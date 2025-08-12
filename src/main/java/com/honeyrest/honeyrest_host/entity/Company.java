@@ -14,13 +14,13 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Company")
+@Table(name = "company")
 public class Company extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "company_id")
-    private int companyId; // 업체 고유 식별자
+    private Integer companyId; // 업체 고유 식별자
 
     @Column(name = "name", nullable = false, length = 200)
     private String name; // 업체명

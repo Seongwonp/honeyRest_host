@@ -14,12 +14,12 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Payment_Detail")
+@Table(name = "payment_detail")
 public class PaymentDetail extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "payment_detail_id")
-    private int paymentDetailId;
+    private Long paymentDetailId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_id", nullable = false)
@@ -32,7 +32,7 @@ public class PaymentDetail extends BaseEntity{
     private String cardNumber; // 마스킹된 카드번호
 
     @Column(name = "installment_months")
-    private int installmentMonths; // 할부 개월
+    private Integer installmentMonths; // 할부 개월
 
     @Column(name = "virtual_account_number", length = 50)
     private String virtualAccountNumber; // 가상계좌번호

@@ -12,13 +12,13 @@ import org.checkerframework.checker.units.qual.C;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Accommodation_Category")
+@Table(name = "accommodation_category")
 public class AccommodationCategory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    private int categoryId; // 카테고리 고유 식별자
+    private Integer categoryId; // 카테고리 고유 식별자
 
     @Column(name = "name", nullable=false, length=100)
     private String name; // 카테고리명
@@ -27,5 +27,5 @@ public class AccommodationCategory {
     private String iconUrl; // 카테고리 아이콘 이미지 경로
 
     @Column(name = "sort_order")
-    private int sortOrder; // 정렬 순서
+    private Integer sortOrder; // 정렬 순서
 }

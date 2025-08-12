@@ -14,13 +14,13 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Review")
+@Table(name = "review")
 public class Review {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "review_id")
-    private int reviewId;
+    private Long reviewId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reservation_id", nullable = false)
@@ -33,10 +33,10 @@ public class Review {
 
     // 중복 저장 컬럼 (FK 아님)
     @Column(name = "accommodation_id", nullable = false)
-    private int accommodationId;
+    private Long accommodationId;
 
     @Column(name = "room_id", nullable = false)
-    private int roomId;
+    private Long roomId;
 
     // 평점 (0.00 ~ 5.00 등)
     @Column(name = "rating", precision = 3, scale = 2, nullable = false)
@@ -61,7 +61,7 @@ public class Review {
     private String reply; // 업체/관리자 답변
 
     @Column(name = "like_count")
-    private int likeCount; // 좋아요 수
+    private Integer likeCount; // 좋아요 수
 
     @Column(name = "status", length = 20, nullable = false)
     private String status; // 상태(PUBLISHED, HIDDEN)

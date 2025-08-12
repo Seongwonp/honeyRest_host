@@ -15,13 +15,13 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Price_Calendar")
+@Table(name = "price_calendar")
 public class PriceCalendar extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "calendar_id")
-    private int calendarId;
+    private Long calendarId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
@@ -34,6 +34,6 @@ public class PriceCalendar extends BaseEntity{
     private BigDecimal price; // 해당 날짜 객실 가격
 
     @Column(name = "available_room")
-    private int availableRoom; // 해당 날짜에 예약 가능한 객실 수
+    private Integer availableRoom; // 해당 날짜에 예약 가능한 객실 수
 
 }

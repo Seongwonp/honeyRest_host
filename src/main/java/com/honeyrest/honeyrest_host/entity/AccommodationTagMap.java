@@ -11,13 +11,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Accommodation_Tag_Map")
+@Table(name = "accommodation_tag_map")
 public class AccommodationTagMap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "map_id")
-    private int mapId;
+    private Long mapId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accommodation_id", nullable = false)
@@ -25,5 +25,5 @@ public class AccommodationTagMap {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tag_id", nullable = false)
-    private AccommodationTag tagId;
+    private AccommodationTag tag;
 }

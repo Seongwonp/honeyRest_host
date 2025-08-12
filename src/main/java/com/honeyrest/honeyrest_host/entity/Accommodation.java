@@ -15,29 +15,29 @@ import java.sql.Time;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Accommodation")
+@Table(name = "accommodation")
 public class Accommodation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "accommodation_id", nullable = false)
-    private int accommodationId;
+    private Long accommodationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
-    private Company companyId;
+    private Company company;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
-    private AccommodationCategory categoryId;
+    private AccommodationCategory category;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "main_region", nullable = false)
+    @JoinColumn(name = "main_region_id", nullable = false)
     private Region mainRegion;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_region_id", nullable = false)
-    private Region subRegionId;
+    private Region subRegion;
 
     @Column(nullable = false, length = 255)
     private String name;
@@ -61,14 +61,14 @@ public class Accommodation {
     private String amenities; // 편의시설 정보(JSON 문자열 저장)
 
     @Column(name = "check_in_time")
-    private Time checkinTime;
+    private Time checkInTime;
     @Column(name = "check_out_time")
-    private Time checkoutTime;
+    private Time checkOutTime;
 
     @Column(precision = 2, scale = 1)
     private BigDecimal rating; // 평균 평점
 
-    @Column(name = "min_price", precision = 10, scale = 12)
+    @Column(name = "min_price", precision = 10, scale = 2)
     private BigDecimal minPrice; // 최저 가격
 
     @Column(length = 20)

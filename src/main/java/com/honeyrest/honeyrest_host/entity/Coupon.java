@@ -15,13 +15,13 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Coupon")
+@Table(name = "coupon")
 public class Coupon extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "coupon_id")
-    private int couponId;
+    private Long couponId;
 
     @Column(name = "name", nullable = false, length = 50)
     private String name; // 쿠폰명
@@ -45,7 +45,7 @@ public class Coupon extends BaseEntity {
     private String targetType; // 적용대상
 
     @Column(name = "target_id")
-    private int targetId; // 특정 숙소, 카테고리 ID(null 가능)
+    private Long targetId; // 특정 숙소, 카테고리 ID(null 가능)
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;

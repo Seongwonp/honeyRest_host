@@ -13,13 +13,13 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Room")
+@Table(name = "room")
 public class Room extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "room_id", nullable = false)
-    private int roomId;
+    private Long roomId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accommodatin_id", nullable = false)
@@ -35,10 +35,10 @@ public class Room extends BaseEntity {
     private BigDecimal price;
 
     @Column(name = "max_occupancy", nullable = false)
-    private int maxOccupancy;
+    private Integer maxOccupancy;
 
     @Column(name = "standard_occupancy", nullable = false)
-    private int standardOccupancy;
+    private Integer standardOccupancy;
 
     @Column(name = "extra_person_fee", precision = 10, scale = 2)
     private BigDecimal extraPersonFee;
@@ -53,7 +53,7 @@ public class Room extends BaseEntity {
     private String description;
 
     @Column(name = "total_rooms", nullable = false)
-    private int totalRooms;
+    private Integer totalRooms;
 
     @Column(name = "status" , length = 20)
     private String status;
