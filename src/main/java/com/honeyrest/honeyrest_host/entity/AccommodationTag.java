@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Accommodation_Tag")
+@Table(name = "accommodation_tag")
 public class AccommodationTag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "tag_id")
-    private int tagId;
+    private Long tagId;
 
     @Column(nullable = false, length = 100)
     private String name; // 태그명(오션뷰,바베큐 등)

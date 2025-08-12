@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "Region")
+@Table(name = "region")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,16 +17,16 @@ public class Region {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "region_id")
-    private int regionId; // 지역 고유 Id
+    private Integer regionId; // 지역 고유 Id
 
     @Column(name = "parent_id")
-    private int parentId; // 상위 지역
+    private Integer parentId; // 상위 지역
 
     @Column(name = "name", nullable = false, length = 100)
     private String name; // 지역명
 
     @Column(name = "level",nullable = false)
-    private int level; // 지역 레벨
+    private Integer level; // 지역 레벨
 
     @Column(name = "is_popular")
     private boolean isPopular; // 인기 지역 여부

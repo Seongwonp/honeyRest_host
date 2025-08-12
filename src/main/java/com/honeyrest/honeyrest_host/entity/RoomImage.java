@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Room_Image")
+@Table(name = "room_image")
 public class RoomImage extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "image_id")
-    private int imageId;
+    private Long imageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
@@ -26,6 +26,6 @@ public class RoomImage extends BaseEntity {
     private String imageUrl;
 
     @Column(name = "sort_order")
-    private int sortOrder;
+    private Integer sortOrder;
 
 }

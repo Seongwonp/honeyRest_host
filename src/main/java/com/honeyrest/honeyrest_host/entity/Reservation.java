@@ -15,13 +15,13 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Reservation")
+@Table(name = "reservation")
 public class Reservation extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "reservation_id")
-    public int reservationId;
+    public Long reservationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -29,10 +29,10 @@ public class Reservation extends BaseEntity{
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id",  nullable = false)
-    private Room roomId;
+    private Room room;
 
     @Column(name = "accommodation_id", nullable = false)
-    private int accommodationId; // 숙소ID(중복 저장)
+    private Long accommodationId; // 숙소ID(중복 저장)
 
     @Column(name = "accommodation_name", nullable = false, length = 255)
     private String accommodationName; // 숙소명
@@ -50,7 +50,7 @@ public class Reservation extends BaseEntity{
     private LocalDate checkOutDate; // 체크 아웃
 
     @Column(name = "guest_count", nullable = false)
-    private int guestCount;
+    private Integer guestCount;
 
     @Column(name = "guest_name", nullable = false, length = 100)
     private String guestName;

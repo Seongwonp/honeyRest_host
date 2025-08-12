@@ -14,12 +14,12 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Coupon_Usage")
+@Table(name = "coupon_usage")
 public class CouponUsage extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "usage_id")
-    private int usageId;
+    private Long usageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_coupon_id", nullable = false)

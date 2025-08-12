@@ -15,13 +15,13 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "User")
+@Table(name = "user")
 public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private int userId; //사용자 고유 식별자
+    private Long userId; //사용자 고유 식별자
 
     @Column(nullable = false, length = 100, unique = true)
     private String email; // 이메일 주소 (자체 가입용)
