@@ -18,9 +18,83 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Spring Boot 기본 웹 애플리케이션 구성
+    implementation 'org.springframework.boot:spring-boot-starter-web' // REST API 및 MVC 웹 기능
+    implementation 'org.springframework.boot:spring-boot-starter-validation' // Bean Validation (예: @Valid)
+
+    // 데이터 접근
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA 기반 ORM
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3' // MyBatis SQL 매퍼
+
+    // 코드 간결화
+    compileOnly 'org.projectlombok:lombok' // Getter/Setter/Builder 등 자동 생성
+    annotationProcessor 'org.projectlombok:lombok' // 컴파일 시 Lombok 처리
+
+    // DTO ↔ Entity 변환
+    implementation 'org.mapstruct:mapstruct:1.6.2' // 타입 매핑 자동화
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.2' // MapStruct 컴파일러
+
+    // 보안 및 인증
+    implementation 'org.springframework.boot:spring-boot-starter-security' // Spring Security 기본 설정
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // OAuth2 소셜 로그인 (구글, 카카오 등)
+    implementation 'com.auth0:java-jwt:4.4.0' // JWT 토큰 생성 및 검증
+
+    // 실시간 통신
+    implementation 'org.springframework.boot:spring-boot-starter-websocket' // WebSocket 지원
+
+    // API 문서화
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0' // Swagger UI 및 OpenAPI 문서 자동 생성
+
+    // 캐시 및 성능 향상
+    implementation 'org.springframework.boot:spring-boot-starter-cache' // 캐시 추상화 (Redis 등과 연동 가능)
+
+    // 이메일 발송
+    implementation 'org.springframework.boot:spring-boot-starter-mail' // SMTP 기반 메일 전송
+
+    // 시스템 모니터링
+    implementation 'org.springframework.boot:spring-boot-starter-actuator' // 애플리케이션 상태 및 지표 확인
+
+    // AOP (관점 지향 프로그래밍)
+    implementation 'org.springframework.boot:spring-boot-starter-aop' // 로깅, 트랜잭션, 인증 등 공통 처리
+
+    // 복잡한 쿼리 작성
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta' // 타입 안전한 JPQL 생성
+    annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta' // Querydsl 코드 생성기
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api' // 어노테이션 API
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api' // JPA 어노테이션 API
+
+    // 파일 업로드 (AWS S3 연동)
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE' // S3, SES 등 AWS 서비스 연동
+
+    // 메시지 큐 (비동기 처리)
+    implementation 'org.springframework.boot:spring-boot-starter-amqp' // RabbitMQ 연동
+
+    // Firebase 연동
+    implementation 'com.google.firebase:firebase-admin:9.2.0' // Firebase Admin SDK (Auth, FCM, Firestore 등)
+
+    // 개발 편의성
+    developmentOnly 'org.springframework.boot:spring-boot-devtools' // 자동 리스타트, 캐시 무효화 등
+
+    // DB 드라이버
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client' // MariaDB JDBC 드라이버
+
+    // 테스트
+    testImplementation 'org.springframework.boot:spring-boot-starter-test' // JUnit, Mockito 등 포함
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // 테스트 런처
+
+    // 테스트 환경에서도 Lombok 사용
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // HTML 템플릿 엔진 Thymeleaf
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.1.0'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 tasks.named('test') {

@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# 민감 정보 파일 (보안 필수)
+application_secret.properties
+firebase-service-key.json
+.env
