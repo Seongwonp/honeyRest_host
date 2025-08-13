@@ -49,7 +49,7 @@ public class Room extends BaseEntity {
     @Column(name = "amenities", columnDefinition = "JSON")
     private String amenities;
 
-    @Column(name = "desription",columnDefinition = "TEXT")
+    @Column(name = "description",columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "total_rooms", nullable = false)

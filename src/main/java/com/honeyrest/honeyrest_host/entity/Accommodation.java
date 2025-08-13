@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+import com.google.type.DateTime;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.sql.Time;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -61,9 +63,9 @@ public class Accommodation {
     private String amenities; // 편의시설 정보(JSON 문자열 저장)
 
     @Column(name = "check_in_time")
-    private Time checkInTime;
+    private LocalDateTime checkInTime;
     @Column(name = "check_out_time")
-    private Time checkOutTime;
+    private LocalDateTime checkOutTime;
 
     @Column(precision = 2, scale = 1)
     private BigDecimal rating; // 평균 평점
