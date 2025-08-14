@@ -22,7 +22,7 @@ public class Room extends BaseEntity {
     private Long roomId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "accommodatin_id", nullable = false)
+    @JoinColumn(name = "accommodation_id", nullable = false)
     private Accommodation accommodation; // 숙소 ID
 
     @Column(name = "name", nullable = false, length = 150)
@@ -49,7 +49,7 @@ public class Room extends BaseEntity {
     @Column(name = "amenities", columnDefinition = "JSON")
     private String amenities;
 
-    @Column(name = "desription",columnDefinition = "TEXT")
+    @Column(name = "description",columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "total_rooms", nullable = false)
