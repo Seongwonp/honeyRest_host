@@ -28,5 +28,7 @@ public class AccommodationDTO {
     private String description;
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;
+    private BigDecimal rating; // 평균 평점
+    private BigDecimal minPrice; // 최저 가격
     private String status; // ACTIVE / INACTIVE
 }

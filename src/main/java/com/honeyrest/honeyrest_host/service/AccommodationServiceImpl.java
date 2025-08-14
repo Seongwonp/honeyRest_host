@@ -1,6 +1,9 @@
 package com.honeyrest.honeyrest_host.service;
 
 import com.amazonaws.services.kms.model.NotFoundException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dto.AccommodationDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.repository.AccommodationCategoryRepository;
@@ -13,6 +16,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,8 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final RegionRepository regionRepository;
     private final AccommodationCategoryRepository accommodationCategoryRepository;
     private final ModelMapper modelMapper;
+    private final ObjectMapper objectMapper;
+
 
     // ===== Mapper =====
     private AccommodationDTO toDTO(Accommodation e) {
@@ -45,7 +51,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .build();
     }
 
-    private Accommodation toEntity(AccommodationDTO d) {
+    private Accommodation toEntity(AccommodationDTO d) throws JsonProcessingException {
         return Accommodation.builder()
                 .company(companyRepository.getReferenceById(d.getCompanyId()))
                 .category(accommodationCategoryRepository.getReferenceById(d.getCategoryId()))
@@ -55,7 +61,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .address(d.getAddress())
                 .latitude(d.getLatitude())
                 .longitude(d.getLongitude())
-                .amenities(d.getAmenities())
+                .amenities(objectMapper.writeValueAsString(d.getAmenities()))
                 .description(d.getDescription())
                 .checkInTime(d.getCheckInTime())
                 .checkOutTime(d.getCheckOutTime())
@@ -79,7 +85,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public Long registerAccommodation(AccommodationDTO dto) {
+    public Long registerAccommodation(AccommodationDTO dto) throws JsonProcessingException {
         Accommodation acc = toEntity(dto);
 
         accommodationRepository.save(acc);
@@ -87,7 +93,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public void modifyAccommodation(AccommodationDTO dto) {
+    public void modifyAccommodation(AccommodationDTO dto) throws JsonProcessingException {
         Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
                 .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
         accommodationRepository.save(toEntity(dto));

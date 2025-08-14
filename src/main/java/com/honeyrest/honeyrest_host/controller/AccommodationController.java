@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.honeyrest.honeyrest_host.dto.AccommodationDTO;
 import com.honeyrest.honeyrest_host.service.AccommodationService;
 import lombok.RequiredArgsConstructor;
@@ -28,13 +29,13 @@ public class AccommodationController {
 
     // 새 숙소 등록
     @PostMapping
-    public Long save(@RequestBody AccommodationDTO dto) {
+    public Long save(@RequestBody AccommodationDTO dto) throws JsonProcessingException {
         return accommodationService.registerAccommodation(dto);
     }
 
     // 숙소 수정
     @PutMapping("/{id}")
-    public void update(@PathVariable Long id, @RequestBody AccommodationDTO dto) {
+    public void update(@PathVariable Long id, @RequestBody AccommodationDTO dto) throws JsonProcessingException {
         accommodationService.modifyAccommodation(dto);
     }
 
