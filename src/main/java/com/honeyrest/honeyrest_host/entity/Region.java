@@ -17,10 +17,10 @@ public class Region {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "region_id")
-    private Integer regionId; // 지역 고유 Id
+    private Long regionId; // 지역 고유 Id
 
     @Column(name = "parent_id")
-    private Integer parentId; // 상위 지역
+    private Long parentId; // 상위 지역
 
     @Column(name = "name", nullable = false, length = 100)
     private String name; // 지역명

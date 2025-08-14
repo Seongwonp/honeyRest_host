@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 // AccommodationDto.java
@@ -20,8 +21,8 @@ public class AccommodationDTO {
     private Long subRegionId;
     private String name;
     private String address;
-    private Double latitude;
-    private Double longitude;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
     private String thumbnailUrl; // 저장된 이미지 URL
     private String amenities; // JSON String
     private String description;

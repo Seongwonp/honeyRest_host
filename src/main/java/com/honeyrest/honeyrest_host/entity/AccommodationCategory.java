@@ -18,7 +18,7 @@ public class AccommodationCategory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
-    private Integer categoryId; // 카테고리 고유 식별자
+    private Long categoryId; // 카테고리 고유 식별자
 
     @Column(name = "name", nullable=false, length=100)
     private String name; // 카테고리명

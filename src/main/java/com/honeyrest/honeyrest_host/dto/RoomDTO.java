@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class RoomDTO {
-    private Long RoomId;
+    private Long roomId;
     private Long accommodationId;
     private String name;
     private String type; // Standard, Deluxe...
@@ -21,7 +21,6 @@ public class RoomDTO {
     private Integer maxOccupancy;
     private Integer standardOccupancy;
     private BigDecimal extraPersonFee;
-    private String size;
     private String bedInfo; // JSON String
     private String amenities; // JSON String
     private String description;

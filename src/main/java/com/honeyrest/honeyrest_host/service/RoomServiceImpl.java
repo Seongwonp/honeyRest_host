@@ -21,6 +21,43 @@ public class RoomServiceImpl implements RoomService{
     private final AccommodationRepository accommodationRepository;
     private final ModelMapper modelMapper;
 
+    // ===== Mapper =====
+    private RoomDTO toDTO(Room e) {
+        return RoomDTO.builder()
+                .roomId(e.getRoomId())
+                .accommodationId(e.getAccommodation().getAccommodationId())
+                .name(e.getName())
+                .type(e.getType())
+                .price(e.getPrice())
+                .maxOccupancy(e.getMaxOccupancy())
+                .standardOccupancy(e.getStandardOccupancy())
+                .extraPersonFee(e.getExtraPersonFee())
+                .bedInfo(e.getBedInfo())
+                .amenities(e.getAmenities())
+                .description(e.getDescription())
+                .totalRooms(e.getTotalRooms())
+                .status(e.getStatus())
+                .build();
+    }
+
+    private Room toEntity(RoomDTO d) {
+        return Room.builder()
+                .roomId(d.getRoomId())
+                .accommodation(accommodationRepository.getReferenceById(d.getAccommodationId()))
+                .name(d.getName())
+                .type(d.getType())
+                .price(d.getPrice())
+                .maxOccupancy(d.getMaxOccupancy())
+                .standardOccupancy(d.getStandardOccupancy())
+                .extraPersonFee(d.getExtraPersonFee())
+                .bedInfo(d.getBedInfo())
+                .amenities(d.getAmenities())
+                .description(d.getDescription())
+                .totalRooms(d.getTotalRooms())
+                .status(d.getStatus() == null ? "ACTIVE" : d.getStatus())
+                .build();
+    }
+
     @Override
     public List<RoomDTO> findRoomsByAccommodationId(Long accommodationId) {
         return roomRepository.findByAccommodation_AccommodationId(accommodationId)
