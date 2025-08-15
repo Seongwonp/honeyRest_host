@@ -28,6 +28,7 @@ public class ReviewServiceImpl implements ReviewService {
 //    @Override
 //    public PageResponseDTO<ReviewDTO> getList(String status, Long roomId, String sort, PageRequestDTO pageRequestDTO) {
 //
+
 //        // 최신/ 오래된 리뷰 조회 가져오기 (기본: 최신순)
 //        Sort sortSpec = "old".equalsIgnoreCase(sort)
 //                ? Sort.by("createdAt").ascending()

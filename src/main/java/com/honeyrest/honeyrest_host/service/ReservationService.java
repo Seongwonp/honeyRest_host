@@ -21,4 +21,7 @@ public interface ReservationService {
 
     // 예약 취소
     void canceledReservation(Long reservationId, String cancelReason);
+
+    // 예약 등록
+    ReservationDTO createReservation(ReservationDTO reservationDTO);
 }

@@ -1,4 +1,4 @@
-package com.honeyrest.honeyrest_host.controller;
+package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
@@ -30,7 +30,7 @@ public class ReservationController {
     @GetMapping
     public ResponseEntity<PageResponseDTO<ReservationDTO>> listByStatus(@PathVariable(required = false) String status,
                                                                         @ModelAttribute PageRequestDTO pageRequestDTO) {
-        PageResponseDTO<ReservationDTO> response = reservationService.getReservationsByStatus(status, pageRequestDTO);
+        var response = reservationService.getReservationsByStatus(status, pageRequestDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -49,6 +49,12 @@ public class ReservationController {
     public ResponseEntity<Void> cancel(@PathVariable Long reservationId, @RequestBody ReservationDTO req) {
         reservationService.canceledReservation(reservationId, req.getCancelReason());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping
+    public ResponseEntity<ReservationDTO> creat(@RequestBody ReservationDTO request) {
+        ReservationDTO created = reservationService.createReservation(request);
+        return ResponseEntity.ok(created);
     }
 
 

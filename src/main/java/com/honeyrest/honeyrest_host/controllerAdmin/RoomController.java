@@ -1,4 +1,4 @@
-package com.honeyrest.honeyrest_host.controller;
+package com.honeyrest.honeyrest_host.controllerAdmin;
 
 import com.honeyrest.honeyrest_host.dto.RoomDTO;
 import com.honeyrest.honeyrest_host.service.RoomService;

@@ -9,7 +9,7 @@ public interface AccommodationService {
 
     AccommodationDTO getByAccommodationId(Long accommodationId);
 
-    Long registerAccommodation(AccommodationDTO accommodationDTO);
+    AccommodationDTO registerAccommodation(AccommodationDTO accommodationDTO);
 
     void modifyAccommodation(AccommodationDTO dto);
 

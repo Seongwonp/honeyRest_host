@@ -71,13 +71,12 @@ public class RoomServiceImpl implements RoomService{
     }
 
     @Override
-    public Long registerRoom(RoomDTO dto) {
+    public void registerRoom(RoomDTO dto) {
         Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
                 .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
         dto.setAccommodationId(acc.getAccommodationId());
         Room room = modelMapper.map(dto, Room.class);
         roomRepository.save(room);
-        return room.getRoomId();
     }
 
     @Override

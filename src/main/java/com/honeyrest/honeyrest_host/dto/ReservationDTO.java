@@ -30,7 +30,6 @@ public class ReservationDTO {
     @NotNull
     private Long userId;
 
-    @NotNull
     private Long roomId;
 
     private LocalDate checkInDate; // 날짜 체크인

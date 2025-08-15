@@ -136,5 +136,28 @@ public class ReservationServiceImpl implements ReservationService {
         modelMapper.map(reservationDTO, r);
     }
 
+    @Override
+    public ReservationDTO createReservation(ReservationDTO reservationDTO) {
+        if (reservationDTO.getRoomId() == null || reservationDTO.getRoomId() <= 0) {
+            throw new IllegalStateException("roomId는 필수 입니다..");
+        }
 
+        if (reservationDTO.getCheckInDate() != null && reservationDTO.getCheckOutDate() != null) {
+            if (!reservationDTO.getCheckInDate().isBefore(reservationDTO.getCheckOutDate())) {
+                throw new IllegalArgumentException("체크인 날짜는 체크아웃 날짜보다 이전이어야 합니다.>");
+            }
+        }
+
+        // 존재 검증 (여기서 실패하면 "객실을 찾을 수 없습니다" 예외가 나와야 정상)
+        Room room = roomRepository.findById(reservationDTO.getRoomId())
+                .orElseThrow(() -> new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + reservationDTO.getRoomId()));
+
+        Reservation entity = modelMapper.map(reservationDTO, Reservation.class);
+        setField(entity, "room", room);
+        // ...
+        Reservation saved = reservationRepository.save(entity);
+        return modelMapper.map(saved, ReservationDTO.class);
+    }
 }
+
+

@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +25,7 @@ public class AccommodationDTO {
     private BigDecimal latitude;
     private BigDecimal longitude;
     private String thumbnailUrl; // 저장된 이미지 URL
-    private String amenities; // JSON String
+    private JsonNode amenities; // JSON String
     private String description;
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;
