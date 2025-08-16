@@ -5,6 +5,7 @@ import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dto.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.Reservation;
 import com.honeyrest.honeyrest_host.entity.Room;
+import com.honeyrest.honeyrest_host.entity.enums.ReservationStatus;
 import com.honeyrest.honeyrest_host.repository.ReservationRepository;
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -124,12 +125,12 @@ public class ReservationServiceImpl implements ReservationService {
                 .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + reservationId));
 
         // 이미 예약 취소 검사
-        if ("CANCELED".equalsIgnoreCase(r.getStatus())) {
+        if (r.getStatus() == ReservationStatus.CANCELED) {
             throw new IllegalStateException("이미 취소된 예약입니다. id=" + reservationId);
         }
 
         ReservationDTO reservationDTO = ReservationDTO.builder()
-                .status("CANCELED")
+                .status(ReservationStatus.CANCELED)
                 .cancelReason(cancelReason)
                 .build();
 

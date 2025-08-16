@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -73,5 +74,5 @@ public class Accommodation {
     private BigDecimal minPrice; // 최저 가격
 
     @Column(length = 20)
-    private String status; // 운영 상태(active, inactive
+    private OperationStatus status; // 운영 상태(active, inactive)
 }

@@ -1,17 +1,24 @@
 package com.honeyrest.honeyrest_host.service;
 
-import com.honeyrest.honeyrest_host.dto.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationResponseDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationUpdateRequestDTO;
 
 import java.util.List;
 
 public interface AccommodationService {
-    List<AccommodationDTO> getAllAccommodations();
+    // 목록
+    List<AccommodationResponseDTO> getAll();
 
-    AccommodationDTO getByAccommodationId(Long accommodationId);
+    // id 조회
+    AccommodationResponseDTO getById(Long id);
 
-    AccommodationDTO registerAccommodation(AccommodationDTO accommodationDTO);
+    // 등록
+    AccommodationResponseDTO create(AccommodationCreateRequestDTO req);
 
-    void modifyAccommodation(AccommodationDTO dto);
+    // 수정
+    AccommodationResponseDTO update(Long id, AccommodationUpdateRequestDTO req);
 
-    void removeAccommodation(Long id);
+    // 삭제
+    void delete(Long id);
 }

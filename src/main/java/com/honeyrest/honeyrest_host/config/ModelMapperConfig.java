@@ -2,7 +2,8 @@ package com.honeyrest.honeyrest_host.config;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.dto.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationResponseDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import org.modelmapper.Converter;
 import org.modelmapper.config.Configuration.AccessLevel;
@@ -43,27 +44,27 @@ public class ModelMapperConfig {
         };
 
         // 엔티티 -> DTO 매핑 규칙
-        modelMapper.typeMap(Accommodation.class, AccommodationDTO.class).addMappings(m -> {
+        modelMapper.typeMap(Accommodation.class, AccommodationResponseDTO.class).addMappings(m -> {
             // ID/이름 다른 필드
-            m.map(Accommodation::getAccommodationId, AccommodationDTO::setAccommodationId);
-            m.map(Accommodation::getThumbnail, AccommodationDTO::setThumbnailUrl);
+            m.map(Accommodation::getAccommodationId, AccommodationResponseDTO::setAccommodationId);
+            m.map(Accommodation::getThumbnail, AccommodationResponseDTO::setThumbnailUrl);
 
             // 연관 ID (null-safe)
             m.<Long>map(src -> src.getCompany() == null ? null : src.getCompany().getCompanyId(),
-                    AccommodationDTO::setCompanyId);
+                    AccommodationResponseDTO::setCompanyId);
             m.<Long>map(src -> src.getCategory() == null ? null : src.getCategory().getCategoryId(),
-                    AccommodationDTO::setCategoryId);
+                    AccommodationResponseDTO::setCategoryId);
             m.<Long>map(src -> src.getMainRegion() == null ? null : src.getMainRegion().getRegionId(),
-                    AccommodationDTO::setMainRegionId);
+                    AccommodationResponseDTO::setMainRegionId);
             m.<Long>map(src -> src.getSubRegion() == null ? null : src.getSubRegion().getRegionId(),
-                    AccommodationDTO::setSubRegionId);
+                    AccommodationResponseDTO::setSubRegionId);
 
             // amenities: String → JsonNode
-            m.using(toJsonNode).map(Accommodation::getAmenities, AccommodationDTO::setAmenities);
+            m.using(toJsonNode).map(Accommodation::getAmenities, AccommodationResponseDTO::setAmenities);
         });
 
         // DTO -> 엔티티 매핑 규칙  (주의: 연관관계는 ID만으로는 entity를 못 채우므로, 아래는 필드만)
-        modelMapper.typeMap(AccommodationDTO.class, Accommodation.class).addMappings(m -> {
+        modelMapper.typeMap(AccommodationCreateRequestDTO.class, Accommodation.class).addMappings(m -> {
 
         });
 

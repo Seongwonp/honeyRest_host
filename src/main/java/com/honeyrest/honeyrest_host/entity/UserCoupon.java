@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+import com.honeyrest.honeyrest_host.entity.enums.UserCouponStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,7 +30,7 @@ public class UserCoupon {
     private Coupon coupon;
 
     @Column(nullable = false,length = 20)
-    private String status; // 상태 (ISSUED, USED, EXPIRED)
+    private UserCouponStatus status; // 상태 (ISSUED, USED, EXPIRED)
 
     @Column(name = "issued_at", nullable = false)
     private LocalDateTime issuedAt; // 발급 일시

@@ -1,4 +1,4 @@
-package com.honeyrest.honeyrest_host.repository;
+package com.honeyrest.honeyrest_host.repository.accommodation;
 
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import org.springframework.data.jpa.repository.JpaRepository;

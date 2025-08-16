@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+
+<head>
+  <title>숙소 목록</title>
+  <th:block layout:fragment="head">
+    <!-- 페이지 전용 CSS 필요하면 여기에 -->
+    <style>
+      .table thead th { white-space: nowrap; }
+      .badge-status { font-size: .85rem; }
+    </style>
+  </th:block>
+</head>
+
+<body>
+<th:block layout:fragment="content">
+  <div class="page-heading d-flex align-items-center justify-content-between">
+    <div>
+      <h3>숙소 목록</h3>
+      <p class="text-subtitle text-muted">등록된 숙소 현황을 확인하고 관리하세요.</p>
+    </div>
+
+    <div class="page-content">
+      <section class="section">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              총 <span th:text="${#lists.size(accommodations)}">0</span>건
+            </h5>
+          </div>
+          <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+              <tr>
+                <th>#</th>
+                <th>숙소명</th>
+                <th>주소</th>
+                <th>상태</th>
+                <th style="width: 220px;">관리</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:if="${#lists.isEmpty(accommodations)}">
+                <td colspan="5" class="text-center text-muted py-4">등록된 숙소가 없습니다.</td>
+              </tr>
+              <tr th:each="acc, stat : ${accommodations}">
+                <td th:text="${stat.index + 1}">1</td>
+                <td th:text="${acc.name}">숙소명</td>
+                <td th:text="${acc.address}">주소</td>
+                <td>
+                                <span class="badge"
+                                      th:classappend="${acc.status}=='ACTIVE' ? ' bg-success' : ' bg-secondary'"
+                                      th:text="${acc.status}">ACTIVE</span>
+                </td>
+                <td>
+                  <a class="btn btn-sm btn-outline-primary"
+                     th:href="@{'/admin/rooms/list'(accommodationId=${acc.accommodationId})}">
+                    객실 보기
+                  </a>
+                  <a class="btn btn-sm btn-outline-success"
+                     th:href="@{'/admin/rooms/add'(accommodationId=${acc.accommodationId})}">
+                    객실 등록
+                  </a>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+</th:block>
+
+<th:block layout:fragment="script"></th:block>
+</body>
+</html>

@@ -1,6 +1,8 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+import com.honeyrest.honeyrest_host.entity.enums.CouponDiscount;
+import com.honeyrest.honeyrest_host.entity.enums.CouponTarget;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,7 +32,7 @@ public class Coupon extends BaseEntity {
     private String code; // 고유 쿠폰 코드(자동 발급의 경우 null)
 
     @Column(name = "discount_type", nullable = false)
-    private String discountType; // 할인 유형
+    private CouponDiscount discountType; // 할인 유형
 
     @Column(name = "discount_value", nullable = false, precision = 10, scale = 2)
     private BigDecimal discountValue; // 할인 값
@@ -42,7 +44,7 @@ public class Coupon extends BaseEntity {
     private BigDecimal maxOrderAmount; // 최대 주문 금액
 
     @Column(name = "target_type", nullable = false, length = 20)
-    private String targetType; // 적용대상
+    private CouponTarget targetType; // 적용대상
 
     @Column(name = "target_id")
     private Long targetId; // 특정 숙소, 카테고리 ID(null 가능)

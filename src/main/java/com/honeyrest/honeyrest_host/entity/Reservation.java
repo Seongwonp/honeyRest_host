@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+import com.honeyrest.honeyrest_host.entity.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -68,7 +69,7 @@ public class Reservation extends BaseEntity{
     private BigDecimal discountAmount; // 총 할인 금액
 
     @Column(name = "status", nullable = false, length = 20)
-    private String status; // 예약 상태
+    private ReservationStatus status; // 예약 상태
 
     @Column(name = "cancel_reason", columnDefinition = "TEXT")
     private String cancelReason; // 취소 사유

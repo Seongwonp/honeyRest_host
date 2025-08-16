@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
+import com.honeyrest.honeyrest_host.entity.enums.ImageType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +27,7 @@ public class AccommodationImage extends BaseEntity {
     private String imageUrl; // 이미지 경로
 
     @Column(name = "image_type", length = 50)
-    private String imageType; // 이미지 종류
+    private ImageType imageType; // 이미지 종류 (MAIN, EXTERIOR, COMMON)
 
     @Column(name = "sort_order")
     private Integer sortOrder; //정렬 순서

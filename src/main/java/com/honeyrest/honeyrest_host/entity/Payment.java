@@ -1,6 +1,8 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+import com.honeyrest.honeyrest_host.entity.enums.PaymentMethod;
+import com.honeyrest.honeyrest_host.entity.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,10 +36,10 @@ public class Payment extends BaseEntity {
     private BigDecimal amount;
 
     @Column(name = "payment_method", length = 30, nullable = false)
-    private String paymentMethod;
+    private PaymentMethod paymentMethod;
 
     @Column(name = "payment_status", length = 20, nullable = false)
-    private String paymentStatus;
+    private PaymentStatus paymentStatus;
 
     @Column(name = "transaction_id", length = 100)
     private String transactionId;

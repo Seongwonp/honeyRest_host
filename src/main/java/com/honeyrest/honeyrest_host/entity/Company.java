@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+import com.honeyrest.honeyrest_host.entity.enums.ApprovalStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,6 +48,6 @@ public class Company extends BaseEntity {
     private BigDecimal commissionRate; // 수수료율
 
     @Column(name = "status", length = 20)
-    private String status; // 승인 상태
+    private ApprovalStatus status; // 승인 상태
 
 }

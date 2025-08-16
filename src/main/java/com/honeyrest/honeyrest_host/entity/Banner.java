@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
+import com.honeyrest.honeyrest_host.entity.enums.BannerPosition;
 import jakarta.persistence.*;
 import lombok.*;
 

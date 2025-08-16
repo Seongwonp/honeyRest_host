@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
+import com.honeyrest.honeyrest_host.entity.enums.TagCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,5 +23,5 @@ public class AccommodationTag {
     private String name; // 태그명(오션뷰,바베큐 등)
 
     @Column(nullable = false, length = 50)
-    private String category; // 태그 카테고리
+    private TagCategory category; // 태그 카테고리
 }

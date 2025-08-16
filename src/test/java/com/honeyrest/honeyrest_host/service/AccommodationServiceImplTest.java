@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.service;
 
-import com.honeyrest.honeyrest_host.dto.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
+import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
 import lombok.extern.log4j.Log4j2;
 
 import org.junit.jupiter.api.Test;
@@ -10,13 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Commit;
 
-import java.math.BigDecimal;
-
 import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.entity.AccommodationCategory;
 import com.honeyrest.honeyrest_host.entity.Region;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
-import com.honeyrest.honeyrest_host.repository.AccommodationCategoryRepository;
+import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationCategoryRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
 import org.junit.jupiter.api.BeforeEach;
 

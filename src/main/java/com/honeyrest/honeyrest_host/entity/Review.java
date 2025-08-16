@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+import com.honeyrest.honeyrest_host.entity.enums.ReviewStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -64,5 +65,5 @@ public class Review {
     private Integer likeCount; // 좋아요 수
 
     @Column(name = "status", length = 20, nullable = false)
-    private String status; // 상태(PUBLISHED, HIDDEN)
+    private ReviewStatus status; // 상태(PUBLISHED, HIDDEN)
 }

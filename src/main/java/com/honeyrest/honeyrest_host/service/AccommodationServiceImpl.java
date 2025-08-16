@@ -1,11 +1,16 @@
 package com.honeyrest.honeyrest_host.service;
 
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.dto.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.*;
+
 import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.repository.AccommodationCategoryRepository;
-import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
+import com.honeyrest.honeyrest_host.entity.AccommodationImage;
+import com.honeyrest.honeyrest_host.entity.AccommodationTag;
+import com.honeyrest.honeyrest_host.entity.AccommodationTagMap;
+import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
+import com.honeyrest.honeyrest_host.repository.accommodation.*;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -14,25 +19,38 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class AccommodationServiceImpl implements AccommodationService {
+
     private final AccommodationRepository accommodationRepository;
     private final CompanyRepository companyRepository;
     private final RegionRepository regionRepository;
     private final AccommodationCategoryRepository accommodationCategoryRepository;
-    private final ModelMapper modelMapper;
+    private final AccommodationTagRepository accommodationTagRepository;
+
+    private final AccommodationImageRepository accommodationImageRepository;
+    private final AccommodationTagMapRepository accommodationTagMapRepository;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+
+    /* ------ json -> String ---------*/
     private JsonNode stringToJsonNode(String json) {
         try {
             if (json == null || json.isBlank()) return objectMapper.readTree("[]");
             return objectMapper.readTree(json);
         } catch (Exception e) {
-            try { return objectMapper.readTree("[]"); } catch (Exception ignored) { return null; }
+            try {
+                return objectMapper.readTree("[]");
+            } catch (Exception ignored) {
+                return null;
+            }
         }
     }
 
@@ -45,10 +63,24 @@ public class AccommodationServiceImpl implements AccommodationService {
         }
     }
 
-    // ===== Mapper =====
-    private AccommodationDTO toDTO(Accommodation e) {
-        return AccommodationDTO.builder()
-                .AccommodationId(e.getAccommodationId())
+    /* ---------------------- 유틸: 시간 변환 ---------------------- */
+    // Entity는 LocalDateTime(컬럼 TIME이 아니고 DATETIME)이므로 기준일 붙여 저장
+    private static final LocalDateTime EPOCH_DAY = LocalDateTime.of(1970, 1, 1, 0, 0);
+
+    private LocalDateTime toDateTime(LocalTime t) {
+        return (t == null) ? null : EPOCH_DAY.withHour(t.getHour()).withMinute(t.getMinute());
+    }
+
+    private LocalTime toTime(LocalDateTime dt) {
+        return (dt == null) ? null : dt.toLocalTime();
+    }
+
+    /* ---------------------- 매핑: Entity -> Response ---------------------- */
+    private AccommodationResponseDTO toResponse(Accommodation e,
+                                                List<AccommodationImage> images,
+                                                List<AccommodationTagMap> tagMaps) {
+        return AccommodationResponseDTO.builder()
+                .accommodationId(e.getAccommodationId())
                 .companyId(e.getCompany() != null ? e.getCompany().getCompanyId() : null)
                 .categoryId(e.getCategory() != null ? e.getCategory().getCategoryId() : null)
                 .mainRegionId(e.getMainRegion() != null ? e.getMainRegion().getRegionId() : null)
@@ -58,103 +90,177 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .latitude(e.getLatitude())
                 .longitude(e.getLongitude())
                 .thumbnailUrl(e.getThumbnail())
-                .amenities(stringToJsonNode(e.getAmenities()))
                 .description(e.getDescription())
-                .checkInTime(e.getCheckInTime())
-                .checkOutTime(e.getCheckOutTime())
-                .status(e.getStatus())
+                .amenities(stringToJsonNode(e.getAmenities()))
+                .checkInTime(toTime(e.getCheckInTime()))
+                .checkOutTime(toTime(e.getCheckOutTime()))
+                .status(String.valueOf(e.getStatus()))
+                .rating(e.getRating())
+                .minPrice(e.getMinPrice())
+                .images(images == null ? List.of() :
+                        images.stream().map(img -> new AccommodationImageDTO(
+                                img.getImageId(),
+                                img.getImageUrl(),
+                                img.getImageType(),
+                                img.getSortOrder()
+                        )).toList())
+                .tags(tagMaps == null ? List.of() :
+                        tagMaps.stream().map(m -> {
+                            AccommodationTag t = m.getTag();
+                            return new AccommodationTagMapDTO(t.getTagId(), t.getName(), t.getCategory());
+                        }).toList())
                 .build();
     }
 
-    private Accommodation toEntity(AccommodationDTO d) {
-        // 필수값 검증: 엔티티에서 nullable=false 인 필드들
-        if (d.getCompanyId() == null || d.getCategoryId() == null ||
-            d.getMainRegionId() == null || d.getSubRegionId() == null ||
-            d.getName() == null || d.getAddress() == null) {
-            throw new IllegalArgumentException("companyId, categoryId, mainRegionId, subRegionId, name, address 는 필수입니다.");
-        }
-
-        return Accommodation.builder()
-                .company(companyRepository.getReferenceById(d.getCompanyId()))
-                .category(accommodationCategoryRepository.getReferenceById(d.getCategoryId()))
-                .mainRegion(regionRepository.getReferenceById(d.getMainRegionId()))
-                .subRegion(regionRepository.getReferenceById(d.getSubRegionId()))
-                .name(d.getName())
-                .address(d.getAddress())
-                .latitude(d.getLatitude())
-                .longitude(d.getLongitude())
-                .thumbnail(d.getThumbnailUrl())
-                .amenities(jsonNodeToString(d.getAmenities()))
-                .description(d.getDescription())
-                .checkInTime(d.getCheckInTime())
-                .checkOutTime(d.getCheckOutTime())
-                .status(d.getStatus() == null ? "ACTIVE" : d.getStatus())
-                .build();
+    /* ---------------------- 조회 보조 ---------------------- */
+    private Accommodation getEntityOrThrow(Long id) {
+        return accommodationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다. id=" + id));
     }
+
+    private List<AccommodationImage> findImages(Long accId) {
+        return accommodationImageRepository.findByAccommodationAccommodationIdOrderBySortOrderAsc(accId);
+    }
+
+    private List<AccommodationTagMap> findTagMaps(Long accId) {
+        return accommodationTagMapRepository.findByAccommodationAccommodationId(accId);
+    }
+
 
     @Override
-    public List<AccommodationDTO> getAllAccommodations() {
-        return accommodationRepository.findAll()
-                .stream()
-                .map(this::toDTO)
+    @Transactional
+    public List<AccommodationResponseDTO> getAll() {
+        List<Accommodation> accommodations = accommodationRepository.findAll();
+        return accommodations.stream()
+                .map(e -> toResponse(e, List.of(), List.of()))
                 .toList();
     }
 
-
-
     @Override
-    public AccommodationDTO getByAccommodationId(Long accommodationId) {
-        Accommodation acc = accommodationRepository.findById(accommodationId)
-                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
-
-        return toDTO(acc);
+    public AccommodationResponseDTO getById(Long id) {
+        Accommodation e = getEntityOrThrow(id);
+        return toResponse(e, findImages(id), findTagMaps(id));
     }
 
     @Override
-    public AccommodationDTO registerAccommodation(AccommodationDTO dto) {
-        Accommodation acc = toEntity(dto);
-        Accommodation saved = accommodationRepository.save(acc); // ← 저장된 엔티티 반환 사용
-        return toDTO(saved);
+    public AccommodationResponseDTO create(AccommodationCreateRequestDTO req) {
+        if (req.getCompanyId() == null || req.getCategoryId() == null ||
+                req.getMainRegionId() == null || req.getSubRegionId() == null ||
+                req.getName() == null || req.getAddress() == null) {
+            throw new IllegalArgumentException("companyId, categoryId, mainRegionId, subRegionId, name, address 는 필수 입니다. ");
+        }
+        Accommodation entity = Accommodation.builder()
+                .company(companyRepository.getReferenceById(req.getCompanyId()))
+                .category(accommodationCategoryRepository.getReferenceById(req.getCategoryId()))
+                .mainRegion(regionRepository.getReferenceById(req.getMainRegionId()))
+                .subRegion(regionRepository.getReferenceById(req.getSubRegionId()))
+                .name(req.getName())
+                .address(req.getAddress())
+                .latitude(req.getLatitude())
+                .longitude(req.getLongitude())
+                .thumbnail(req.getThumbnailUrl())
+                .description(req.getDescription())
+                .amenities(jsonNodeToString(req.getAmenities()))
+                .checkInTime(toDateTime(req.getCheckInTime()))
+                .checkOutTime(toDateTime(req.getCheckOutTime()))
+                .status(req.getStatus() == null ? OperationStatus.ACTIVE : req.getStatus())
+                .minPrice(req.getMinPrice())
+                .build();
+
+        Accommodation saved = accommodationRepository.save(entity);
+
+        // 이미지 저장(선택: 전체 신규)
+        if (req.getImages() != null && !req.getImages().isEmpty()) {
+            int idx = 0;
+            for (AccommodationImageDTO img : req.getImages()) {
+                AccommodationImage row = AccommodationImage.builder()
+                        .accommodation(saved)
+                        .imageUrl(img.getImageUrl())
+                        .imageType(img.getImageType())
+                        .sortOrder(img.getSortOrder() != null ? img.getSortOrder() : idx++)
+                        .build();
+                accommodationImageRepository.save(row);
+            }
+        }
+
+        // 태그 매핑 저장(선택: 초기 매핑)
+        if (req.getTagIds() != null && !req.getTagIds().isEmpty()) {
+            for (Long tagId : req.getTagIds()) {
+                AccommodationTag tag = accommodationTagRepository.getReferenceById(tagId);
+                AccommodationTagMap map = AccommodationTagMap.builder()
+                        .accommodation(saved)
+                        .tag(tag)
+                        .build();
+                accommodationTagMapRepository.save(map);
+            }
+        }
+
+        return getById(saved.getAccommodationId()); // 이미지/태그 포함 응답
     }
 
     @Override
-    public void modifyAccommodation(AccommodationDTO dto) {
-        Accommodation current = accommodationRepository.findById(dto.getAccommodationId())
-                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
+    public AccommodationResponseDTO update(Long id, AccommodationUpdateRequestDTO req) {
+        Accommodation cur = getEntityOrThrow(id);
 
         Accommodation updated = Accommodation.builder()
-                .accommodationId(current.getAccommodationId())
-                // 연관: DTO에 값이 있으면 참조로 교체, 아니면 기존 유지
-                .company(dto.getCompanyId() != null ?
-                        companyRepository.getReferenceById(dto.getCompanyId()) : current.getCompany())
-                .category(dto.getCategoryId() != null ?
-                        accommodationCategoryRepository.getReferenceById(dto.getCategoryId()) : current.getCategory())
-                .mainRegion(dto.getMainRegionId() != null ?
-                        regionRepository.getReferenceById(dto.getMainRegionId()) : current.getMainRegion())
-                .subRegion(dto.getSubRegionId() != null ?
-                        regionRepository.getReferenceById(dto.getSubRegionId()) : current.getSubRegion())
-                // 값 타입/단순 필드: DTO 값이 있으면 덮어쓰고, 없으면 기존 유지
-                .name(dto.getName() != null ? dto.getName() : current.getName())
-                .address(dto.getAddress() != null ? dto.getAddress() : current.getAddress())
-                .latitude(dto.getLatitude() != null ? dto.getLatitude() : current.getLatitude())
-                .longitude(dto.getLongitude() != null ? dto.getLongitude() : current.getLongitude())
-                .thumbnail(dto.getThumbnailUrl() != null ? dto.getThumbnailUrl() : current.getThumbnail())
-                .amenities(dto.getAmenities() != null ? jsonNodeToString(dto.getAmenities()) : current.getAmenities())
-                .description(dto.getDescription() != null ? dto.getDescription() : current.getDescription())
-                .checkInTime(dto.getCheckInTime() != null ? dto.getCheckInTime() : current.getCheckInTime())
-                .checkOutTime(dto.getCheckOutTime() != null ? dto.getCheckOutTime() : current.getCheckOutTime())
-                .status(dto.getStatus() != null ? dto.getStatus() : current.getStatus())
+                .accommodationId(cur.getAccommodationId())
+                .company(req.getCompanyId() != null ? companyRepository.getReferenceById(req.getCompanyId()) : cur.getCompany())
+                .category(req.getCategoryId() != null ? accommodationCategoryRepository.getReferenceById(req.getCategoryId()) : cur.getCategory())
+                .mainRegion(req.getMainRegionId() != null ? regionRepository.getReferenceById(req.getMainRegionId()) : cur.getMainRegion())
+                .subRegion(req.getSubRegionId() != null ? regionRepository.getReferenceById(req.getSubRegionId()) : cur.getSubRegion())
+                .name(req.getName() != null ? req.getName() : cur.getName())
+                .address(req.getAddress() != null ? req.getAddress() : cur.getAddress())
+                .latitude(req.getLatitude() != null ? req.getLatitude() : cur.getLatitude())
+                .longitude(req.getLongitude() != null ? req.getLongitude() : cur.getLongitude())
+                .thumbnail(req.getThumbnailUrl() != null ? req.getThumbnailUrl() : cur.getThumbnail())
+                .description(req.getDescription() != null ? req.getDescription() : cur.getDescription())
+                .amenities(req.getAmenities() != null ? jsonNodeToString(req.getAmenities()) : cur.getAmenities())
+                .checkInTime(req.getCheckInTime() != null ? toDateTime(req.getCheckInTime()) : cur.getCheckInTime())
+                .checkOutTime(req.getCheckOutTime() != null ? toDateTime(req.getCheckOutTime()) : cur.getCheckOutTime())
+                .status(req.getStatus() != null ? req.getStatus() : cur.getStatus())
+                .rating(cur.getRating())
+                .minPrice(req.getMinPrice() != null ? req.getMinPrice() : cur.getMinPrice())
                 .build();
 
         accommodationRepository.save(updated);
+
+        // (정책) 이미지/태그 덮어쓰기 예시
+        if (req.getImages() != null) {
+            accommodationImageRepository.deleteByAccommodationAccommodationId(id);
+            int idx = 0;
+            for (AccommodationImageDTO img : req.getImages()) {
+                accommodationImageRepository.save(
+                        AccommodationImage.builder()
+                                .accommodation(updated)
+                                .imageUrl(img.getImageUrl())
+                                .imageType(img.getImageType())
+                                .sortOrder(img.getSortOrder() != null ? img.getSortOrder() : idx++)
+                                .build()
+                );
+            }
+        }
+        if (req.getTagIds() != null) {
+            accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
+            for (Long tagId : req.getTagIds()) {
+                accommodationTagMapRepository.save(
+                        AccommodationTagMap.builder()
+                                .accommodation(updated)
+                                .tag(accommodationTagMapRepository.getReferenceById(tagId).getTag())
+                                .build()
+                );
+            }
+        }
+
+        return getById(id);
+
     }
 
-    @Override
-    public void removeAccommodation(Long id) {
-        Accommodation acc = accommodationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
 
-        // Rooms/Images는 orphanRemoval=true 이므로 자동 삭제 (연관관계 매핑 기준)
+    @Override
+    public void delete(Long id) {
+        // 이미지/태그 매핑 선삭제(필요 시)
+        accommodationImageRepository.deleteByAccommodationAccommodationId(id);
+        accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
         accommodationRepository.deleteById(id);
     }
 }
