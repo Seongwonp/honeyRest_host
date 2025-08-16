@@ -21,6 +21,7 @@ public class CouponUsage extends BaseEntity {
     @Column(name = "usage_id")
     private Long usageId;
 
+    @Enumerated(EnumType.STRING)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_coupon_id", nullable = false)
     private UserCoupon userCoupon;

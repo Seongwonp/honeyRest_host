@@ -30,6 +30,7 @@ public class Room extends BaseEntity {
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", length = 60)
     private RoomType type;
 
@@ -57,6 +58,7 @@ public class Room extends BaseEntity {
     @Column(name = "total_rooms", nullable = false)
     private Integer totalRooms;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status" , length = 20)
     private OperationStatus status; // 운영 상태
 

@@ -73,6 +73,7 @@ public class Accommodation {
     @Column(name = "min_price", precision = 10, scale = 2)
     private BigDecimal minPrice; // 최저 가격
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private OperationStatus status; // 운영 상태(active, inactive)
 }

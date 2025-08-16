@@ -28,17 +28,28 @@ public class AdminAuthService {
             throw new IllegalArgumentException("이미 사용중인 이메일 입니다.");
         });
 
-        RoleType finalRole = (request.getRoleType() == null ? RoleType.COMPANY_ADMIN: request.getRoleType());
-        if(finalRole == RoleType.GENERAL) {
+        RoleType finalRole = (request.getRoleType() == null ? RoleType.COMPANY_ADMIN : request.getRoleType());
+        if (finalRole == RoleType.GENERAL) {
             throw new IllegalArgumentException("관리자 가입은 일반 회원 권한을 허용하지 않습니다.");
         }
+
         User admin = User.builder()
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
+                .phone(request.getPhone())
+                .birthDate(request.getBirthDate())
                 .roleType(finalRole)
                 .status(UserStatus.ACTIVE)
                 .build();
+
+        // [선택] 정말 외부에서 만든 생성/수정일을 강제로 넣고 싶다면(권장X)
+    /*
+    if (request.getCreatedAt() != null || request.getUpdatedAt() != null) {
+        setField(admin, "createdAt", request.getCreatedAt());
+        setField(admin, "updatedAt", request.getUpdatedAt());
+    }
+    */
 
         userRepository.save(admin);
     }

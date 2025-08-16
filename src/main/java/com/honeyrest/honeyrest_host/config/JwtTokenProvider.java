@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import io.jsonwebtoken.JwtException;
@@ -105,9 +106,18 @@ public class JwtTokenProvider {
 
     // Authorization: Bearer ... 추출
     public String resolveToken(HttpServletRequest request) {
+        // 1) Authorization: Bearer <token>
         String bearer = request.getHeader("Authorization");
         if (bearer != null && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
+        }
+        // 2) 쿠키 (로그인 페이지에서 저장한 ACCESS_TOKEN)
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie c : request.getCookies()) {
+                if ("ACCESS_TOKEN".equals(c.getName())) {
+                    return c.getValue();
+                }
+            }
         }
         return null;
     }
@@ -142,4 +152,6 @@ public class JwtTokenProvider {
     // 기존 메서드 이름 유지용 (호환)
     public boolean validateToken(String token) { return validate(token); }
     public String getSubject(String token) { return parseClaims(token).getPayload().getSubject(); }
+
+
 }

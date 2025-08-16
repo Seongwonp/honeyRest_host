@@ -29,6 +29,7 @@ public class UserCoupon {
     @JoinColumn(name = "coupon_id", nullable = false)
     private Coupon coupon;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false,length = 20)
     private UserCouponStatus status; // 상태 (ISSUED, USED, EXPIRED)
 

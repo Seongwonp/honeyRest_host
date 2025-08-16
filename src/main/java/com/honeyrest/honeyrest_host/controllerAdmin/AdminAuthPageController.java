@@ -11,11 +11,11 @@ public class AdminAuthPageController {
 
     @GetMapping("/login")
     public String loginPage() {
-        return "/admin/auth/login";
+        return "admin/auth/login";
     }
 
     @GetMapping("/logout")
     public String logoutPage() {
-        return "/admin/auth/logout";
+        return "admin/auth/logout";
     }
 }

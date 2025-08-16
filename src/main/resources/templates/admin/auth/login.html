@@ -2,26 +2,92 @@
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{admin/layout/base}">
+      layout:decorate="~{admin/layout/blank}">
 <head>
     <meta charset="UTF-8">
-    <title>관리자 로그인</title>
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}">
+    <title layout:fragment="title">관리자 로그인</title>
+    <th:block layout:fragment="head">
+        <style>
+            .login-card { max-width: 420px; margin: 80px auto; }
+        </style>
+    </th:block>
 </head>
 <body>
-<div class="container mt-5">
-    <h2>관리자 로그인</h2>
-    <form th:action="@{/api/admin/auth/login}" method="post">
-        <div class="mb-3">
-            <label for="username" class="form-label">아이디</label>
-            <input type="text" class="form-control" id="username" name="username" required>
+<th:block layout:fragment="content">
+    <section class="section">
+        <div class="container">
+            <div class="card login-card shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title mb-4 fw-bold">관리자 로그인</h4>
+
+                    <form id="loginForm" class="mt-4">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">이메일</label>
+                            <input type="email" class="form-control" id="email" required />
+                        </div>
+                        <div class="mb-4">
+                            <label for="password" class="form-label">비밀번호</label>
+                            <input type="password" class="form-control" id="password" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">로그인</button>
+                    </form>
+
+                    <div id="loginError" class="text-danger mt-3 d-none"></div>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">비밀번호</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn btn-primary">로그인</button>
-    </form>
-</div>
+    </section>
+</th:block>
+
+<th:block layout:fragment="script">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('loginForm');
+            const errorBox = document.getElementById('loginError');
+
+            if (!form) return;
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+
+                if (!email || !password) {
+                    showError('이메일과 비밀번호를 입력하세요.');
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/api/admin/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',     // ✅ 쿠키 저장/전송을 위해 꼭 필요
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    if (!res.ok) {
+                        // 서버가 에러 JSON을 줄 수도/안 줄 수도 있으니 안전하게
+                        const err = await res.json().catch(() => ({}));
+                        showError(err.message || err.error || '로그인 실패');
+                        return;
+                    }
+
+                    // ✅ 쿠키가 저장됐으니 바로 대시보드로 이동
+                    window.location.replace('/admin/dashboard');
+                } catch (err) {
+                    console.error(err);
+                    showError('네트워크 오류가 발생했습니다.');
+                }
+            });
+
+            function showError(msg) {
+                if (!errorBox) return alert(msg);
+                errorBox.textContent = msg;
+                errorBox.classList.remove('d-none');
+            }
+        });
+    </script>
+</th:block>
 </body>
 </html>

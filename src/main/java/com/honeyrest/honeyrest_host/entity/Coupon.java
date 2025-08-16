@@ -43,6 +43,7 @@ public class Coupon extends BaseEntity {
     @Column(name = "max_discount_amount", precision = 10, scale = 2)
     private BigDecimal maxOrderAmount; // 최대 주문 금액
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "target_type", nullable = false, length = 20)
     private CouponTarget targetType; // 적용대상
 

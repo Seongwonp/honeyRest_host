@@ -24,6 +24,7 @@ public class Notification extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 50, nullable = false)
     private NotificationType type; // 알림 유형 (RESERVATION_CONFIRM, REVIEW_REPLY, EVENT 등)
 

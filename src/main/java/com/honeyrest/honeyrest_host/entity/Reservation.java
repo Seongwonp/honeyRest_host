@@ -68,6 +68,7 @@ public class Reservation extends BaseEntity{
     @Column(name = "discount_amount", precision = 10, scale = 2)
     private BigDecimal discountAmount; // 총 할인 금액
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private ReservationStatus status; // 예약 상태
 

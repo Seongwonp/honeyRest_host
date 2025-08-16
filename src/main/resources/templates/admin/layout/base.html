@@ -2,62 +2,129 @@
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title layout:title-pattern="$CONTENT_TITLE :: HoneyRest Host">HoneyRest Host</title>
 
     <!-- 공통 스타일 -->
     <link rel="shortcut icon" th:href="@{/assets/compiled/svg/favicon.svg}" type="image/x-icon">
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}" />
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}" />
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}" />
+    <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}"/>
+    <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}"/>
+    <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}"/>
 
     <!-- 페이지별 추가 head -->
     <th:block layout:fragment="head"></th:block>
+
+    <!-- 테마 초기화 (가능하면 head에서) -->
+    <script th:src="@{/assets/static/js/initTheme.js}"></script>
+    <!-- ▼ 사이드바 안전 보정 스크립트 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1) has-sub 구조 검증: .submenu-link / .submenu 보정
+            document.querySelectorAll('.sidebar-item.has-sub').forEach(li => {
+                // 토글용 링크에 .submenu-link가 없으면 추가
+                const toggle = li.querySelector('.submenu-link') || li.querySelector('.sidebar-link');
+                if (toggle && !toggle.classList.contains('submenu-link')) {
+                    toggle.classList.add('submenu-link');
+                }
+                // submenu가 없다면 has-sub 제거 (NPE 방지)
+                if (!li.querySelector('.submenu')) {
+                    li.classList.remove('has-sub');
+                }
+            });
+
+            // 2) 초기 로드시 .submenu-open 이 하나도 없으면 첫 번째 서브메뉴를 열어 줘서
+            //    Mazer의 forceElementVisibility(null) 호출을 방지
+            if (!document.querySelector('.submenu-open')) {
+                const first = document.querySelector('.sidebar-item.has-sub .submenu');
+                if (first) {
+                    first.classList.add('submenu-open');
+                    // 높이 CSS 변수도 미리 채워주면 열림 애니메이션/높이 계산 안정적
+                    first.style.setProperty('--submenu-height', first.scrollHeight + 'px');
+                }
+            }
+        });
+    </script>
 </head>
-
 <body>
-<script th:src="@{/assets/static/js/initTheme.js}"></script>
-
 <div id="app">
+
+    <!-- ✅ 사이드바: #main 밖(형제)으로 배치 -->
+    <div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+
+    <!-- 메인 영역 -->
     <div id="main">
-
-        <div th:replace="admin/fragments/sidebar :: sidebar"></div>
-
-
         <header class="mb-3">
             <a href="#" class="burger-btn d-block d-xl-none">
                 <i class="bi bi-justify fs-3"></i>
             </a>
         </header>
 
-
-        <main layout:fragment="content">
-            <div class="page-heading" style="display: none;"></div>
-            <div class="page-content" style="display: none;"></div>
-
+        <!-- ✅ 자식 템플릿에서 이 fragment를 채웁니다 -->
+        <main>
+            <th:block layout:fragment="content"></th:block>
         </main>
 
-
-        <footer th:replace="admin/fragments/footer :: footer"></footer>
+        <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
     </div>
 </div>
 
-<!-- 공통 스크립트 -->
+<!-- ✅ Back-to-top 버튼: app.js가 기대하는 요소 (없으면 에러) -->
+<a href="#" class="btn btn-primary btn-back-to-top d-none" id="backToTop" aria-label="Back to Top">
+    <i class="bi bi-arrow-up"></i>
+</a>
+
+<!-- 공통 스크립트: perfect-scrollbar → app.js 순으로 -->
 <script th:src="@{/assets/static/js/components/dark.js}"></script>
 <script th:src="@{/assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js}"></script>
 <script th:src="@{/assets/compiled/js/app.js}"></script>
 
+<!-- (선택) 안전 가드: 혹시라도 필수 요소 누락 시 에러 방지 -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // back-to-top이 없다면 생성
+        if (!document.querySelector('#backToTop') && !document.querySelector('.btn-back-to-top')) {
+            const a = document.createElement('a');
+            a.id = 'backToTop';
+            a.className = 'btn btn-primary btn-back-to-top d-none';
+            a.href = '#';
+            a.setAttribute('aria-label', 'Back to Top');
+            document.body.appendChild(a);
+        }
+        // #main 보장
+        if (!document.getElementById('main')) {
+            const main = document.createElement('div');
+            main.id = 'main';
+            document.getElementById('app')?.appendChild(main);
+        }
+    });
+</script>
+<script>
+    // Mazer 템플릿이 기대하는 구조를 보정 + null 안전 가드
+    document.addEventListener('DOMContentLoaded', function () {
+        // (1) has-sub인데 .submenu가 없으면 has-sub 제거 (JS가 null 접근 안 하도록)
+        document.querySelectorAll('.sidebar-item.has-sub').forEach(function (li) {
+            const submenu = li.querySelector('.submenu');
+            if (!submenu) {
+                li.classList.remove('has-sub');
+                return;
+            }
+            // (2) .submenu 안의 a 에 .submenu-link 부여 (템플릿 코드가 이 클래스 전제)
+            submenu.querySelectorAll('a').forEach(function (a) {
+                a.classList.add('submenu-link');
+            });
+        });
+
+        // (선택) 스크롤/가시성 계산에서 null을 만나면 그냥 스킵하도록 보조 함수 제공
+        window.__safeGetRect = function (el) {
+            if (!el || !el.getBoundingClientRect) return {top:0,left:0,bottom:0,right:0};
+            return el.getBoundingClientRect();
+        };
+    });
+</script>
+
 <!-- 페이지별 추가 스크립트 -->
-<th:block layout:fragment="script">
-
-
-
-
-
-
-</th:block>
+<th:block layout:fragment="script"></th:block>
 </body>
 </html>

@@ -33,7 +33,7 @@
                                 <div class="ms-3">
                                     <!-- 등록 숙소 수 -->
                                     <h6 class="text-muted font-semibold">등록 숙소 수</h6>
-                                    <h6 class="font-extrabold mb-0" id="acc-count">-</h6>
+                                    <h6 class="font-extrabold mb-0" id="${accCount}">-</h6>
                                 </div>
                             </div>
                         </div>
@@ -50,7 +50,7 @@
                                 </div>
                                 <div class="ms-3">
                                     <h6 class="text-muted font-semibold">예약 건수</h6>
-                                    <h6 class="font-extrabold mb-0" id="res-count">-</h6>
+                                    <h6 class="font-extrabold mb-0" id="${resCount}">-</h6>
                                 </div>
                             </div>
                         </div>
@@ -66,8 +66,11 @@
                                     이미지
                                 </div>
                                 <div class="ms-3 name">
-                                    <h5 class="font-bold" id="admin-name">admin01</h5>
+                                    <!-- 관리자 이름 -->
+                                    <h5 class="font-bold" id="${adminName}">admin01</h5>
                                     <h6 class="text-muted mb-0">HOST</h6>
+                                    <!-- 관리자 권한 -->
+                                    <h6 class="text-muted mb-0" th:text="${adminRole}">-</h6>
                                 </div>
                             </div>
                         </div>
@@ -80,47 +83,7 @@
 
 <th:block layout:fragment="script">
     <!-- 페이지별 스크립트 -->
-    <script>
-        (async function () {
-            const token = localStorage.getItem('accessToken');
-            if (!token) {
-                // 토큰 없으면 로그인 페이지로
-                location.href = '/admin/auth/login';
-                return;
-            }
 
-            try {
-                const res = await fetch('/api/admin/dashboard/summary', {
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    }
-                });
-
-                if (res.status === 401 || res.status === 403) {
-                    // 인증/권한 문제 → 로그인 페이지로
-                    localStorage.removeItem('accessToken');
-                    location.href = '/admin/auth/login';
-                    return;
-                }
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-
-                const data = await res.json();
-
-                // 숫자 렌더링
-                document.querySelector('#acc-count').textContent = data.accommodationCount ?? 0;
-                document.querySelector('#res-count').textContent = data.reservationCount ?? 0;
-
-                // 관리자 정보
-                document.querySelector('#admin-name').textContent = data.adminName ?? '-';
-                document.querySelector('#admin-role').textContent = data.adminRole ?? '-';
-
-            } catch (e) {
-                console.error(e);
-                // 화면에 간단 표시
-                alert('대시보드 데이터를 불러오는 데 실패했습니다.');
-            }
-        })();
-    </script>
 </th:block>
 </body>
 </html>

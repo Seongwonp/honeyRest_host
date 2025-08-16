@@ -64,6 +64,7 @@ public class Review {
     @Column(name = "like_count")
     private Integer likeCount; // 좋아요 수
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
     private ReviewStatus status; // 상태(PUBLISHED, HIDDEN)
 }
