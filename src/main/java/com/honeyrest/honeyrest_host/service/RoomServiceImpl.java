@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.service;
 
 import com.amazonaws.services.kms.model.NotFoundException;
-import com.honeyrest.honeyrest_host.dto.RoomDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
@@ -59,7 +59,12 @@ public class RoomServiceImpl implements RoomService{
     }
 
     @Override
-    public List<RoomDTO> findRoomsByAccommodationId(Long accommodationId) {
+    public List<RoomDTO> getAllRooms() {
+        return roomRepository.findAll().stream().map(r -> modelMapper.map(r, RoomDTO.class)).toList();
+    }
+
+    @Override
+    public List<RoomDTO> getRoomsByAccommodationId(Long accommodationId) {
         return roomRepository.findByAccommodation_AccommodationId(accommodationId)
                 .stream().map(room -> modelMapper.map(room, RoomDTO.class)).toList();
     }

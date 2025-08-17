@@ -1,6 +1,6 @@
-package com.honeyrest.honeyrest_host.controller;
+package com.honeyrest.honeyrest_host.controllerOwner;
 
-import com.honeyrest.honeyrest_host.dto.RoomDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
 import com.honeyrest.honeyrest_host.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;

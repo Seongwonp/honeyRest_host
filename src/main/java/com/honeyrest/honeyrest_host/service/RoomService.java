@@ -1,11 +1,13 @@
 package com.honeyrest.honeyrest_host.service;
 
-import com.honeyrest.honeyrest_host.dto.RoomDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
 
 import java.util.List;
 
 public interface RoomService {
-    List<RoomDTO> findRoomsByAccommodationId(Long accommodationId);
+    List<RoomDTO> getAllRooms();
+
+    List<RoomDTO> getRoomsByAccommodationId(Long accommodationId);
 
     RoomDTO getByRoomId(Long id);
 

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading"><h3>쿠폰 리스트</h3>
+        <p class="text-subtitle text-muted">쿠폰 현황</p>
+    </div>
+    <!-- 쿠폰 등록 버튼 -->
+    <div>
+        <a th:href="@{/owner/coupon/create}" class="btn btn-primary">쿠폰 등록</a>
+    </div>
+    <div class="page-content">
+        <section class="section">
+            <div class="row">
+                <div class="col-12">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>쿠폰 ID</th>
+                            <th>쿠폰 이름</th>
+                            <th>할인 값</th>
+                            <th>적용 대상</th>
+                            <th>활성 여부</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="c : ${coupons}">
+                            <td th:text="${c.couponId}"></td>
+                            <td th:text="${c.name}"></td>
+                            <td th:text="${c.discountValue}"></td>
+                            <td th:text="${c.targetType}"></td>
+                            <td th:text="${c.isActive()}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</th:block>
+</body>
+</html>

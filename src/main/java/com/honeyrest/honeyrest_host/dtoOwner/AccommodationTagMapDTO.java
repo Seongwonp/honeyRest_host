@@ -1,4 +1,4 @@
-package com.honeyrest.honeyrest_host.dto;
+package com.honeyrest.honeyrest_host.dtoOwner;
 
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationTag;

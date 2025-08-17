@@ -1,4 +1,4 @@
-package com.honeyrest.honeyrest_host.dto;
+package com.honeyrest.honeyrest_host.dtoOwner;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

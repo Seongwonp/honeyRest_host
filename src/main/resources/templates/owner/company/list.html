@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+<head>
+  <title>숙소 관리자 대시보드</title>
+  <th:block layout:fragment="head"></th:block>
+</head>
+
+<body>
+<th:block layout:fragment="content">
+  <div class="page-heading">
+    <h3>업체 리스트</h3>
+    <p class="text-subtitle text-muted">관리자용 숙소 및 예약 현황</p>
+  </div>
+
+  <div class="page-content">
+    <section class="section">
+      <div class="row">
+        <div class="col-12">
+          <table class="table table-striped">
+            <thead>
+            <tr>
+              <th>업체 ID</th>
+              <th>업체명</th>
+              <th>대표자</th>
+              <th>연락처</th>
+              <th>상태</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="company : ${companies}">
+              <td th:text="${company.companyId}"></td>
+              <td><a th:href="@{'/owner/company/' + ${company.companyId} + '/accommodations'}"
+                     th:text="${company.name}"></a></td>
+              <td th:text="${company.ownerName}"></td>
+              <td th:text="${company.phone}"></td>
+              <td th:text="${company.status}"></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</th:block>
+</body>
+</html>

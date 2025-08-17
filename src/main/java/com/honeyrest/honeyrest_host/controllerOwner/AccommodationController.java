@@ -1,7 +1,7 @@
-package com.honeyrest.honeyrest_host.controller;
+package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.honeyrest.honeyrest_host.dto.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.service.AccommodationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

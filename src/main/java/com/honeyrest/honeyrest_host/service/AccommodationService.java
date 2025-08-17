@@ -1,12 +1,14 @@
 package com.honeyrest.honeyrest_host.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.honeyrest.honeyrest_host.dto.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 
 import java.util.List;
 
 public interface AccommodationService {
     List<AccommodationDTO> getAllAccommodations();
+
+    List<AccommodationDTO> getAccommodationsByCompanyId(Long companyId);
 
     AccommodationDTO getByAccommodationId(Long accommodationId);
 

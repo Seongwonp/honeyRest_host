@@ -2,9 +2,8 @@ package com.honeyrest.honeyrest_host.service;
 
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.dto.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.repository.AccommodationCategoryRepository;
 import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
@@ -16,7 +15,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +46,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .checkInTime(e.getCheckInTime())
                 .checkOutTime(e.getCheckOutTime())
                 .status(e.getStatus())
+                .minPrice(e.getMinPrice())
                 .build();
     }
 
@@ -72,6 +71,11 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Override
     public List<AccommodationDTO> getAllAccommodations() {
         return accommodationRepository.findAll().stream().map(this::toDTO).toList();
+    }
+
+    @Override
+    public List<AccommodationDTO> getAccommodationsByCompanyId(Long companyId) {
+        return accommodationRepository.findByCompany_CompanyId(companyId).stream().map(this::toDTO).toList();
     }
 
 
