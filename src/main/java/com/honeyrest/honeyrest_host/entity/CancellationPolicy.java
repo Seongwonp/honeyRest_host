@@ -22,6 +22,6 @@ public class CancellationPolicy extends BaseEntity {
 
     private String policyName;
 
-    @Column(columnDefinition = "TEXT")
-    private String detail; // JSON 문자열로 저장
+    @Column(columnDefinition = "JSON")
+    private String detail; // JSON 문자열로 저장 ,환불 규정 상세
 }

@@ -1,6 +1,8 @@
 package com.honeyrest.honeyrest_host.dto;
 
 
+import com.honeyrest.honeyrest_host.entity.enums.ReviewStatus;
+
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -55,5 +57,7 @@ public class ReviewDTO {
     private Integer likeCount; // 좋아요 수
 
     @NotBlank
-    private String status; // 상태(PUBLISHED, HIDDEN)
+    private ReviewStatus status; //VISIBLE 노출, HIDDEN 숨김(소프트 삭제),REPORTED 신고,PENDING 임시저장/검토 전
 }
+
+

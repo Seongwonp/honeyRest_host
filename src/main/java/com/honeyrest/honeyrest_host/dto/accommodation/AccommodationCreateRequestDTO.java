@@ -3,6 +3,7 @@ package com.honeyrest.honeyrest_host.dto.accommodation;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -57,10 +58,11 @@ public class AccommodationCreateRequestDTO {
     // 편의시설(JSON) — 예: ["wifi","parking"]
     private JsonNode amenities;
 
-    // 체크인/아웃 (폼에서 <input type="time">와 1:1 매핑)
+    @Schema(type = "string", example = "15:00", description = "open (HH:mm)")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkInTime;
 
+    @Schema(type = "string", example = "11:00", description = "close (HH:mm)")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkOutTime;
 

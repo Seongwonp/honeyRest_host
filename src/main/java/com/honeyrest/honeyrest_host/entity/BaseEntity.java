@@ -1,9 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -22,5 +20,16 @@ public class BaseEntity {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        if (this.createdAt == null) this.createdAt = now;
+        this.updatedAt = now;
+    }
 
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
+

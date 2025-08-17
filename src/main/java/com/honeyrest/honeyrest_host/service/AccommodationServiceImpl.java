@@ -17,6 +17,8 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -92,8 +94,8 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .thumbnailUrl(e.getThumbnail())
                 .description(e.getDescription())
                 .amenities(stringToJsonNode(e.getAmenities()))
-                .checkInTime(toTime(e.getCheckInTime()))
-                .checkOutTime(toTime(e.getCheckOutTime()))
+                .checkInTime((e.getCheckInTime()))
+                .checkOutTime((e.getCheckOutTime()))
                 .status(String.valueOf(e.getStatus()))
                 .rating(e.getRating())
                 .minPrice(e.getMinPrice())
@@ -161,8 +163,8 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .thumbnail(req.getThumbnailUrl())
                 .description(req.getDescription())
                 .amenities(jsonNodeToString(req.getAmenities()))
-                .checkInTime(toDateTime(req.getCheckInTime()))
-                .checkOutTime(toDateTime(req.getCheckOutTime()))
+                .checkInTime((req.getCheckInTime()))
+                .checkOutTime((req.getCheckOutTime()))
                 .status(req.getStatus() == null ? OperationStatus.ACTIVE : req.getStatus())
                 .minPrice(req.getMinPrice())
                 .build();
@@ -215,8 +217,8 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .thumbnail(req.getThumbnailUrl() != null ? req.getThumbnailUrl() : cur.getThumbnail())
                 .description(req.getDescription() != null ? req.getDescription() : cur.getDescription())
                 .amenities(req.getAmenities() != null ? jsonNodeToString(req.getAmenities()) : cur.getAmenities())
-                .checkInTime(req.getCheckInTime() != null ? toDateTime(req.getCheckInTime()) : cur.getCheckInTime())
-                .checkOutTime(req.getCheckOutTime() != null ? toDateTime(req.getCheckOutTime()) : cur.getCheckOutTime())
+                .checkInTime(req.getCheckInTime() != null ? (req.getCheckInTime()) : cur.getCheckInTime())
+                .checkOutTime(req.getCheckOutTime() != null ? (req.getCheckOutTime()) : cur.getCheckOutTime())
                 .status(req.getStatus() != null ? req.getStatus() : cur.getStatus())
                 .rating(cur.getRating())
                 .minPrice(req.getMinPrice() != null ? req.getMinPrice() : cur.getMinPrice())
@@ -245,7 +247,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 accommodationTagMapRepository.save(
                         AccommodationTagMap.builder()
                                 .accommodation(updated)
-                                .tag(accommodationTagMapRepository.getReferenceById(tagId).getTag())
+                                .tag(accommodationTagRepository.getReferenceById(tagId))
                                 .build()
                 );
             }
@@ -262,5 +264,10 @@ public class AccommodationServiceImpl implements AccommodationService {
         accommodationImageRepository.deleteByAccommodationAccommodationId(id);
         accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
         accommodationRepository.deleteById(id);
+    }
+
+    @Override
+    public Page<AccommodationListDTO> search(String q, Long categoryId, Long mainRegionId, Pageable pageable) {
+        return accommodationRepository.search(q, categoryId, mainRegionId, pageable);
     }
 }

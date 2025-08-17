@@ -22,13 +22,13 @@ public class ReservationDTO {
 
     private String reservationNumber; // 예약 번호
 
-    @NotNull
+
     private Long accommodationId;
 
-    @NotNull
+
     private String accommodationName; // 숙소명
 
-    @NotNull
+
     private Long userId;
 
     private Long roomId;
@@ -36,16 +36,16 @@ public class ReservationDTO {
     private LocalDate checkInDate; // 날짜 체크인
     private LocalDate checkOutDate; // 날짜 체크아웃
 
-    @NotNull
+
     private Integer guestCount; // 인원
 
-    @NotNull
+
     private String guestName; // 예약자 이름
 
-    @NotNull
+
     private String guestPhone; // 예약자 연락처
 
-    @NotNull
+
     private BigDecimal price; // 예약 금액
 
     private ReservationStatus status; // 예약 상태(예약, 취소, 체크인, 체크아웃 등)

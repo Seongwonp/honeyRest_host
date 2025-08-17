@@ -3,6 +3,7 @@ package com.honeyrest.honeyrest_host.dto.accommodation;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,8 +34,11 @@ public class AccommodationUpdateRequestDTO {
     private String description;
 
     private JsonNode amenities;         // ["wifi", ...]
+    @Schema(type = "string", example = "15:00", description = "체크인 시간 (HH:mm)")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkInTime;
+
+    @Schema(type = "string", example = "11:00", description = "체크아웃 시간 (HH:mm)")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkOutTime;
 

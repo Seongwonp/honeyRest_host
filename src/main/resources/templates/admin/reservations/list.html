@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <title>예약 목록</title>
+    <th:block layout:fragment="head">
+        <style>
+            .skeleton{
+                height: 52px;
+                background: linear-gradient(90deg,#eee,#f5f5f5,#eee);
+                background-size: 200% 100%;
+                animation: shine 1.2s infinite;
+            }
+            @keyframes shine{0%{background-position:200% 0}100%{background-position:-200% 0}}
+            .badge-status{font-weight:600}
+        </style>
+        <meta name="_csrf" th:content="${_csrf?.token}">
+        <meta name="_csrf_header" th:content="${_csrf?.headerName}">
+        <link rel="shortcut icon" th:href="@{/assets/compiled/svg/favicon.svg}" type="image/x-icon">
+        <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}">
+        <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}">
+        <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}">
+    </th:block>
+</head>
+
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading d-flex align-items-center justify-content-between">
+        <div>
+            <h3 class="mb-1">예약 목록</h3>
+            <p class="text-muted mb-0">상태로 필터링하고, 결과를 표로 확인하세요.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <!-- 필요 시: 수동 예약 생성 링크 등 -->
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- 검색/필터 -->
+            <form id="searchForm" class="row g-2 align-items-end mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">예약번호</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="number" placeholder="예) HR-2025-08-18-ABC123">
+                        <button class="btn btn-outline-secondary" id="btnFindByNumber" type="button">단건 조회</button>
+                    </div>
+                    <div class="form-text">예약번호로 단건 조회(우선 적용).</div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">상태</label>
+                    <select class="form-select" id="status">
+                        <option value="">전체</option>
+                        <option value="PENDING">PENDING</option>
+                        <option value="CONFIRMED">CONFIRMED</option>
+                        <option value="CHECKED_IN">CHECKED_IN</option>
+                        <option value="CHECKED_OUT">CHECKED_OUT</option>
+                        <option value="CANCELED">CANCELED</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">페이지 크기</label>
+                    <select class="form-select" id="size">
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-primary w-100" type="submit">검색</button>
+                </div>
+            </form>
+
+            <!-- 테이블 -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width:90px">ID</th>
+                        <th style="width:190px">예약번호</th>
+                        <th>숙소명 / 객실</th>
+                        <th style="width:160px">체크인 ~ 체크아웃</th>
+                        <th style="width:100px">인원</th>
+                        <th>예약자</th>
+                        <th style="width:130px">금액</th>
+                        <th style="width:120px">상태</th>
+                        <th style="width:140px">생성일</th>
+                    </tr>
+                    </thead>
+                    <tbody id="listBody">
+                    <tr class="skeleton"><td colspan="9"></td></tr>
+                    <tr class="skeleton"><td colspan="9"></td></tr>
+                    <tr class="skeleton"><td colspan="9"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 페이지네이션 -->
+            <nav>
+                <ul id="pager" class="pagination justify-content-center mt-3"></ul>
+            </nav>
+        </div>
+    </div>
+</th:block>
+
+<th:block layout:fragment="body-end">
+    <script>
+        (function(){
+            const bodyEl = document.getElementById('listBody');
+            const pagerEl = document.getElementById('pager');
+            const statusEl = document.getElementById('status');
+            const sizeEl = document.getElementById('size');
+            const numberEl = document.getElementById('number');
+            const btnFindByNumber = document.getElementById('btnFindByNumber');
+
+            let state = { page: 0, size: parseInt(sizeEl.value,10) || 10, totalPages: 0 };
+
+            function showLoading(){
+                bodyEl.innerHTML = `
+        <tr class="skeleton"><td colspan="9"></td></tr>
+        <tr class="skeleton"><td colspan="9"></td></tr>
+        <tr class="skeleton"><td colspan="9"></td></tr>`;
+                pagerEl.innerHTML = '';
+            }
+
+            function money(n){
+                if (n == null) return '-';
+                const v = Number(n);
+                return isNaN(v) ? String(n) : v.toLocaleString('ko-KR') + '원';
+            }
+            function fmtDate(d){
+                if(!d) return '-';
+                if (typeof d === 'string' && d.length <= 10) return d;
+                const dt = new Date(d);
+                if (isNaN(dt)) return d;
+                return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+            }
+            function badge(status){
+                const map = {
+                    PENDING: 'bg-warning text-dark',
+                    CONFIRMED: 'bg-primary',
+                    CHECKED_IN: 'bg-info text-dark',
+                    CHECKED_OUT: 'bg-success',
+                    CANCELED: 'bg-secondary'
+                };
+                const cls = map[status] || 'bg-light text-dark';
+                return `<span class="badge badge-status ${cls}">${status ?? '-'}</span>`;
+            }
+            function escapeHtml(s){
+                return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+            }
+
+            function renderRows(items){
+                if(!items || items.length === 0){
+                    bodyEl.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-5">데이터가 없습니다.</td></tr>`;
+                    return;
+                }
+                bodyEl.innerHTML = items.map(it=>`
+        <tr>
+          <td>${it.reservationId}</td>
+          <td class="fw-semibold">${escapeHtml(it.reservationNumber)}</td>
+          <td>
+            <div class="fw-semibold">${escapeHtml(it.accommodationName ?? '-')}</div>
+            <div class="text-muted small">${escapeHtml(it.roomName ?? '')}</div>
+          </td>
+          <td>${fmtDate(it.checkInDate)} ~ ${fmtDate(it.checkOutDate)}</td>
+          <td>${it.guestCount ?? '-'}</td>
+          <td>
+            <div class="fw-semibold">${escapeHtml(it.guestName ?? '-')}</div>
+            <div class="text-muted small">${escapeHtml(it.guestPhone ?? '')}</div>
+          </td>
+          <td>${money(it.price)}</td>
+          <td>${badge(it.status)}</td>
+          <td>${it.createdAt ? String(it.createdAt).replace('T',' ').substring(0,16) : '-'}</td>
+        </tr>
+      `).join('');
+            }
+
+            function renderPager(totalPages){
+                state.totalPages = Math.max(1, totalPages || 1);
+                const cur = state.page;
+
+                function li(disabled, active, page, label){
+                    const cls = `page-item ${disabled?'disabled':''} ${active?'active':''}`;
+                    const href = disabled ? '#' : `?page=${page}`;
+                    return `<li class="${cls}"><a class="page-link" href="${href}" data-page="${page}">${label}</a></li>`;
+                }
+
+                let html = '';
+                html += li(cur<=0, false, cur-1, '«');
+                for(let i=0;i<state.totalPages;i++){
+                    html += li(false, i===cur, i, i+1);
+                }
+                html += li(cur>=state.totalPages-1, false, cur+1, '»');
+                pagerEl.innerHTML = html;
+            }
+
+            function buildQuery(){
+                const p = new URLSearchParams();
+                const st = statusEl.value.trim();
+                if (st) p.set('status', st);     // 필터
+                p.set('page', state.page +1);       // 0-base
+                p.set('size', state.size);
+                return p.toString();
+            }
+
+            async function loadPage(){
+                showLoading();
+                try{
+                    // PageResponseDTO 규격 API 호출
+                    const res = await fetch("/api/reservations?" + buildQuery());
+                    if(!res.ok) throw new Error('목록을 불러오지 못했습니다.');
+                    const data = await res.json();
+
+                    // 예상 형태: { dtoList:[], total, page, size }
+                    const rows  = Array.isArray(data.dtoList) ? data.dtoList : [];
+                    renderRows(rows);
+
+                    const total = Number(data.total ?? 0);
+                    const size  = Number(data.size ?? state.size);
+                    const pages = Math.max(1, Math.ceil(total / (size || 10)));
+                    renderPager(pages);
+                }catch(e){
+                    console.error(e);
+                    bodyEl.innerHTML =
+                        `<tr><td colspan="9" class="text-center text-danger py-5">목록을 불러오지 못했습니다.</td></tr>`;
+                }
+            }
+
+            // 단건(예약번호) 조회 → 표 1행
+            async function findByNumber() {
+                const num = numberEl.value.trim();
+                if(!num){ numberEl.focus(); return; }
+                showLoading();
+                try{
+                    const res = await fetch('/api/reservations/number/'+encodeURIComponent(num));
+                    if(!res.ok) throw new Error('예약번호로 조회 실패');
+                    const item = await res.json();
+                    renderRows([item]);
+                    pagerEl.innerHTML = ''; // 단건 조회 시 페이저 숨김
+                }catch(e){
+                    console.error(e);
+                    bodyEl.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-5">해당 예약번호를 찾지 못했습니다.</td></tr>`;
+                }
+            }
+
+            // 이벤트
+            document.getElementById('searchForm').addEventListener('submit', (e)=>{
+                e.preventDefault();
+                state.page = 0;
+                state.size = parseInt(sizeEl.value,10) || 10;
+                loadPage();
+            });
+            pagerEl.addEventListener('click', (e)=>{
+                const a = e.target.closest('a[data-page]');
+                if(!a) return;
+                e.preventDefault();
+                const p = parseInt(a.dataset.page,10);
+                if(Number.isNaN(p) || p<0 || p>=state.totalPages) return;
+                state.page = p;
+                loadPage();
+            });
+            btnFindByNumber.addEventListener('click', findByNumber);
+
+            // 최초 로드
+            loadPage();
+        })();
+    </script>
+</th:block>
+</body>
+</html>

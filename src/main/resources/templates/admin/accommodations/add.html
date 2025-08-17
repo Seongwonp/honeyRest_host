@@ -3,322 +3,237 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
-
 <head>
-    <meta charset="utf-8"/>
     <title>숙소 등록</title>
     <th:block layout:fragment="head">
-    <style>
-        .required::after{content:" *"; color:#dc3545;}
-        .error{color:#dc3545;font-size:.85rem;margin-top:4px}
-        .card{background:#fff;border:1px solid #e9ecef;border-radius:.5rem}
-        .card-header{padding:.75rem 1rem;border-bottom:1px solid #e9ecef;font-weight:600}
-        .card-body{padding:1rem}
-        pre.result{background:#f8f9fa;border-radius:.5rem;padding:12px;white-space:pre-wrap}
-        .table thead th { position: sticky; top: 0; background: #fff; }
-    </style>
+        <style>
+            .help-text {
+                font-size: .875rem;
+                color: #6c757d
+            }
+
+            .required::after {
+                content: " *";
+                color: #dc3545;
+            }
+
+            .field-error {
+                border-color: #dc3545
+            }
+        </style>
+        <meta name="_csrf" th:content="${_csrf?.token}">
+        <meta name="_csrf_header" th:content="${_csrf?.headerName}">
+        <link rel="shortcut icon" th:href="@{/assets/compiled/svg/favicon.svg}" type="image/x-icon">
+        <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}">
+        <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}">
+        <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}">
+        <!--        <script th:src="@{/assets/static/js/initTheme.js}"></script>-->
+        <!--        <script th:src="@{/assets/static/js/components/dark.js}"></script>-->
     </th:block>
 </head>
+
 <body>
 <th:block layout:fragment="content">
-    <div class="container-fluid py-3">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h2 class="mb-0">숙소 등록</h2>
-            <div class="d-flex gap-2">
-                <a class="btn btn-outline-secondary btn-sm" href="/swagger-ui/index.html" target="_blank">Swagger</a>
-                <a class="btn btn-outline-primary btn-sm" href="/admin/accommodations/list">목록</a>
-            </div>
-        </div>
+    <div class="page-heading">
+        <h3 class="mb-2">숙소 등록</h3>
+        <p class="text-muted">필수 항목은 <span class="text-danger">*</span> 표시가 있어요.</p>
+    </div>
 
-        <div class="row g-3">
-            <!-- 폼 -->
-            <div class="col-12 col-xxl-8">
-                <div class="card">
-                    <div class="card-header">기본 정보</div>
-                    <div class="card-body">
-                        <form id="accForm" class="row g-3">
-                            <!-- 연관키 -->
-                            <div class="col-md-3">
-                                <label class="form-label required">회사 ID</label>
-                                <input type="number" class="form-control" name="companyId" required>
-                                <div class="error" data-err-for="companyId"></div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label required">카테고리 ID</label>
-                                <input type="number" class="form-control" name="categoryId" required>
-                                <div class="error" data-err-for="categoryId"></div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label required">메인지역 ID</label>
-                                <input type="number" class="form-control" name="mainRegionId" required>
-                                <div class="error" data-err-for="mainRegionId"></div>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label required">서브지역 ID</label>
-                                <input type="number" class="form-control" name="subRegionId" required>
-                                <div class="error" data-err-for="subRegionId"></div>
-                            </div>
-
-                            <!-- 기본필드 -->
-                            <div class="col-md-6">
-                                <label class="form-label required">숙소명</label>
-                                <input type="text" class="form-control" name="name" required>
-                                <div class="error" data-err-for="name"></div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label required">주소</label>
-                                <input type="text" class="form-control" name="address" required>
-                                <div class="error" data-err-for="address"></div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <label class="form-label">위도</label>
-                                <input type="number" step="0.000001" class="form-control" name="latitude" placeholder="예: 37.5665">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">경도</label>
-                                <input type="number" step="0.000001" class="form-control" name="longitude" placeholder="예: 126.9780">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">썸네일 URL</label>
-                                <input type="url" class="form-control" name="thumbnailUrl" placeholder="https://...">
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label">설명</label>
-                                <textarea class="form-control" rows="2" name="description"></textarea>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label">편의시설 JSON</label>
-                                <textarea class="form-control" rows="2" name="amenities" placeholder='예: {"wifi":true,"parking":true}'></textarea>
-                                <div class="error" data-err-for="amenities"></div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <label class="form-label">체크인</label>
-                                <input type="time" class="form-control" name="checkInTime" value="15:00">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">체크아웃</label>
-                                <input type="time" class="form-control" name="checkOutTime" value="11:00">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">상태</label>
-                                <select class="form-select" name="status">
-                                    <option value="">(기본: ACTIVE)</option>
-                                    <option value="ACTIVE">ACTIVE</option>
-                                    <option value="INACTIVE">INACTIVE</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">최저가</label>
-                                <input type="number" class="form-control" name="minPrice" min="0" step="1">
-                            </div>
-
-                            <!-- 태그 -->
-                            <div class="col-12">
-                                <label class="form-label">태그 ID(콤마구분)</label>
-                                <input type="text" class="form-control" name="tagIds" placeholder="예: 1,3,7">
-                                <div class="help-text">DB에 존재하는 tag_id만 입력하세요.</div>
-                            </div>
-
-                            <!-- 이미지 테이블 -->
-                            <div class="col-12">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <label class="form-label mb-2">이미지</label>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-outline-primary" type="button" id="btnAddImage">행 추가</button>
-                                        <button class="btn btn-sm btn-outline-secondary" type="button" id="btnClearImage">모두 삭제</button>
-                                    </div>
-                                </div>
-
-                                <div class="table-responsive" style="max-height: 280px; overflow:auto;">
-                                    <table class="table table-sm align-middle mb-0" id="imageTable">
-                                        <thead>
-                                        <tr>
-                                            <th style="width:45%">Image URL</th>
-                                            <th style="width:20%">Type</th>
-                                            <th style="width:20%">Sort</th>
-                                            <th style="width:15%"></th>
-                                        </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="col-12 d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">등록</button>
-                                <button type="button" id="btnReset" class="btn btn-light">초기화</button>
-                            </div>
-                        </form>
+    <div class="card">
+        <div class="card-body">
+            <form id="accommodationForm" novalidate>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label required">숙소명</label>
+                        <input type="text" class="form-control" id="name" placeholder="예) 허니레스트 강남점" required>
                     </div>
-                </div>
-            </div>
 
-            <!-- 결과/빠른 테스트 -->
-            <div class="col-12 col-xxl-4">
-                <div class="card mb-3">
-                    <div class="card-header">등록 결과</div>
-                    <div class="card-body">
-                        <pre id="resultBox" class="result">아직 결과가 없습니다.</pre>
+                    <div class="col-md-6">
+                        <label class="form-label required">카테고리</label>
+                        <select class="form-select" id="categoryId" required>
+                            <option value="" selected disabled>선택하세요</option>
+                            <option value="1">호텔</option>
+                            <option value="2">모텔</option>
+                            <option value="3">게스트하우스</option>
+                            <!-- 필요 시 서버에서 주입해 옵션 렌더링 -->
+                        </select>
                     </div>
-                </div>
 
-                <div class="card">
-                    <div class="card-header">API 테스트 (목록)</div>
-                    <div class="card-body">
-                        <div class="d-flex gap-2 mb-2">
-                            <button class="btn btn-outline-secondary btn-sm" id="btnLoad">GET /api/admin/accommodations</button>
-                        </div>
-                        <div class="table-responsive" style="max-height:320px;overflow:auto;">
-                            <table class="table table-sm mb-0">
-                                <thead><tr><th>ID</th><th>이름</th><th>상태</th><th>지역</th></tr></thead>
-                                <tbody id="listBody"><tr><td colspan="4" class="text-muted">데이터 없음</td></tr></tbody>
-                            </table>
+                    <!-- 우편번호 + 주소 찾기 -->
+                    <div class="col-md-4">
+                        <label class="form-label required">우편번호</label>
+                        <div class="input-group">
+                            <input type="text" id="postcode" class="form-control" placeholder="우편번호" readonly required>
+                            <button
+                                    type="button"
+                                    id="btnFindAddr"
+                                    class="btn btn-outline-secondary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#addrModal"
+                            >
+                                주소 찾기
+                            </button>
                         </div>
                     </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label required">주소</label>
+                        <input type="text" id="address" class="form-control" placeholder="도로명/지번" readonly required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">참고항목</label>
+                        <input type="text" id="extraAddress" class="form-control" placeholder="(동/건물명 등)" readonly>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">상세 주소</label>
+                        <input type="text" id="addressDetail" class="form-control" placeholder="동/호수 등">
+                    </div>
+
+                    <!-- 선택: 지역 select를 유지하고 자동선택 되도록 둘 수도 있음 -->
+                    <div class="col-md-6">
+                        <label class="form-label required">지역(대)</label>
+                        <select class="form-select" id="mainRegionId" required>
+                            <option value="" selected disabled>선택하세요</option>
+                            <option value="11">서울</option>
+                            <option value="26">부산</option>
+                            <!-- 실제 옵션은 프로젝트 값으로 -->
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label required">지역(소)</label>
+                        <select class="form-select" id="subRegionId" required>
+                            <option value="" selected disabled>선택하세요</option>
+                            <option value="1101">강남구</option>
+                            <option value="1102">서초구</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label required">영업 시작</label>
+                        <input type="time" class="form-control" id="checkInTime" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label required">영업 종료</label>
+                        <input type="time" class="form-control" id="checkOutTime" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label required">기본가(원)</label>
+                        <input type="number" class="form-control" id="basePrice" placeholder="예) 80000" min="0"
+                               required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">대표 연락처</label>
+                        <input type="text" class="form-control" id="phone" placeholder="010-0000-0000">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">설명</label>
+                        <textarea class="form-control" id="description" rows="3" placeholder="숙소 소개, 편의시설 등"></textarea>
+                    </div>
                 </div>
 
-            </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="iconly-boldPlus me-1"></i>등록
+                    </button>
+                    <a th:href="@{/admin/accommodations/list}" class="btn btn-outline-secondary">목록으로</a>
+                </div>
+            </form>
         </div>
     </div>
 
-    <script>
-        /* ---------- 공통 ---------- */
-        function csrfHeader() {
-            const t = document.querySelector('meta[name="_csrf"]')?.content;
-            const h = document.querySelector('meta[name="_csrf_header"]')?.content;
-            return t && h ? { [h]: t } : {};
-        }
-        function errSet(name, msg){ const el = document.querySelector(`.error[data-err-for="${name}"]`); if(el) el.textContent = msg || ''; }
-        function errClear(){ document.querySelectorAll('.error').forEach(e=>e.textContent=''); }
-
-        /* ---------- 이미지 행 ---------- */
-        const imageTBody = document.querySelector('#imageTable tbody');
-        function addImageRow(imgUrl='', imgType='', sort='') {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-        <td><input type="url" class="form-control form-control-sm img-url" placeholder="https://..." value="${imgUrl}"></td>
-        <td><input type="text" class="form-control form-control-sm img-type" placeholder="ROOM/LOBBY" value="${imgType}"></td>
-        <td><input type="number" class="form-control form-control-sm img-sort" min="0" step="1" value="${sort}"></td>
-        <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger btn-del">삭제</button></td>
-      `;
-            tr.querySelector('.btn-del').addEventListener('click', ()=> tr.remove());
-            imageTBody.appendChild(tr);
-        }
-        document.getElementById('btnAddImage').addEventListener('click', ()=> addImageRow());
-        document.getElementById('btnClearImage').addEventListener('click', ()=> imageTBody.innerHTML='');
-
-        /* ---------- 목록 로드 ---------- */
-        async function loadList(){
-            const listBody = document.getElementById('listBody');
-            listBody.innerHTML = `<tr><td colspan="4" class="text-muted">불러오는 중...</td></tr>`;
-            try{
-                const res = await fetch('/api/admin/accommodations', { headers: csrfHeader() });
-                if(!res.ok) throw new Error('HTTP '+res.status);
-                const data = await res.json();
-                if(!Array.isArray(data) || data.length===0){
-                    listBody.innerHTML = `<tr><td colspan="4" class="text-muted">데이터 없음</td></tr>`;
-                    return;
-                }
-                listBody.innerHTML = data.map(r=>`
-          <tr>
-            <td>${r.accommodationId ?? ''}</td>
-            <td>${r.name ?? ''}</td>
-            <td>${r.status ?? ''}</td>
-            <td>${r.mainRegionId ?? ''}</td>
-          </tr>
-        `).join('');
-            }catch(e){
-                listBody.innerHTML = `<tr><td colspan="4" class="text-danger">불러오기 실패: ${e.message}</td></tr>`;
-            }
-        }
-        document.getElementById('btnLoad').addEventListener('click', loadList);
-
-        /* ---------- 폼 제출 ---------- */
-        const form = document.getElementById('accForm');
-        const resultBox = document.getElementById('resultBox');
-
-        document.getElementById('btnReset').addEventListener('click', ()=>{
-            form.reset(); imageTBody.innerHTML=''; errClear(); resultBox.textContent='아직 결과가 없습니다.';
-        });
-
-        form.addEventListener('submit', async (e)=>{
-            e.preventDefault(); errClear();
-
-            const fd = new FormData(form);
-            const raw = Object.fromEntries(fd.entries());
-
-            // 숫자 필드
-            ['companyId','categoryId','mainRegionId','subRegionId'].forEach(k=>{
-                raw[k] = raw[k] ? Number(raw[k]) : null;
-            });
-            ['latitude','longitude','minPrice'].forEach(k=>{
-                raw[k] = raw[k] !== '' ? Number(raw[k]) : null;
-            });
-
-            // 시간: "HH:mm" 문자열 → LocalTime으로 자동 변환
-            raw.checkInTime  = raw.checkInTime  || null;
-            raw.checkOutTime = raw.checkOutTime || null;
-
-            // amenities JSON
-            if(raw.amenities && raw.amenities.trim()!==''){
-                try { raw.amenities = JSON.parse(raw.amenities); }
-                catch(e){ errSet('amenities','올바른 JSON 형식이 아닙니다. 예: {"wifi":true}'); return; }
-            } else {
-                raw.amenities = {};
-            }
-
-            // 태그 IDs (콤마구분)
-            raw.tagIds = (raw.tagIds || '')
-                .split(',')
-                .map(s=>s.trim())
-                .filter(Boolean)
-                .map(n=>Number(n));
-
-            // 이미지 배열
-            raw.images = Array.from(imageTBody.querySelectorAll('tr')).map((tr, idx)=>({
-                imageUrl : tr.querySelector('.img-url').value || '',
-                imageType: tr.querySelector('.img-type').value || null,
-                sortOrder: (()=>{ const v=tr.querySelector('.img-sort').value; return v===''? idx : Number(v) })()
-            })).filter(it=>it.imageUrl!==''); // URL 없는 행은 제외
-
-            // 필수값 프론트 검증
-            let hasErr=false;
-            ['companyId','categoryId','mainRegionId','subRegionId','name','address'].forEach(k=>{
-                if(raw[k]===null || raw[k]===''){ errSet(k,'필수값입니다.'); hasErr=true; }
-            });
-            if(hasErr) return;
-
-            // 빈 문자열 → null 정리
-            ['thumbnailUrl','description','status'].forEach(k=>{ if(raw[k]==='') raw[k]=null; });
-
-            try{
-                const res = await fetch('/api/admin/accommodations', {
-                    method: 'POST',
-                    headers: { 'Content-Type':'application/json', ...csrfHeader() },
-                    body: JSON.stringify(raw)
-                });
-                if(res.ok){
-                    const json = await res.json();
-                    resultBox.textContent = '등록 성공 ✅\n' + JSON.stringify(json, null, 2);
-                    // 등록 후 목록 갱신
-                    loadList();
-                }else{
-                    let text = await res.text();
-                    try{ text = JSON.stringify(JSON.parse(text), null, 2);}catch{}
-                    resultBox.textContent = '등록 실패 ❌\nHTTP '+res.status+'\n'+text;
-                }
-            }catch(err){
-                resultBox.textContent = '요청 실패 ❌\n'+(err?.message || err);
-            }
-        });
-
-        // 필요 시 자동 목록 로드
-        // loadList();
-    </script>
+    <!-- Toast -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+        <div id="toast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div id="toast-body" class="toast-body"></div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+    <!-- ✅ 모달: content fragment 안으로 이동 -->
+    <div class="modal fade" id="addrModal" tabindex="-1" aria-labelledby="addrModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addrModalLabel">주소 검색</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="postcode-wrap" style="width:100%;height:500px;min-height:420px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </th:block>
+
+<th:block layout:fragment="body-end">
+        <!-- 다음 주소 스크립트: 딱 한 번만 로드 -->
+
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const modalEl = document.getElementById('addrModal');
+            const wrap    = document.getElementById('postcode-wrap');
+            const btn     = document.getElementById('btnFindAddr');
+
+            if (!btn || !modalEl || !wrap) {
+                console.error('[주소] 필수 요소를 찾지 못했습니다.', { btn: !!btn, modalEl: !!modalEl, wrap: !!wrap });
+                return;
+            }
+
+            // 버튼은 data-bs-*로도 모달을 띄우므로, 여기서는 Postcode 임베드 타이밍만 다룹니다.
+            modalEl.addEventListener('shown.bs.modal', function onShown(){
+                try{
+                    if (!window.daum || !window.daum.Postcode){
+                        alert('주소 검색 스크립트를 불러오지 못했습니다.');
+                        return;
+                    }
+                    wrap.innerHTML = '';
+                    wrap.style.height = '500px';
+                    new daum.Postcode({
+                        oncomplete: fillAddress,
+                        onresize: function(size){ wrap.style.height = size.height + 'px'; },
+                        width: '100%',
+                        height: '100%'
+                    }).embed(wrap);
+                }catch(e){
+                    console.error('[주소] embed 실패', e);
+                    alert('주소 검색 창을 표시할 수 없습니다.');
+                }
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', function(){
+                wrap.innerHTML = '';
+            });
+        });
+
+        function fillAddress(data){
+            const roadAddr  = data.roadAddress;
+            const jibunAddr = data.jibunAddress;
+            let extra = '';
+            if (data.bname && /[동|로|가]$/g.test(data.bname)) extra += data.bname;
+            if (data.buildingName && data.apartment === 'Y') extra += (extra ? ', ' : '') + data.buildingName;
+            if (extra) extra = ' (' + extra + ')';
+
+            document.getElementById('postcode').value     = data.zonecode;
+            document.getElementById('address').value      = roadAddr || jibunAddr;
+            document.getElementById('extraAddress').value = extra;
+
+            const sido    = (data.sido || '').replace(/(특별시|광역시|특별자치시|특별자치도)$/,'');
+            const sigungu = data.sigungu || '';
+            const mainSel = document.getElementById('mainRegionId');
+            const subSel  = document.getElementById('subRegionId');
+            if (mainSel) Array.from(mainSel.options).forEach(opt => { if (opt.text.includes(sido)) mainSel.value = opt.value; });
+            if (subSel)  Array.from(subSel.options).forEach(opt => { if (opt.text.includes(sigungu)) subSel.value = opt.value; });
+
+            document.getElementById('addressDetail').focus();
+        }
+    </script>
+    </th:block>
 </body>
 </html>

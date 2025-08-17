@@ -14,7 +14,6 @@ import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.entity.AccommodationCategory;
 import com.honeyrest.honeyrest_host.entity.Region;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
-import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationCategoryRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
 import org.junit.jupiter.api.BeforeEach;
 

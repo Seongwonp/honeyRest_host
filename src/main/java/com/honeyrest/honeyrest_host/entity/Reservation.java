@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+import com.honeyrest.honeyrest_host.dto.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -78,4 +79,66 @@ public class Reservation extends BaseEntity{
     @Column(name = "special_requests", columnDefinition = "TEXT")
     private String specialRequest; // 특별 요청 사항
 
+    @Version
+    private Long version; // ✅ 낙관적 락
+
+    // -------- 생성 시 필수값 검증 (엔티티 내부) --------
+    public void validateNew() {
+        if (user == null)           throw new IllegalStateException("user는 필수입니다.");
+        if (room == null)           throw new IllegalStateException("room은 필수입니다.");
+        if (accommodationId == null)    throw new IllegalStateException("accommodationId는 필수입니다.");
+        if (accommodationName == null)  throw new IllegalStateException("accommodationName은 필수입니다.");
+        if (roomName == null)           throw new IllegalStateException("roomName은 필수입니다.");
+        if (reservationNumber == null)  throw new IllegalStateException("reservationNumber는 필수입니다.");
+        if (checkInDate == null)        throw new IllegalStateException("checkInDate는 필수입니다.");
+        if (checkOutDate == null)       throw new IllegalStateException("checkOutDate는 필수입니다.");
+        if (guestCount == null)         throw new IllegalStateException("guestCount는 필수입니다.");
+        if (guestName == null)          throw new IllegalStateException("guestName은 필수입니다.");
+        if (guestPhone == null)         throw new IllegalStateException("guestPhone는 필수입니다.");
+        if (price == null)              throw new IllegalStateException("price는 필수입니다.");
+        if (status == null)             throw new IllegalStateException("status는 필수입니다.");
+        validateDates();
+    }
+
+    private void validateDates() {
+        if (checkInDate != null && checkOutDate != null && !checkInDate.isBefore(checkOutDate)) {
+            throw new IllegalArgumentException("체크인 날짜는 체크아웃 이전이어야 합니다.");
+        }
+    }
+
+    // -------- 부분 업데이트: 세터 없이 DTO로 업데이트 --------
+    public void update(ReservationDTO dto, User newUser, Room newRoom) {
+        if (dto.getCheckInDate() != null)  this.checkInDate = dto.getCheckInDate();
+        if (dto.getCheckOutDate() != null) this.checkOutDate = dto.getCheckOutDate();
+        validateDates();
+
+        if (dto.getGuestCount() != null)   this.guestCount = dto.getGuestCount();
+        if (dto.getGuestName() != null)    this.guestName = dto.getGuestName();
+        if (dto.getGuestPhone() != null)   this.guestPhone = dto.getGuestPhone();
+        if (dto.getPrice() != null)        this.price = dto.getPrice();
+        if (dto.getStatus() != null)       this.status = dto.getStatus();
+        if (dto.getCancelReason() != null) this.cancelReason = dto.getCancelReason();
+        if (dto.getSpecialRequest() != null) this.specialRequest = dto.getSpecialRequest();
+
+        if (dto.getAccommodationId() != null)   this.accommodationId = dto.getAccommodationId();
+        if (dto.getAccommodationName() != null) this.accommodationName = dto.getAccommodationName();
+
+        // 예약번호는 보통 불변(변경 비권장). 정말 필요하면 아래 주석 해제
+        // if (dto.getReservationNumber() != null) this.reservationNumber = dto.getReservationNumber();
+
+        if (newUser != null) this.user = newUser;
+        if (newRoom != null) this.room = newRoom;
+        if (newRoom != null && dto.getRoomId() != null) {
+            // roomName은 보통 Room 엔티티의 필드에서 가져오거나 DTO로 받음
+            // this.roomName = newRoom.getName(); // 필요 시
+        }
+    }
+
+    public void cancel(String reason) {
+        if (this.status == ReservationStatus.CANCELED) {
+            throw new IllegalStateException("이미 취소된 예약입니다.");
+        }
+        this.status = ReservationStatus.CANCELED;
+        this.cancelReason = reason;
+    }
 }

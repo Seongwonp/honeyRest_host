@@ -3,127 +3,153 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
-
 <head>
     <title>객실 등록</title>
     <th:block layout:fragment="head">
-        <!-- 페이지 전용 CSS가 있으면 여기 -->
-        <style>
-            .help-text{font-size:.875rem;color:#6c757d}
-            .required::after{content:" *"; color:#dc3545;}
-        </style>
+        <meta name="_csrf" th:content="${_csrf?.token}"/>
+        <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+        <style>.required::after{content:" *";color:#dc3545}</style>
     </th:block>
-    <link rel="shortcut icon" th:href="@{/assets/compiled/svg/favicon.svg}" type="image/x-icon">
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}">
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}">
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}">
-    <script th:src="@{/assets/static/js/initTheme.js}"></script>
-    <script th:src="@{/assets/static/js/components/dark.js}"></script>
-    <script th:src="@{/assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js}"></script>
-    <script th:src="@{/assets/compiled/js/app.js}"></script>
 </head>
-
 <body>
 <th:block layout:fragment="content">
-    <!-- Page heading -->
-    <div class="page-heading">
-        <h3>객실 등록</h3>
-        <p class="text-subtitle text-muted">새 객실 정보를 입력해 주세요.</p>
+    <div class="page-heading d-flex align-items-center justify-content-between">
+        <div>
+            <h3 class="mb-1">객실 등록</h3>
+            <p class="text-muted mb-0">숙소 선택 후 객실 정보를 입력하세요.</p>
+        </div>
+        <a class="btn btn-outline-secondary" id="toList">목록</a>
     </div>
 
-    <div class="page-content">
-        <section class="section">
-            <div class="card">
-                <div class="card-header"><h5 class="mb-0">기본 정보</h5></div>
-                <div class="card-body">
-                    <form th:action="@{/admin/rooms/add}" th:object="${room}" method="post" id="roomForm">
-                        <!-- ★ Spring Security 사용 시 CSRF 토큰 -->
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+    <div class="card">
+        <div class="card-body">
+            <form id="roomForm" class="row g-3">
+                <input type="hidden" id="accommodationId" />
 
-                        <!-- ★ accommodationId는 모델에 바인딩된 값만 사용(단 하나의 hidden) -->
-                        <input type="hidden" th:field="*{accommodationId}"/>
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">객실 이름</label>
-                                <input type="text" class="form-control" th:field="*{name}">
-                                <div class="text-danger small" th:errors="*{name}"></div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">객실 유형</label>
-                                <input type="text" class="form-control" th:field="*{type}">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">가격</label>
-                                <input type="number" class="form-control" th:field="*{price}" step="1000">
-                                <div class="text-danger small" th:errors="*{price}"></div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">최대 인원</label>
-                                <input type="number" class="form-control" th:field="*{maxOccupancy}">
-                                <div class="text-danger small" th:errors="*{maxOccupancy}"></div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">기준 인원</label>
-                                <input type="number" class="form-control" th:field="*{standardOccupancy}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">침대 정보</label>
-                                <input type="text" class="form-control" th:field="*{bedInfo}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">편의시설</label>
-                                <input type="text" class="form-control" th:field="*{amenities}">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">설명</label>
-                                <textarea class="form-control" rows="3" th:field="*{description}"></textarea>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">보유 객실 수</label>
-                                <input type="number" class="form-control" th:field="*{totalRooms}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">상태</label>
-                                <select class="form-select" th:field="*{status}">
-                                    <option value="">선택하세요</option>
-                                    <option value="ACTIVE">ACTIVE</option>
-                                    <option value="INACTIVE">INACTIVE</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 d-flex gap-2">
-                            <a href="/admin/dashboard" class="btn btn-outline-secondary">취소</a>
-                            <button type="submit" class="btn btn-primary">등록</button>
-                        </div>
-                    </form>
+                <div class="col-md-6">
+                    <label class="form-label required">객실명</label>
+                    <input type="text" class="form-control" id="name" placeholder="디럭스 더블" required>
                 </div>
-            </div>
-        </section>
+
+                <div class="col-md-6">
+                    <label class="form-label required">객실 유형</label>
+                    <select id="type" class="form-select" required>
+                        <!-- enum RoomType 에 맞춰 수정 -->
+                        <option value="" disabled selected>선택</option>
+                        <option value="STANDARD">STANDARD</option>
+                        <option value="DELUXE">DELUXE</option>
+                        <option value="SUITE">SUITE</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label required">가격(원)</label>
+                    <input type="number" class="form-control" id="price" min="0" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">기준 인원</label>
+                    <input type="number" class="form-control" id="standardOccupancy" min="1">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">최대 인원</label>
+                    <input type="number" class="form-control" id="maxOccupancy" min="1">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">추가 인원 요금</label>
+                    <input type="number" class="form-control" id="extraPersonFee" min="0" step="1000">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">총 객실 수</label>
+                    <input type="number" class="form-control" id="totalRooms" min="1">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">상태</label>
+                    <select id="status" class="form-select">
+                        <option value="ACTIVE" selected>ACTIVE</option>
+                        <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">침대 정보(쉼표로 구분 또는 JSON)</label>
+                    <input type="text" class="form-control" id="bedInfo" placeholder='예: "더블 1개, 싱글 1개" 또는 ["DOUBLE","SINGLE"]'>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">편의시설(쉼표로 구분 또는 JSON)</label>
+                    <input type="text" class="form-control" id="amenities" placeholder='예: "wifi, tv, parking" 또는 ["wifi","tv"]'>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">설명</label>
+                    <textarea class="form-control" id="description" rows="3"></textarea>
+                </div>
+
+                <div class="col-12 d-flex gap-2 mt-2">
+                    <button type="submit" class="btn btn-primary">등록</button>
+                    <a class="btn btn-outline-secondary" id="cancelBtn">취소</a>
+                </div>
+            </form>
+        </div>
     </div>
 </th:block>
 
-<th:block layout:fragment="script">
-    <!-- 페이지 전용 스크립트 -->
-    <script th:inline="javascript">
-        // 간단한 클라이언트 유효성 검사 (필수값)
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('roomForm');
-            form.addEventListener('submit', function (e) {
-                const name = form.querySelector('[name="name"]').value.trim();
-                const price = form.querySelector('[name="price"]').value;
-                const maxOcc = form.querySelector('[name="maxOccupancy"]').value;
+<th:block layout:fragment="body-end">
+    <script>
+        (function(){
+            const qs = new URLSearchParams(location.search);
+            const accId = qs.get('accommodationId');
+            const listUrl = accId ? `/admin/rooms?accommodationId=${accId}` : '/admin/rooms';
 
-                if (!name || !price || !maxOcc) {
-                    e.preventDefault();
-                    alert('객실 이름, 가격, 최대 인원은 필수입니다.');
-                    return;
+            document.getElementById('toList').href = listUrl;
+            document.getElementById('cancelBtn').href = listUrl;
+
+            if (!accId) {
+                alert('accommodationId가 없습니다. 숙소 목록에서 "객실" 버튼으로 들어와 주세요.');
+                location.href = '/admin/accommodations/list';
+                return;
+            }
+            document.getElementById('accommodationId').value = accId;
+
+            function getCsrf(){
+                const token = document.querySelector('meta[name="_csrf"]')?.content;
+                const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+                return token && header ? { [header]: token } : {};
+            }
+
+            document.getElementById('roomForm').addEventListener('submit', async (e)=>{
+                e.preventDefault();
+                const body = {
+                    accommodationId: Number(document.getElementById('accommodationId').value),
+                    name: document.getElementById('name').value.trim(),
+                    type: document.getElementById('type').value,
+                    price: Number(document.getElementById('price').value || 0),
+                    maxOccupancy: Number(document.getElementById('maxOccupancy').value || 0),
+                    standardOccupancy: Number(document.getElementById('standardOccupancy').value || 0),
+                    extraPersonFee: Number(document.getElementById('extraPersonFee').value || 0),
+                    bedInfo: document.getElementById('bedInfo').value.trim(),
+                    amenities: document.getElementById('amenities').value.trim(),
+                    description: document.getElementById('description').value.trim(),
+                    totalRooms: Number(document.getElementById('totalRooms').value || 0),
+                    status: document.getElementById('status').value || 'ACTIVE'
+                };
+
+                try{
+                    const res = await fetch('/api/rooms', {
+                        method: 'POST',
+                        headers: Object.assign({'Content-Type':'application/json'}, getCsrf()),
+                        body: JSON.stringify(body)
+                    });
+                    if(!res.ok){
+                        const err = await res.json().catch(()=>({message:'등록 실패'}));
+                        throw new Error(err.message || '등록 실패');
+                    }
+                    location.href = listUrl;
+                }catch(err){
+                    alert(err.message || '에러가 발생했습니다.');
                 }
-                // 확인 알림 후 그대로 전송
-                alert('등록되었습니다.');
             });
-        });
+        })();
     </script>
 </th:block>
 </body>

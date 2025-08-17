@@ -3,77 +3,170 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
-
 <head>
-  <title>숙소 목록</title>
+  <title>객실 목록</title>
   <th:block layout:fragment="head">
-    <!-- 페이지 전용 CSS 필요하면 여기에 -->
-    <style>
-      .table thead th { white-space: nowrap; }
-      .badge-status { font-size: .85rem; }
-    </style>
+    <meta name="_csrf" th:content="${_csrf?.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
   </th:block>
 </head>
-
 <body>
 <th:block layout:fragment="content">
   <div class="page-heading d-flex align-items-center justify-content-between">
     <div>
-      <h3>숙소 목록</h3>
-      <p class="text-subtitle text-muted">등록된 숙소 현황을 확인하고 관리하세요.</p>
+      <h3 class="mb-1">객실 목록</h3>
+      <p class="text-muted mb-0" id="accInfo">숙소 ID: -</p>
     </div>
+    <a class="btn btn-primary" id="toAdd">객실 등록</a>
+  </div>
 
-    <div class="page-content">
-      <section class="section">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="mb-0">
-              총 <span th:text="${#lists.size(accommodations)}">0</span>건
-            </h5>
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+          <tr>
+            <th style="width:80px">ID</th>
+            <th>이름</th>
+            <th>유형</th>
+            <th>가격</th>
+            <th>정원</th>
+            <th>상태</th>
+            <th style="width:200px">작업</th>
+          </tr>
+          </thead>
+          <tbody id="tbody">
+          <tr><td colspan="7" class="text-center text-muted">로딩중…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 간단 수정 모달 -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">객실 수정</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <input type="hidden" id="editId">
+          <div class="mb-2">
+            <label class="form-label">이름</label>
+            <input type="text" class="form-control" id="editName">
           </div>
-          <div class="card-body table-responsive">
-            <table class="table table-hover align-middle">
-              <thead>
-              <tr>
-                <th>#</th>
-                <th>숙소명</th>
-                <th>주소</th>
-                <th>상태</th>
-                <th style="width: 220px;">관리</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr th:if="${#lists.isEmpty(accommodations)}">
-                <td colspan="5" class="text-center text-muted py-4">등록된 숙소가 없습니다.</td>
-              </tr>
-              <tr th:each="acc, stat : ${accommodations}">
-                <td th:text="${stat.index + 1}">1</td>
-                <td th:text="${acc.name}">숙소명</td>
-                <td th:text="${acc.address}">주소</td>
-                <td>
-                                <span class="badge"
-                                      th:classappend="${acc.status}=='ACTIVE' ? ' bg-success' : ' bg-secondary'"
-                                      th:text="${acc.status}">ACTIVE</span>
-                </td>
-                <td>
-                  <a class="btn btn-sm btn-outline-primary"
-                     th:href="@{'/admin/rooms/list'(accommodationId=${acc.accommodationId})}">
-                    객실 보기
-                  </a>
-                  <a class="btn btn-sm btn-outline-success"
-                     th:href="@{'/admin/rooms/add'(accommodationId=${acc.accommodationId})}">
-                    객실 등록
-                  </a>
-                </td>
-              </tr>
-              </tbody>
-            </table>
+          <div class="mb-2">
+            <label class="form-label">가격</label>
+            <input type="number" class="form-control" id="editPrice" min="0">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">상태</label>
+            <select id="editStatus" class="form-select">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
           </div>
         </div>
-      </section>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+          <button class="btn btn-primary" id="saveEdit">저장</button>
+        </div>
+      </div>
     </div>
+  </div>
 </th:block>
 
-<th:block layout:fragment="script"></th:block>
+<th:block layout:fragment="body-end">
+  <script>
+    (function(){
+      const qs = new URLSearchParams(location.search);
+      const accId = qs.get('accommodationId');
+      if (!accId) {
+        alert('accommodationId가 없습니다. 숙소 목록에서 "객실" 버튼으로 들어와 주세요.');
+        location.href = '/admin/accommodations/list';
+        return;
+      }
+
+      document.getElementById('accInfo').textContent = '숙소 ID: ' + accId;
+      document.getElementById('toAdd').href = '/admin/rooms/add?accommodationId=' + accId;
+
+      const tbody = document.getElementById('tbody');
+      const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+      const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+      const csrf = csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {};
+
+      function money(n){ return (n??0).toLocaleString('ko-KR') + '원'; }
+
+      async function load(){
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">로딩중…</td></tr>`;
+        const res = await fetch('/api/rooms?accommodationId=' + accId);
+        if(!res.ok){ tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center">불러오기 실패</td></tr>`; return; }
+        const data = await res.json();
+        if(!data.length){ tbody.innerHTML = `<tr><td colspan="7" class="text-muted text-center">데이터 없음</td></tr>`; return; }
+        tbody.innerHTML = data.map(r=>`
+        <tr>
+          <td>${r.roomId}</td>
+          <td>${escapeHtml(r.name ?? '')}</td>
+          <td>${escapeHtml(r.type ?? '')}</td>
+          <td>${money(r.price)}</td>
+          <td>${r.standardOccupancy ?? '-'} / ${r.maxOccupancy ?? '-'}</td>
+          <td>${escapeHtml(r.status ?? '')}</td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-secondary btn-edit"
+                      data-id="${r.roomId}" data-name="${escapeAttr(r.name ??'')}"
+                      data-price="${r.price ?? 0}" data-status="${r.status ?? 'ACTIVE'}">수정</button>
+              <button class="btn btn-outline-danger btn-del" data-id="${r.roomId}">삭제</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      }
+
+      function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));}
+      function escapeAttr(s){return String(s).replace(/"/g,'&quot;');}
+
+      tbody.addEventListener('click', async (e)=>{
+        const del = e.target.closest('.btn-del');
+        const edit= e.target.closest('.btn-edit');
+        if(del){
+          if(!confirm('삭제하시겠어요?')) return;
+          const id = del.dataset.id;
+          const res = await fetch('/api/rooms/' + id, { method:'DELETE', headers: csrf });
+          if(!res.ok) return alert('삭제 실패');
+          load();
+        }
+        if(edit){
+          document.getElementById('editId').value   = edit.dataset.id;
+          document.getElementById('editName').value = edit.dataset.name;
+          document.getElementById('editPrice').value= edit.dataset.price;
+          document.getElementById('editStatus').value= edit.dataset.status;
+          new bootstrap.Modal(document.getElementById('editModal')).show();
+        }
+      });
+
+      document.getElementById('saveEdit').addEventListener('click', async ()=>{
+        const id = document.getElementById('editId').value;
+        const body = {
+          roomId: Number(id),
+          accommodationId: Number(accId),
+          name: document.getElementById('editName').value.trim(),
+          price: Number(document.getElementById('editPrice').value || 0),
+          status: document.getElementById('editStatus').value
+        };
+        const res = await fetch('/api/rooms/' + id, {
+          method: 'PUT',
+          headers: Object.assign({'Content-Type':'application/json'}, csrf),
+          body: JSON.stringify(body)
+        });
+        if(!res.ok) return alert('수정 실패');
+        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        load();
+      });
+
+      load();
+    })();
+  </script>
+</th:block>
 </body>
 </html>

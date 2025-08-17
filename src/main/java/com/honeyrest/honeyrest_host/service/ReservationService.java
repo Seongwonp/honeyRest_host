@@ -6,6 +6,8 @@ import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dto.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.Reservation;
 
+import java.util.List;
+
 public interface ReservationService {
     // 예약 현황으로 목록 조회
     PageResponseDTO<ReservationDTO> getReservationsByStatus(String status, PageRequestDTO pageRequestDTO);
@@ -24,4 +26,8 @@ public interface ReservationService {
 
     // 예약 등록
     ReservationDTO createReservation(ReservationDTO reservationDTO);
+
+    PageResponseDTO<ReservationDTO> getAllReservations(PageRequestDTO pageRequestDTO);
+
+    List<ReservationDTO> getAllReservationsNoPaging();
 }
