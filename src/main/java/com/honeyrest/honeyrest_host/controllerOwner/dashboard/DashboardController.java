@@ -1,14 +1,11 @@
 package com.honeyrest.honeyrest_host.controllerOwner.dashboard;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CouponDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
-import com.honeyrest.honeyrest_host.entity.Company;
-import com.honeyrest.honeyrest_host.service.AccommodationService;
-import com.honeyrest.honeyrest_host.service.CompanyService;
-import com.honeyrest.honeyrest_host.service.CouponService;
-import com.honeyrest.honeyrest_host.service.RoomService;
+import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,6 +21,9 @@ public class DashboardController {
     private final AccommodationService accommodationService;
     private final RoomService roomService;
     private final CouponService couponService;
+    private final ReservationService reservationService;
+    private final RegionService regionService;
+    private final AccommodationCategory accommodationCategory;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -45,14 +45,11 @@ public class DashboardController {
         List<CompanyDTO> companies = companyService.getAllCompanies();
         List<AccommodationDTO> accommodations;
 
-        if (companyId > 0) {
+        if (companyId != null) {
             accommodations = accommodationService.getAccommodationsByCompanyId(companyId);
             model.addAttribute("company", companyService.getCompany(companyId));
         } else {
             accommodations = accommodationService.getAllAccommodations();
-            model.addAttribute("companies", companies);
-            model.addAttribute("accommodations", accommodations);
-            return "owner/company/list";
         }
 
         model.addAttribute("companies", companies);
@@ -62,6 +59,7 @@ public class DashboardController {
     }
     @GetMapping("/accommodation/list")
     public String accommodations(Model model) {
+        model.addAttribute("companies", companyService.getAllCompanies());
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         return "owner/accommodation/list";
     }
@@ -70,18 +68,13 @@ public class DashboardController {
     public String roomsByAccommodation(@PathVariable Long accommodationId, Model model) {
         List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
         List<CompanyDTO> companies = companyService.getAllCompanies();
-
         List<RoomDTO> roomDTOS;
 
-        if (accommodationId > 0) {
+        if (accommodationId != null) {
             roomDTOS = roomService.getRoomsByAccommodationId(accommodationId);
             model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
         } else {
             roomDTOS = roomService.getAllRooms();
-            model.addAttribute("accommodations", accommodations);
-            model.addAttribute("companies", companies);
-            model.addAttribute("rooms", roomDTOS);
-            return "owner/accommodation/list";
         }
         model.addAttribute("accommodations", accommodations);
         model.addAttribute("rooms", roomDTOS);
@@ -90,6 +83,7 @@ public class DashboardController {
     }
     @GetMapping("/room/list")
     public String rooms(Model model) {
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         model.addAttribute("rooms", roomService.getAllRooms());
         return "owner/room/list";
     }
@@ -108,5 +102,40 @@ public class DashboardController {
     public String createCoupon(@ModelAttribute CouponDTO couponDTO) {
         couponService.registerCoupon(couponDTO);
         return "redirect:/owner/coupon/list";
+    }
+
+    @GetMapping("/company/create")
+    public String createCompany(Model model) {
+        return "owner/company/create";
+    }
+    @PostMapping("/company/create")
+    public String createCompany(@ModelAttribute CompanyDTO companyDTO) {
+        companyService.registerCompany(companyDTO);
+        return "redirect:/owner/company/list";
+    }
+
+    @GetMapping("/reservation/list")
+    public String reservations(Model model) {
+        model.addAttribute("reservations", reservationService.getReservations());
+        return "owner/reservation/list";
+    }
+
+    @GetMapping("/accommodation/create")
+    public String createAccommodation(Model model) {
+        model.addAttribute("companies", companyService.getAllCompanies());
+        model.addAttribute("categories", accommodationCategory.getAllAccommodationCategory());
+        model.addAttribute("regions", regionService.getAllRegions());
+        return "owner/accommodation/create";
+    }
+    @PostMapping("/accommodation/create")
+    public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO) throws JsonProcessingException {
+        accommodationService.registerAccommodation(accommodationDTO);
+        return "redirect:/owner/accommodation/list";
+    }
+
+    @PostMapping("/accommodation/{accommodationId}/delete")
+    public String deleteAccommodation(@PathVariable Long accommodationId) {
+        accommodationService.removeAccommodation(accommodationId);
+        return "redirect:/owner/accommodation/list";
     }
 }

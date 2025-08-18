@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -21,7 +23,7 @@ public class Room extends BaseEntity {
     @Column(name = "room_id", nullable = false)
     private Long roomId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY ,cascade = CascadeType.REMOVE)
     @JoinColumn(name = "accommodation_id", nullable = false)
     private Accommodation accommodation; // 숙소 ID
 
@@ -57,5 +59,9 @@ public class Room extends BaseEntity {
 
     @Column(name = "status" , length = 20)
     private String status;
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RoomImage> images = new ArrayList<>();
+
 
 }

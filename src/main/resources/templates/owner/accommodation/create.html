@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading">
+        <h3>숙소 등록</h3>
+        <p class="text-subtitle text-muted">새 숙소를 등록합니다.</p>
+    </div>
+
+    <div class="page-content">
+        <form th:action="@{/owner/accommodation/create}" method="post">
+            <!-- 업체 선택 -->
+            <div class="mb-3">
+                <label for="companyId" class="form-label">업체</label>
+                <select name="companyId" class="form-select" id="companyId" required>
+                    <option th:each="c : ${companies}" th:value="${c.companyId}" th:text="${c.name}"></option>
+                </select>
+            </div>
+
+            <!-- 카테고리 -->
+            <div class="mb-3">
+                <label for="categoryId" class="form-label">카테고리</label>
+                <select name="categoryId" class="form-select" id="categoryId" required>
+                    <option th:each="cat : ${categories}" th:value="${cat.categoryId}" th:text="${cat.name}"></option>
+                </select>
+            </div>
+
+            <!-- 지역 -->
+            <div class="mb-3">
+                <label for="mainRegionId" class="form-label">메인 지역</label>
+                <select name="mainRegionId" class="form-select" id="mainRegionId" required>
+                    <option th:each="r : ${regions}" th:if="${r.level == 1}"
+                            th:value="${r.regionId}" th:text="${r.name}"></option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="subRegionId" class="form-label">서브 지역</label>
+                <select name="subRegionId" class="form-select" id="subRegionId" required>
+                    <option th:each="sr : ${regions}" th:if="${sr.level == 2}"
+                             th:value="${sr.regionId}" th:text="${sr.name}"></option>
+                </select>
+            </div>
+
+            <!-- 기본 정보 -->
+            <div class="mb-3">
+                <label for="name" class="form-label">숙소 이름</label>
+                <input type="text" name="name" class="form-control" id="name" required>
+            </div>
+            <div class="mb-3">
+                <label for="address" class="form-label">주소</label>
+                <input type="text" name="address" class="form-control" id="address" required>
+            </div>
+            <div class="mb-3">
+                <label for="latitude" class="form-label">위도</label>
+                <input type="number" name="latitude" class="form-control" id="latitude" step="0.000001" required>
+            </div>
+            <div class="mb-3">
+                <label for="longitude" class="form-label">경도</label>
+                <input type="number" name="longitude" class="form-control" id="longitude" step="0.000001" required>
+            </div>
+
+            <!-- 썸네일/설명/편의시설 -->
+            <div class="mb-3">
+                <label for="thumbnail" class="form-label">썸네일 이미지 URL</label>
+                <input type="text" name="thumbnail" class="form-control" id="thumbnail" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">설명</label>
+                <textarea name="description" class="form-control" id="description" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="amenities" class="form-label">편의시설 (JSON)</label>
+                <textarea name="amenities" class="form-control" id="amenities" placeholder='{"wifi":true,"tv":true}'></textarea>
+            </div>
+
+            <!-- 체크인/체크아웃 -->
+            <div class="mb-3">
+                <label for="checkInTime" class="form-label">체크인 시간</label>
+                <input type="time" name="checkInTime" class="form-control" id="checkInTime" required>
+            </div>
+            <div class="mb-3">
+                <label for="checkOutTime" class="form-label">체크아웃 시간</label>
+                <input type="time" name="checkOutTime" class="form-control" id="checkOutTime" required>
+            </div>
+
+            <!-- 평점 / 최소 가격 -->
+            <div class="mb-3">
+                <label for="rating" class="form-label">평점</label>
+                <input type="number" name="rating" class="form-control" id="rating" step="0.1" min="0" max="5">
+            </div>
+            <div class="mb-3">
+                <label for="minPrice" class="form-label">최소 가격</label>
+                <input type="number" name="minPrice" class="form-control" id="minPrice" required>
+            </div>
+
+            <!-- 상태 -->
+            <div class="mb-3">
+                <label for="status" class="form-label">상태</label>
+                <select name="status" class="form-select" id="status" required>
+                    <option value="ACTIVE">활성</option>
+                    <option value="INACTIVE">비활성</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">등록</button>
+        </form>
+    </div>
+</th:block>
+</body>
+</html>

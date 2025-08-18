@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 // AccommodationDto.java
 @Data
@@ -26,8 +27,8 @@ public class AccommodationDTO {
     private String thumbnailUrl; // 저장된 이미지 URL
     private String amenities; // JSON String
     private String description;
-    private LocalDateTime checkInTime;
-    private LocalDateTime checkOutTime;
+    private LocalTime checkInTime;
+    private LocalTime  checkOutTime;
     private BigDecimal rating; // 평균 평점
     private BigDecimal minPrice; // 최저 가격
     private String status; // ACTIVE / INACTIVE

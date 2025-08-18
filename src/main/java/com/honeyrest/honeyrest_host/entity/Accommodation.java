@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -63,9 +66,9 @@ public class Accommodation {
     private String amenities; // 편의시설 정보(JSON 문자열 저장)
 
     @Column(name = "check_in_time")
-    private LocalDateTime checkInTime;
+    private LocalTime checkInTime;
     @Column(name = "check_out_time")
-    private LocalDateTime checkOutTime;
+    private LocalTime checkOutTime;
 
     @Column(precision = 2, scale = 1)
     private BigDecimal rating; // 평균 평점
@@ -75,4 +78,10 @@ public class Accommodation {
 
     @Column(length = 20)
     private String status; // 운영 상태(active, inactive
+
+    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Room> rooms = new ArrayList<>();
+
+    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AccommodationTagMap> tagMaps = new ArrayList<>();
 }

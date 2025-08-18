@@ -5,10 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.repository.AccommodationCategoryRepository;
-import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
-import com.honeyrest.honeyrest_host.repository.CompanyRepository;
-import com.honeyrest.honeyrest_host.repository.RegionRepository;
+import com.honeyrest.honeyrest_host.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -26,6 +23,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationCategoryRepository accommodationCategoryRepository;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
+    private final RoomRepository roomRepository;
 
 
     // ===== Mapper =====
@@ -65,6 +63,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .checkInTime(d.getCheckInTime())
                 .checkOutTime(d.getCheckOutTime())
                 .status(d.getStatus() == null ? "ACTIVE" : d.getStatus())
+                .minPrice(d.getMinPrice())
                 .build();
     }
 
@@ -108,7 +107,6 @@ public class AccommodationServiceImpl implements AccommodationService {
         Accommodation acc = accommodationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
 
-        // Rooms/Images는 orphanRemoval=true 이므로 자동 삭제 (연관관계 매핑 기준)
         accommodationRepository.deleteById(id);
     }
 }
