@@ -55,121 +55,121 @@
                         </a>
                     </li>
 
-                        <!-- 승인 과정 -->
-                        <li class="sidebar-item has-sub">
-                            <a href="#" class="sidebar-link">
-                                <i class="bi bi-house-door"></i>
-                                <span>숙소 등록/승인</span>
-                            </a>
-                            <ul class="submenu">
-                                <li class="submenu-item"><a href="/admin/accommodations/add">숙소 등록</a></li>
-                                <li class="submenu-item"><a class="submenu-link" href="/admin/accommodations/list">숙소 목록</a></li>
-                                <li class="submenu-item"><a class="submenu-link" href="/admin/accommodations/list?status=PENDING">승인 대기 목록</a></li>
-                                <li class="submenu-item"><a class="submenu-link" href="/admin/rooms/add">객실 등록</a></li>
-                            </ul>
-                        </li>
-
-                        <!-- 승인 전 -->
-                        <li class="sidebar-item">
-                            <a href="/calendar" class="sidebar-link">
-                                <i class="bi bi-calendar-check"></i>
-                                <span>가격/재고 캘린더</span>
-                            </a>
-                        </li>
-
-                        <li class="sidebar-item has-sub">
-                            <a href="#" class="sidebar-link">
-                                <i class="bi bi-journal-bookmark"></i>
-                                <span>예약 관리</span>
-                            </a>
-                            <ul class="submenu">
-                                <li class="submenu-item"><a href="/admin/reservations/list">예약 목록</a></li>
-                                <li class="submenu-item"><a href="/admin/canceled/add">환불/취소</a></li>
-                            </ul>
-                        </li>
-
-
-                        <!-- 승인 후: 전부 활성화 -->
-<!--                        <div th:if="${approvalStatus == 'APPROVED'}">-->
-                            <li class="sidebar-item has-sub">
-                                <a href="#" class="sidebar-link">
-                                    <i class="bi bi-house-door"></i><span>숙소/객실 관리</span>
-                                </a>
-                                <ul class="submenu">
-                                    <li class="submenu-item"><a href="/admin/accommodations/edit">숙소 정보 수정</a></li>
-                                    <li class="submenu-item"><a href="/admin/rooms/add">객실 등록</a></li>
-                                    <li class="submenu-item"><a href="/admin/rooms/list">객실 목록</a></li>
-                                    <li class="submenu-item"><a href="/admin/policies">이용/환불 정책</a></li>
-                                    <li class="submenu-item"><a href="/admin/amenities">편의시설/이미지</a></li>
-                                </ul>
+                    <!-- 승인 과정 -->
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-house-door"></i>
+                            <span>숙소 등록/승인</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/admin/accommodations/add">숙소 등록</a></li>
+                            <li class="submenu-item"><a href="/admin/accommodations/list">숙소 목록</a></li>
+                            <li class="submenu-item"><a href="/admin/accommodations/list?status=PENDING">승인 대기 목록</a>
                             </li>
+                            <li class="submenu-item"><a href="/admin/rooms/add">객실 등록</a></li>
+                        </ul>
+                    </li>
 
-                            <li class="sidebar-item has-sub">
-                                <a href="#" class="sidebar-link">
-                                    <i class="bi bi-journal-bookmark"></i>
-                                    <span>예약 관리</span>
-                                </a>
-                                <ul class="submenu">
-                                    <li class="submenu-item"><a href="/admin/reservations/list">예약 목록</a></li>
-                                    <li class="submenu-item"><a href="/admin/reservations/refunds">환불/취소 관리</a></li>
-                                </ul>
-                            </li>
+                    <!-- 승인 전 -->
+                    <li class="sidebar-item">
+                        <a href="/calendar" class="sidebar-link">
+                            <i class="bi bi-calendar-check"></i>
+                            <span>가격/재고 캘린더</span>
+                        </a>
+                    </li>
 
-                            <li class="sidebar-item has-sub">
-                                <a href="/reviews" class="sidebar-link">
-                                    <i class="bi bi-chat-left-text"></i>
-                                    <span>결제/정산</span>
-                                </a>
-                                <ul class="submenu">
-                                    <li class="submenu-item"><a href="/admin/point/list">결제 내역</a></li>
-                                    <li class="submenu-item"><a href="/admin/point/use">포인트 사용/적립 내역</a></li>
-                                    <li class="submenu-item"><a href="/admin/point/use">정산 리포트</a></li>
-                                </ul>
-                            </li>
-
-                            <li class="sidebar-item has-sub">
-                                <a href="/sales" class="sidebar-link">
-                                    <i class="bi bi-bar-chart-line"></i>
-                                    <span>알림 메세지</span>
-                                </a>
-                                <ul class="submenu">
-                                    <li class="submenu-item"><a class="submenu-link" href="/admin/alerts/system">시스템 알림</a></li>
-                                    <li class="submenu-item"><a class="submenu-link" href="/admin/inbox">1:1 문의/메시지</a></li>
-                                </ul>
-                            </li>
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-journal-bookmark"></i>
+                            <span>예약 관리</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/admin/reservations/list">예약 목록</a></li>
+                            <li class="submenu-item"><a href="/admin/canceled/add">환불/취소</a></li>
+                        </ul>
+                    </li>
 
 
-                            <li class="sidebar-item has-sub">
-                                <a href="#" class="sidebar-link">
-                                    <i class="bi bi-chat-left-text"></i><span>고객 리뷰</span>
-                                </a>
-                                <ul class="submenu">
-                                    <li class="submenu-item"><a class="submenu-link" href="/admin/customers">고객 목록</a></li>
-                                    <li class="submenu-item"><a class="submenu-link" href="/admin/reviews">리뷰/평점 관리</a></li>
-                                </ul>
-                            </li>
+                    <!-- 승인 후: 전부 활성화 -->
+                    <!--                        <div th:if="${approvalStatus == 'APPROVED'}">-->
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-house-door"></i><span>숙소/객실 관리</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/admin/accommodations/edit">숙소 정보 수정</a></li>
+                            <li class="submenu-item"><a href="/admin/rooms/add">객실 등록</a></li>
+                            <li class="submenu-item"><a href="/admin/rooms/list">객실 목록</a></li>
+                            <li class="submenu-item"><a href="/admin/policies">이용/환불 정책</a></li>
+                            <li class="submenu-item"><a href="/admin/amenities">편의시설/이미지</a></li>
+                        </ul>
+                    </li>
 
-                            <li class="sidebar-item has-sub">
-                                <a href="/sales" class="sidebar-link">
-                                    <i class="bi bi-bar-chart-line"></i>
-                                    <span>매출/정산 확인</span>
-                                </a>
-                                <ul class="submenu">
-                                    <li class="submenu-item"><a href="/admin/point/list">일/주/월/요일별 매출</a></li>
-                                    <li class="submenu-item"><a href="/admin/point/use">예약 건수/취소율</a></li>
-                                </ul>
-                            </li>
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-journal-bookmark"></i>
+                            <span>예약 관리</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/admin/reservations/list">예약 목록</a></li>
+                            <li class="submenu-item"><a href="/admin/reservations/refunds">환불/취소 관리</a></li>
+                        </ul>
+                    </li>
 
-                            <li class="sidebar-title">기타</li>
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-chat-left-text"></i>
+                            <span>결제/정산</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/admin/point/list">결제 내역</a></li>
+                            <li class="submenu-item"><a href="/admin/point/use">포인트 사용/적립 내역</a></li>
+                            <li class="submenu-item"><a href="/admin/point/use">정산 리포트</a></li>
+                        </ul>
+                    </li>
 
-                            <li class="sidebar-item">
-                                <a href="/settings" class="sidebar-link">
-                                    <i class="bi bi-gear"></i>
-                                    <span>설정</span>
-                                </a>
-                            </li>
-                        </div>
+                    <li class="sidebar-item has-sub">
+                        <a href="/sales" class="sidebar-link">
+                            <i class="bi bi-bar-chart-line"></i>
+                            <span>알림 메세지</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/admin/alerts/system">시스템 알림</a></li>
+                            <li class="submenu-item"><a href="/admin/inbox">1:1 문의/메시지</a></li>
+                        </ul>
+                    </li>
 
+
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-chat-left-text"></i><span>고객 리뷰</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/admin/customers">고객 목록</a></li>
+                            <li class="submenu-item"><a href="/admin/reviews">리뷰/평점 관리</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="sidebar-item has-sub">
+                        <a href="/sales" class="sidebar-link">
+                            <i class="bi bi-bar-chart-line"></i>
+                            <span>매출/정산 확인</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/admin/point/list">일/주/월/요일별 매출</a></li>
+                            <li class="submenu-item"><a href="/admin/point/use">예약 건수/취소율</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="sidebar-title">기타</li>
+
+                    <li class="sidebar-item">
+                        <a href="/settings" class="sidebar-link">
+                            <i class="bi bi-gear"></i>
+                            <span>설정</span>
+                        </a>
+
+                    </li>
                 </ul>
             </div>
         </div>
