@@ -2,7 +2,6 @@ package com.honeyrest.honeyrest_host.dto.accommodation;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -67,7 +66,7 @@ public class AccommodationCreateRequestDTO {
     private LocalTime checkOutTime;
 
     // 상태 (미지정 시 서비스에서 "ACTIVE" 기본처리 권장)
-    private OperationStatus status;
+    private String status;
 
     // 초기 부가정보 (선택)
     @Digits(integer = 8, fraction = 2)

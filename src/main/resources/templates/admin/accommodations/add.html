@@ -1,3 +1,4 @@
+<!-- templates/admin/accommodations/add.html -->
 <!DOCTYPE html>
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
@@ -7,31 +8,12 @@
     <title>숙소 등록</title>
     <th:block layout:fragment="head">
         <style>
-            .help-text {
-                font-size: .875rem;
-                color: #6c757d
-            }
-
-            .required::after {
-                content: " *";
-                color: #dc3545;
-            }
-
-            .field-error {
-                border-color: #dc3545
-            }
+            .help-text{font-size:.875rem;color:#6c757d}
+            .required::after{content:" *";color:#dc3545}
+            .field-error{border-color:#dc3545}
         </style>
-        <meta name="_csrf" th:content="${_csrf?.token}">
-        <meta name="_csrf_header" th:content="${_csrf?.headerName}">
-        <link rel="shortcut icon" th:href="@{/assets/compiled/svg/favicon.svg}" type="image/x-icon">
-        <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}">
-        <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}">
-        <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}">
-        <!--        <script th:src="@{/assets/static/js/initTheme.js}"></script>-->
-        <!--        <script th:src="@{/assets/static/js/components/dark.js}"></script>-->
     </th:block>
 </head>
-
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
@@ -41,199 +23,198 @@
 
     <div class="card">
         <div class="card-body">
-            <form id="accommodationForm" novalidate>
+            <!-- 컨트롤러에서 model.addAttribute("form", new AccommodationCreateRequestDTO()) -->
+            <form th:object="${form}"
+                  th:action="@{/admin/accommodations/add}"
+                  method="post" id="accForm" novalidate>
+
+                <!-- CSRF -->
+                <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}"/>
+
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label required">숙소명</label>
-                        <input type="text" class="form-control" id="name" placeholder="예) 허니레스트 강남점" required>
+
+                    <!-- 회사 / 카테고리 / 지역 -->
+                    <div class="col-md-4">
+                        <label class="form-label required">회사 ID</label>
+                        <input type="number" class="form-control" th:field="*{companyId}" placeholder="예) 1" required>
+                        <div class="help-text">로그인 회사 고정이라면 hidden 처리 가능</div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label required">카테고리</label>
-                        <select class="form-select" id="categoryId" required>
-                            <option value="" selected disabled>선택하세요</option>
+                        <select class="form-select" th:field="*{categoryId}" required>
+                            <option value="" disabled selected>선택하세요</option>
                             <option value="1">호텔</option>
                             <option value="2">모텔</option>
                             <option value="3">게스트하우스</option>
-                            <!-- 필요 시 서버에서 주입해 옵션 렌더링 -->
+                            <option value="4">펜션</option>
+                            <option value="5">글램핑/캠핑</option>
                         </select>
                     </div>
 
-                    <!-- 우편번호 + 주소 찾기 -->
                     <div class="col-md-4">
-                        <label class="form-label required">우편번호</label>
-                        <div class="input-group">
-                            <input type="text" id="postcode" class="form-control" placeholder="우편번호" readonly required>
-                            <button
-                                    type="button"
-                                    id="btnFindAddr"
-                                    class="btn btn-outline-secondary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#addrModal"
-                            >
-                                주소 찾기
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="col-md-8">
-                        <label class="form-label required">주소</label>
-                        <input type="text" id="address" class="form-control" placeholder="도로명/지번" readonly required>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">참고항목</label>
-                        <input type="text" id="extraAddress" class="form-control" placeholder="(동/건물명 등)" readonly>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">상세 주소</label>
-                        <input type="text" id="addressDetail" class="form-control" placeholder="동/호수 등">
-                    </div>
-
-                    <!-- 선택: 지역 select를 유지하고 자동선택 되도록 둘 수도 있음 -->
-                    <div class="col-md-6">
                         <label class="form-label required">지역(대)</label>
-                        <select class="form-select" id="mainRegionId" required>
-                            <option value="" selected disabled>선택하세요</option>
+                        <select class="form-select" th:field="*{mainRegionId}" required>
+                            <option value="" disabled selected>선택하세요</option>
                             <option value="11">서울</option>
                             <option value="26">부산</option>
-                            <!-- 실제 옵션은 프로젝트 값으로 -->
+                            <!-- 프로젝트 값으로 교체 -->
                         </select>
                     </div>
-                    <div class="col-md-6">
+
+                    <div class="col-md-4">
                         <label class="form-label required">지역(소)</label>
-                        <select class="form-select" id="subRegionId" required>
-                            <option value="" selected disabled>선택하세요</option>
+                        <select class="form-select" th:field="*{subRegionId}" required>
+                            <option value="" disabled selected>선택하세요</option>
                             <option value="1101">강남구</option>
                             <option value="1102">서초구</option>
+                            <!-- 프로젝트 값으로 교체 -->
                         </select>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label required">영업 시작</label>
-                        <input type="time" class="form-control" id="checkInTime" required>
+                    <!-- 기본 정보 -->
+                    <div class="col-md-8">
+                        <label class="form-label required">숙소명</label>
+                        <input type="text" class="form-control" th:field="*{name}" placeholder="예) 허니레스트 강남점" required>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label required">영업 종료</label>
-                        <input type="time" class="form-control" id="checkOutTime" required>
+
+                    <div class="col-md-12">
+                        <label class="form-label required">주소</label>
+                        <input type="text" class="form-control" th:field="*{address}" placeholder="도로명/지번" required>
+                        <div class="help-text">주소검색 연동은 나중에 붙여도 됩니다.</div>
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label required">기본가(원)</label>
-                        <input type="number" class="form-control" id="basePrice" placeholder="예) 80000" min="0"
-                               required>
+                        <label class="form-label">위도</label>
+                        <input type="number" step="0.000001" class="form-control" th:field="*{latitude}" placeholder="예) 37.5665">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">경도</label>
+                        <input type="number" step="0.000001" class="form-control" th:field="*{longitude}" placeholder="예) 126.9780">
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">대표 연락처</label>
-                        <input type="text" class="form-control" id="phone" placeholder="010-0000-0000">
+                    <div class="col-md-6">
+                        <label class="form-label">썸네일 URL</label>
+                        <input type="text" class="form-control" th:field="*{thumbnailUrl}" placeholder="https://...">
                     </div>
 
                     <div class="col-12">
                         <label class="form-label">설명</label>
-                        <textarea class="form-control" id="description" rows="3" placeholder="숙소 소개, 편의시설 등"></textarea>
+                        <textarea class="form-control" th:field="*{description}" rows="3" placeholder="숙소 소개, 편의시설 등"></textarea>
                     </div>
+
+                    <!-- 편의시설(JSON) -->
+                    <div class="col-12">
+                        <label class="form-label">편의시설(amenities, JSON)</label>
+                        <textarea class="form-control" th:field="*{amenities}" rows="2"
+                                  placeholder='예) ["wifi","parking","pool"]'></textarea>
+                        <div class="help-text">JSON 배열 형태 권장. 단순 문자열도 수용 코딩되어 있으면 사용 가능.</div>
+                    </div>
+
+                    <!-- 운영 시간 / 가격 -->
+                    <div class="col-md-3">
+                        <label class="form-label required">체크인</label>
+                        <input type="time" class="form-control" th:field="*{checkInTime}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label required">체크아웃</label>
+                        <input type="time" class="form-control" th:field="*{checkOutTime}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">최저가(원)</label>
+                        <input type="number" step="0.01" min="0" class="form-control" th:field="*{minPrice}" placeholder="예) 80000">
+                    </div>
+
+                    <!-- 태그(복수 선택) : name=tagIds 다중 -->
+                    <div class="col-md-3">
+                        <label class="form-label">태그 선택</label>
+                        <select class="form-select" th:field="*{tagIds}" multiple size="4">
+                            <option value="1">오션뷰</option>
+                            <option value="2">바베큐</option>
+                            <option value="3">수영장</option>
+                            <option value="4">조식 포함</option>
+                            <!-- 실제 태그로 교체 -->
+                        </select>
+                        <div class="help-text">Ctrl(⌘)로 다중 선택</div>
+                    </div>
+
+                    <!-- 이미지(간단 3개 슬롯 예시) -->
+                    <div class="col-12">
+                        <label class="form-label">이미지</label>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="images[0].imageUrl" placeholder="이미지 URL">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" name="images[0].imageType">
+                                    <option value="">(선택)</option>
+                                    <option value="MAIN">MAIN</option>
+                                    <option value="EXTERIOR">EXTERIOR</option>
+                                    <option value="COMMON">COMMON</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" class="form-control" name="images[0].sortOrder" placeholder="정렬(숫자)">
+                            </div>
+                        </div>
+                        <div class="row g-2 mt-1">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="images[1].imageUrl" placeholder="이미지 URL">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" name="images[1].imageType">
+                                    <option value="">(선택)</option>
+                                    <option value="MAIN">MAIN</option>
+                                    <option value="EXTERIOR">EXTERIOR</option>
+                                    <option value="COMMON">COMMON</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" class="form-control" name="images[1].sortOrder" placeholder="정렬(숫자)">
+                            </div>
+                        </div>
+                        <div class="row g-2 mt-1">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="images[2].imageUrl" placeholder="이미지 URL">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" name="images[2].imageType">
+                                    <option value="">(선택)</option>
+                                    <option value="MAIN">MAIN</option>
+                                    <option value="EXTERIOR">EXTERIOR</option>
+                                    <option value="COMMON">COMMON</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" class="form-control" name="images[2].sortOrder" placeholder="정렬(숫자)">
+                            </div>
+                        </div>
+                        <div class="help-text mt-1">필요 시 동적 추가 스크립트로 확장 가능</div>
+                    </div>
+
                 </div>
 
                 <div class="d-flex gap-2 mt-4">
                     <button type="submit" class="btn btn-primary">
-                        <i class="iconly-boldPlus me-1"></i>등록
+                        저장(승인요청)
                     </button>
                     <a th:href="@{/admin/accommodations/list}" class="btn btn-outline-secondary">목록으로</a>
                 </div>
-            </form>
-        </div>
-    </div>
 
-    <!-- Toast -->
-    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
-        <div id="toast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div id="toast-body" class="toast-body"></div>
-                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    </div>
-    <!-- ✅ 모달: content fragment 안으로 이동 -->
-    <div class="modal fade" id="addrModal" tabindex="-1" aria-labelledby="addrModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addrModalLabel">주소 검색</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <div id="postcode-wrap" style="width:100%;height:500px;min-height:420px;"></div>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 </th:block>
 
+<!-- 페이지 전용 스크립트가 필요하면 여기에 -->
 <th:block layout:fragment="body-end">
-        <!-- 다음 주소 스크립트: 딱 한 번만 로드 -->
-
-    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function(){
-            const modalEl = document.getElementById('addrModal');
-            const wrap    = document.getElementById('postcode-wrap');
-            const btn     = document.getElementById('btnFindAddr');
-
-            if (!btn || !modalEl || !wrap) {
-                console.error('[주소] 필수 요소를 찾지 못했습니다.', { btn: !!btn, modalEl: !!modalEl, wrap: !!wrap });
-                return;
-            }
-
-            // 버튼은 data-bs-*로도 모달을 띄우므로, 여기서는 Postcode 임베드 타이밍만 다룹니다.
-            modalEl.addEventListener('shown.bs.modal', function onShown(){
-                try{
-                    if (!window.daum || !window.daum.Postcode){
-                        alert('주소 검색 스크립트를 불러오지 못했습니다.');
-                        return;
-                    }
-                    wrap.innerHTML = '';
-                    wrap.style.height = '500px';
-                    new daum.Postcode({
-                        oncomplete: fillAddress,
-                        onresize: function(size){ wrap.style.height = size.height + 'px'; },
-                        width: '100%',
-                        height: '100%'
-                    }).embed(wrap);
-                }catch(e){
-                    console.error('[주소] embed 실패', e);
-                    alert('주소 검색 창을 표시할 수 없습니다.');
-                }
-            });
-
-            modalEl.addEventListener('hidden.bs.modal', function(){
-                wrap.innerHTML = '';
-            });
+        // 폼 전송 전에 amenities가 빈 문자열이면 제거(선택)
+        document.getElementById('accForm')?.addEventListener('submit', function(){
+            const ta = this.querySelector('[name="amenities"]');
+            if (ta && ta.value.trim() === '') ta.removeAttribute('name');
         });
-
-        function fillAddress(data){
-            const roadAddr  = data.roadAddress;
-            const jibunAddr = data.jibunAddress;
-            let extra = '';
-            if (data.bname && /[동|로|가]$/g.test(data.bname)) extra += data.bname;
-            if (data.buildingName && data.apartment === 'Y') extra += (extra ? ', ' : '') + data.buildingName;
-            if (extra) extra = ' (' + extra + ')';
-
-            document.getElementById('postcode').value     = data.zonecode;
-            document.getElementById('address').value      = roadAddr || jibunAddr;
-            document.getElementById('extraAddress').value = extra;
-
-            const sido    = (data.sido || '').replace(/(특별시|광역시|특별자치시|특별자치도)$/,'');
-            const sigungu = data.sigungu || '';
-            const mainSel = document.getElementById('mainRegionId');
-            const subSel  = document.getElementById('subRegionId');
-            if (mainSel) Array.from(mainSel.options).forEach(opt => { if (opt.text.includes(sido)) mainSel.value = opt.value; });
-            if (subSel)  Array.from(subSel.options).forEach(opt => { if (opt.text.includes(sigungu)) subSel.value = opt.value; });
-
-            document.getElementById('addressDetail').focus();
-        }
     </script>
-    </th:block>
+</th:block>
 </body>
 </html>

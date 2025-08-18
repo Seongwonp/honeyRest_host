@@ -1,3 +1,4 @@
+<!-- templates/admin/accommodations/list.html -->
 <!DOCTYPE html>
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
@@ -7,239 +8,75 @@
     <title>숙소 목록</title>
     <th:block layout:fragment="head">
         <style>
-            .skeleton{
-                height: 52px; background: linear-gradient(90deg,#eee,#f5f5f5,#eee);
-                background-size: 200% 100%; animation: shine 1.2s infinite;
+            .status-badge {
+                padding: 0.35em 0.65em;
+                border-radius: 0.25rem;
+                font-size: .75rem;
+                font-weight: 500;
             }
-            @keyframes shine{0%{background-position:200% 0}100%{background-position:-200% 0}}
+            .status-pending {background-color: #fff3cd; color: #856404;}
+            .status-approved {background-color: #d4edda; color: #155724;}
+            .status-rejected {background-color: #f8d7da; color: #721c24;}
         </style>
-        <meta name="_csrf" th:content="${_csrf?.token}">
-        <meta name="_csrf_header" th:content="${_csrf?.headerName}">
-        <link rel="shortcut icon" th:href="@{/assets/compiled/svg/favicon.svg}" type="image/x-icon">
-        <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}">
-        <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}">
-        <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}">
     </th:block>
 </head>
-
 <body>
 <th:block layout:fragment="content">
-    <div class="page-heading d-flex align-items-center justify-content-between">
-        <div>
-            <h3 class="mb-1">숙소 목록</h3>
-            <p class="text-muted mb-0">검색/필터 후 결과를 표로 확인하세요.</p>
-        </div>
-        <a th:href="@{/admin/accommodations/add}" class="btn btn-primary">
-            <i class="iconly-boldPlus me-1"></i>숙소 등록
-        </a>
+    <div class="page-heading d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">숙소 목록</h3>
+        <a th:href="@{/admin/accommodations/add}" class="btn btn-primary">+ 새 숙소 등록</a>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <!-- 검색/필터 -->
-            <form id="searchForm" class="row g-2 align-items-end mb-3">
-                <div class="col-md-4">
-                    <label class="form-label">검색어</label>
-                    <input type="text" class="form-control" id="q" placeholder="숙소명, 주소">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">카테고리</label>
-                    <select class="form-select" id="cat">
-                        <option value="">전체</option>
-                        <option value="1">호텔</option>
-                        <option value="2">모텔</option>
-                        <option value="3">게스트하우스</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">지역(대)</label>
-                    <select class="form-select" id="region">
-                        <option value="">전체</option>
-                        <option value="11">서울</option>
-                        <option value="26">부산</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-outline-primary w-100" type="submit">검색</button>
-                </div>
-            </form>
-
-            <!-- 테이블 -->
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                    <tr>
-                        <th style="width:80px">ID</th>
-                        <th>숙소명</th>
-                        <th>카테고리</th>
-                        <th>지역</th>
-                        <th>가격</th>
-                        <th style="width:180px">운영</th>
-                    </tr>
-                    </thead>
-                    <tbody id="listBody">
-                    <!-- 로딩 스켈레톤 -->
-                    <tr class="skeleton"><td colspan="6"></td></tr>
-                    <tr class="skeleton"><td colspan="6"></td></tr>
-                    <tr class="skeleton"><td colspan="6"></td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 페이지네이션 -->
-            <nav>
-                <ul id="pager" class="pagination justify-content-center mt-3"></ul>
-            </nav>
+    <div class="card mt-3">
+        <div class="card-body table-responsive">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                <tr>
+                    <th>번호</th>
+                    <th>숙소명</th>
+                    <th>카테고리</th>
+                    <th>지역</th>
+                    <th>상태</th>
+                    <th>등록일</th>
+                    <th>액션</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- 컨트롤러에서 model.addAttribute("accommodations", service.getAll()); -->
+                <tr th:each="acc, stat : ${accommodations}">
+                    <td th:text="${acc.accommodationId}">1</td>
+                    <td>
+                        <span th:text="${acc.name}">허니레스트 강남점</span>
+                    </td>
+                    <td th:text="${acc.categoryName}">호텔</td>
+                    <td>
+                        <span th:text="${acc.mainRegionName}">서울</span>
+                        <span th:text="${acc.subRegionName}">강남구</span>
+                    </td>
+                    <td>
+                        <span class="status-badge"
+                              th:classappend="${acc.status}=='PENDING' ? 'status-pending'
+                                            : ${acc.status}=='APPROVED' ? 'status-approved'
+                                            : 'status-rejected'"
+                              th:text="${acc.status}">승인대기</span>
+                    </td>
+                    <td th:text="${#temporals.format(acc.createdAt, 'yyyy-MM-dd HH:mm')}">
+                        2025-08-19
+                    </td>
+                    <td>
+                        <a th:href="@{/admin/accommodations/detail/{id}(id=${acc.accommodationId})}"
+                           class="btn btn-sm btn-outline-primary">상세보기</a>
+                        <a th:href="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}"
+                           class="btn btn-sm btn-outline-secondary">수정</a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(accommodations)}">
+                    <td colspan="7" class="text-center text-muted">등록된 숙소가 없습니다.</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
-
-    <!-- 삭제 확인 모달 -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title" id="deleteLabel">삭제 확인</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">정말로 이 숙소를 삭제하시겠어요?</div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
-                    <button type="button" id="confirmDelete" class="btn btn-danger">삭제</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</th:block>
-
-<th:block layout:fragment="body-end">
-    <script>
-        (function(){
-            const bodyEl = document.getElementById('listBody');
-            const pagerEl = document.getElementById('pager');
-            const qEl = document.getElementById('q');
-            const catEl = document.getElementById('cat');
-            const regionEl = document.getElementById('region');
-
-            let state = { page: 0, size: 10, totalPages: 0, deletingId: null };
-
-            function qs(params){
-                const p = new URLSearchParams();
-                if(qEl.value.trim()) p.set('q', qEl.value.trim());
-                if(catEl.value) p.set('categoryId', catEl.value);
-                if(regionEl.value) p.set('mainRegionId', regionEl.value);
-                p.set('page', state.page);
-                p.set('size', state.size);
-                return p.toString();
-            }
-
-            function money(n){ return (n ?? 0).toLocaleString('ko-KR') + '원'; }
-
-            function renderRows(items){
-                if(!items || items.length === 0){
-                    bodyEl.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5">데이터가 없습니다.</td></tr>`;
-                    return;
-                }
-                bodyEl.innerHTML = items.map(it=>`
-            <tr>
-              <td>${it.accommodationId}</td>
-              <td class="fw-semibold">${escapeHtml(it.name)}</td>
-              <td>${escapeHtml(it.categoryName ?? '-')}</td>
-              <td>${escapeHtml(it.regionName ?? '-')}</td>
-              <td>${money(it.basePrice)}</td>
-              <td>
-                <div class="btn-group btn-group-sm">
-                  <a class="btn btn-outline-primary" href="/admin/accommodations/add?copyId=${it.accommodationId}">복제</a>
-                  <a class="btn btn-outline-secondary" href="/admin/rooms?accommodationId=${it.accommodationId}">객실</a>
-                  <button class="btn btn-outline-danger" data-delete="${it.accommodationId}">삭제</button>
-                </div>
-              </td>
-            </tr>
-        `).join('');
-            }
-
-            function renderPager(totalPages){
-                state.totalPages = totalPages;
-                const cur = state.page;
-                let html = '';
-                function li(disabled, active, page, label){
-                    const cls = `page-item ${disabled?'disabled':''} ${active?'active':''}`;
-                    return `<li class="${cls}"><a class="page-link" href="#" data-page="${page}">${label}</a></li>`;
-                }
-                html += li(cur===0,true&&false,cur-1,'«');
-                html += Array.from({length: totalPages}, (_,i)=>li(false, i===cur, i, i+1)).join('');
-                html += li(cur===totalPages-1,true&&false,cur+1,'»');
-                pagerEl.innerHTML = html;
-            }
-
-            function showLoading(){
-                bodyEl.innerHTML = `
-          <tr class="skeleton"><td colspan="6"></td></tr>
-          <tr class="skeleton"><td colspan="6"></td></tr>
-          <tr class="skeleton"><td colspan="6"></td></tr>`;
-            }
-
-            function escapeHtml(s){
-                return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-            }
-
-            async function load(){
-                showLoading();
-                const res = await fetch('/api/accommodations?'+qs());
-                if(!res.ok){ bodyEl.innerHTML = `<tr><td colspan="6" class="text-center text-danger">목록을 불러오지 못했어요.</td></tr>`; return; }
-                const data = await res.json();
-                // 기대 응답 형태 예시:
-                // { content: [...], totalPages: 12, number: 0, size: 10, totalElements: 115 }
-                renderRows(data.content || []);
-                renderPager(data.totalPages ?? 1);
-            }
-
-            // 검색/필터
-            document.getElementById('searchForm').addEventListener('submit', (e)=>{
-                e.preventDefault();
-                state.page = 0;
-                load();
-            });
-
-            // 페이지 클릭
-            pagerEl.addEventListener('click', (e)=>{
-                const a = e.target.closest('a[data-page]');
-                if(!a) return;
-                e.preventDefault();
-                const p = parseInt(a.dataset.page,10);
-                if(isNaN(p) || p<0 || p>=state.totalPages) return;
-                state.page = p;
-                load();
-            });
-
-            // 삭제
-            bodyEl.addEventListener('click', (e)=>{
-                const btn = e.target.closest('button[data-delete]');
-                if(!btn) return;
-                state.deletingId = btn.dataset.delete;
-                const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-                modal.show();
-            });
-
-            document.getElementById('confirmDelete').addEventListener('click', async ()=>{
-                const id = state.deletingId;
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
-                const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
-                try{
-                    const res = await fetch('/api/accommodations/'+id, {
-                        method:'DELETE',
-                        headers: csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {}
-                    });
-                    if(!res.ok) throw new Error('삭제 실패');
-                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-                    load();
-                }catch(err){
-                    alert(err.message || '에러가 발생했습니다.');
-                }
-            });
-
-            // 최초 로드
-            load();
-        })();
-    </script>
 </th:block>
 </body>
 </html>

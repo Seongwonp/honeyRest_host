@@ -1,28 +1,22 @@
 package com.honeyrest.honeyrest_host.service;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dto.accommodation.*;
-
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationImage;
 import com.honeyrest.honeyrest_host.entity.AccommodationTag;
 import com.honeyrest.honeyrest_host.entity.AccommodationTagMap;
-import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
-import com.honeyrest.honeyrest_host.repository.accommodation.*;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
+import com.honeyrest.honeyrest_host.repository.accommodation.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -35,14 +29,12 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final RegionRepository regionRepository;
     private final AccommodationCategoryRepository accommodationCategoryRepository;
     private final AccommodationTagRepository accommodationTagRepository;
-
     private final AccommodationImageRepository accommodationImageRepository;
     private final AccommodationTagMapRepository accommodationTagMapRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-
-    /* ------ json -> String ---------*/
+    /* ---------------------- JSON 헬퍼 ---------------------- */
     private JsonNode stringToJsonNode(String json) {
         try {
             if (json == null || json.isBlank()) return objectMapper.readTree("[]");
@@ -65,22 +57,12 @@ public class AccommodationServiceImpl implements AccommodationService {
         }
     }
 
-    /* ---------------------- 유틸: 시간 변환 ---------------------- */
-    // Entity는 LocalDateTime(컬럼 TIME이 아니고 DATETIME)이므로 기준일 붙여 저장
-    private static final LocalDateTime EPOCH_DAY = LocalDateTime.of(1970, 1, 1, 0, 0);
-
-    private LocalDateTime toDateTime(LocalTime t) {
-        return (t == null) ? null : EPOCH_DAY.withHour(t.getHour()).withMinute(t.getMinute());
-    }
-
-    private LocalTime toTime(LocalDateTime dt) {
-        return (dt == null) ? null : dt.toLocalTime();
-    }
-
     /* ---------------------- 매핑: Entity -> Response ---------------------- */
-    private AccommodationResponseDTO toResponse(Accommodation e,
-                                                List<AccommodationImage> images,
-                                                List<AccommodationTagMap> tagMaps) {
+    private AccommodationResponseDTO toResponse(
+            Accommodation e,
+            List<AccommodationImage> images,
+            List<AccommodationTagMap> tagMaps
+    ) {
         return AccommodationResponseDTO.builder()
                 .accommodationId(e.getAccommodationId())
                 .companyId(e.getCompany() != null ? e.getCompany().getCompanyId() : null)
@@ -94,9 +76,9 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .thumbnailUrl(e.getThumbnail())
                 .description(e.getDescription())
                 .amenities(stringToJsonNode(e.getAmenities()))
-                .checkInTime((e.getCheckInTime()))
-                .checkOutTime((e.getCheckOutTime()))
-                .status(String.valueOf(e.getStatus()))
+                .checkInTime(e.getCheckInTime())
+                .checkOutTime(e.getCheckOutTime())
+                .status(e.getStatus())
                 .rating(e.getRating())
                 .minPrice(e.getMinPrice())
                 .images(images == null ? List.of() :
@@ -109,7 +91,11 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .tags(tagMaps == null ? List.of() :
                         tagMaps.stream().map(m -> {
                             AccommodationTag t = m.getTag();
-                            return new AccommodationTagMapDTO(t.getTagId(), t.getName(), t.getCategory());
+                            return new AccommodationTagMapDTO(
+                                    t.getTagId(),
+                                    t.getName(),
+                                    t.getCategory()
+                            );
                         }).toList())
                 .build();
     }
@@ -128,12 +114,10 @@ public class AccommodationServiceImpl implements AccommodationService {
         return accommodationTagMapRepository.findByAccommodationAccommodationId(accId);
     }
 
-
+    /* ---------------------- 서비스 구현 ---------------------- */
     @Override
-    @Transactional
     public List<AccommodationResponseDTO> getAll() {
-        List<Accommodation> accommodations = accommodationRepository.findAll();
-        return accommodations.stream()
+        return accommodationRepository.findAll().stream()
                 .map(e -> toResponse(e, List.of(), List.of()))
                 .toList();
     }
@@ -146,11 +130,14 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Override
     public AccommodationResponseDTO create(AccommodationCreateRequestDTO req) {
+        // 필수값 체크
         if (req.getCompanyId() == null || req.getCategoryId() == null ||
                 req.getMainRegionId() == null || req.getSubRegionId() == null ||
                 req.getName() == null || req.getAddress() == null) {
-            throw new IllegalArgumentException("companyId, categoryId, mainRegionId, subRegionId, name, address 는 필수 입니다. ");
+            throw new IllegalArgumentException("companyId, categoryId, mainRegionId, subRegionId, name, address 는 필수 입니다.");
         }
+
+        // 엔티티 생성
         Accommodation entity = Accommodation.builder()
                 .company(companyRepository.getReferenceById(req.getCompanyId()))
                 .category(accommodationCategoryRepository.getReferenceById(req.getCategoryId()))
@@ -163,37 +150,38 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .thumbnail(req.getThumbnailUrl())
                 .description(req.getDescription())
                 .amenities(jsonNodeToString(req.getAmenities()))
-                .checkInTime((req.getCheckInTime()))
-                .checkOutTime((req.getCheckOutTime()))
-                .status(req.getStatus() == null ? OperationStatus.ACTIVE : req.getStatus())
+                .checkInTime(req.getCheckInTime())
+                .checkOutTime(req.getCheckOutTime())
+                .status(req.getStatus() == null ? "ACTIVE" : req.getStatus())
                 .minPrice(req.getMinPrice())
                 .build();
 
         Accommodation saved = accommodationRepository.save(entity);
 
-        // 이미지 저장(선택: 전체 신규)
+        // 이미지 저장(선택)
         if (req.getImages() != null && !req.getImages().isEmpty()) {
             int idx = 0;
             for (AccommodationImageDTO img : req.getImages()) {
-                AccommodationImage row = AccommodationImage.builder()
-                        .accommodation(saved)
-                        .imageUrl(img.getImageUrl())
-                        .imageType(img.getImageType())
-                        .sortOrder(img.getSortOrder() != null ? img.getSortOrder() : idx++)
-                        .build();
-                accommodationImageRepository.save(row);
+                accommodationImageRepository.save(
+                        AccommodationImage.builder()
+                                .accommodation(saved)
+                                .imageUrl(img.getImageUrl())
+                                .imageType(img.getImageType())
+                                .sortOrder(img.getSortOrder() != null ? img.getSortOrder() : idx++)
+                                .build()
+                );
             }
         }
 
-        // 태그 매핑 저장(선택: 초기 매핑)
+        // 태그 매핑 저장(선택)
         if (req.getTagIds() != null && !req.getTagIds().isEmpty()) {
             for (Long tagId : req.getTagIds()) {
-                AccommodationTag tag = accommodationTagRepository.getReferenceById(tagId);
-                AccommodationTagMap map = AccommodationTagMap.builder()
-                        .accommodation(saved)
-                        .tag(tag)
-                        .build();
-                accommodationTagMapRepository.save(map);
+                accommodationTagMapRepository.save(
+                        AccommodationTagMap.builder()
+                                .accommodation(saved)
+                                .tag(accommodationTagRepository.getReferenceById(tagId))
+                                .build()
+                );
             }
         }
 
@@ -217,8 +205,8 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .thumbnail(req.getThumbnailUrl() != null ? req.getThumbnailUrl() : cur.getThumbnail())
                 .description(req.getDescription() != null ? req.getDescription() : cur.getDescription())
                 .amenities(req.getAmenities() != null ? jsonNodeToString(req.getAmenities()) : cur.getAmenities())
-                .checkInTime(req.getCheckInTime() != null ? (req.getCheckInTime()) : cur.getCheckInTime())
-                .checkOutTime(req.getCheckOutTime() != null ? (req.getCheckOutTime()) : cur.getCheckOutTime())
+                .checkInTime(req.getCheckInTime() != null ? req.getCheckInTime() : cur.getCheckInTime())
+                .checkOutTime(req.getCheckOutTime() != null ? req.getCheckOutTime() : cur.getCheckOutTime())
                 .status(req.getStatus() != null ? req.getStatus() : cur.getStatus())
                 .rating(cur.getRating())
                 .minPrice(req.getMinPrice() != null ? req.getMinPrice() : cur.getMinPrice())
@@ -226,7 +214,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         accommodationRepository.save(updated);
 
-        // (정책) 이미지/태그 덮어쓰기 예시
+        // 정책: 이미지/태그 “덮어쓰기” 요청 시에만 교체
         if (req.getImages() != null) {
             accommodationImageRepository.deleteByAccommodationAccommodationId(id);
             int idx = 0;
@@ -241,6 +229,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 );
             }
         }
+
         if (req.getTagIds() != null) {
             accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
             for (Long tagId : req.getTagIds()) {
@@ -254,13 +243,10 @@ public class AccommodationServiceImpl implements AccommodationService {
         }
 
         return getById(id);
-
     }
-
 
     @Override
     public void delete(Long id) {
-        // 이미지/태그 매핑 선삭제(필요 시)
         accommodationImageRepository.deleteByAccommodationAccommodationId(id);
         accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
         accommodationRepository.deleteById(id);
@@ -270,4 +256,34 @@ public class AccommodationServiceImpl implements AccommodationService {
     public Page<AccommodationListDTO> search(String q, Long categoryId, Long mainRegionId, Pageable pageable) {
         return accommodationRepository.search(q, categoryId, mainRegionId, pageable);
     }
-}
+
+    @Override
+    public void changeStatus(Long id, String status) {
+        var e = accommodationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다. id=" + id));
+
+        // 빌더 패턴이라 세터가 없으니, 동일 PK로 새로 빌드해서 상태만 바꿔 저장
+        var updated = Accommodation.builder()
+                .accommodationId(e.getAccommodationId())
+                .company(e.getCompany())
+                .category(e.getCategory())
+                .mainRegion(e.getMainRegion())
+                .subRegion(e.getSubRegion())
+                .name(e.getName())
+                .address(e.getAddress())
+                .latitude(e.getLatitude())
+                .longitude(e.getLongitude())
+                .thumbnail(e.getThumbnail())
+                .description(e.getDescription())
+                .amenities(e.getAmenities())
+                .checkInTime(e.getCheckInTime())
+                .checkOutTime(e.getCheckOutTime())
+                .status(status)               // ← 여기만 변경
+                .rating(e.getRating())
+                .minPrice(e.getMinPrice())
+                .build();
+
+        accommodationRepository.save(updated);
+    }
+
+    }

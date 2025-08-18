@@ -51,6 +51,6 @@ public class CompanyDTO {
     private BigDecimal commissionRate; // 수수료율
 
 
-    private ApprovalStatus status; // 승인 상태
+    private String status; // 승인 상태
 
 }

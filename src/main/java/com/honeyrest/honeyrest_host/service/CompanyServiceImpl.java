@@ -49,7 +49,7 @@ public class CompanyServiceImpl implements CompanyService {
                 .address(d.getAddress())
                 .bankInfo(d.getBankInfo())
                 .commissionRate(d.getCommissionRate())
-                .status(d.getStatus() == null ? ApprovalStatus.PENDING : d.getStatus())
+                .status(d.getStatus())
                 .build();
     }
 

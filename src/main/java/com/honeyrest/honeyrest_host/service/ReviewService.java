@@ -8,7 +8,7 @@ public interface ReviewService {
 
 
     // 리뷰 목록 전체 조회
-//    PageResponseDTO<ReviewDTO> getList(String status, Long roomId, String sort, PageRequestDTO pageRequestDTO);
+    PageResponseDTO<ReviewDTO> getList(String status, Long roomId, Long accommodationId,String sort, PageRequestDTO pageRequestDTO);
 
     // 리뷰 조회
     ReviewDTO getOne(Long reviewId);
@@ -21,5 +21,7 @@ public interface ReviewService {
 
     // 리뷰 삭제
     void delete(Long reviewId);
+
+    ReviewDTO patch(Long reviewId, ReviewDTO reviewDTO);
 
 }

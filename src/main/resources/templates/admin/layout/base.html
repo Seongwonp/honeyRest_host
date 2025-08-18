@@ -1,125 +1,57 @@
+
 <!DOCTYPE html>
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
-<head>
-    <!-- 🔹 테마 초기화: 페이지 깜빡임 방지용, head에서 1회만 -->
-    <script th:src="@{/assets/static/js/initTheme.js}"></script>
 
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title layout:title-pattern="$CONTENT_TITLE :: HoneyRest Host">HoneyRest Host</title>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-            crossorigin="anonymous"></script>
 
     <!-- 공통 스타일 -->
     <link rel="shortcut icon" th:href="@{/assets/compiled/svg/favicon.svg}" type="image/x-icon">
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}"/>
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}"/>
-    <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}"/>
+    <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}" />
+    <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}" />
+    <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}" />
 
     <!-- 페이지별 추가 head -->
     <th:block layout:fragment="head"></th:block>
-
-    <!-- 🔹 사이드바 구조 보정(안전 가드) -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.sidebar-item.has-sub').forEach(li => {
-                const toggle = li.querySelector('.submenu-link') || li.querySelector('.sidebar-link');
-                if (toggle && !toggle.classList.contains('submenu-link')) {
-                    toggle.classList.add('submenu-link');
-                }
-                if (!li.querySelector('.submenu')) {
-                    li.classList.remove('has-sub');
-                }
-            });
-
-            if (!document.querySelector('.submenu-open')) {
-                const first = document.querySelector('.sidebar-item.has-sub .submenu');
-                if (first) {
-                    first.classList.add('submenu-open');
-                    first.style.setProperty('--submenu-height', first.scrollHeight + 'px');
-                }
-            }
-        });
-    </script>
 </head>
-<body>
-<div id="app">
-    <!-- ✅ 사이드바 -->
-    <div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
 
-    <!-- 메인 영역 -->
+<body>
+<script th:src="@{/assets/static/js/initTheme.js}"></script>
+
+<div id="app">
     <div id="main">
+
+        <div th:replace="admin/fragments/sidebar :: sidebar"></div>
+
+
         <header class="mb-3">
             <a href="#" class="burger-btn d-block d-xl-none">
                 <i class="bi bi-justify fs-3"></i>
             </a>
         </header>
 
-        <main>
-            <th:block layout:fragment="content"></th:block>
+
+        <main layout:fragment="content">
+            <div class="page-heading" style="display: none;"></div>
+            <div class="page-content" style="display: none;"></div>
+
         </main>
 
-        <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
+
+        <footer th:replace="admin/fragments/footer :: footer"></footer>
     </div>
 </div>
 
-<!-- ✅ Back-to-top 버튼: app.js에서 참조 -->
-<a href="#" class="btn btn-primary btn-back-to-top d-none" id="backToTop" aria-label="Back to Top">
-    <i class="bi bi-arrow-up"></i>
-</a>
-
-<!-- (선택) 안전 가드: 필수 요소 누락 시 생성 -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        if (!document.querySelector('#backToTop') && !document.querySelector('.btn-back-to-top')) {
-            const a = document.createElement('a');
-            a.id = 'backToTop';
-            a.className = 'btn btn-primary btn-back-to-top d-none';
-            a.href = '#';
-            a.setAttribute('aria-label', 'Back to Top');
-            document.body.appendChild(a);
-        }
-        if (!document.getElementById('main')) {
-            const main = document.createElement('div');
-            main.id = 'main';
-            document.getElementById('app')?.appendChild(main);
-        }
-        window.__safeGetRect = function (el) {
-            if (!el || !el.getBoundingClientRect) return {top:0,left:0,bottom:0,right:0};
-            return el.getBoundingClientRect();
-        };
-    });
-</script>
-
-<!-- 🔹 공통 스크립트: **여기서만** 한 번씩 로드 -->
-<script th:src="@{/assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js}"></script>
+<!-- 공통 스크립트 -->
 <script th:src="@{/assets/static/js/components/dark.js}"></script>
+<script th:src="@{/assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js}"></script>
 <script th:src="@{/assets/compiled/js/app.js}"></script>
-<!-- app.js 이후 Null-세이프 패치 -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const Root = (window.Mr || window.Mazer);
-        if (!Root) return;
 
-        const _isInView = typeof Root.isElementInViewport === 'function' ? Root.isElementInViewport.bind(Root) : null;
-        const _forceVis = typeof Root.forceElementVisibility === 'function' ? Root.forceElementVisibility.bind(Root) : null;
-
-        if (_isInView) {
-            Root.isElementInViewport = function (el) {
-                if (!el || !el.getBoundingClientRect) return false;
-                try { return _isInView(el); } catch (e) { return false; }
-            };
-        }
-        if (_forceVis) {
-            Root.forceElementVisibility = function (el) {
-                if (!el || !el.getBoundingClientRect) return;
-                try { return _forceVis(el); } catch (e) { /* noop */ }
-            };
-        }
-    });
-</script>
-<th:block layout:fragment="body-end"></th:block>
+<!-- 페이지별 추가 스크립트 -->
+<th:block layout:fragment="script"></th:block>
 </body>
 </html>

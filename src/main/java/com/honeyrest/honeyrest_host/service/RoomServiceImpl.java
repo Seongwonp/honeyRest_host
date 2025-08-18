@@ -2,8 +2,6 @@ package com.honeyrest.honeyrest_host.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
-import com.honeyrest.honeyrest_host.entity.enums.RoomType;
 import jakarta.persistence.EntityNotFoundException;
 import com.honeyrest.honeyrest_host.dto.RoomDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
@@ -92,7 +90,7 @@ public class RoomServiceImpl implements RoomService{
                 .amenities(d.getAmenities())
                 .description(d.getDescription())
                 .totalRooms(d.getTotalRooms())
-                .status(d.getStatus() == null ? OperationStatus.ACTIVE : d.getStatus())
+                .status(d.getStatus() == null ? "ACTIVE" : d.getStatus())
                 .build();
     }
 
@@ -132,7 +130,7 @@ public class RoomServiceImpl implements RoomService{
                 .amenities(jsonNodeToString(stringToJsonNode(dto.getAmenities())))
                 .description(dto.getDescription())
                 .totalRooms(dto.getTotalRooms())
-                .status(dto.getStatus() == null ? OperationStatus.ACTIVE : dto.getStatus())
+                .status(dto.getStatus() == null ? "ACTIVE" : dto.getStatus())
                 .build();
         Room saved = roomRepository.save(room);
         return toDTO(saved);

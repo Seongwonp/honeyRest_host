@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+  <title>리뷰/평점 관리</title>
+  <th:block layout:fragment="head">
+    <style>
+      .badge-status{font-weight:600}
+    </style>
+  </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+  <div class="page-heading">
+    <h3 class="mb-1">리뷰/평점 관리</h3>
+    <p class="text-muted">승인/숨김/삭제 등 리뷰 상태를 관리합니다.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form id="filterForm" class="row g-2 align-items-end mb-3">
+        <div class="col-md-3">
+          <label class="form-label">상태</label>
+          <select id="status" class="form-select">
+            <option value="">전체</option>
+            <option value="PUBLISHED">PUBLISHED</option>
+            <option value="PENDING">PENDING</option>
+            <option value="HIDDEN">HIDDEN</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">객실 ID(선택)</label>
+          <input id="roomId" class="form-control" type="number" placeholder="예) 101">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">페이지 크기</label>
+          <select id="size" class="form-select">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-outline-primary w-100" type="submit">적용</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+          <tr>
+            <th style="width:90px">ID</th>
+            <th>숙소 / 객실</th>
+            <th>작성자</th>
+            <th style="width:110px">평점</th>
+            <th>내용</th>
+            <th style="width:120px">상태</th>
+            <th style="width:160px">작성일</th>
+            <th style="width:140px">관리</th>
+          </tr>
+          </thead>
+          <tbody id="reviewBody">
+          <tr><td colspan="8" class="text-center text-muted py-5">로딩중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <nav>
+        <ul id="pager" class="pagination justify-content-center mt-3"></ul>
+      </nav>
+    </div>
+  </div>
+</th:block>
+
+<th:block layout:fragment="body-end">
+  <script>
+    (() => {
+      const bodyEl  = document.getElementById('reviewBody');
+      const pagerEl = document.getElementById('pager');
+      const statusEl= document.getElementById('status');
+      const sizeEl  = document.getElementById('size');
+      const roomEl  = document.getElementById('roomId');
+
+      let state = { page: 0, size: Number(sizeEl.value)||10, totalPages: 1 };
+
+      const esc = s => String(s ?? '').replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+      const badge = st => {
+        const map = { PUBLISHED:'bg-success', PENDING:'bg-warning text-dark', HIDDEN:'bg-secondary' };
+        return `<span class="badge badge-status ${map[st]||'bg-light text-dark'}">${st ?? '-'}</span>`;
+      };
+      const fmtDate = d => {
+        if(!d) return '-';
+        if (typeof d==='string' && d.length<=16) return d;
+        const t=new Date(d); if(isNaN(t)) return d;
+        return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')+' '
+                + String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+      };
+
+      function rows(items){
+        if(!items || items.length===0){
+          bodyEl.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-5">데이터가 없습니다.</td></tr>`;
+          return;
+        }
+        bodyEl.innerHTML = items.map(x => `
+            <tr>
+              <td>${x.reviewId}</td>
+              <td>
+                <div class="fw-semibold">${esc(x.accommodationName ?? '-')}</div>
+                <div class="small text-muted">${esc(x.roomName ?? '')}</div>
+              </td>
+              <td>${esc(x.userName ?? '-')}</td>
+              <td>${x.rating != null ? Number(x.rating).toFixed(1) : '-'}</td>
+              <td>${esc(x.content ?? '')}</td>
+              <td>${badge(x.status)}</td>
+              <td>${fmtDate(x.createdAt)}</td>
+              <td class="d-flex gap-1">
+                <button class="btn btn-sm btn-outline-success" data-act="publish" data-id="${x.reviewId}">승인</button>
+                <button class="btn btn-sm btn-outline-secondary" data-act="hide" data-id="${x.reviewId}">숨김</button>
+                <button class="btn btn-sm btn-outline-danger" data-act="delete" data-id="${x.reviewId}">삭제</button>
+              </td>
+            </tr>
+        `).join('');
+      }
+
+      function pager(total, size){
+        const pages = Math.max(1, Math.ceil((total ?? 0) / (size||10)));
+        state.totalPages = pages;
+        const cur = state.page;
+        let html = '';
+        const li = (disabled, active, page, label) =>
+                `<li class="page-item ${disabled?'disabled':''} ${active?'active':''}">
+               <a class="page-link" href="#" data-page="${page}">${label}</a>
+             </li>`;
+        html += li(cur===0,false,cur-1,'«');
+        for(let i=0;i<pages;i++) html += li(false, i===cur, i, i+1);
+        html += li(cur===pages-1,false,cur+1,'»');
+        pagerEl.innerHTML = html;
+      }
+
+      const qs = () => {
+        const p = new URLSearchParams();
+        const st = statusEl.value.trim();
+        const roomId = roomEl.value.trim();
+        if(st) p.set('status', st);
+        if(roomId) p.set('roomId', roomId);
+        p.set('page', state.page);
+        p.set('size', state.size);
+        return p.toString();
+      };
+
+      async function load(){
+        bodyEl.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-5">로딩중...</td></tr>`;
+        try{
+          // ✅ 실제 API에 맞게 경로 조정
+          const res = await fetch('/api/reviews?' + qs());
+          if(!res.ok) throw new Error('목록 호출 실패');
+          const data = await res.json(); // { dtoList, total, size... } 가정
+          rows(data.dtoList || data.items || []);
+          pager(Number(data.total ?? 0), Number(data.size ?? state.size));
+        }catch(e){
+          console.error(e);
+          bodyEl.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-5">목록을 불러오지 못했습니다.</td></tr>`;
+        }
+      }
+
+      document.getElementById('filterForm').addEventListener('submit', e=>{
+        e.preventDefault();
+        state.page = 0;
+        state.size = Number(sizeEl.value)||10;
+        load();
+      });
+
+      pagerEl.addEventListener('click', e=>{
+        const a = e.target.closest('a[data-page]'); if(!a) return;
+        e.preventDefault();
+        const p = Number(a.dataset.page);
+        if(isNaN(p)||p<0||p>=state.totalPages) return;
+        state.page = p; load();
+      });
+
+      // 액션(승인/숨김/삭제)
+      bodyEl.addEventListener('click', async e=>{
+        const btn = e.target.closest('button[data-act]'); if(!btn) return;
+        const id  = btn.dataset.id;
+        const act = btn.dataset.act;
+
+        try{
+          let res;
+          if(act==='publish'){
+            res = await fetch(`/api/reviews/${id}/publish`, { method:'PATCH' });
+          }else if(act==='hide'){
+            res = await fetch(`/api/reviews/${id}/hide`, { method:'PATCH' });
+          }else if(act==='delete'){
+            if(!confirm('삭제하시겠습니까?')) return;
+            res = await fetch(`/api/reviews/${id}`, { method:'DELETE' });
+          }
+          if(!res.ok) throw new Error('요청 실패');
+          load();
+        }catch(err){
+          console.error(err);
+          alert('처리 중 오류가 발생했습니다.');
+        }
+      });
+
+      load();
+    })();
+  </script>
+</th:block>
+</body>
+</html>

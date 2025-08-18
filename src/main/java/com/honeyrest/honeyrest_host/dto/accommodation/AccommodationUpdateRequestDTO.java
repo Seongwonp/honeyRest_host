@@ -2,7 +2,6 @@ package com.honeyrest.honeyrest_host.dto.accommodation;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,7 +41,7 @@ public class AccommodationUpdateRequestDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkOutTime;
 
-    private OperationStatus status;              // ACTIVE / INACTIVE
+    private String status;              // ACTIVE / INACTIVE
     private BigDecimal minPrice;
 
     // 선택: 이미지/태그 전체 교체(덮어쓰기)를 할지, 부분 수정할지는 정책에 따라

@@ -1,6 +1,5 @@
 package com.honeyrest.honeyrest_host.dto.accommodation;
 
-import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -14,5 +13,5 @@ public class AccommodationListDTO {
     private String categoryName;
     private String regionName;     // mainRegion.name
     private BigDecimal minPrice;
-    private OperationStatus status;         //  enum
+    private String status;
 }

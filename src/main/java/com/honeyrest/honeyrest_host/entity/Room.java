@@ -1,6 +1,5 @@
 package com.honeyrest.honeyrest_host.entity;
 
-import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
 import com.honeyrest.honeyrest_host.entity.enums.RoomType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -58,8 +57,8 @@ public class Room extends BaseEntity {
     @Column(name = "total_rooms", nullable = false)
     private Integer totalRooms;
 
-    @Enumerated(EnumType.STRING)
+
     @Column(name = "status" , length = 20)
-    private OperationStatus status; // 운영 상태
+    private String status; // 운영 상태
 
 }

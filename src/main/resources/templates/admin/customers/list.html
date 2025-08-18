@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+  <title>고객 목록</title>
+  <th:block layout:fragment="head">
+    <style>
+      .skeleton{height:52px;background:linear-gradient(90deg,#eee,#f5f5f5,#eee);background-size:200% 100%;animation:shine 1.2s infinite}
+      @keyframes shine{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    </style>
+  </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+  <div class="page-heading">
+    <h3 class="mb-1">고객 목록(예약히스토리/포인트)</h3>
+    <p class="text-muted">고객별 포인트/예약수/리뷰현황을 요약해서 보여줍니다.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form id="searchForm" class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+          <label class="form-label">검색(이름/이메일/전화)</label>
+          <input type="text" class="form-control" id="query" placeholder="예) 홍길동, hong@...">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">페이지 크기</label>
+          <select id="size" class="form-select">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-outline-primary w-100" type="submit">검색</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+          <tr>
+            <th style="width:90px">ID</th>
+            <th>이름</th>
+            <th>연락처 / 이메일</th>
+            <th style="width:120px">포인트</th>
+            <th style="width:120px">예약수</th>
+            <th style="width:160px">최근 예약일</th>
+            <th style="width:140px">리뷰수</th>
+            <th style="width:140px">평균 평점</th>
+            <th style="width:100px">관리</th>
+          </tr>
+          </thead>
+          <tbody id="listBody">
+          <tr class="skeleton"><td colspan="9"></td></tr>
+          <tr class="skeleton"><td colspan="9"></td></tr>
+          <tr class="skeleton"><td colspan="9"></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <nav>
+        <ul id="pager" class="pagination justify-content-center mt-3"></ul>
+      </nav>
+    </div>
+  </div>
+</th:block>
+
+<th:block layout:fragment="body-end">
+  <script>
+    (() => {
+      const bodyEl  = document.getElementById('listBody');
+      const pagerEl = document.getElementById('pager');
+      const qEl     = document.getElementById('query');
+      const sizeEl  = document.getElementById('size');
+
+      let state = { page: 0, size: Number(sizeEl.value)||10, totalPages: 1 };
+
+      function loading(){
+        bodyEl.innerHTML = `
+          <tr class="skeleton"><td colspan="9"></td></tr>
+          <tr class="skeleton"><td colspan="9"></td></tr>
+          <tr class="skeleton"><td colspan="9"></td></tr>`;
+        pagerEl.innerHTML = '';
+      }
+      function esc(s){ return String(s ?? '').replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m])); }
+      function fmt(n){ return (n ?? 0).toLocaleString('ko-KR'); }
+      function fmtDate(d){
+        if(!d) return '-';
+        if (typeof d === 'string' && d.length<=10) return d;
+        const t = new Date(d); if(isNaN(t)) return d;
+        return t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+      }
+
+      function rows(items){
+        if(!items || items.length===0){
+          bodyEl.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-5">데이터가 없습니다.</td></tr>`;
+          return;
+        }
+        bodyEl.innerHTML = items.map(x => `
+            <tr>
+              <td>${x.userId}</td>
+              <td class="fw-semibold">${esc(x.name)}</td>
+              <td>
+                <div>${esc(x.phone ?? '-')}</div>
+                <div class="small text-muted">${esc(x.email ?? '')}</div>
+              </td>
+              <td>${fmt(x.totalPoints)}</td>
+              <td>${fmt(x.reservationCount)}</td>
+              <td>${fmtDate(x.lastReservationDate)}</td>
+              <td>${fmt(x.reviewCount)}</td>
+              <td>${x.averageRating != null ? Number(x.averageRating).toFixed(1) : '-'}</td>
+              <td>
+                <a class="btn btn-sm btn-outline-primary"
+                   href="/admin/customers/detail?userId=${encodeURIComponent(x.userId)}">보기</a>
+              </td>
+            </tr>
+        `).join('');
+      }
+
+      function pager(total, size){
+        const pages = Math.max(1, Math.ceil((total ?? 0) / (size || 10)));
+        state.totalPages = pages;
+        const cur = state.page;
+        let html = '';
+        const li = (disabled, active, page, label) =>
+                `<li class="page-item ${disabled?'disabled':''} ${active?'active':''}">
+               <a class="page-link" href="#" data-page="${page}">${label}</a>
+             </li>`;
+        html += li(cur===0,false,cur-1,'«');
+        for(let i=0;i<pages;i++) html += li(false, i===cur, i, i+1);
+        html += li(cur===pages-1,false,cur+1,'»');
+        pagerEl.innerHTML = html;
+      }
+
+      function qs(){
+        const p = new URLSearchParams();
+        const q = qEl.value.trim();
+        if(q) p.set('query', q);
+        p.set('page', state.page);
+        p.set('size', state.size);
+        return p.toString();
+      }
+
+      async function load(){
+        loading();
+        try{
+          // ✅ 여기의 API는 네가 만드는 요약용 엔드포인트에 맞춰 변경
+          const res = await fetch('/api/admin/customers/summary?' + qs());
+          if(!res.ok) throw new Error('목록 호출 실패');
+          const data = await res.json(); // { dtoList, total, size, page ... } 형태 가정
+          rows(data.dtoList || data.items || []);
+          pager(Number(data.total ?? 0), Number(data.size ?? state.size));
+        }catch(err){
+          console.error(err);
+          bodyEl.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-5">목록을 불러오지 못했습니다.</td></tr>`;
+        }
+      }
+
+      document.getElementById('searchForm').addEventListener('submit', e=>{
+        e.preventDefault();
+        state.page = 0;
+        state.size = Number(sizeEl.value)||10;
+        load();
+      });
+      pagerEl.addEventListener('click', e=>{
+        const a = e.target.closest('a[data-page]'); if(!a) return;
+        e.preventDefault();
+        const p = Number(a.dataset.page);
+        if(isNaN(p) || p<0 || p>=state.totalPages) return;
+        state.page = p; load();
+      });
+
+      load();
+    })();
+  </script>
+</th:block>
+</body>
+</html>

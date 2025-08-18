@@ -47,8 +47,8 @@ public class Company extends BaseEntity {
     @Column(name = "commission_rate", precision = 5, scale = 2)
     private BigDecimal commissionRate; // 수수료율
 
-    @Enumerated(EnumType.STRING)
+
     @Column(name = "status", length = 20)
-    private ApprovalStatus status; // 승인 상태
+    private String status; // 승인 상태
 
 }

@@ -1,6 +1,5 @@
 package com.honeyrest.honeyrest_host.dto;
 
-import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
 import com.honeyrest.honeyrest_host.entity.enums.RoomType;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -33,5 +32,5 @@ public class RoomDTO {
     private String amenities; // JSON String
     private String description;
     private Integer totalRooms;
-    private OperationStatus status; // ACTIVE / INACTIVE
+    private String status; // ACTIVE / INACTIVE
 }

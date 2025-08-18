@@ -1,7 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
-import com.honeyrest.honeyrest_host.entity.enums.OperationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.sql.Time;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -74,7 +71,6 @@ public class Accommodation {
     @Column(name = "min_price", precision = 10, scale = 2)
     private BigDecimal minPrice; // 최저 가격
 
-    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private OperationStatus status; // 운영 상태(active, inactive)
+    private String status; // 운영 상태(active, inactive)
 }

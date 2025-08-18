@@ -28538,9 +28538,6 @@
       const bodyId = getBodyId(editor);
       const bodyClass = getBodyClass(editor);
       const translatedAriaText = editor.translate(getIframeAriaText(editor));
-      if (getContentSecurityPolicy(editor)) {
-        iframeHTML += '<meta http-equiv="Content-Security-Policy" content="' + getContentSecurityPolicy(editor) + '" />';
-      }
       iframeHTML += '</head>' + `<body id="${ bodyId }" class="mce-content-body ${ bodyClass }" data-id="${ editor.id }" aria-label="${ translatedAriaText }">` + '<br>' + '</body></html>';
       return iframeHTML;
     };

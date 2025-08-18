@@ -26,4 +26,7 @@ public interface AccommodationService {
     void delete(Long id);
 
     Page<AccommodationListDTO> search(String q, Long categoryId, Long mainRegionId, Pageable pageable);
+
+    // 승인
+    void changeStatus(Long id, String status); // "APPROVED" | "REJECTED" | "ACTIVE" 등
 }

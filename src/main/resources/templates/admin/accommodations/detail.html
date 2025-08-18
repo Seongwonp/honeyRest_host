@@ -1,0 +1,152 @@
+<!-- templates/admin/accommodations/detail.html -->
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+  <title>숙소 상세</title>
+  <th:block layout:fragment="head">
+    <style>
+      .kv {display:flex; gap:8px; margin-bottom:.25rem;}
+      .kv .k {width:120px; color:#6c757d;}
+      .badge-status {padding:.35em .6em; font-size:.75rem; border-radius:.35rem;}
+      .status-PENDING {background:#fff3cd; color:#856404;}
+      .status-APPROVED {background:#d4edda; color:#155724;}
+      .status-REJECTED {background:#f8d7da; color:#721c24;}
+      .status-DRAFT   {background:#e2e3e5; color:#41464b;}
+      .thumb {max-width:240px; border:1px solid #e9ecef; border-radius:.5rem}
+      .img-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:12px}
+      .img-grid img{width:100%; height:100px; object-fit:cover; border-radius:.5rem; border:1px solid #eee}
+      .chip{display:inline-block; padding:.25rem .5rem; border:1px solid #dee2e6; border-radius:999px; margin:2px; font-size:.8rem}
+      .section-title {font-weight:600; margin-top:1rem; margin-bottom:.5rem}
+      .mono {font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:.875rem}
+      pre.mono {white-space:pre-wrap; border:1px solid #e9ecef; background:#fafafa; border-radius:.5rem; padding:.75rem}
+    </style>
+  </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">숙소 상세</h3>
+    <div class="d-flex gap-2">
+      <a th:href="@{/admin/accommodations/list}" class="btn btn-outline-secondary">목록</a>
+      <a th:href="@{/admin/accommodations/edit/{id}(id=${item.accommodationId})}"
+         class="btn btn-outline-primary">수정</a>
+
+      <!-- 승인요청: DRAFT/REJECTED 일 때 노출 (APPROVED/이미 PENDING이면 숨김) -->
+      <form th:if="${item.status} == 'DRAFT' or ${item.status} == 'REJECTED'"
+            th:action="@{/admin/accommodations/{id}/request(id=${item.accommodationId})}"
+            method="post" class="d-inline">
+        <input type="hidden" name="to" value="PENDING"/>
+        <button type="submit" class="btn btn-warning">총관리자에게 승인 요청</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+
+      <!-- 상단 요약 -->
+      <div class="row g-4">
+        <div class="col-md-8">
+          <h4 class="mb-1" th:text="${item.name}">허니레스트 강남점</h4>
+          <div class="mb-2">
+            <span class="badge-status"
+                  th:text="${item.status}"
+                  th:classappend="' status-' + ${item.status}">PENDING</span>
+          </div>
+
+          <div class="kv"><div class="k">카테고리ID</div><div class="v" th:text="${item.categoryId}">1</div></div>
+          <div class="kv"><div class="k">지역(대/소)</div>
+            <div class="v">
+              <span th:text="${item.mainRegionId}">11</span> /
+              <span th:text="${item.subRegionId}">1101</span>
+            </div>
+          </div>
+          <div class="kv"><div class="k">주소</div><div class="v" th:text="${item.address}">서울시 …</div></div>
+
+          <div class="kv"><div class="k">좌표</div>
+            <div class="v">
+              <span th:text="${item.latitude}">37.5</span>,
+              <span th:text="${item.longitude}">127.0</span>
+            </div>
+          </div>
+
+          <div class="kv"><div class="k">체크인/아웃</div>
+            <div class="v">
+              <span th:text="${#temporals.format(item.checkInTime,'HH:mm')}">15:00</span> ~
+              <span th:text="${#temporals.format(item.checkOutTime,'HH:mm')}">11:00</span>
+            </div>
+          </div>
+
+          <div class="kv"><div class="k">지표</div>
+            <div class="v">
+              평점 <span th:text="${item.rating}">4.6</span> /
+              최저가 <span th:text="${#numbers.formatDecimal(item.minPrice, 0, 'COMMA', 0, 'POINT')}">80,000</span>원
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <img class="thumb" th:if="${item.thumbnailUrl}"
+               th:src="${item.thumbnailUrl}"
+               alt="thumbnail">
+          <div th:if="${item.thumbnailUrl == null}" class="text-muted">썸네일 없음</div>
+        </div>
+      </div>
+
+      <hr/>
+
+      <!-- 설명 -->
+      <div class="section-title">설명</div>
+      <div th:text="${item.description}">설명 없음</div>
+
+      <!-- 편의시설(JSON 미리보기) -->
+      <div class="section-title">편의시설(JSON)</div>
+      <pre class="mono" th:text="${#objects.toString(item.amenities)}">[]</pre>
+
+      <!-- 태그 -->
+      <div class="section-title">태그</div>
+      <div th:if="${item.tags != null and !item.tags.isEmpty()}">
+        <span class="chip"
+              th:each="t : ${item.tags}"
+              th:text="${t.category + ' · ' + t.name}">뷰 · 오션뷰</span>
+      </div>
+      <div th:if="${item.tags == null or item.tags.isEmpty()}" class="text-muted">태그 없음</div>
+
+      <!-- 이미지 -->
+      <div class="section-title">이미지</div>
+      <div class="img-grid" th:if="${item.images != null and !item.images.isEmpty()}">
+        <div th:each="img : ${item.images}">
+          <img th:src="${img.imageUrl}" th:alt="${img.imageType}"/>
+          <div class="small text-muted mt-1">
+            <span th:text="${img.imageType}">MAIN</span>
+            <span th:if="${img.sortOrder != null}"> · #<span th:text="${img.sortOrder}">0</span></span>
+          </div>
+        </div>
+      </div>
+      <div th:if="${item.images == null or item.images.isEmpty()}" class="text-muted">이미지 없음</div>
+
+    </div>
+  </div>
+
+  <!-- 하단 액션 -->
+  <div class="d-flex gap-2 mt-3">
+    <a th:href="@{/admin/accommodations/list}" class="btn btn-outline-secondary">목록</a>
+    <a th:href="@{/admin/accommodations/edit/{id}(id=${item.accommodationId})}"
+       class="btn btn-primary">수정</a>
+
+    <!-- 승인요청 버튼 (상단과 동일, 하단에도 배치 원하면 유지) -->
+    <form th:if="${item.status} == 'DRAFT' or ${item.status} == 'REJECTED'"
+          th:action="@{/admin/accommodations/{id}/request(id=${item.accommodationId})}"
+          method="post" class="d-inline">
+      <input type="hidden" name="to" value="PENDING"/>
+      <button type="submit" class="btn btn-warning">총관리자에게 승인 요청</button>
+    </form>
+  </div>
+
+</th:block>
+</body>
+</html>
