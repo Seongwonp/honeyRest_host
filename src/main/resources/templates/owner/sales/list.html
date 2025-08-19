@@ -21,7 +21,7 @@
     <h3 class="mb-4"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
 
     <div class="card p-4 mb-4 shadow-sm">
-        <form method="get" action="/admin/sales/daily" class="row g-3 align-items-end">
+        <form method="get" action="/owner/sales/list" class="row g-3 align-items-end">
             <div class="col-auto">
                 <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>
                 <input type="date" name="startDate"  class="form-control">
@@ -59,14 +59,26 @@
     </div>
 
     <div class="card p-4 mb-4 shadow-sm">
-        <h6 class="card-title mb-3"><i class="bi bi-graph-up-arrow me-2"></i>일별 매출 차트</h6>
-        <div class="d-flex justify-content-between mb-3">
-            <p class="text-muted mb-3">
+        <h6 class="card-title mb-3">
+            <i class="bi bi-graph-up-arrow me-2"></i>일별 매출 차트
+        </h6>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="text-muted mb-0">
                 <i class="bi bi-calendar-event me-1"></i>
-                오늘 날짜: <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">2025-07-31</span>
+                오늘 날짜: <span th:text="${startDate != null} ? ${startDate} : ${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">2025-07-31</span>
             </p>
+            <div>
+                <button type="button" class="btn btn-outline-primary btn-sm me-2" id="prevMonthBtn">
+                    <i class="bi bi-arrow-left-circle me-1"></i>이전달
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="nextMonthBtn">
+                    다음달<i class="bi bi-arrow-right-circle ms-1"></i>
+                </button>
+            </div>
 
         </div>
+
         <canvas id="dailySalesChart" style="max-width: 100%; height: 500px;"></canvas>
     </div>
 
@@ -108,6 +120,7 @@
     /*<![CDATA[*/
     let daySales = /*[[${daySales}]]*/ [];
 
+    console.log(daySales);
     if (daySales && daySales.length > 0) {
         const allDays = Array.from({length: 31}, (_, i) => (i + 1).toString().padStart(2, '0'));
         const salesMap = {};
@@ -180,7 +193,57 @@
     } else {
         console.log("일별 매출 데이터 없음!");
     }
+    let startDateFromServer = /*[[${startDate}]]*/ '';
+    let currentYearMonth = '';
+
+    console.log(startDateFromServer);
+    if (startDateFromServer !== '') {
+        currentYearMonth = startDateFromServer.substring(0,7);
+    } else {
+        currentYearMonth = /*[[${#temporals.format(#temporals.createNow(), 'yyyy-MM')}]]*/ '2025-07';
+    }
+
+    function changeMonth(yearMonth, offset) {
+        const [year, month] = yearMonth.split('-').map(Number);
+        let newYear = year;
+        let newMonth = month + offset;
+
+        if (newMonth === 0) {
+            newYear -= 1;
+            newMonth = 12;
+        } else if (newMonth === 13) {
+            newYear += 1;
+            newMonth = 1;
+        }
+
+        const startDate = `${newYear}-${String(newMonth).padStart(2, '0')}-01`;
+
+        // 다음달 첫날에서 하루 뺀 날 (마지막 날)
+        const endDateObj = new Date(newYear, newMonth, 0);
+        const endDate = `${endDateObj.getFullYear()}-${String(endDateObj.getMonth() + 1).padStart(2, '0')}-${String(endDateObj.getDate()).padStart(2, '0')}`;
+
+        return {startDate, endDate};
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const prevBtn = document.getElementById('prevMonthBtn');
+        const nextBtn = document.getElementById('nextMonthBtn');
+
+
+        prevBtn.addEventListener('click', () => {
+            const {startDate, endDate} = changeMonth(currentYearMonth, -1);
+            console.log(startDate);
+            window.location.href = `/owner/sales/list?startDate=${startDate}&endDate=${endDate}`;
+        });
+
+        nextBtn.addEventListener('click', () => {
+            console.log(currentYearMonth);
+            const {startDate, endDate} = changeMonth(currentYearMonth, 1);
+            window.location.href = `/owner/sales/list?startDate=${startDate}&endDate=${endDate}`;
+        });
+    });
     /*]]>*/
 </script>
 </body>
+
 </html>
