@@ -1,10 +1,6 @@
 package com.honeyrest.honeyrest_host.controllerOwner.dashboard;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CouponDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
 import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -34,59 +30,8 @@ public class DashboardController {
         return "owner/dashboard/dashboard";
     }
 
-    @GetMapping("/company/list")
-    public String company(Model model) {
-        model.addAttribute("companies", companyService.getAllCompanies());
-        return "owner/company/list";
-    }
 
-    @GetMapping("/company/{companyId}/accommodations")
-    public String accommodationsByCompany(@PathVariable Long companyId, Model model) {
-        List<CompanyDTO> companies = companyService.getAllCompanies();
-        List<AccommodationDTO> accommodations;
 
-        if (companyId != null) {
-            accommodations = accommodationService.getAccommodationsByCompanyId(companyId);
-            model.addAttribute("company", companyService.getCompany(companyId));
-        } else {
-            accommodations = accommodationService.getAllAccommodations();
-        }
-
-        model.addAttribute("companies", companies);
-        model.addAttribute("accommodations", accommodations);
-
-        return "owner/accommodation/list";
-    }
-    @GetMapping("/accommodation/list")
-    public String accommodations(Model model) {
-        model.addAttribute("companies", companyService.getAllCompanies());
-        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
-        return "owner/accommodation/list";
-    }
-
-    @GetMapping("/accommodation/{accommodationId}/rooms")
-    public String roomsByAccommodation(@PathVariable Long accommodationId, Model model) {
-        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
-        List<CompanyDTO> companies = companyService.getAllCompanies();
-        List<RoomDTO> roomDTOS;
-
-        if (accommodationId != null) {
-            roomDTOS = roomService.getRoomsByAccommodationId(accommodationId);
-            model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
-        } else {
-            roomDTOS = roomService.getAllRooms();
-        }
-        model.addAttribute("accommodations", accommodations);
-        model.addAttribute("rooms", roomDTOS);
-
-        return "owner/room/list";
-    }
-    @GetMapping("/room/list")
-    public String rooms(Model model) {
-        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
-        model.addAttribute("rooms", roomService.getAllRooms());
-        return "owner/room/list";
-    }
 
     @GetMapping("/coupon/list")
     public String coupons(Model model) {
@@ -104,15 +49,6 @@ public class DashboardController {
         return "redirect:/owner/coupon/list";
     }
 
-    @GetMapping("/company/create")
-    public String createCompany(Model model) {
-        return "owner/company/create";
-    }
-    @PostMapping("/company/create")
-    public String createCompany(@ModelAttribute CompanyDTO companyDTO) {
-        companyService.registerCompany(companyDTO);
-        return "redirect:/owner/company/list";
-    }
 
     @GetMapping("/reservation/list")
     public String reservations(Model model) {
@@ -120,22 +56,5 @@ public class DashboardController {
         return "owner/reservation/list";
     }
 
-    @GetMapping("/accommodation/create")
-    public String createAccommodation(Model model) {
-        model.addAttribute("companies", companyService.getAllCompanies());
-        model.addAttribute("categories", accommodationCategory.getAllAccommodationCategory());
-        model.addAttribute("regions", regionService.getAllRegions());
-        return "owner/accommodation/create";
-    }
-    @PostMapping("/accommodation/create")
-    public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO) throws JsonProcessingException {
-        accommodationService.registerAccommodation(accommodationDTO);
-        return "redirect:/owner/accommodation/list";
-    }
 
-    @PostMapping("/accommodation/{accommodationId}/delete")
-    public String deleteAccommodation(@PathVariable Long accommodationId) {
-        accommodationService.removeAccommodation(accommodationId);
-        return "redirect:/owner/accommodation/list";
-    }
 }

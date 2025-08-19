@@ -18,7 +18,7 @@
             업체 선택 시 해당 업체의 숙소만 조회됩니다.
         </p>
         <div>
-            <a th:href="@{/owner/accommodation/create}" class="btn btn-primary">숙소 등록</a>
+            <a th:href="@{/owner/accommodation/create(companyId=${companyId})}" class="btn btn-primary">숙소 등록</a>
         </div>
         <!-- 업체 선택 폼 -->
         <form id="companyForm">

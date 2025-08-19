@@ -11,7 +11,7 @@ public interface RoomService {
 
     RoomDTO getByRoomId(Long id);
 
-    Long registerRoom(RoomDTO dto);
+    void registerRoom(RoomDTO dto);
 
     void modifyRoom(RoomDTO dto);
 

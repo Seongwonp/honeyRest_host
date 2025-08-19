@@ -17,7 +17,8 @@
             <div class="mb-3">
                 <label for="companyId" class="form-label">업체</label>
                 <select name="companyId" class="form-select" id="companyId" required>
-                    <option th:each="c : ${companies}" th:value="${c.companyId}" th:text="${c.name}"></option>
+                    <option value="">업체 선택</option>
+                    <option th:each="c : ${companies}" th:value="${c.companyId}" th:text="${c.name}" th:selected="${c.companyId == companyId}"></option>
                 </select>
             </div>
 
@@ -33,6 +34,7 @@
             <div class="mb-3">
                 <label for="mainRegionId" class="form-label">메인 지역</label>
                 <select name="mainRegionId" class="form-select" id="mainRegionId" required>
+                    <option value="">메인 지역 선택</option>
                     <option th:each="r : ${regions}" th:if="${r.level == 1}"
                             th:value="${r.regionId}" th:text="${r.name}"></option>
                 </select>
@@ -40,8 +42,8 @@
             <div class="mb-3">
                 <label for="subRegionId" class="form-label">서브 지역</label>
                 <select name="subRegionId" class="form-select" id="subRegionId" required>
-                    <option th:each="sr : ${regions}" th:if="${sr.level == 2}"
-                             th:value="${sr.regionId}" th:text="${sr.name}"></option>
+                    <option value="">서브 지역 선택</option>
+                    <!-- 서브 지역은 JS에서 채워 넣음 -->
                 </select>
             </div>
 
@@ -112,3 +114,28 @@
 </th:block>
 </body>
 </html>
+
+<script th:inline="javascript">
+    // Thymeleaf에서 regions 리스트를 JSON으로 내려받기
+    let regions = [[${regions}]];
+
+    const mainSelect = document.getElementById("mainRegionId");
+    const subSelect = document.getElementById("subRegionId");
+
+    mainSelect.addEventListener("change", function() {
+        const selectedMainId = this.value;
+
+        // 기존 옵션 제거
+        subSelect.innerHTML = '<option value="">서브 지역 선택</option>';
+
+        // 선택된 메인 지역의 서브 지역만 필터링
+        regions
+            .filter(r => r.level === 2 && r.parentId == selectedMainId)
+            .forEach(sr => {
+                const option = document.createElement("option");
+                option.value = sr.regionId;
+                option.textContent = sr.name;
+                subSelect.appendChild(option);
+            });
+    });
+</script>

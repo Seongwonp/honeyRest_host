@@ -21,9 +21,8 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final CompanyRepository companyRepository;
     private final RegionRepository regionRepository;
     private final AccommodationCategoryRepository accommodationCategoryRepository;
-    private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
-    private final RoomRepository roomRepository;
+
 
 
     // ===== Mapper =====
@@ -45,6 +44,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .checkOutTime(e.getCheckOutTime())
                 .status(e.getStatus())
                 .minPrice(e.getMinPrice())
+                .rating(e.getRating())
                 .build();
     }
 
@@ -64,6 +64,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .checkOutTime(d.getCheckOutTime())
                 .status(d.getStatus() == null ? "ACTIVE" : d.getStatus())
                 .minPrice(d.getMinPrice())
+                .rating(d.getRating())
                 .build();
     }
 

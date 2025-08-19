@@ -92,6 +92,9 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.modelmapper/modelmapper <- ModelMapper
     implementation("org.modelmapper:modelmapper:3.2.0")
+
+    // 파일 업로드 및 이미지 처리
+    implementation("com.google.firebase:firebase-admin:9.2.0")
 }
 
 configurations {

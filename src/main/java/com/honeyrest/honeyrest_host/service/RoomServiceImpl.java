@@ -60,43 +60,35 @@ public class RoomServiceImpl implements RoomService{
 
     @Override
     public List<RoomDTO> getAllRooms() {
-        return roomRepository.findAll().stream().map(r -> modelMapper.map(r, RoomDTO.class)).toList();
+        return roomRepository.findAll().stream().map(this::toDTO).toList();
     }
 
     @Override
     public List<RoomDTO> getRoomsByAccommodationId(Long accommodationId) {
         return roomRepository.findByAccommodation_AccommodationId(accommodationId)
-                .stream().map(room -> modelMapper.map(room, RoomDTO.class)).toList();
+                .stream().map(this::toDTO).toList();
     }
 
     @Override
     public RoomDTO getByRoomId(Long id) {
-        return roomRepository.findById(id).map(room -> modelMapper.map(room, RoomDTO.class))
+        Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("객실이 존재하지 않습니다."));
+        return toDTO(room);
     }
 
     @Override
-    public Long registerRoom(RoomDTO dto) {
+    public void registerRoom(RoomDTO dto) {
         Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
                 .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
         dto.setAccommodationId(acc.getAccommodationId());
-        Room room = modelMapper.map(dto, Room.class);
-        roomRepository.save(room);
-        return room.getRoomId();
+        roomRepository.save(toEntity(dto));
     }
 
     @Override
     public void modifyRoom(RoomDTO dto) {
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new NotFoundException("객실이 존재하지 않습니다."));
-//        // 숙소 변경도 허용하려면
-//        if (dto.getAccommodationId() != null && !dto.getAccommodationId().equals(room.getAccommodation().getAccommodationId())) {
-//            Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
-//                    .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
-//            room.setAccommodation(acc);
-//        }
-        modelMapper.map(dto, room);
-        roomRepository.save(room);
+        roomRepository.save(toEntity(dto));
     }
 
     @Override

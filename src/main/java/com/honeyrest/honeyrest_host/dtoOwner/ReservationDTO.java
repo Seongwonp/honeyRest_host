@@ -7,15 +7,16 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class ReservationDTO {
-    public Long reservationId;
-    private String user;
-    private String room;
+    private Long reservationId;
+    private Long userId;
+    private Long roomId;
     private Long accommodationId; // 숙소ID(중복 저장)
     private String accommodationName; // 숙소명
     private String roomName; // 객실명
@@ -31,5 +32,7 @@ public class ReservationDTO {
     private String status; // 예약 상태
     private String cancelReason; // 취소 사유
     private String specialRequest; // 특별 요청 사항
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
 }
