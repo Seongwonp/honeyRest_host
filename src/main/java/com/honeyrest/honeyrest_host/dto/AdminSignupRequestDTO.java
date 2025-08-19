@@ -28,11 +28,8 @@ public class AdminSignupRequestDTO {
     // 선택 입력: 미입력시 COMPANY_ADMIN 기본 부여
     private RoleType roleType; // COMPANY_ADMIN | SUPER_ADMIN
 
-    /* [선택] 정말 외부에서 만든 생성일/수정일을 저장해야 한다면 아래 필드 추가
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime createdAt;
+    private String gender;          // 성별 (예: "M", "F")
+    private Boolean marketingAgree; // 마케팅 수신 동의
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime updatedAt;
-    */
+
 }

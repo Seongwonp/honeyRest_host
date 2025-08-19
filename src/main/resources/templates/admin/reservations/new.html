@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <title>예약 등록</title>
+</head>
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="mb-1">예약 등록</h3>
+            <p class="text-muted mb-0">관리자 수동 생성</p>
+        </div>
+        <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/list}">목록</a>
+    </div>
+
+    <div class="page-content">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form th:action="@{/admin/reservations}" th:object="${form}" method="post">
+<!--                    <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>-->
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">사용자 ID</label>
+                            <input type="number" class="form-control" th:field="*{userId}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">객실 ID</label>
+                            <input type="number" class="form-control" th:field="*{roomId}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">상태</label>
+                            <select class="form-select" th:field="*{status}">
+                                <option th:each="st : ${T(com.honeyrest.honeyrest_host.entity.enums.ReservationStatus).values()}"
+                                        th:value="${st}" th:text="${st}">CONFIRMED</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">체크인</label>
+                            <input type="date" class="form-control" th:field="*{checkInDate}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">체크아웃</label>
+                            <input type="date" class="form-control" th:field="*{checkOutDate}" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">인원</label>
+                            <input type="number" class="form-control" min="1" th:field="*{guestCount}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">금액(원)</label>
+                            <input type="number" class="form-control" min="0" step="1000" th:field="*{price}" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">예약자명</label>
+                            <input type="text" class="form-control" th:field="*{guestName}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">연락처</label>
+                            <input type="text" class="form-control" th:field="*{guestPhone}" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">요청사항</label>
+                            <textarea class="form-control" rows="3" th:field="*{specialRequest}"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">등록</button>
+                        <a class="btn btn-light" th:href="@{/admin/reservations/list}">취소</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${msg}">
+        <script th:inline="javascript"> alert([[${msg}]]); </script>
+    </div>
+</th:block>
+</body>
+</html>

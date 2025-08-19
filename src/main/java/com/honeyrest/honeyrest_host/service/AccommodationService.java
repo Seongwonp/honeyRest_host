@@ -29,4 +29,6 @@ public interface AccommodationService {
 
     // 승인
     void changeStatus(Long id, String status); // "APPROVED" | "REJECTED" | "ACTIVE" 등
+
+    long count();
 }

@@ -3,270 +3,148 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
+
 <head>
     <title>예약 목록</title>
     <th:block layout:fragment="head">
         <style>
-            .skeleton{
-                height: 52px;
-                background: linear-gradient(90deg,#eee,#f5f5f5,#eee);
-                background-size: 200% 100%;
-                animation: shine 1.2s infinite;
-            }
-            @keyframes shine{0%{background-position:200% 0}100%{background-position:-200% 0}}
-            .badge-status{font-weight:600}
+            .table td,.table th{vertical-align:middle}
+            .badge-light{background:#f8f9fa;color:#343a40}
         </style>
-        <meta name="_csrf" th:content="${_csrf?.token}">
-        <meta name="_csrf_header" th:content="${_csrf?.headerName}">
-        <link rel="shortcut icon" th:href="@{/assets/compiled/svg/favicon.svg}" type="image/x-icon">
-        <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}">
-        <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}">
-        <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}">
     </th:block>
 </head>
 
 <body>
 <th:block layout:fragment="content">
-    <div class="page-heading d-flex align-items-center justify-content-between">
-        <div>
-            <h3 class="mb-1">예약 목록</h3>
-            <p class="text-muted mb-0">상태로 필터링하고, 결과를 표로 확인하세요.</p>
-        </div>
-        <div class="d-flex gap-2">
-            <!-- 필요 시: 수동 예약 생성 링크 등 -->
-        </div>
+
+    <!-- 플래시 메시지 -->
+    <div th:if="${msg}" class="alert alert-success" role="alert" th:text="${msg}">수정되었습니다.</div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0 fw-bold">예약 목록</h3>
+        <a class="btn btn-outline-secondary" href="/admin/reservations/my">내 예약 현황</a>
     </div>
 
-    <div class="card">
+    <div class="card mb-3 shadow-sm">
         <div class="card-body">
-            <!-- 검색/필터 -->
-            <form id="searchForm" class="row g-2 align-items-end mb-3">
-                <div class="col-md-4">
-                    <label class="form-label">예약번호</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="number" placeholder="예) HR-2025-08-18-ABC123">
-                        <button class="btn btn-outline-secondary" id="btnFindByNumber" type="button">단건 조회</button>
-                    </div>
-                    <div class="form-text">예약번호로 단건 조회(우선 적용).</div>
+            <form method="get" class="row g-2">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="number" placeholder="예약번호 검색"
+                           th:value="${number}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">상태</label>
-                    <select class="form-select" id="status">
-                        <option value="">전체</option>
-                        <option value="PENDING">PENDING</option>
-                        <option value="CONFIRMED">CONFIRMED</option>
-                        <option value="CHECKED_IN">CHECKED_IN</option>
-                        <option value="CHECKED_OUT">CHECKED_OUT</option>
-                        <option value="CANCELED">CANCELED</option>
+                    <select class="form-select" name="status">
+                        <option value="ALL" th:selected="${selectedStatus}=='ALL'">전체 상태</option>
+                        <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                                th:selected="${selectedStatus}==${s}"></option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">페이지 크기</label>
-                    <select class="form-select" id="size">
-                        <option value="10" selected>10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
+                    <select class="form-select" name="size">
+                        <option th:value="10" th:selected="${pageSize==10}">10개</option>
+                        <option th:value="20" th:selected="${pageSize==20}">20개</option>
+                        <option th:value="50" th:selected="${pageSize==50}">50개</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <button class="btn btn-outline-primary w-100" type="submit">검색</button>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-primary" type="submit">조회</button>
+                    <a class="btn btn-light" th:href="@{/admin/reservations/list}">초기화</a>
                 </div>
             </form>
+        </div>
+    </div>
 
-            <!-- 테이블 -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                     <tr>
-                        <th style="width:90px">ID</th>
-                        <th style="width:190px">예약번호</th>
-                        <th>숙소명 / 객실</th>
-                        <th style="width:160px">체크인 ~ 체크아웃</th>
-                        <th style="width:100px">인원</th>
-                        <th>예약자</th>
-                        <th style="width:130px">금액</th>
-                        <th style="width:120px">상태</th>
-                        <th style="width:140px">생성일</th>
+                        <th style="width:80px" class="text-center">#</th>
+                        <th style="width:160px">예약번호</th>
+                        <th>숙소/객실</th>
+                        <th style="width:140px">체크인</th>
+                        <th style="width:140px">체크아웃</th>
+                        <th style="width:120px" class="text-end">금액</th>
+                        <th style="width:120px" class="text-center">상태</th>
+                        <th style="width:140px" class="text-center">관리</th>
                     </tr>
                     </thead>
-                    <tbody id="listBody">
-                    <tr class="skeleton"><td colspan="9"></td></tr>
-                    <tr class="skeleton"><td colspan="9"></td></tr>
-                    <tr class="skeleton"><td colspan="9"></td></tr>
+                    <tbody>
+                    <tr th:each="r,iter : ${list}">
+                        <td class="text-center"
+                            th:text="${(currentPage-1)*pageSize + iter.index + 1}">1</td>
+                        <td>
+                            <div class="fw-semibold" th:text="${r.reservationNumber}">HR-...</div>
+                            <div class="text-muted small">ID: <span th:text="${r.reservationId}">1</span></div>
+                        </td>
+                        <td>
+                            <div th:text="${r.accommodationName}">숙소명</div>
+                            <div class="text-muted small" th:text="${r.roomName}">객실명</div>
+                        </td>
+                        <td th:text="${r.checkInDate}">2025-08-20</td>
+                        <td th:text="${r.checkOutDate}">2025-08-21</td>
+                        <td class="text-end" th:text="${r.price}">120000</td>
+                        <td class="text-center">
+              <span class="badge"
+                    th:classappend="${r.status}=='CONFIRMED' ? ' bg-success-subtle text-success' :
+                                    (${r.status}=='PENDING' ? ' bg-warning-subtle text-warning' :
+                                    (${r.status}=='CANCELLED' ? ' bg-secondary' : ' badge-light'))"
+                    th:text="${r.status}">CONFIRMED</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a class="btn btn-outline-primary"
+                                   th:href="@{|/admin/reservations/${r.reservationId}|}">상세</a>
+                                <form th:action="@{|/admin/reservations/${r.reservationId}/cancel|}" method="post"
+                                      th:if="${r.status!='CANCELLED'}" onsubmit="return confirm('취소하시겠어요?')">
+                                    <button type="submit" class="btn btn-outline-danger">취소</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(list)}">
+                        <td colspan="8" class="text-center py-5 text-muted">데이터가 없습니다.</td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
+        </div>
 
-            <!-- 페이지네이션 -->
-            <nav>
-                <ul id="pager" class="pagination justify-content-center mt-3"></ul>
+        <!-- 페이지네이션 -->
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div class="small text-muted">
+                총 <span th:text="${total}">0</span>건 · 페이지
+                <span th:text="${currentPage}">1</span>/<span th:text="${totalPages}">1</span>
+            </div>
+            <nav th:if="${totalPages > 1}">
+                <ul class="pagination mb-0">
+                    <li class="page-item" th:classappend="${currentPage==1} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/reservations/list(page=${currentPage-1},size=${pageSize},status=${selectedStatus},number=${number})}">이전</a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}"
+                        th:classappend="${i==currentPage} ? 'active'">
+                        <a class="page-link"
+                           th:text="${i}"
+                           th:href="@{/admin/reservations/list(page=${i},size=${pageSize},status=${selectedStatus},number=${number})}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage==totalPages} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/reservations/list(page=${currentPage+1},size=${pageSize},status=${selectedStatus},number=${number})}">다음</a>
+                    </li>
+                </ul>
             </nav>
         </div>
     </div>
+
 </th:block>
 
-<th:block layout:fragment="body-end">
-    <script>
-        (function(){
-            const bodyEl = document.getElementById('listBody');
-            const pagerEl = document.getElementById('pager');
-            const statusEl = document.getElementById('status');
-            const sizeEl = document.getElementById('size');
-            const numberEl = document.getElementById('number');
-            const btnFindByNumber = document.getElementById('btnFindByNumber');
-
-            let state = { page: 0, size: parseInt(sizeEl.value,10) || 10, totalPages: 0 };
-
-            function showLoading(){
-                bodyEl.innerHTML = `
-        <tr class="skeleton"><td colspan="9"></td></tr>
-        <tr class="skeleton"><td colspan="9"></td></tr>
-        <tr class="skeleton"><td colspan="9"></td></tr>`;
-                pagerEl.innerHTML = '';
-            }
-
-            function money(n){
-                if (n == null) return '-';
-                const v = Number(n);
-                return isNaN(v) ? String(n) : v.toLocaleString('ko-KR') + '원';
-            }
-            function fmtDate(d){
-                if(!d) return '-';
-                if (typeof d === 'string' && d.length <= 10) return d;
-                const dt = new Date(d);
-                if (isNaN(dt)) return d;
-                return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
-            }
-            function badge(status){
-                const map = {
-                    PENDING: 'bg-warning text-dark',
-                    CONFIRMED: 'bg-primary',
-                    CHECKED_IN: 'bg-info text-dark',
-                    CHECKED_OUT: 'bg-success',
-                    CANCELED: 'bg-secondary'
-                };
-                const cls = map[status] || 'bg-light text-dark';
-                return `<span class="badge badge-status ${cls}">${status ?? '-'}</span>`;
-            }
-            function escapeHtml(s){
-                return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-            }
-
-            function renderRows(items){
-                if(!items || items.length === 0){
-                    bodyEl.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-5">데이터가 없습니다.</td></tr>`;
-                    return;
-                }
-                bodyEl.innerHTML = items.map(it=>`
-        <tr>
-          <td>${it.reservationId}</td>
-          <td class="fw-semibold">${escapeHtml(it.reservationNumber)}</td>
-          <td>
-            <div class="fw-semibold">${escapeHtml(it.accommodationName ?? '-')}</div>
-            <div class="text-muted small">${escapeHtml(it.roomName ?? '')}</div>
-          </td>
-          <td>${fmtDate(it.checkInDate)} ~ ${fmtDate(it.checkOutDate)}</td>
-          <td>${it.guestCount ?? '-'}</td>
-          <td>
-            <div class="fw-semibold">${escapeHtml(it.guestName ?? '-')}</div>
-            <div class="text-muted small">${escapeHtml(it.guestPhone ?? '')}</div>
-          </td>
-          <td>${money(it.price)}</td>
-          <td>${badge(it.status)}</td>
-          <td>${it.createdAt ? String(it.createdAt).replace('T',' ').substring(0,16) : '-'}</td>
-        </tr>
-      `).join('');
-            }
-
-            function renderPager(totalPages){
-                state.totalPages = Math.max(1, totalPages || 1);
-                const cur = state.page;
-
-                function li(disabled, active, page, label){
-                    const cls = `page-item ${disabled?'disabled':''} ${active?'active':''}`;
-                    const href = disabled ? '#' : `?page=${page}`;
-                    return `<li class="${cls}"><a class="page-link" href="${href}" data-page="${page}">${label}</a></li>`;
-                }
-
-                let html = '';
-                html += li(cur<=0, false, cur-1, '«');
-                for(let i=0;i<state.totalPages;i++){
-                    html += li(false, i===cur, i, i+1);
-                }
-                html += li(cur>=state.totalPages-1, false, cur+1, '»');
-                pagerEl.innerHTML = html;
-            }
-
-            function buildQuery(){
-                const p = new URLSearchParams();
-                const st = statusEl.value.trim();
-                if (st) p.set('status', st);     // 필터
-                p.set('page', state.page +1);       // 0-base
-                p.set('size', state.size);
-                return p.toString();
-            }
-
-            async function loadPage(){
-                showLoading();
-                try{
-                    // PageResponseDTO 규격 API 호출
-                    const res = await fetch("/api/reservations?" + buildQuery());
-                    if(!res.ok) throw new Error('목록을 불러오지 못했습니다.');
-                    const data = await res.json();
-
-                    // 예상 형태: { dtoList:[], total, page, size }
-                    const rows  = Array.isArray(data.dtoList) ? data.dtoList : [];
-                    renderRows(rows);
-
-                    const total = Number(data.total ?? 0);
-                    const size  = Number(data.size ?? state.size);
-                    const pages = Math.max(1, Math.ceil(total / (size || 10)));
-                    renderPager(pages);
-                }catch(e){
-                    console.error(e);
-                    bodyEl.innerHTML =
-                        `<tr><td colspan="9" class="text-center text-danger py-5">목록을 불러오지 못했습니다.</td></tr>`;
-                }
-            }
-
-            // 단건(예약번호) 조회 → 표 1행
-            async function findByNumber() {
-                const num = numberEl.value.trim();
-                if(!num){ numberEl.focus(); return; }
-                showLoading();
-                try{
-                    const res = await fetch('/api/reservations/number/'+encodeURIComponent(num));
-                    if(!res.ok) throw new Error('예약번호로 조회 실패');
-                    const item = await res.json();
-                    renderRows([item]);
-                    pagerEl.innerHTML = ''; // 단건 조회 시 페이저 숨김
-                }catch(e){
-                    console.error(e);
-                    bodyEl.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-5">해당 예약번호를 찾지 못했습니다.</td></tr>`;
-                }
-            }
-
-            // 이벤트
-            document.getElementById('searchForm').addEventListener('submit', (e)=>{
-                e.preventDefault();
-                state.page = 0;
-                state.size = parseInt(sizeEl.value,10) || 10;
-                loadPage();
-            });
-            pagerEl.addEventListener('click', (e)=>{
-                const a = e.target.closest('a[data-page]');
-                if(!a) return;
-                e.preventDefault();
-                const p = parseInt(a.dataset.page,10);
-                if(Number.isNaN(p) || p<0 || p>=state.totalPages) return;
-                state.page = p;
-                loadPage();
-            });
-            btnFindByNumber.addEventListener('click', findByNumber);
-
-            // 최초 로드
-            loadPage();
-        })();
+<th:block layout:fragment="script">
+    <script th:if="${msg}" th:inline="javascript">
+        // 메시지 토스트/알림이 필요하면 alert으로 간단 처리
+        alert([[${msg}]]);
     </script>
 </th:block>
 </body>

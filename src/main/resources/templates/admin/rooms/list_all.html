@@ -21,13 +21,16 @@
 <body>
 <!-- ★★★ base가 기대하는 슬롯 이름과 동일하게! 예: content -->
 <th:block layout:fragment="content">
+  <script th:if="${msg}" th:inline="javascript">
+    alert([[${msg}]]);
+  </script>
 
   <!-- 여기부터 이전에 준 "카드+테이블" 마크업을 넣습니다 -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="mb-0 fw-bold">객실 전체 목록</h3>
     <div class="d-flex gap-2">
       <a class="btn btn-outline-secondary" href="/admin/accommodations/list">← 숙소 목록</a>
-      <a class="btn btn-primary" href="/admin/rooms/register">+ 객실 등록</a>
+      <a class="btn btn-primary" href="/admin/rooms/add">+ 객실 등록</a>
     </div>
   </div>
 
@@ -45,7 +48,9 @@
           </select>
         </div>
         <div class="col-md-5 text-muted small text-end">
-          총 <span th:text="${page.totalElements}">0</span>개 / 페이지 <span th:text="${page.number + 1}">1</span> / <span th:text="${page.totalPages}">1</span>
+          총 <span th:text="${page.totalElements}">0</span>개 /
+          페이지 <span th:text="${page.number + 1}">1</span> /
+          <span th:text="${page.totalPages}">1</span>
         </div>
       </form>
     </div>
@@ -68,13 +73,15 @@
           </tr>
           </thead>
           <tbody>
-          <tr th:each="room, idx : ${rooms}"
+
+          <tr th:each="room, idx : ${page.content}"
               th:attr="data-name=${room.name},data-status=${room.status}">
-            <td class="text-center" th:text="${idx.index + 1}">1</td>
+            <td class="text-center"
+                th:text="${(page.number * page.size) + idx.index + 1}">1</td>
             <td>
               <div class="fw-semibold" th:text="${room.name}">디럭스 트윈</div>
               <div class="text-muted small">
-                ID: <span th:text="${room.roomId}">1</span> · 숙소ID: <span th:text="${room.accommodationId}">10</span>
+                ID: <span th:text="${room.roomId}">1</span> · 숙소명: <span th:text="${room.accommodationId}">10</span>
               </div>
             </td>
             <td>
@@ -104,14 +111,19 @@
               <div class="btn-group btn-group-sm">
                 <a class="btn btn-outline-primary" th:href="@{|/admin/rooms/detail/${room.roomId}|}">보기</a>
                 <a class="btn btn-outline-secondary" th:href="@{|/admin/rooms/edit/${room.roomId}|}">수정</a>
+                <a class="btn btn-success"
+                   th:classappend="${room.totalRooms > 0} ? '' : ' disabled'"
+                   th:href="@{/admin/reservations/new(roomId=${room.roomId})}">
+                  예약
+                </a>
               </div>
             </td>
           </tr>
 
-          <tr th:if="${#lists.isEmpty(rooms)}">
+          <tr th:if="${#lists.isEmpty(page.content)}">
             <td colspan="8" class="text-center py-5">
               <div class="text-muted">등록된 객실이 없습니다.</div>
-              <a class="btn btn-primary btn-sm mt-2" href="/admin/rooms/register">객실 등록</a>
+              <a class="btn btn-primary btn-sm mt-2" href="/admin/rooms/add">객실 등록</a>
             </td>
           </tr>
           </tbody>
@@ -126,7 +138,8 @@
       <nav th:if="${page.totalPages > 1}">
         <ul class="pagination mb-0">
           <li class="page-item" th:classappend="${page.first}? 'disabled'">
-            <a class="page-link" th:href="@{/admin/rooms/list_all(page=${page.number - 1}, size=${page.size})}">이전</a>
+            <a class="page-link"
+               th:href="@{/admin/rooms/list_all(page=${page.number - 1}, size=${page.size})}">이전</a>
           </li>
           <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages-1)}"
               th:classappend="${i == page.number}? 'active'">
@@ -134,7 +147,8 @@
                th:href="@{/admin/rooms/list_all(page=${i}, size=${page.size})}">1</a>
           </li>
           <li class="page-item" th:classappend="${page.last}? 'disabled'">
-            <a class="page-link" th:href="@{/admin/rooms/list_all(page=${page.number + 1}, size=${page.size})}">다음</a>
+            <a class="page-link"
+               th:href="@{/admin/rooms/list_all(page=${page.number + 1}, size=${page.size})}">다음</a>
           </li>
         </ul>
       </nav>

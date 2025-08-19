@@ -108,7 +108,7 @@ public class JwtTokenProvider {
     public String resolveToken(HttpServletRequest request) {
         // 1) Authorization: Bearer <token>
         String bearer = request.getHeader("Authorization");
-        if (bearer != null && bearer.startsWith("Bearer ")) {
+        if (bearer != null && bearer.startsWith("Bearer")) {
             return bearer.substring(7);
         }
         // 2) 쿠키 (로그인 페이지에서 저장한 ACCESS_TOKEN)

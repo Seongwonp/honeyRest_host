@@ -135,10 +135,10 @@ public class Reservation extends BaseEntity{
     }
 
     public void cancel(String reason) {
-        if (this.status == ReservationStatus.CANCELED) {
+        if (this.status == ReservationStatus.CANCELLED) {
             throw new IllegalStateException("이미 취소된 예약입니다.");
         }
-        this.status = ReservationStatus.CANCELED;
+        this.status = ReservationStatus.CANCELLED;
         this.cancelReason = reason;
     }
 }

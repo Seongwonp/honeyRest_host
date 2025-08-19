@@ -30,4 +30,10 @@ public interface ReservationService {
     PageResponseDTO<ReservationDTO> getAllReservations(PageRequestDTO pageRequestDTO);
 
     List<ReservationDTO> getAllReservationsNoPaging();
+
+    long countAll();
+
+    PageResponseDTO<ReservationDTO> getCompanyReservations(Long companyId, String status, String q, PageRequestDTO pageRequestDTO);
+
+
 }

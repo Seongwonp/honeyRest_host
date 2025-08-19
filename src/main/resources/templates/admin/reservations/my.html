@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+  <title>내 예약 현황</title>
+  <th:block layout:fragment="head">
+    <style>
+      .badge-status { font-size:.85rem; }
+      .bg-success-subtle{background:#e8f5e9!important;color:#2e7d32!important;}
+      .bg-warning-subtle{background:#fff8e1!important;color:#8d6e63!important;}
+      .bg-secondary-subtle{background:#f1f3f5!important;color:#495057!important;}
+    </style>
+  </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+  <div class="page-heading d-flex justify-content-between align-items-center">
+    <div>
+      <h3 class="mb-1">내 예약 현황</h3>
+      <p class="text-muted mb-0">내가 소속된 회사/숙소의 예약만 모아서 봅니다.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/list}">전체 목록</a>
+      <a class="btn btn-primary" th:href="@{/admin/reservations/new(roomId=)}">+ 수동 예약 등록</a>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+              <th style="width:80px" class="text-center">ID</th>
+              <th>예약번호</th>
+              <th>숙소/객실</th>
+              <th style="width:160px" class="text-center">체크인~아웃</th>
+              <th style="width:110px" class="text-center">인원</th>
+              <th style="width:140px" class="text-end">금액</th>
+              <th style="width:120px" class="text-center">상태</th>
+              <th style="width:120px" class="text-center">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${list}">
+              <td class="text-center" th:text="${r.reservationId}">1</td>
+              <td>
+                <div class="fw-semibold" th:text="${r.reservationNumber}">HR-…</div>
+                <div class="text-muted small">예약자: <span th:text="${r.guestName} ?: '-'">-</span> (<span th:text="${r.guestPhone} ?: '-'">-</span>)</div>
+              </td>
+              <td>
+                <div th:text="${r.accommodationName}">숙소명</div>
+                <div class="text-muted small" th:text="${r.roomName} ?: '-'">객실명</div>
+              </td>
+              <td class="text-center">
+                <div th:text="${#temporals.format(r.checkInDate, 'yyyy-MM-dd')}">-</div>
+                <div class="text-muted small">~ <span th:text="${#temporals.format(r.checkOutDate, 'yyyy-MM-dd')}">-</span></div>
+              </td>
+              <td class="text-center" th:text="${r.guestCount}">2</td>
+              <td class="text-end" th:text="${r.price != null ? #numbers.formatInteger(r.price.intValue(), 3, 'COMMA') : '0'}">0</td>
+              <td class="text-center">
+                <span class="badge badge-status rounded-pill"
+                      th:text="${r.status}"
+                      th:classappend="${r.status.name()}=='CONFIRMED' ? ' bg-success-subtle text-success' :
+                                      (${r.status.name()}=='PENDING' ? ' bg-warning-subtle text-warning' :
+                                      (${r.status.name()}=='CANCELLED' ? ' bg-secondary-subtle text-secondary' :
+                                      ' bg-light text-dark'))">CONFIRMED</span>
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                  <a class="btn btn-outline-primary" th:href="@{|/admin/reservations/${r.reservationId}|}">상세</a>
+                  <form th:action="@{|/admin/reservations/${r.reservationId}/cancel|}" method="post"
+                        onsubmit="return confirm('이 예약을 취소하시겠습니까?');">
+                    <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="reason" value="관리자 취소"/>
+                    <button type="submit" class="btn btn-outline-danger"
+                            th:disabled="${r.status.name()=='CANCELLED'}">취소</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(list)}">
+              <td colspan="8" class="text-center py-5 text-muted">표시할 예약이 없습니다.</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 페이지네이션 (원하면 동일하게 붙여쓰기) -->
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="small text-muted">총 <span th:text="${total}">0</span>건</div>
+      </div>
+    </div>
+  </div>
+
+  <div th:if="${msg}">
+    <script th:inline="javascript"> alert([[${msg}]]); </script>
+  </div>
+</th:block>
+</body>
+</html>

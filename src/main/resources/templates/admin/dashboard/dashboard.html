@@ -67,10 +67,9 @@
                                 </div>
                                 <div class="ms-3 name">
                                     <!-- 관리자 이름 -->
-                                    <h5 class="font-bold" id="${adminName}">admin01</h5>
-                                    <h6 class="text-muted mb-0">HOST</h6>
-                                    <!-- 관리자 권한 -->
-                                    <h6 class="text-muted mb-0" th:text="${adminRole}">-</h6>
+                                    <h5 class="font-bold" th:text="${currentAdmin != null ? currentAdmin.name : '관리자'}">관리자</h5>
+                                    <h6 class="text-muted mb-0" th:text="${currentAdmin != null ? currentAdmin.email : '-'}">-</h6>
+                                    <h6 class="text-muted mb-0" th:text="${currentAdmin != null ? currentAdmin.roleType : '-'}">-</h6>
                                 </div>
                             </div>
                         </div>

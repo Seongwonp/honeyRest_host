@@ -76,7 +76,7 @@
         : (#strings.equalsIgnoreCase(acc.status,'ACTIVE') ? ' status-active'
         : ' status-rejected'))}">
                     <!-- 번호 -->
-                    <td class="text-center" th:text="${stat.count}">1</td>
+                    <td class="text-center" th:text="${acc.accommodationId}">1</td>
 
                     <!-- 숙소명 -->
                     <td class="fw-semibold" th:text="${acc.name}">숙소명</td>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+  <title>환불/취소 관리</title>
+</head>
+<body>
+<th:block layout:fragment="content">
+  <div class="page-heading d-flex justify-content-between align-items-center">
+    <div>
+      <h3 class="mb-1">환불/취소 관리</h3>
+      <p class="text-muted mb-0">취소된 예약을 확인하고 후속 조치하세요.</p>
+    </div>
+    <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/list}">예약 목록</a>
+  </div>
+
+  <div class="page-content">
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+              <th style="width:80px" class="text-center">ID</th>
+              <th>예약번호</th>
+              <th>숙소/객실</th>
+              <th style="width:160px" class="text-center">체크인~아웃</th>
+              <th style="width:140px" class="text-end">금액</th>
+              <th>취소 사유</th>
+              <th style="width:140px" class="text-center">처리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- 컨트롤러에서 취소건만 list로 전달한다고 가정 -->
+            <tr th:each="r : ${list}">
+              <td class="text-center" th:text="${r.reservationId}">1</td>
+              <td class="fw-semibold" th:text="${r.reservationNumber}">HR-…</td>
+              <td>
+                <div th:text="${r.accommodationName}">숙소명</div>
+                <div class="text-muted small" th:text="${r.roomName} ?: '-'">객실명</div>
+              </td>
+              <td class="text-center">
+                <div th:text="${#temporals.format(r.checkInDate, 'yyyy-MM-dd')}">-</div>
+                <div class="text-muted small">~ <span th:text="${#temporals.format(r.checkOutDate, 'yyyy-MM-dd')}">-</span></div>
+              </td>
+              <td class="text-end" th:text="${r.price != null ? #numbers.formatInteger(r.price.intValue(), 3, 'COMMA') : '0'}">0</td>
+              <td th:text="${r.cancelReason} ?: '-'">-</td>
+              <td class="text-center">
+                <!-- 예: 환불 확정 처리 버튼 등 추후 추가 -->
+                <span class="badge bg-secondary">취소됨</span>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(list)}">
+              <td colspan="7" class="text-center py-5 text-muted">취소/환불 대상이 없습니다.</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- 필요 시 페이지네이션 붙이기 -->
+    </div>
+  </div>
+
+  <div th:if="${msg}">
+    <script th:inline="javascript"> alert([[${msg}]]); </script>
+  </div>
+</th:block>
+</body>
+</html>

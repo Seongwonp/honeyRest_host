@@ -15,4 +15,5 @@ public class AdminLoginRequestDTO {
     private String email;
     @NotBlank
     private String password;
+    private String role; // 화면 표시용 (COMPANY_ADMIN, SUPER_ADMIN 등)
 }

@@ -36,10 +36,18 @@ public class RoomPageController {
                           Pageable pageable,
                           Model model) {
         Page<RoomDTO> page = roomService.findPageAll(pageable);
-        model.addAttribute("rooms", page.getContent());
         model.addAttribute("page", page);
         return "admin/rooms/list_all";
     }
+    /** 라우팅 헬퍼: /list?accommodationId=... -> by-accommodation, 없으면 list_all */
+    @GetMapping("/list")
+    public String listRouter(@RequestParam(required = false) Long accommodationId) {
+        if (accommodationId != null) {
+            return "redirect:/admin/rooms/list/by-accommodation?accommodationId=" + accommodationId;
+        }
+        return "redirect:/admin/rooms/list_all";
+    }
+
 
     /** 특정 숙소의 객실 목록 (등록/수정 후 이동) */
     @GetMapping("/list/by-accommodation")
@@ -84,26 +92,34 @@ public class RoomPageController {
     // 수정 폼
     @GetMapping("/edit/{roomId}")
     public String editForm(@PathVariable Long roomId, Model model) {
-        RoomDTO room = roomService.getByRoomId(roomId);
-        model.addAttribute("form", room);
+        RoomDTO form = roomService.getByRoomId(roomId); // 반드시 null 아니게
+        model.addAttribute("form", form);
         model.addAttribute("accommodations", accommodationRepository.findAll());
-        return "admin/rooms/edit";
+        return "admin/rooms/edit"; // templates/admin/rooms/edit.html
     }
 
-    // 수정 처리
     @PostMapping("/{roomId}")
     public String update(@PathVariable Long roomId,
                          @Valid @ModelAttribute("form") RoomDTO form,
                          BindingResult binding,
+                         Model model,
                          RedirectAttributes ra) {
+
         if (binding.hasErrors()) {
+            model.addAttribute("accommodations", accommodationRepository.findAll());
             return "admin/rooms/edit";
         }
-        // form 안에 roomId가 없다면 세팅
+
+        // form에 roomId 보장
         form.setRoomId(roomId);
+
         roomService.modifyRoom(form);
+
+        // 알림용 플래시 메시지
         ra.addFlashAttribute("msg", "객실이 수정되었습니다.");
-        return "redirect:/admin/rooms/list?accommodationId=" + form.getAccommodationId();
+
+        // ✅ 전체 객실 목록으로 이동
+        return "redirect:/admin/rooms/list_all";
     }
 
     /* ========== 삭제 ========== */

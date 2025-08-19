@@ -34,6 +34,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+
     /* ---------------------- JSON 헬퍼 ---------------------- */
     private JsonNode stringToJsonNode(String json) {
         try {
@@ -286,4 +287,8 @@ public class AccommodationServiceImpl implements AccommodationService {
         accommodationRepository.save(updated);
     }
 
+    public long count() {
+        return accommodationRepository.count(); // JpaRepository 기본 제공
     }
+
+}
