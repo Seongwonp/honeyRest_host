@@ -63,10 +63,8 @@
                         </a>
                         <ul class="submenu">
                             <li class="submenu-item"><a href="/admin/accommodations/add">숙소 등록</a></li>
-                            <li class="submenu-item"><a href="/admin/accommodations/list">숙소 목록</a></li>
                             <li class="submenu-item"><a href="/admin/accommodations/list?status=PENDING">승인 대기 목록</a>
                             </li>
-                            <li class="submenu-item"><a href="/admin/rooms/add">객실 등록</a></li>
                         </ul>
                     </li>
 
@@ -78,28 +76,17 @@
                         </a>
                     </li>
 
-                    <li class="sidebar-item has-sub">
-                        <a href="#" class="sidebar-link">
-                            <i class="bi bi-journal-bookmark"></i>
-                            <span>예약 관리</span>
-                        </a>
-                        <ul class="submenu">
-                            <li class="submenu-item"><a href="/admin/reservations/list">예약 목록</a></li>
-                            <li class="submenu-item"><a href="/admin/canceled/add">환불/취소</a></li>
-                        </ul>
-                    </li>
-
-
                     <!-- 승인 후: 전부 활성화 -->
-                    <!--                        <div th:if="${approvalStatus == 'APPROVED'}">-->
+                    <!-- <div th:if="${approvalStatus == 'APPROVED'}">-->
                     <li class="sidebar-item has-sub">
                         <a href="#" class="sidebar-link">
                             <i class="bi bi-house-door"></i><span>숙소/객실 관리</span>
                         </a>
                         <ul class="submenu">
-                            <li class="submenu-item"><a href="/admin/accommodations/edit">숙소 정보 수정</a></li>
+                            <li class="submenu-item"><a href="/admin/accommodations/list">숙소 목록</a></li>
+<!--                            <li class="submenu-item"><a href="/admin/accommodations/edit">숙소 정보 수정</a></li>-->
                             <li class="submenu-item"><a href="/admin/rooms/add">객실 등록</a></li>
-                            <li class="submenu-item"><a href="/admin/rooms/list">객실 목록</a></li>
+                            <li class="submenu-item"><a href="/admin/rooms/list_all">객실 전체 목록</a></li>
                             <li class="submenu-item"><a href="/admin/policies">이용/환불 정책</a></li>
                             <li class="submenu-item"><a href="/admin/amenities">편의시설/이미지</a></li>
                         </ul>

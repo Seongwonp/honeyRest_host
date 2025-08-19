@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+
+<head>
+    <title>숙소 수정</title>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <div class="page-heading">
+        <h3>숙소 수정</h3>
+    </div>
+
+    <div class="page-content">
+        <section class="row">
+            <div class="col-12 col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <form th:action="@{|/admin/accommodations/edit/${acc.accommodationId}|}"
+                              th:object="${form}" method="post">
+<!--                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>-->
+
+                            <!-- 기본 정보 -->
+                            <div class="row g-3">
+
+                                <div class="col-md-6">
+                                    <label class="form-label required">숙소명</label>
+                                    <input type="text" class="form-control" th:field="*{name}" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">카테고리</label>
+                                    <select class="form-select" th:field="*{categoryId}">
+                                        <option value="">선택</option>
+                                        <option th:each="c : ${categories}"
+                                                th:value="${c.categoryId}"
+                                                th:text="${c.name}"></option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label class="form-label required">주소</label>
+                                    <input type="text" class="form-control" th:field="*{address}" required>
+                                </div>
+
+                                <!-- 지역 선택 -->
+                                <div class="col-md-4">
+                                    <label class="form-label required">지역(대)</label>
+                                    <select id="mainRegion" class="form-select"
+                                            th:field="*{mainRegionId}" required
+                                            th:data-url="@{/admin/accommodations/regions/children}">
+                                        <option value="">선택하세요</option>
+                                        <option th:each="r : ${mainRegions}" th:value="${r.regionId}"
+                                                th:text="${r.name}"></option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label required">지역(소)</label>
+                                    <select id="subRegion" class="form-select" th:field="*{subRegionId}" required
+                                            th:data-selected="${form.subRegionId}">
+                                        <option value="">상위를 먼저 선택하세요</option>
+                                        <!-- 초기 진입시 서버가 내려준 subRegions 로 채움 -->
+                                        <option th:each="r : ${subRegions}" th:value="${r.regionId}"
+                                                th:text="${r.name}"
+                                                th:selected="${r.regionId} == ${form.subRegionId}"></option>
+                                    </select>
+                                </div>
+
+                                <!-- 썸네일/설명 -->
+                                <div class="col-md-4">
+                                    <label class="form-label">썸네일 URL</label>
+                                    <input type="text" class="form-control" th:field="*{thumbnailUrl}">
+                                </div>
+
+                                <div class="col-md-8">
+                                    <label class="form-label">설명</label>
+                                    <textarea class="form-control" rows="3" th:field="*{description}"></textarea>
+                                </div>
+
+
+                                <div class="col-md-3">
+                                    <label class="form-label">상태</label>
+                                    <select class="form-select" th:field="*{status}">
+                                        <option value="">선택</option>
+                                        <option value="ACTIVE">ACTIVE</option>
+                                        <option value="INACTIVE">INACTIVE</option>
+                                        <option value="PENDING">PENDING</option>
+                                        <option value="REJECTED">REJECTED</option>
+                                        <option value="DRAFT">DRAFT</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">최저가(원)</label>
+                                    <input type="number" class="form-control" th:field="*{minPrice}">
+                                </div>
+
+                            </div>
+
+                            <div class="mt-4 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">저장</button>
+                                <a th:href="@{|/admin/accommodations/detail/${acc.accommodationId}|}" class="btn btn-light">
+                                    취소
+                                </a>
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<th:block layout:fragment="script">
+        <script th:if="${updated}">
+            alert('수정되었습니다.');
+
+        (function(){
+            const main = document.getElementById('mainRegion');
+            const sub  = document.getElementById('subRegion');
+            if(!main || !sub) return;
+
+            const dataUrl = main.getAttribute('data-url'); // /admin/accommodations/regions/children
+
+            main.addEventListener('change', async function(){
+                const parentId = this.value;
+                sub.innerHTML = '<option value="">불러오는 중...</option>';
+                if(!parentId){ sub.innerHTML = '<option value="">상위를 먼저 선택하세요</option>'; return; }
+
+                try{
+                    const res = await fetch(`${dataUrl}?parentId=${parentId}`, {headers: {'Accept':'application/json'}});
+                    if(!res.ok) throw new Error(res.status);
+                    const list = await res.json();
+
+                    const selected = sub.getAttribute('data-selected'); // 기존 선택값
+                    sub.innerHTML = '<option value="">선택하세요</option>';
+                    list.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.id;
+                        opt.textContent = item.name;
+                        if(selected && String(item.id) === String(selected)) opt.selected = true;
+                        sub.appendChild(opt);
+                    });
+                }catch(e){
+                    console.error('지역(소) 로드 실패:', e);
+                    sub.innerHTML = '<option value="">불러오기 실패</option>';
+                }
+            });
+        })();
+    </script>
+</th:block>
+</body>
+</html>

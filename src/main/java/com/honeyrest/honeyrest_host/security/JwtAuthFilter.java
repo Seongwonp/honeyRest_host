@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -31,6 +30,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain)
             throws ServletException, IOException {
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            chain.doFilter(request, response);
+            return;
+        }
 
         String raw = resolveToken(request);         // 헤더/쿠키 모두에서 원문 추출
         String token = normalizeToken(raw);         // Bearer 제거
@@ -82,10 +85,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private String normalizeToken(String raw) {
         if (raw == null) return null;
-        return raw.startsWith("Bearer ") ? raw.substring(7) : raw;
+        String v = raw.trim();
+        if (v.length() >= 7 && v.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            return v.substring(7).trim();
+        }
+        return v;
     }
 
     private String mask(String v) {
+        if (v == null) return null;
         return (v.length() <= 12) ? v : v.substring(0, 6) + "..." + v.substring(v.length() - 6);
     }
 
@@ -94,11 +102,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         return uri.startsWith("/api/admin/auth/")
                 || uri.startsWith("/admin/auth/")
+                || uri.startsWith("/admin/assets/")
                 || uri.startsWith("/assets/")
                 || uri.startsWith("/static/")
                 || uri.startsWith("/css/")
                 || uri.startsWith("/js/")
                 || uri.startsWith("/images/")
+                || uri.startsWith("/.well-known/")
                 || uri.startsWith("/swagger-ui/")
                 || uri.startsWith("/v3/api-docs");
     }

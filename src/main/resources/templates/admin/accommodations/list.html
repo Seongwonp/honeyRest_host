@@ -9,14 +9,31 @@
     <th:block layout:fragment="head">
         <style>
             .status-badge {
-                padding: 0.35em 0.65em;
-                border-radius: 0.25rem;
+                padding: .35em .65em;
+                border-radius: .25rem;
                 font-size: .75rem;
-                font-weight: 500;
+                font-weight: 500
             }
-            .status-pending {background-color: #fff3cd; color: #856404;}
-            .status-approved {background-color: #d4edda; color: #155724;}
-            .status-rejected {background-color: #f8d7da; color: #721c24;}
+
+            .status-pending {
+                background: #fff3cd;
+                color: #856404
+            }
+
+            .status-approved {
+                background: #d4edda;
+                color: #155724
+            }
+
+            .status-rejected {
+                background: #f8d7da;
+                color: #721c24
+            }
+
+            .status-active {
+                background: #e7f1ff;
+                color: #0a58ca
+            }
         </style>
     </th:block>
 </head>
@@ -29,49 +46,79 @@
 
     <div class="card mt-3">
         <div class="card-body table-responsive">
-            <table class="table table-bordered align-middle">
+            <table class="table table-sm align-middle">
+                <colgroup>
+                    <col style="width: 90px;"/>      <!-- 번호 -->
+                    <col/>                           <!-- 숙소명 -->
+                    <col style="width: 160px;"/>     <!-- 카테고리 -->
+                    <col style="width: 180px;"/>     <!-- 지역 -->
+                    <col style="width: 140px;"/>     <!-- 최저가 -->
+                    <col style="width: 120px;"/>     <!-- 상태 -->
+                    <col style="width: 260px;"/>     <!-- 액션 -->
+                </colgroup>
+
                 <thead class="table-light">
                 <tr>
-                    <th>번호</th>
+                    <th class="text-center">번호</th>
                     <th>숙소명</th>
                     <th>카테고리</th>
                     <th>지역</th>
-                    <th>상태</th>
-                    <th>등록일</th>
-                    <th>액션</th>
+                    <th class="text-end">최저가</th>
+                    <th class="text-center">상태</th>
+                    <th class="text-center">액션</th>
                 </tr>
                 </thead>
                 <tbody>
-                <!-- 컨트롤러에서 model.addAttribute("accommodations", service.getAll()); -->
-                <tr th:each="acc, stat : ${accommodations}">
-                    <td th:text="${acc.accommodationId}">1</td>
-                    <td>
-                        <span th:text="${acc.name}">허니레스트 강남점</span>
+                <tr th:each="acc, stat : ${accommodations}"
+                    th:with="badgeClass=
+        ${#strings.equalsIgnoreCase(acc.status,'PENDING') ? ' status-pending'
+        : (#strings.equalsIgnoreCase(acc.status,'APPROVED') ? ' status-approved'
+        : (#strings.equalsIgnoreCase(acc.status,'ACTIVE') ? ' status-active'
+        : ' status-rejected'))}">
+                    <!-- 번호 -->
+                    <td class="text-center" th:text="${stat.count}">1</td>
+
+                    <!-- 숙소명 -->
+                    <td class="fw-semibold" th:text="${acc.name}">숙소명</td>
+
+
+                    <!-- 카테고리 -->
+                    <td th:text="${acc.categoryName}">카테고리</td>
+
+                    <!-- 지역 -->
+                    <td th:text="${acc.regionName}">지역</td>
+
+                    <!-- 최저가 -->
+                    <td class="text-end" th:text="|${#numbers.formatDecimal(acc.minPrice,0,'COMMA',0,'POINT')}원|">0원
                     </td>
-                    <td th:text="${acc.categoryName}">호텔</td>
-                    <td>
-                        <span th:text="${acc.mainRegionName}">서울</span>
-                        <span th:text="${acc.subRegionName}">강남구</span>
+
+                    <!-- 상태 -->
+                    <td class="text-center">
+      <span class="status-badge" th:classappend="${' ' + badgeClass}"
+            th:text="${acc.status}">ACTIVE</span>
                     </td>
-                    <td>
-                        <span class="status-badge"
-                              th:classappend="${acc.status}=='PENDING' ? 'status-pending'
-                                            : ${acc.status}=='APPROVED' ? 'status-approved'
-                                            : 'status-rejected'"
-                              th:text="${acc.status}">승인대기</span>
-                    </td>
-                    <td th:text="${#temporals.format(acc.createdAt, 'yyyy-MM-dd HH:mm')}">
-                        2025-08-19
-                    </td>
-                    <td>
-                        <a th:href="@{/admin/accommodations/detail/{id}(id=${acc.accommodationId})}"
-                           class="btn btn-sm btn-outline-primary">상세보기</a>
-                        <a th:href="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}"
-                           class="btn btn-sm btn-outline-secondary">수정</a>
+
+                    <!-- 액션 -->
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm" role="group" style="white-space:nowrap; " >
+                            <a class="btn btn-outline-primary"
+                               th:href="@{/admin/accommodations/detail/{id}(id=${acc.accommodationId})}">상세보기</a>
+                            <a class="btn btn-outline-secondary"
+                               th:href="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}">수정</a>
+                            <a class="btn btn-outline-info"
+                               th:href="@{|/admin/rooms/list/by-accommodation?accommodationId=${acc.accommodationId}|}">객실관리</a>
+
+                            <form th:action="@{/admin/accommodations/delete/{id}(id=${acc.accommodationId})}"
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');">
+                                <button type="submit" class="btn btn-outline-danger">삭제</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
-                <tr th:if="${#lists.isEmpty(accommodations)}">
-                    <td colspan="7" class="text-center text-muted">등록된 숙소가 없습니다.</td>
+
+                <tr th:if="${accommodations == null or #lists.isEmpty(accommodations)}">
+                    <td colspan="7" class="text-center text-muted py-4">등록된 숙소가 없습니다.</td>
                 </tr>
                 </tbody>
             </table>
@@ -79,4 +126,3 @@
     </div>
 </th:block>
 </body>
-</html>

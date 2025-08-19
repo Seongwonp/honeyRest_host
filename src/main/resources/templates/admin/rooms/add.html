@@ -3,154 +3,134 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
+
 <head>
-    <title>객실 등록</title>
-    <th:block layout:fragment="head">
-        <meta name="_csrf" th:content="${_csrf?.token}"/>
-        <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
-        <style>.required::after{content:" *";color:#dc3545}</style>
-    </th:block>
+    <title layout:fragment="title">객실 등록</title>
 </head>
+
 <body>
-<th:block layout:fragment="content">
-    <div class="page-heading d-flex align-items-center justify-content-between">
+<main layout:fragment="content">
+    <div class="page-heading d-flex justify-content-between align-items-center">
         <div>
-            <h3 class="mb-1">객실 등록</h3>
-            <p class="text-muted mb-0">숙소 선택 후 객실 정보를 입력하세요.</p>
+            <h3>객실 등록</h3>
+            <p class="text-muted">숙소별로 여러 개의 객실을 등록할 수 있습니다.</p>
         </div>
-        <a class="btn btn-outline-secondary" id="toList">목록</a>
-    </div>
-
-    <div class="card">
-        <div class="card-body">
-            <form id="roomForm" class="row g-3">
-                <input type="hidden" id="accommodationId" />
-
-                <div class="col-md-6">
-                    <label class="form-label required">객실명</label>
-                    <input type="text" class="form-control" id="name" placeholder="디럭스 더블" required>
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label required">객실 유형</label>
-                    <select id="type" class="form-select" required>
-                        <!-- enum RoomType 에 맞춰 수정 -->
-                        <option value="" disabled selected>선택</option>
-                        <option value="STANDARD">STANDARD</option>
-                        <option value="DELUXE">DELUXE</option>
-                        <option value="SUITE">SUITE</option>
-                    </select>
-                </div>
-
-                <div class="col-md-4">
-                    <label class="form-label required">가격(원)</label>
-                    <input type="number" class="form-control" id="price" min="0" required>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">기준 인원</label>
-                    <input type="number" class="form-control" id="standardOccupancy" min="1">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">최대 인원</label>
-                    <input type="number" class="form-control" id="maxOccupancy" min="1">
-                </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">추가 인원 요금</label>
-                    <input type="number" class="form-control" id="extraPersonFee" min="0" step="1000">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">총 객실 수</label>
-                    <input type="number" class="form-control" id="totalRooms" min="1">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">상태</label>
-                    <select id="status" class="form-select">
-                        <option value="ACTIVE" selected>ACTIVE</option>
-                        <option value="INACTIVE">INACTIVE</option>
-                    </select>
-                </div>
-
-                <div class="col-12">
-                    <label class="form-label">침대 정보(쉼표로 구분 또는 JSON)</label>
-                    <input type="text" class="form-control" id="bedInfo" placeholder='예: "더블 1개, 싱글 1개" 또는 ["DOUBLE","SINGLE"]'>
-                </div>
-                <div class="col-12">
-                    <label class="form-label">편의시설(쉼표로 구분 또는 JSON)</label>
-                    <input type="text" class="form-control" id="amenities" placeholder='예: "wifi, tv, parking" 또는 ["wifi","tv"]'>
-                </div>
-
-                <div class="col-12">
-                    <label class="form-label">설명</label>
-                    <textarea class="form-control" id="description" rows="3"></textarea>
-                </div>
-
-                <div class="col-12 d-flex gap-2 mt-2">
-                    <button type="submit" class="btn btn-primary">등록</button>
-                    <a class="btn btn-outline-secondary" id="cancelBtn">취소</a>
-                </div>
-            </form>
+        <div>
+            <a class="btn btn-light"
+               th:href="${form.accommodationId} != null ? @{/admin/rooms/by-accommodation(accommodationId=${form.accommodationId})} : @{/admin/accommodations/list}">
+                ← 돌아가기
+            </a>
         </div>
     </div>
-</th:block>
 
-<th:block layout:fragment="body-end">
-    <script>
-        (function(){
-            const qs = new URLSearchParams(location.search);
-            const accId = qs.get('accommodationId');
-            const listUrl = accId ? `/admin/rooms?accommodationId=${accId}` : '/admin/rooms';
+    <div class="page-content">
+        <div class="card">
+            <div class="card-body">
+                <form th:action="@{/admin/rooms}" th:object="${form}" method="post" class="row g-3">
 
-            document.getElementById('toList').href = listUrl;
-            document.getElementById('cancelBtn').href = listUrl;
+                    <!-- 숙소 선택 -->
+                    <div class="col-md-6">
+                        <label class="form-label required">숙소</label>
+                        <select class="form-select" th:field="*{accommodationId}" required>
+                            <option value="" disabled th:selected="${form.accommodationId == null}">선택하세요</option>
+                            <option th:each="a : ${accommodations}"
+                                    th:value="${a.accommodationId}"
+                                    th:text="|[${a.accommodationId}] ${a.name}|"
+                                    th:selected="${form.accommodationId == a.accommodationId}">
+                            </option>
+                        </select>
+                    </div>
 
-            if (!accId) {
-                alert('accommodationId가 없습니다. 숙소 목록에서 "객실" 버튼으로 들어와 주세요.');
-                location.href = '/admin/accommodations/list';
-                return;
-            }
-            document.getElementById('accommodationId').value = accId;
+                    <!-- 객실명 -->
+                    <div class="col-md-6">
+                        <label class="form-label required">객실명</label>
+                        <input type="text" class="form-control" th:field="*{name}" placeholder="예) 디럭스 트윈" required>
+                    </div>
 
-            function getCsrf(){
-                const token = document.querySelector('meta[name="_csrf"]')?.content;
-                const header = document.querySelector('meta[name="_csrf_header"]')?.content;
-                return token && header ? { [header]: token } : {};
-            }
+                    <!-- 유형(enum) -->
+                    <div class="col-md-4">
+                        <label class="form-label required">객실 유형</label>
+                        <select class="form-select" th:field="*{type}" required>
+                            <option value="" disabled selected>선택</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Deluxe">Deluxe</option>
+                            <option value="Suite">Suite</option>
+                        </select>
+                    </div>
 
-            document.getElementById('roomForm').addEventListener('submit', async (e)=>{
-                e.preventDefault();
-                const body = {
-                    accommodationId: Number(document.getElementById('accommodationId').value),
-                    name: document.getElementById('name').value.trim(),
-                    type: document.getElementById('type').value,
-                    price: Number(document.getElementById('price').value || 0),
-                    maxOccupancy: Number(document.getElementById('maxOccupancy').value || 0),
-                    standardOccupancy: Number(document.getElementById('standardOccupancy').value || 0),
-                    extraPersonFee: Number(document.getElementById('extraPersonFee').value || 0),
-                    bedInfo: document.getElementById('bedInfo').value.trim(),
-                    amenities: document.getElementById('amenities').value.trim(),
-                    description: document.getElementById('description').value.trim(),
-                    totalRooms: Number(document.getElementById('totalRooms').value || 0),
-                    status: document.getElementById('status').value || 'ACTIVE'
-                };
+                    <!-- 가격 -->
+                    <div class="col-md-4">
+                        <label class="form-label required">가격(원)</label>
+                        <input type="number" min="0" step="1000" class="form-control" th:field="*{price}" placeholder="예) 120000" required>
+                    </div>
 
-                try{
-                    const res = await fetch('/api/rooms', {
-                        method: 'POST',
-                        headers: Object.assign({'Content-Type':'application/json'}, getCsrf()),
-                        body: JSON.stringify(body)
-                    });
-                    if(!res.ok){
-                        const err = await res.json().catch(()=>({message:'등록 실패'}));
-                        throw new Error(err.message || '등록 실패');
-                    }
-                    location.href = listUrl;
-                }catch(err){
-                    alert(err.message || '에러가 발생했습니다.');
-                }
-            });
-        })();
-    </script>
-</th:block>
+                    <!-- 총 객실수 -->
+                    <div class="col-md-4">
+                        <label class="form-label required">총 객실 수</label>
+                        <input type="number" min="1" class="form-control" th:field="*{totalRooms}" placeholder="예) 10" required>
+                    </div>
+
+                    <!-- 정원 -->
+                    <div class="col-md-4">
+                        <label class="form-label required">기준 인원</label>
+                        <input type="number" min="1" class="form-control" th:field="*{standardOccupancy}" placeholder="예) 2" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label required">최대 인원</label>
+                        <input type="number" min="1" class="form-control" th:field="*{maxOccupancy}" placeholder="예) 3" required>
+                    </div>
+
+                    <!-- 추가 인원 요금 -->
+                    <div class="col-md-4">
+                        <label class="form-label">추가 인원 요금(원)</label>
+                        <input type="number" min="0" step="1000" class="form-control" th:field="*{extraPersonFee}" placeholder="예) 20000">
+                    </div>
+
+                    <!-- 침대 정보 (CSV) -->
+                    <div class="col-12">
+                        <label class="form-label">침대 정보 (쉼표로 구분)</label>
+                        <input type="text" class="form-control"
+                               th:field="*{bedInfo}" placeholder="예) 더블베드1, 싱글베드1">
+                        <div class="form-text">쉼표(,)로 구분해서 입력하면 저장 시 JSON으로 변환됩니다.</div>
+                    </div>
+
+                    <!-- 편의시설 (CSV) -->
+                    <div class="col-12">
+                        <label class="form-label">편의시설 (쉼표로 구분)</label>
+                        <input type="text" class="form-control"
+                               th:field="*{amenities}" placeholder="예) TV, 와이파이, 에어컨">
+                        <div class="form-text">쉼표(,)로 구분해서 입력하면 저장 시 JSON으로 변환됩니다.</div>
+                    </div>
+
+                    <!-- 설명 -->
+                    <div class="col-12">
+                        <label class="form-label">설명</label>
+                        <textarea rows="4" class="form-control" th:field="*{description}"
+                                  placeholder="객실에 대한 상세 설명을 입력하세요."></textarea>
+                    </div>
+
+                    <!-- 상태 -->
+                    <div class="col-md-4">
+                        <label class="form-label">상태</label>
+                        <select class="form-select" th:field="*{status}">
+                            <option value="ACTIVE" selected>ACTIVE</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 mt-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">저장</button>
+                        <a class="btn btn-light"
+                           th:href="${form.accommodationId} != null ? @{/admin/rooms/by-accommodation(accommodationId=${form.accommodationId})} : @{/admin/accommodations/list}">
+                            취소
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
 </body>
 </html>

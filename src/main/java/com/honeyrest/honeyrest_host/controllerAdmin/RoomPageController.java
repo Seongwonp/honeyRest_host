@@ -1,107 +1,118 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
+
 import com.honeyrest.honeyrest_host.dto.RoomDTO;
+import com.honeyrest.honeyrest_host.entity.Accommodation;
+import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
 import com.honeyrest.honeyrest_host.service.RoomService;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
+
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;                // ★ 바인딩 결과
-import org.springframework.validation.annotation.Validated;   // ★ DTO 검증
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-@Controller
-public class RoomPageController {
+import java.util.List;
 
-    @GetMapping("/admin/rooms")
-    public String listPage(@RequestParam(required = false) Long accommodationId) {
-        // accommodationId 없이 접근해도 화면은 열리지만, JS에서 필요 파라미터 검사
-        return "admin/rooms/list";
+@Controller
+@RequiredArgsConstructor
+@RequestMapping("/admin/rooms")
+public class RoomPageController {
+    private final RoomService roomService;
+    private final AccommodationRepository accommodationRepository;
+
+
+    /** 전체 객실 목록 (사이드바 진입) */
+    @GetMapping("/list_all")
+    public String listAll(@PageableDefault(size = 10, sort = "roomId", direction = Sort.Direction.DESC)
+                          Pageable pageable,
+                          Model model) {
+        Page<RoomDTO> page = roomService.findPageAll(pageable);
+        model.addAttribute("rooms", page.getContent());
+        model.addAttribute("page", page);
+        return "admin/rooms/list_all";
     }
 
-    @GetMapping("/admin/rooms/add")
-    public String addPage(@RequestParam(required = false) Long accommodationId) {
+    /** 특정 숙소의 객실 목록 (등록/수정 후 이동) */
+    @GetMapping("/list/by-accommodation")
+    public String listByAccommodation(@RequestParam Long accommodationId,
+                                      @RequestParam(defaultValue = "0") int page,
+                                      @RequestParam(defaultValue = "10") int size,
+                                      Model model) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "roomId"));
+        model.addAttribute("page", roomService.findPageByAccommodationId(accommodationId, pageable));
+        model.addAttribute("accommodationId", accommodationId);
+        return "admin/rooms/list"; // 숙소별 테이블
+    }
+
+    /** 등록 폼 */
+    @GetMapping("/add")
+    public String addForm(@RequestParam(value = "accommodationId", required = false) Long accommodationId,
+                          Model model) {
+        RoomDTO form = new RoomDTO();
+        form.setAccommodationId(accommodationId);
+        model.addAttribute("form", form);
+        model.addAttribute("accommodations", accommodationRepository.findAll());
         return "admin/rooms/add";
     }
 
+    /** 등록 처리 */
+    @PostMapping("/add")
+    public String create(@Valid @ModelAttribute("form") RoomDTO form,
+                         BindingResult binding,
+                         Model model,
+                         RedirectAttributes ra) {
+        if (binding.hasErrors()) {
+            // 에러 시 다시 렌더링할 데이터들 채워줌
+            model.addAttribute("accommodations", accommodationRepository.findAll());
+            return "admin/rooms/add";
+        }
+        RoomDTO saved = roomService.registerRoom(form);
+        ra.addFlashAttribute("msg", "객실이 등록되었습니다.");
+        // ✅ 숙소별 목록으로 리다이렉트
+        return "redirect:/admin/rooms/list/by-accommodation?accommodationId=" + saved.getAccommodationId();
+    }
+    /* ========== 수정 ========== */
+    // 수정 폼
+    @GetMapping("/edit/{roomId}")
+    public String editForm(@PathVariable Long roomId, Model model) {
+        RoomDTO room = roomService.getByRoomId(roomId);
+        model.addAttribute("form", room);
+        model.addAttribute("accommodations", accommodationRepository.findAll());
+        return "admin/rooms/edit";
+    }
 
+    // 수정 처리
+    @PostMapping("/{roomId}")
+    public String update(@PathVariable Long roomId,
+                         @Valid @ModelAttribute("form") RoomDTO form,
+                         BindingResult binding,
+                         RedirectAttributes ra) {
+        if (binding.hasErrors()) {
+            return "admin/rooms/edit";
+        }
+        // form 안에 roomId가 없다면 세팅
+        form.setRoomId(roomId);
+        roomService.modifyRoom(form);
+        ra.addFlashAttribute("msg", "객실이 수정되었습니다.");
+        return "redirect:/admin/rooms/list?accommodationId=" + form.getAccommodationId();
+    }
+
+    /* ========== 삭제 ========== */
+    @PostMapping("/{roomId}/delete")
+    public String delete(@PathVariable Long roomId,
+                         @RequestParam("accommodationId") Long accommodationId,
+                         RedirectAttributes ra) {
+        roomService.removeRoom(roomId);
+        ra.addFlashAttribute("msg", "객실이 삭제되었습니다.");
+        return "redirect:/admin/rooms/list?accommodationId=" + accommodationId;
+    }
 }
-
-
-//    // 숙소별 객실 목록
-//    @GetMapping("/list")
-//    public String listRooms(@RequestParam Long accommodationId, Model model) {
-//        model.addAttribute("accommodationId", accommodationId);
-//        return "admin/rooms/list";
-//    }
-//
-//    // 객실 단건 조회
-//    @GetMapping("/{id}")
-//    public ResponseEntity<RoomDTO> get(@PathVariable Long id) {
-//        RoomDTO dto = roomService.getByRoomId(id);
-//        return ResponseEntity.ok(dto);
-//    }
-//
-//    // ===== 폼 진입: 쿼리파라미터 -> 경로변수로 변경 =====
-//    // ex) /admin/rooms/accommodations/3/add
-//    @GetMapping("/add")
-//    public String addRoomForm(@RequestParam Long accommodationId, Model model) {
-//        model.addAttribute("accommodationId", accommodationId);
-//        model.addAttribute("room", new RoomDTO());
-//        return "admin/rooms/add";
-//    }
-//
-//    // 객실 등록
-//    @PostMapping("/add")
-//    public String register(@ModelAttribute("room") @Validated RoomDTO roomDTO, // ← DTO 제약(@NotNull 등) 적용
-//                           BindingResult bindingResult,                         // ← 바인딩/검증 에러 수집
-//                           Model model,
-//                           RedirectAttributes redirectAttributes) {
-//
-//        // ★ 서버측 추가 유효성 검사(에러 발생 시 400 대신 폼으로 돌려보내기)
-//        if (roomDTO.getAccommodationId() == null) {
-//            bindingResult.rejectValue("accommodationId", "NotNull", "업체 ID(accommodationId)는 필수입니다.");
-//        }
-//        if (roomDTO.getName() == null || roomDTO.getName().isBlank()) {
-//            bindingResult.rejectValue("name", "NotBlank", "객실 이름은 필수입니다.");
-//        }
-//        if (roomDTO.getPrice() == null) {
-//            bindingResult.rejectValue("price", "NotNull", "가격은 필수입니다.");
-//        }
-//        if (roomDTO.getMaxOccupancy() == null) {
-//            bindingResult.rejectValue("maxOccupancy", "NotNull", "최대 인원은 필수입니다.");
-//        }
-//
-//        // 에러 있으면 그대로 add.html 로
-//        if (bindingResult.hasErrors()) {
-//            model.addAttribute("room", roomDTO);
-//            return "admin/rooms/add";
-//        }
-//
-//        RoomDTO saved = roomService.registerRoom(roomDTO);
-//        redirectAttributes.addFlashAttribute("message", "객실이 등록되었습니다 (Id = " + saved.getRoomId() + ")");
-//        // ★ 리스트로 돌아갈 때도 확실한 숫자만 사용
-//        return "redirect:/admin/rooms/list?accommodationId=" + saved.getAccommodationId();
-//    }
-//
-//    @GetMapping("/{id}/edit")
-//    public String editForm(@PathVariable Long id, Model model) {
-//        model.addAttribute("room", roomService.getByRoomId(id));
-//        return "admin/rooms/roomd-edit";
-//    }
-//
-//    // 객실 부분 수정
-//    @PatchMapping("/{id}")
-//    public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody RoomDTO dto) {
-//        dto.setRoomId(id);
-//        roomService.modifyRoom(dto);
-//        return ResponseEntity.noContent().build();
-//    }
-//
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<Void> delete(@PathVariable Long id) {
-//        roomService.removeRoom(id);
-//        return ResponseEntity.noContent().build();
-//    }
-//}

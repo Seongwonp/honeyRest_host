@@ -11,6 +11,8 @@ import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +20,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class RoomServiceImpl implements RoomService{
+public class RoomServiceImpl implements RoomService {
     private final RoomRepository roomRepository;
     private final AccommodationRepository accommodationRepository;
     private final ModelMapper modelMapper;
@@ -44,7 +46,11 @@ public class RoomServiceImpl implements RoomService{
             }
             return arr;
         } catch (Exception e) {
-            try { return objectMapper.readTree("[]"); } catch (Exception ignored) { return null; }
+            try {
+                return objectMapper.readTree("[]");
+            } catch (Exception ignored) {
+                return null;
+            }
         }
     }
 
@@ -62,6 +68,8 @@ public class RoomServiceImpl implements RoomService{
         return RoomDTO.builder()
                 .roomId(e.getRoomId())
                 .accommodationId(e.getAccommodation().getAccommodationId())
+                // ✅ 전체 목록에서 보기 좋도록 숙소명도 같이 내려주자 (DTO에 필드 하나 추가)
+                .name(e.getAccommodation().getName())
                 .name(e.getName())
                 .type(e.getType())
                 .price(e.getPrice())
@@ -92,14 +100,7 @@ public class RoomServiceImpl implements RoomService{
                 .totalRooms(d.getTotalRooms())
                 .status(d.getStatus() == null ? "ACTIVE" : d.getStatus())
                 .build();
-    }
 
-    @Override
-    public List<RoomDTO> findRoomsByAccommodationId(Long accommodationId) {
-        return roomRepository.findByAccommodation_AccommodationId(accommodationId)
-                .stream()
-                .map(this::toDTO)
-                .toList();
     }
 
     @Override
@@ -170,5 +171,15 @@ public class RoomServiceImpl implements RoomService{
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
         roomRepository.delete(room);
+    }
+
+    @Override
+    public Page<RoomDTO> findPageAll(Pageable pageable) {
+        return roomRepository.findAll(pageable).map(this::toDTO);
+    }
+
+    @Override
+    public Page<RoomDTO> findPageByAccommodationId(Long accommodationId, Pageable pageable) {
+        return roomRepository.findByAccommodation_AccommodationId(accommodationId, pageable).map(this::toDTO);
     }
 }
