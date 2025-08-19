@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
 import com.honeyrest.honeyrest_host.service.AccommodationCategory;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -23,6 +25,7 @@ public class AccommodationController {
     private final CompanyService companyService;
     private final AccommodationCategory accommodationCategory;
     private final RegionService regionService;
+    private final FileUploadUtil fileUploadUtil;
 
     @GetMapping("/company/{companyId}/accommodations")
     public String accommodationsByCompany(@PathVariable Long companyId, Model model) {
@@ -58,9 +61,20 @@ public class AccommodationController {
         return "owner/accommodation/create";
     }
     @PostMapping("/accommodation/create")
-    public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO) throws JsonProcessingException {
-        accommodationService.registerAccommodation(accommodationDTO);
-        return "redirect:/owner/accommodation/list";
+    public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO, Model model) throws JsonProcessingException {
+        try {
+            // Firebase 업로드
+            MultipartFile file = accommodationDTO.getFile();
+            String imageUrl = fileUploadUtil.upload(file, "accommodation");
+
+            accommodationDTO.setThumbnailUrl(imageUrl);
+
+            model.addAttribute("accommodation", accommodationService.registerAccommodation(accommodationDTO));
+            return "redirect:/owner/accommodation/list"; // 성공 페이지
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "/owner/accommodation/list";
+        }
     }
 
     @PostMapping("/accommodation/{accommodationId}/delete")

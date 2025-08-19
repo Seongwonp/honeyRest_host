@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ public class AccommodationDTO {
     private String address;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    private MultipartFile file;
     private String thumbnailUrl; // 저장된 이미지 URL
     private String amenities; // JSON String
     private String description;

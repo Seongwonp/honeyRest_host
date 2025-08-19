@@ -12,7 +12,7 @@
     </div>
 
     <div class="page-content">
-        <form th:action="@{/owner/accommodation/create}" method="post">
+        <form th:action="@{/owner/accommodation/create}" method="post"  enctype="multipart/form-data">
             <!-- 업체 선택 -->
             <div class="mb-3">
                 <label for="companyId" class="form-label">업체</label>
@@ -67,8 +67,8 @@
 
             <!-- 썸네일/설명/편의시설 -->
             <div class="mb-3">
-                <label for="thumbnail" class="form-label">썸네일 이미지 URL</label>
-                <input type="text" name="thumbnail" class="form-control" id="thumbnail" required>
+                <label for="file">로고 업로드:</label>
+                <input type="file" id="file" name="file" required><br/><br/>
             </div>
             <div class="mb-3">
                 <label for="description" class="form-label">설명</label>
