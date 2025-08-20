@@ -1,6 +1,9 @@
 package com.honeyrest.honeyrest_host.controllerOwner.dashboard;
 
+import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CouponDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
+import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -52,7 +55,27 @@ public class DashboardController {
 
     @GetMapping("/reservation/list")
     public String reservations(Model model) {
+        model.addAttribute("accommodationId", 0);
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         model.addAttribute("reservations", reservationService.getReservations());
+        return "owner/reservation/list";
+    }
+
+    @GetMapping("/reservation/list/{accommodationId}")
+    public String reservation(@PathVariable Long accommodationId, Model model) {
+        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
+        List<ReservationDTO> reservations;
+        if (accommodationId != null) {
+            reservations = reservationService.getReservationsByAccommodationId(accommodationId);
+            AccommodationDTO accommodation = accommodationService.getByAccommodationId(accommodationId);
+            model.addAttribute("reservation", reservations);
+            model.addAttribute("accommodation", accommodation);
+        } else {
+            reservations = reservationService.getReservations();
+        }
+        model.addAttribute("reservations", reservations);
+        model.addAttribute("accommodations", accommodations);
+        model.addAttribute("accommodationId", accommodationId);
         return "owner/reservation/list";
     }
 

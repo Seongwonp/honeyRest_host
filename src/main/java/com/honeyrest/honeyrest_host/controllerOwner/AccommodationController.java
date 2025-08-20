@@ -3,6 +3,7 @@ package com.honeyrest.honeyrest_host.controllerOwner;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.AccommodationImageDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
 import com.honeyrest.honeyrest_host.service.AccommodationCategory;
 import com.honeyrest.honeyrest_host.service.AccommodationService;
@@ -60,17 +61,27 @@ public class AccommodationController {
         model.addAttribute("regions", regionService.getAllRegions());
         return "owner/accommodation/create";
     }
+
     @PostMapping("/accommodation/create")
     public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO, Model model) throws JsonProcessingException {
         try {
             // Firebase 업로드
             MultipartFile file = accommodationDTO.getFile();
             String imageUrl = fileUploadUtil.upload(file, "accommodation");
-
             accommodationDTO.setThumbnailUrl(imageUrl);
 
-            model.addAttribute("accommodation", accommodationService.registerAccommodation(accommodationDTO));
-            return "redirect:/owner/accommodation/list"; // 성공 페이지
+
+            AccommodationImageDTO accommodationImageDTO = AccommodationImageDTO.builder()
+                    .imageUrl(imageUrl)
+                    .accommodationId(accommodationDTO.getAccommodationId())
+//                    .imageType()
+//                    .sortOrder()
+                    .build();
+            accommodationService.registerAccommodationImage(accommodationImageDTO);
+
+
+            accommodationService.registerAccommodation(accommodationDTO);
+            return "/owner/accommodation/list"; // 성공 페이지
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             return "/owner/accommodation/list";

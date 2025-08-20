@@ -2,6 +2,7 @@ package com.honeyrest.honeyrest_host.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.AccommodationImageDTO;
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface AccommodationService {
     void modifyAccommodation(AccommodationDTO dto) throws JsonProcessingException;
 
     void removeAccommodation(Long id);
+
+    void registerAccommodationImage(AccommodationImageDTO dto) throws JsonProcessingException;
 }

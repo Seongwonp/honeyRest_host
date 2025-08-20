@@ -21,7 +21,7 @@
     <h3 class="mb-4"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
 
     <div class="card p-4 mb-4 shadow-sm">
-        <form method="get" action="/owner/sales/list" class="row g-3 align-items-end">
+        <form method="get" action="/owner/sales/day" class="row g-3 align-items-end">
             <div class="col-auto">
                 <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>
                 <input type="date" name="startDate"  class="form-control">
@@ -50,12 +50,10 @@
 
 
     <div class="mb-4">
-        <a href="/admin/sales/daily"
+        <a href="/owner/sales/day"
            class="btn btn-warning text-dark custom-hover-dark me-2 active"
            aria-current="page"><i class="bi bi-calendar-day me-1"></i>일별</a>
-        <a href="/admin/sales/monthly" class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
-        <a href="/admin/sales/weekly" class="btn btn-outline-warning  me-2"><i class="bi bi-calendar-week me-1"></i>요일별</a>
-        <a href="/admin/sales/hourly" class="btn btn-outline-warning "><i class="bi bi-clock-history me-1"></i>시간대별</a>
+        <a href="/owner/sales/month" class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
     </div>
 
     <div class="card p-4 mb-4 shadow-sm">
@@ -66,7 +64,8 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <p class="text-muted mb-0">
                 <i class="bi bi-calendar-event me-1"></i>
-                오늘 날짜: <span th:text="${startDate != null} ? ${startDate} : ${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">2025-07-31</span>
+                오늘 날짜: <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">2025-07-31</span>
+
             </p>
             <div>
                 <button type="button" class="btn btn-outline-primary btn-sm me-2" id="prevMonthBtn">
@@ -233,13 +232,13 @@
         prevBtn.addEventListener('click', () => {
             const {startDate, endDate} = changeMonth(currentYearMonth, -1);
             console.log(startDate);
-            window.location.href = `/owner/sales/list?startDate=${startDate}&endDate=${endDate}`;
+            window.location.href = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
         });
 
         nextBtn.addEventListener('click', () => {
             console.log(currentYearMonth);
             const {startDate, endDate} = changeMonth(currentYearMonth, 1);
-            window.location.href = `/owner/sales/list?startDate=${startDate}&endDate=${endDate}`;
+            window.location.href = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
         });
     });
     /*]]>*/

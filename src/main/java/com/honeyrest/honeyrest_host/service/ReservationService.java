@@ -9,7 +9,6 @@ import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import com.honeyrest.honeyrest_host.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -85,6 +84,11 @@ public class ReservationService {
                 .stream()
                 .map(this::toDTO)
                 .toList();
+    }
+
+    public List<ReservationDTO> getReservationsByAccommodationId(Long accommodationId) {
+        return reservationRepository.findReservationsByAccommodationId_AccommodationId(accommodationId)
+                .stream().map(this::toDTO).toList();
     }
 
     public void registerReservation(ReservationDTO dto) { reservationRepository.save(toEntity(dto));
