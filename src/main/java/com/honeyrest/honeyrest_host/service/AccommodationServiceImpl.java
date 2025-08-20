@@ -50,7 +50,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .build();
     }
 
-    private Accommodation toImageEntity(AccommodationDTO d) throws JsonProcessingException {
+    private Accommodation toEntity(AccommodationDTO d) throws JsonProcessingException {
         return Accommodation.builder()
                 .company(companyRepository.getReferenceById(d.getCompanyId()))
                 .category(accommodationCategoryRepository.getReferenceById(d.getCategoryId()))
@@ -71,7 +71,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .build();
     }
 
-    private AccommodationImageDTO toDTO(AccommodationImage e) {
+    private AccommodationImageDTO toImageDTO(AccommodationImage e) {
         return AccommodationImageDTO.builder()
                 .accommodationId(e.getAccommodation().getAccommodationId())
                 .imageUrl(e.getImageUrl())
@@ -110,18 +110,17 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public Long registerAccommodation(AccommodationDTO dto) throws JsonProcessingException {
-        Accommodation acc = toImageEntity(dto);
+    public void registerAccommodation(AccommodationDTO dto) throws JsonProcessingException {
+        Accommodation acc = toEntity(dto);
 
         accommodationRepository.save(acc);
-        return acc.getAccommodationId();
     }
 
     @Override
     public void modifyAccommodation(AccommodationDTO dto) throws JsonProcessingException {
         Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
                 .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
-        accommodationRepository.save(toImageEntity(dto));
+        accommodationRepository.save(toEntity(dto));
     }
 
     @Override

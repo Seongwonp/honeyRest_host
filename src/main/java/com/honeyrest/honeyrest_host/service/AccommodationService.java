@@ -13,7 +13,7 @@ public interface AccommodationService {
 
     AccommodationDTO getByAccommodationId(Long accommodationId);
 
-    Long registerAccommodation(AccommodationDTO accommodationDTO) throws JsonProcessingException;
+    void registerAccommodation(AccommodationDTO accommodationDTO) throws JsonProcessingException;
 
     void modifyAccommodation(AccommodationDTO dto) throws JsonProcessingException;
 
