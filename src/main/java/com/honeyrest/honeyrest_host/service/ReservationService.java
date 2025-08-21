@@ -25,6 +25,7 @@ public class ReservationService {
 
     private Reservation toEntity(ReservationDTO dto) {
         return Reservation.builder()
+                .reservationId(dto.getReservationId())
                 .user(userRepository.getReferenceById(dto.getUserId())) // userId는 DTO에 추가 필요
                 .room(roomRepository.getReferenceById(dto.getRoomId())) // roomId는 DTO에 추가 필요
                 .accommodationId(accommodationRepository.getReferenceById(dto.getAccommodationId()))

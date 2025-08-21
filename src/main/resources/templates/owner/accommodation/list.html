@@ -54,6 +54,12 @@
                             <td th:text="${acc.minPrice}"></td>
                             <td th:text="${acc.status}"></td>
                             <td>
+
+                                <a th:href="@{'/owner/accommodation/' + ${acc.accommodationId} + '/modify'}"
+                                   class="btn btn-primary btn-sm">수정</a>
+                            </td>
+                            <td>
+
                                 <form th:action="@{'/owner/accommodation/' + ${acc.accommodationId} + '/delete'}"
                                       method="post"
                                       onsubmit="return confirm('정말 삭제하시겠습니까?');">

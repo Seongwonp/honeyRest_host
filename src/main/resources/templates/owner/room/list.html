@@ -51,6 +51,17 @@
                             <td th:text="${room.maxOccupancy}"></td>
                             <td th:text="${room.price}"></td>
                             <td th:text="${room.status}"></td>
+                            <td>
+                                <a th:href="@{'/owner/room/' + ${room.roomId} + '/modify'}"
+                                   class="btn btn-primary btn-sm">수정</a>
+                            </td>
+                            <td>
+                                <form th:action="@{'/owner/room/' + ${room.roomId} + '/delete'}"
+                                      method="post"
+                                      onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                                </form>
+                            </td>
                         </tr>
                         </tbody>
                     </table>

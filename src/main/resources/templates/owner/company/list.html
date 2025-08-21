@@ -40,6 +40,18 @@
               <td th:text="${company.ownerName}"></td>
               <td th:text="${company.phone}"></td>
               <td th:text="${company.status}"></td>
+                <td>
+                    <a th:href="@{'/owner/company/' + ${company.companyId} + '/modify'}"
+                       class="btn btn-primary btn-sm">수정</a>
+                </td>
+                <td>
+
+                    <form th:action="@{'/owner/company/' + ${company.companyId} + '/delete'}"
+                          method="post"
+                          onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                        <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                    </form>
+                </td>
             </tr>
             </tbody>
           </table>

@@ -5,6 +5,7 @@ import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationImageDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
+import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.service.AccommodationCategory;
 import com.honeyrest.honeyrest_host.service.AccommodationService;
 import com.honeyrest.honeyrest_host.service.CompanyService;
@@ -70,22 +71,38 @@ public class AccommodationController {
             String imageUrl = fileUploadUtil.upload(file, "accommodation");
             accommodationDTO.setThumbnailUrl(imageUrl);
 
+            Long a = accommodationService.registerAccommodation(accommodationDTO);
 
             AccommodationImageDTO accommodationImageDTO = AccommodationImageDTO.builder()
                     .imageUrl(imageUrl)
-                    .accommodationId(accommodationDTO.getAccommodationId())
+                    .accommodationId(a)
 //                    .imageType()
 //                    .sortOrder()
                     .build();
             accommodationService.registerAccommodationImage(accommodationImageDTO);
 
 
-            accommodationService.registerAccommodation(accommodationDTO);
-            return "/owner/accommodation/list"; // 성공 페이지
+            return "redirect:/owner/accommodation/list"; // 성공 페이지
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
-            return "/owner/accommodation/list";
+            return "redirect:/owner/accommodation/list";
         }
+    }
+
+    @GetMapping("/accommodation/{accommodationId}/modify")
+    public String modifyAccommodation(@PathVariable Long accommodationId, Model model) {
+        model.addAttribute("accommodationId", accommodationId);
+        model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
+        model.addAttribute("companies", companyService.getAllCompanies());
+        model.addAttribute("categories", accommodationCategory.getAllAccommodationCategory());
+        model.addAttribute("regions", regionService.getAllRegions());
+        return "owner/accommodation/modify";
+    }
+
+    @PostMapping("/accommodation/modify")
+    public String modifyAccommodation(@ModelAttribute AccommodationDTO dto) throws JsonProcessingException {
+        accommodationService.modifyAccommodation(dto);
+        return "redirect:/owner/accommodation/list";
     }
 
     @PostMapping("/accommodation/{accommodationId}/delete")

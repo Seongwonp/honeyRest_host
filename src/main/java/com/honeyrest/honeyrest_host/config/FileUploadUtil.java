@@ -32,6 +32,9 @@ public class FileUploadUtil {
     }
 
     public String upload(MultipartFile file, String folder) throws Exception {
+        if(file.isEmpty()){
+            return null;
+        }
         String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
         String blobName = folder + "/" + filename;
 

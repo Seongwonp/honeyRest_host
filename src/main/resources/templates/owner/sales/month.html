@@ -51,9 +51,9 @@
 
     <div class="mb-4">
         <a href="/owner/sales/day"
-           class="btn btn-warning text-dark custom-hover-dark me-2 active"
+           class="btn btn-outline-warning  me-2"
            aria-current="page"><i class="bi bi-calendar-day me-1"></i>일별</a>
-        <a href="/owner/sales/month" class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
+        <a href="/owner/sales/month" class="btn btn-warning text-dark custom-hover-dark me-2 active"><i class="bi bi-calendar3 me-1"></i>월별</a>
 
     </div>
 
@@ -70,6 +70,10 @@
                 <span th:text="${#temporals.format(endDate, 'yyyy-MM')}"></span>
             </p>
             <div>
+                <span class="fw-bold text-dark ms-3"
+                      th:text="${startDate != null} ? ${#temporals.format(startDate, 'yyyy년')} : ${#temporals.format(#temporals.createNow(), 'yyyy년')}">
+                2025년 08월
+                </span>
                 <button type="button" class="btn btn-outline-primary btn-sm me-2" id="prevYearBtn">
                     <i class="bi bi-arrow-left-circle me-1"></i>이전연도
                 </button>

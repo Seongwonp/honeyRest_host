@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading">
+        <h3>업체 수정</h3>
+        <p class="text-subtitle text-muted">업체 정보를 수정합니다.</p>
+    </div>
+
+    <div class="page-content">
+        <form th:action="@{/owner/company/modify}" method="post">
+            <!-- 숨겨진 PK 전달 -->
+            <input type="hidden" name="companyId" th:value="${companyId}"/>
+
+            <div class="mb-3">
+                <label for="name" class="form-label">업체 이름</label>
+                <input type="text" name="name" class="form-control" id="name" th:value="${company.name}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="businessNumber" class="form-label">사업자 등록번호</label>
+                <input type="text" name="businessNumber" class="form-control" id="businessNumber" th:value="${company.businessNumber}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="ownerName" class="form-label">대표자명</label>
+                <input type="text" name="ownerName" class="form-control" id="ownerName" th:value="${company.ownerName}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="phone" class="form-label">대표 연락처</label>
+                <input type="text" name="phone" class="form-control" id="phone" th:value="${company.phone}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">대표 이메일</label>
+                <input type="email" name="email" class="form-control" id="email" th:value="${company.email}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="address" class="form-label">사업장 주소</label>
+                <input type="text" name="address" class="form-control" id="address" th:value="${company.address}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="bankInfo" class="form-label">은행 정보 (JSON)</label>
+                <textarea name="bankInfo" class="form-control" id="bankInfo" required
+                          th:text="${company.bankInfo}"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="commissionRate" class="form-label">수수료 (%)</label>
+                <input type="number" name="commissionRate" class="form-control" id="commissionRate" step="0.01"
+                       th:value="${company.commissionRate}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="status" class="form-label">상태</label>
+                <select name="status" class="form-select" id="status" required>
+                    <option value="ACTIVE" th:selected="${company.status == 'ACTIVE'}">활성</option>
+                    <option value="INACTIVE" th:selected="${company.status == 'INACTIVE'}">비활성</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">수정하기</button>
+        </form>
+    </div>
+</th:block>
+</body>
+</html>

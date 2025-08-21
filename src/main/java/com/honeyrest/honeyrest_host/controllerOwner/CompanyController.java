@@ -23,9 +23,29 @@ public class CompanyController {
     public String createCompany(Model model) {
         return "owner/company/create";
     }
+
     @PostMapping("/company/create")
     public String createCompany(@ModelAttribute CompanyDTO companyDTO) {
         companyService.registerCompany(companyDTO);
+        return "redirect:/owner/company/list";
+    }
+
+    @GetMapping("/company/{companyId}/modify")
+    public String modifyCompany(@PathVariable("companyId") Long companyId, Model model) {
+        model.addAttribute("companyId", companyId);
+        model.addAttribute("company", companyService.getCompany(companyId));
+        return "owner/company/modify";
+    }
+
+    @PostMapping("/company/modify")
+    public String modifyCompany(@ModelAttribute CompanyDTO companyDTO) {
+        companyService.modifyCompany(companyDTO);
+        return "redirect:/owner/company/list";
+    }
+
+    @PostMapping("/company/{companyId}/delete")
+    public String deleteCompany(@PathVariable Long companyId) {
+        companyService.removeCompany(companyId);
         return "redirect:/owner/company/list";
     }
 }

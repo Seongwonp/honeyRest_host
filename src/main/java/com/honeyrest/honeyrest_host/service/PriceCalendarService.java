@@ -34,6 +34,7 @@ public class PriceCalendarService {
 
     private PriceCalendar toEntity(PriceCalendarDTO dto) {
         return PriceCalendar.builder()
+                .calendarId(dto.getCalendarId())
                 .date(dto.getDate())
                 .price(dto.getPrice())
                 .availableRoom(dto.getAvailableRoom())

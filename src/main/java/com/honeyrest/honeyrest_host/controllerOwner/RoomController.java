@@ -62,9 +62,24 @@ public class RoomController {
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         return "owner/room/create";
     }
+
     @PostMapping("/room/create")
     public String createRoom(@ModelAttribute RoomDTO roomDTO) {
         roomService.registerRoom(roomDTO);
+        return "redirect:/owner/room/list";
+    }
+
+    @GetMapping("/room/{roomId}/modify")
+    public String modifyRoom(@PathVariable Long roomId, Model model) {
+        model.addAttribute("roomId", roomId);
+        model.addAttribute("room", roomService.getByRoomId(roomId));
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+        return "owner/room/modify";
+    }
+
+    @PostMapping("/room/modify")
+    public String modifyRoom(@ModelAttribute RoomDTO roomDTO) {
+        roomService.modifyRoom(roomDTO);
         return "redirect:/owner/room/list";
     }
 

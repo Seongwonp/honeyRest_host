@@ -24,29 +24,28 @@
         <form method="get" action="/owner/sales/day" class="row g-3 align-items-end">
             <div class="col-auto">
                 <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>
-                <input type="date" name="startDate"  class="form-control">
+                <input type="date" name="startDate" class="form-control">
             </div>
             <div class="col-auto">
                 <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>
-                <input type="date" name="endDate"  class="form-control">
+                <input type="date" name="endDate" class="form-control">
             </div>
             <div class="col-auto">
                 <label class="form-label"><i class="bi bi-filter-square me-1"></i>검색 조건</label>
                 <select name="searchType" class="form-select">
-                    <option value="categoryName" >카테고리명</option>
-                    <option value="menuName" >상품명</option>
+                    <option value="categoryName">카테고리명</option>
+                    <option value="menuName">상품명</option>
                 </select>
             </div>
             <div class="col-md-4 col-sm-8">
                 <label class="form-label"><i class="bi bi-search me-1"></i>검색어</label>
-                <input type="text" name="keyword" placeholder="검색어 입력"  class="form-control">
+                <input type="text" name="keyword" placeholder="검색어 입력" class="form-control">
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
             </div>
         </form>
     </div>
-
 
 
     <div class="mb-4">
@@ -68,6 +67,10 @@
 
             </p>
             <div>
+                <span class="fw-bold text-dark ms-3"
+                      th:text="${startDate != null} ? ${#temporals.format(startDate, 'yyyy년 MM월')} : ${#temporals.format(#temporals.createNow(), 'yyyy년 MM월')}">
+                2025년 08월
+                </span>
                 <button type="button" class="btn btn-outline-primary btn-sm me-2" id="prevMonthBtn">
                     <i class="bi bi-arrow-left-circle me-1"></i>이전달
                 </button>
@@ -197,7 +200,7 @@
 
     console.log(startDateFromServer);
     if (startDateFromServer !== '') {
-        currentYearMonth = startDateFromServer.substring(0,7);
+        currentYearMonth = startDateFromServer.substring(0, 7);
     } else {
         currentYearMonth = /*[[${#temporals.format(#temporals.createNow(), 'yyyy-MM')}]]*/ '2025-07';
     }
@@ -224,7 +227,7 @@
         return {startDate, endDate};
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const prevBtn = document.getElementById('prevMonthBtn');
         const nextBtn = document.getElementById('nextMonthBtn');
 

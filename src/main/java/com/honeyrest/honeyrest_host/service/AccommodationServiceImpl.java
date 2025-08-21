@@ -2,6 +2,7 @@ package com.honeyrest.honeyrest_host.service;
 
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationImageDTO;
@@ -12,7 +13,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,11 +26,24 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final CompanyRepository companyRepository;
     private final RegionRepository regionRepository;
     private final AccommodationCategoryRepository accommodationCategoryRepository;
-    private final ObjectMapper objectMapper;
     private final AccommodationImageRepository accommodationImageRepository;
+    private final ObjectMapper objectMapper;
 
 
-
+    private String parseAmenitiesJson(String json) {
+        if (json == null || json.isBlank()) return "";
+        try {
+            // JSON을 Map으로 변환
+            Map<String, Object> map = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+            // "key:value" 형식으로 변환 후 join
+            return map.entrySet().stream()
+                    .map(e -> e.getKey() + ":" + e.getValue())
+                    .collect(Collectors.joining(", "));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return json; // 실패하면 그냥 원본 JSON 반환
+        }
+    }
     // ===== Mapper =====
     private AccommodationDTO toDTO(Accommodation e) {
         return AccommodationDTO.builder()
@@ -40,7 +57,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .latitude(e.getLatitude())
                 .longitude(e.getLongitude())
                 .thumbnailUrl(e.getThumbnail())
-                .amenities(e.getAmenities())
+                .amenities(parseAmenitiesJson(e.getAmenities()))
                 .description(e.getDescription())
                 .checkInTime(e.getCheckInTime())
                 .checkOutTime(e.getCheckOutTime())
@@ -50,8 +67,38 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .build();
     }
 
-    private Accommodation toEntity(AccommodationDTO d) throws JsonProcessingException {
+    /**
+     * "wifi:true, tv:true" -> Map<String,Object> 변환
+     */
+    private Map<String, Object> parseAmenitiesString(String str) {
+        Map<String, Object> map = new HashMap<>();
+        String[] entries = str.split(",");
+        for (String entry : entries) {
+            String[] kv = entry.trim().split(":");
+            if (kv.length == 2) {
+                String key = kv[0].trim();
+                String valueStr = kv[1].trim();
+                Object value = "true".equalsIgnoreCase(valueStr) ? true :
+                        "false".equalsIgnoreCase(valueStr) ? false : valueStr;
+                map.put(key, value);
+            }
+        }
+        return map;
+    }
+
+    private Accommodation toEntity(AccommodationDTO d) {
+        String amenitiesJson = "[]"; // 기본값
+
+        try {
+            if (d.getAmenities() != null && !d.getAmenities().isBlank()) {
+                amenitiesJson = objectMapper.writeValueAsString(parseAmenitiesString(d.getAmenities()));
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace(); // 변환 실패 시 로그 출력
+        }
+
         return Accommodation.builder()
+                .accommodationId(d.getAccommodationId())
                 .company(companyRepository.getReferenceById(d.getCompanyId()))
                 .category(accommodationCategoryRepository.getReferenceById(d.getCategoryId()))
                 .mainRegion(regionRepository.getReferenceById(d.getMainRegionId()))
@@ -60,7 +107,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .address(d.getAddress())
                 .latitude(d.getLatitude())
                 .longitude(d.getLongitude())
-                .amenities(objectMapper.writeValueAsString(d.getAmenities()))
+                .amenities(amenitiesJson)
                 .thumbnail(d.getThumbnailUrl())
                 .description(d.getDescription())
                 .checkInTime(d.getCheckInTime())
@@ -70,6 +117,8 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .rating(d.getRating())
                 .build();
     }
+
+
 
     private AccommodationImageDTO toImageDTO(AccommodationImage e) {
         return AccommodationImageDTO.builder()
@@ -83,6 +132,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     private AccommodationImage toImageEntity(AccommodationImageDTO d) throws JsonProcessingException {
         return AccommodationImage.builder()
+                .imageId(d.getImageId())
                 .imageUrl(d.getImageUrl())
                 .sortOrder(d.getSortOrder())
                 .imageType(d.getImageType())
@@ -110,10 +160,11 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public void registerAccommodation(AccommodationDTO dto) throws JsonProcessingException {
+    public Long registerAccommodation(AccommodationDTO dto) throws JsonProcessingException {
         Accommodation acc = toEntity(dto);
 
-        accommodationRepository.save(acc);
+
+        return accommodationRepository.save(acc).getAccommodationId();
     }
 
     @Override
