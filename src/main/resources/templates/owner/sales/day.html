@@ -239,7 +239,8 @@
     document.addEventListener('DOMContentLoaded', function () {
         const prevBtn = document.getElementById('prevMonthBtn');
         const nextBtn = document.getElementById('nextMonthBtn');
-
+        const searchType = document.getElementById('searchTypeSelect').value;
+        const keyword = document.getElementById('keywordSelect').value;
         // Thymeleaf로 companyId 값을 JS 변수에 전달 (null일 수도 있으니 대비)
         const companyId = /*[[${companyId}]]*/'';
         const accommodationId = /*[[${accommodationId}]]*/'';
@@ -276,8 +277,7 @@
 
         const searchTypeSelect = document.getElementById("searchTypeSelect");
         const keywordSelect = document.getElementById("keywordSelect");
-        const searchType = document.getElementById('searchTypeSelect').value;
-        const keyword = document.getElementById('keywordSelect').value;
+
         // 회사명과 숙소명을 JS 배열로 변환
         const companies = /*[[${companies}]]*/ [];
         const accommodations = /*[[${accommodations}]]*/ [];
@@ -299,6 +299,8 @@
         }
 
         document.getElementById('searchForm').addEventListener('submit', function(event) {
+            const searchType = document.getElementById('searchTypeSelect').value;
+            const keyword = document.getElementById('keywordSelect').value;
             console.log(keyword);
             let actionUrl = '';
 
