@@ -1,15 +1,15 @@
 package com.honeyrest.honeyrest_host.dto;
 
-import com.honeyrest.honeyrest_host.entity.enums.RoomType;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 
-// RoomDto.java
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,7 +23,7 @@ public class RoomDTO {
     // @NotBlank(message = "객실 이름은 필수입니다.")  // ← 선택
     private String name;
 
-    private RoomType type; // Standard, Deluxe...
+    private String type; // Standard, Deluxe...
     private BigDecimal price;            // @NotNull 붙여도 OK (선택)
     private Integer maxOccupancy;        // @NotNull 붙여도 OK (선택)
     private Integer standardOccupancy;
@@ -33,5 +33,7 @@ public class RoomDTO {
     private String description;
     private Integer totalRooms;
     private String status; // ACTIVE / INACTIVE
+
+    private MultipartFile image;
 
 }

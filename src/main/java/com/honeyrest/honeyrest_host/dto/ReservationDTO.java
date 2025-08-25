@@ -1,10 +1,6 @@
 package com.honeyrest.honeyrest_host.dto;
 
 
-import com.honeyrest.honeyrest_host.entity.enums.ReservationStatus;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,8 +47,8 @@ public class ReservationDTO {
 
     private BigDecimal price; // 예약 금액
 
-    @Enumerated(EnumType.STRING)
-    private ReservationStatus status; // 예약 상태(예약, 취소, 체크인, 체크아웃 등)
+
+    private String status; // 예약 상태(예약, 취소, 체크인, 체크아웃 등)
 
     private String cancelReason; // 취소 사유
 

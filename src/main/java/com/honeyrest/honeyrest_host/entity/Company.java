@@ -1,7 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
-import com.honeyrest.honeyrest_host.entity.enums.ApprovalStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

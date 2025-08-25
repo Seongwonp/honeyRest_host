@@ -1,7 +1,9 @@
 package com.honeyrest.honeyrest_host.security;
 
 import com.honeyrest.honeyrest_host.config.JwtTokenProvider;
-import com.honeyrest.honeyrest_host.entity.enums.RoleType;
+import com.honeyrest.honeyrest_host.repository.UserRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import jakarta.servlet.http.Cookie;
 
@@ -24,46 +27,50 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
+
+    private static final AntPathMatcher PM = new AntPathMatcher();
+    private static final String[] WHITELIST = {
+            "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico",
+            "/swagger-ui/**", "/v3/api-docs/**",
+            "/.well-known/**",
+            "/admin/auth/**"   // 로그인/로그아웃/페이지
+    };
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain chain)
-            throws ServletException, IOException {
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            chain.doFilter(request, response);
-            return;
-        }
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
-        String raw = resolveToken(request);         // 헤더/쿠키 모두에서 원문 추출
-        String token = normalizeToken(raw);         // Bearer 제거
+        String uri = request.getRequestURI();
+        try {
+            String token = jwtTokenProvider.resolveToken(request);
+            log.debug("[JWT] {} token? {}", uri, token != null);
 
-        log.debug("[JWT] URI={}, rawToken={}, normalizedToken={}",
-                request.getRequestURI(),
-                raw != null ? mask(raw) : null,
-                token != null ? mask(token) : null);
+            if (token != null && jwtTokenProvider.validate(token)) {
+                Jws<Claims> jws = jwtTokenProvider.parseClaims(token);
+                Claims claims = jws.getPayload();
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            Long userId = jwtTokenProvider.getUserId(token);
-            RoleType role = jwtTokenProvider.getRole(token);
+                String email = (String) claims.get("email");
+                String roleStr = (String) claims.get("role");
 
-            if (userId != null && role != null) {
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                userId,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
-                        );
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                log.debug("[JWT] Auth set: userId={}, role={}", userId, role);
+                log.debug("[JWT] {} email={}, role={}", uri, email, roleStr);
+
+                if (email != null && roleStr != null) {
+                    var auth = new UsernamePasswordAuthenticationToken(
+                            email, null, List.of(new SimpleGrantedAuthority("ROLE_" + roleStr)));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             } else {
-                log.debug("[JWT] Missing userId/role in token");
+                log.debug("[JWT] {} token missing or invalid", uri);
             }
-        } else {
-            log.debug("[JWT] No token or invalid token");
+        } catch (Exception e) {
+            log.warn("[JWT] {} exception: {}", uri, e.toString());
         }
 
-        chain.doFilter(request, response);
+        filterChain.doFilter(request, response);
     }
 
     private String resolveToken(HttpServletRequest request) {
@@ -99,17 +106,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String uri = request.getRequestURI();
-        return uri.startsWith("/api/admin/auth/")
-                || uri.startsWith("/admin/auth/")
-                || uri.startsWith("/admin/assets/")
-                || uri.startsWith("/assets/")
-                || uri.startsWith("/static/")
-                || uri.startsWith("/css/")
-                || uri.startsWith("/js/")
-                || uri.startsWith("/images/")
-                || uri.startsWith("/.well-known/")
-                || uri.startsWith("/swagger-ui/")
-                || uri.startsWith("/v3/api-docs");
+        String path = request.getRequestURI();
+        for (String p : WHITELIST) {
+            if (PM.match(p, path)) return true;
+        }
+        return false;
     }
 }

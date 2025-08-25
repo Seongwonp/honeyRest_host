@@ -8,39 +8,22 @@
     <title>숙소 목록</title>
     <th:block layout:fragment="head">
         <style>
-            .status-badge {
-                padding: .35em .65em;
-                border-radius: .25rem;
-                font-size: .75rem;
-                font-weight: 500
-            }
-
-            .status-pending {
-                background: #fff3cd;
-                color: #856404
-            }
-
-            .status-approved {
-                background: #d4edda;
-                color: #155724
-            }
-
-            .status-rejected {
-                background: #f8d7da;
-                color: #721c24
-            }
-
-            .status-active {
-                background: #e7f1ff;
-                color: #0a58ca
-            }
+            .status-badge{padding:.35em .65em;border-radius:.25rem;font-size:.75rem;font-weight:500}
+            .status-pending{background:#fff3cd;color:#856404}
+            .status-approved{background:#d4edda;color:#155724}
+            .status-rejected{background:#f8d7da;color:#721c24}
+            .status-active{background:#e7f1ff;color:#0a58ca}
+            .thumb{width:56px;height:56px;object-fit:cover;border-radius:6px;background:#f6f6f6}
         </style>
     </th:block>
 </head>
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading d-flex justify-content-between align-items-center">
-        <h3 class="mb-0">숙소 목록</h3>
+        <div>
+            <h3 class="mb-0">숙소 목록</h3>
+            <small class="text-muted" th:if="${loginEmail}">로그인: <span th:text="${loginEmail}">email</span></small>
+        </div>
         <a th:href="@{/admin/accommodations/add}" class="btn btn-primary">+ 새 숙소 등록</a>
     </div>
 
@@ -48,18 +31,20 @@
         <div class="card-body table-responsive">
             <table class="table table-sm align-middle">
                 <colgroup>
-                    <col style="width: 90px;"/>      <!-- 번호 -->
-                    <col/>                           <!-- 숙소명 -->
-                    <col style="width: 160px;"/>     <!-- 카테고리 -->
-                    <col style="width: 180px;"/>     <!-- 지역 -->
-                    <col style="width: 140px;"/>     <!-- 최저가 -->
-                    <col style="width: 120px;"/>     <!-- 상태 -->
-                    <col style="width: 260px;"/>     <!-- 액션 -->
+                    <col style="width:70px;"/>
+                    <col style="width:80px;"/>
+                    <col/>
+                    <col style="width:160px;"/>
+                    <col style="width:180px;"/>
+                    <col style="width:140px;"/>
+                    <col style="width:120px;"/>
+                    <col style="width:260px;"/>
                 </colgroup>
 
                 <thead class="table-light">
                 <tr>
                     <th class="text-center">번호</th>
+                    <th class="text-center">썸네일</th>
                     <th>숙소명</th>
                     <th>카테고리</th>
                     <th>지역</th>
@@ -68,39 +53,47 @@
                     <th class="text-center">액션</th>
                 </tr>
                 </thead>
+
                 <tbody>
-                <tr th:each="acc, stat : ${accommodations}"
+                <tr th:each="acc : ${accommodations}"
                     th:with="badgeClass=
-        ${#strings.equalsIgnoreCase(acc.status,'PENDING') ? ' status-pending'
-        : (#strings.equalsIgnoreCase(acc.status,'APPROVED') ? ' status-approved'
-        : (#strings.equalsIgnoreCase(acc.status,'ACTIVE') ? ' status-active'
-        : ' status-rejected'))}">
+                        ${#strings.equalsIgnoreCase(acc.status,'PENDING') ? ' status-pending'
+                        : (#strings.equalsIgnoreCase(acc.status,'APPROVED') ? ' status-approved'
+                        : (#strings.equalsIgnoreCase(acc.status,'ACTIVE') ? ' status-active'
+                        : ' status-rejected'))}">
                     <!-- 번호 -->
                     <td class="text-center" th:text="${acc.accommodationId}">1</td>
+
+                    <!-- 썸네일 -->
+                    <td class="text-center">
+                        <img th:if="${acc.thumbnailUrl != null and !#strings.isEmpty(acc.thumbnailUrl)}"
+                             th:src="${acc.thumbnailUrl}" alt="썸네일" class="thumb">
+                        <div th:if="${acc.thumbnailUrl == null or #strings.isEmpty(acc.thumbnailUrl)}"
+                             class="text-muted small">없음</div>
+                    </td>
 
                     <!-- 숙소명 -->
                     <td class="fw-semibold" th:text="${acc.name}">숙소명</td>
 
-
-                    <!-- 카테고리 -->
-                    <td th:text="${acc.categoryName}">카테고리</td>
-
-                    <!-- 지역 -->
-                    <td th:text="${acc.regionName}">지역</td>
+                    <!-- 카테고리 / 지역 -->
+                    <td th:text="${acc.categoryName} ?: '-'">카테고리</td>
+                    <td th:text="${acc.regionName} ?: '-'">지역</td>
 
                     <!-- 최저가 -->
-                    <td class="text-end" th:text="|${#numbers.formatDecimal(acc.minPrice,0,'COMMA',0,'POINT')}원|">0원
+                    <td class="text-end"
+                        th:text="${acc.minPrice != null ? #numbers.formatDecimal(acc.minPrice,0,'COMMA',0,'POINT') + '원' : '-'}">
+                        -
                     </td>
 
                     <!-- 상태 -->
                     <td class="text-center">
-      <span class="status-badge" th:classappend="${' ' + badgeClass}"
-            th:text="${acc.status}">ACTIVE</span>
+                        <span class="status-badge" th:classappend="${' ' + badgeClass}"
+                              th:text="${acc.status}">ACTIVE</span>
                     </td>
 
                     <!-- 액션 -->
                     <td class="text-center">
-                        <div class="btn-group btn-group-sm" role="group" style="white-space:nowrap; " >
+                        <div class="btn-group btn-group-sm" role="group" style="white-space:nowrap;">
                             <a class="btn btn-outline-primary"
                                th:href="@{/admin/accommodations/detail/{id}(id=${acc.accommodationId})}">상세보기</a>
                             <a class="btn btn-outline-secondary"
@@ -118,11 +111,45 @@
                 </tr>
 
                 <tr th:if="${accommodations == null or #lists.isEmpty(accommodations)}">
-                    <td colspan="7" class="text-center text-muted py-4">등록된 숙소가 없습니다.</td>
+                    <td colspan="8" class="text-center text-muted py-4">등록된 숙소가 없습니다.</td>
                 </tr>
                 </tbody>
             </table>
+
+            <!-- 페이지네이션 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted">
+                    총 <span th:text="${page.totalElements}">0</span>개 /
+                    <span th:text="${page.number + 1}">1</span> /
+                    <span th:text="${page.totalPages}">1</span> 페이지
+                </div>
+
+                <nav th:if="${page.totalPages > 0}">
+                    <ul class="pagination pagination-sm mb-0">
+                        <!-- 이전 -->
+                        <li class="page-item" th:classappend="${page.first} ? ' disabled'">
+                            <a class="page-link"
+                               th:href="@{/admin/accommodations/list(page=${page.number - 1},size=${page.size})}">&laquo;</a>
+                        </li>
+
+                        <!-- 번호 -->
+                        <li class="page-item"
+                            th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                            th:classappend="${i == page.number} ? ' active'">
+                            <a class="page-link" th:text="${i + 1}"
+                               th:href="@{/admin/accommodations/list(page=${i},size=${page.size})}">1</a>
+                        </li>
+
+                        <!-- 다음 -->
+                        <li class="page-item" th:classappend="${page.last} ? ' disabled'">
+                            <a class="page-link"
+                               th:href="@{/admin/accommodations/list(page=${page.number + 1},size=${page.size})}">&raquo;</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
 </th:block>
 </body>
+</html>

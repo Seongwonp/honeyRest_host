@@ -1,7 +1,6 @@
 package com.honeyrest.honeyrest_host.repository;
 
 import com.honeyrest.honeyrest_host.entity.Review;
-import com.honeyrest.honeyrest_host.entity.enums.ReviewStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,18 +9,16 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
-
 public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecificationExecutor<Review> {
 
     // [기본 조회]
     // Pageable을 넘기면 페이징/정렬 모두 처리가능 (기본 findAll(Pageable)도 있음)
 
     // [조건 조회 1] 숙소 기준 + 상태 필터
-    Page<Review> findByAccommodationIdAndStatus(Long accommodationId, ReviewStatus status, Pageable pageable);
+    Page<Review> findByAccommodationIdAndStatus(Long accommodationId, String status, Pageable pageable);
 
     // [조건 조회 2] 객실 기준 + 상태 필터
-    Page<Review> findByRoomIdAndStatus(Long roomId, ReviewStatus status, Pageable pageable);
+    Page<Review> findByRoomIdAndStatus(Long roomId, String status, Pageable pageable);
 
     // [조건 조회 3] 숙소 기준(상태 무관)
     Page<Review> findByAccommodationId(Long accommodationId, Pageable pageable);

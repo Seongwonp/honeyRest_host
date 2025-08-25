@@ -36,6 +36,7 @@
             <tr>
               <th style="width:80px" class="text-center">ID</th>
               <th>예약번호</th>
+              <th>예약자</th>
               <th>숙소/객실</th>
               <th style="width:160px" class="text-center">체크인~아웃</th>
               <th style="width:110px" class="text-center">인원</th>
@@ -49,6 +50,8 @@
               <td class="text-center" th:text="${r.reservationId}">1</td>
               <td>
                 <div class="fw-semibold" th:text="${r.reservationNumber}">HR-…</div>
+              </td>
+              <td>
                 <div class="text-muted small">예약자: <span th:text="${r.guestName} ?: '-'">-</span> (<span th:text="${r.guestPhone} ?: '-'">-</span>)</div>
               </td>
               <td>

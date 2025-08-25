@@ -33,7 +33,7 @@
                                 <div class="ms-3">
                                     <!-- 등록 숙소 수 -->
                                     <h6 class="text-muted font-semibold">등록 숙소 수</h6>
-                                    <h6 class="font-extrabold mb-0" id="${accCount}">-</h6>
+                                    <h6 class="font-extrabold mb-0" th:text="${accCount}">0</h6>
                                 </div>
                             </div>
                         </div>
@@ -50,7 +50,7 @@
                                 </div>
                                 <div class="ms-3">
                                     <h6 class="text-muted font-semibold">예약 건수</h6>
-                                    <h6 class="font-extrabold mb-0" id="${resCount}">-</h6>
+                                    <h6 class="font-extrabold mb-0" th:text="${resCount}">0</h6>
                                 </div>
                             </div>
                         </div>
@@ -65,11 +65,12 @@
                                 <div class="avatar avatar-xl">
                                     이미지
                                 </div>
+
                                 <div class="ms-3 name">
                                     <!-- 관리자 이름 -->
                                     <h5 class="font-bold" th:text="${currentAdmin != null ? currentAdmin.name : '관리자'}">관리자</h5>
                                     <h6 class="text-muted mb-0" th:text="${currentAdmin != null ? currentAdmin.email : '-'}">-</h6>
-                                    <h6 class="text-muted mb-0" th:text="${currentAdmin != null ? currentAdmin.roleType : '-'}">-</h6>
+                                    <h6 class="text-muted mb-0" th:text="${currentAdmin != null ? currentAdmin.role : '-'}">-</h6>
                                 </div>
                             </div>
                         </div>

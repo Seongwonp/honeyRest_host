@@ -2,7 +2,6 @@ package com.honeyrest.honeyrest_host.entity;
 
 
 import com.honeyrest.honeyrest_host.dto.ReservationDTO;
-import com.honeyrest.honeyrest_host.entity.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,8 +32,9 @@ public class Reservation extends BaseEntity{
     @JoinColumn(name = "room_id",  nullable = false)
     private Room room;
 
-    @Column(name = "accommodation_id", nullable = false)
-    private Long accommodationId; // 숙소ID(중복 저장)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "accommodation_id", nullable = false)
+    private Accommodation accommodation; // 숙소 ID(중복 저장)
 
     @Column(name = "accommodation_name", nullable = false, length = 255)
     private String accommodationName; // 숙소명
@@ -69,9 +69,8 @@ public class Reservation extends BaseEntity{
     @Column(name = "discount_amount", precision = 10, scale = 2)
     private BigDecimal discountAmount; // 총 할인 금액
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private ReservationStatus status; // 예약 상태
+    private String status; // 예약 상태
 
     @Column(name = "cancel_reason", columnDefinition = "TEXT")
     private String cancelReason; // 취소 사유
@@ -86,7 +85,7 @@ public class Reservation extends BaseEntity{
     public void validateNew() {
         if (user == null)           throw new IllegalStateException("user는 필수입니다.");
         if (room == null)           throw new IllegalStateException("room은 필수입니다.");
-        if (accommodationId == null)    throw new IllegalStateException("accommodationId는 필수입니다.");
+        if (accommodation == null)    throw new IllegalStateException("accommodationId는 필수입니다.");
         if (accommodationName == null)  throw new IllegalStateException("accommodationName은 필수입니다.");
         if (roomName == null)           throw new IllegalStateException("roomName은 필수입니다.");
         if (reservationNumber == null)  throw new IllegalStateException("reservationNumber는 필수입니다.");
@@ -107,7 +106,7 @@ public class Reservation extends BaseEntity{
     }
 
     // -------- 부분 업데이트: 세터 없이 DTO로 업데이트 --------
-    public void update(ReservationDTO dto, User newUser, Room newRoom) {
+    public void update(ReservationDTO dto, User newUser, Room newRoom, Accommodation newAccommodation) {
         if (dto.getCheckInDate() != null)  this.checkInDate = dto.getCheckInDate();
         if (dto.getCheckOutDate() != null) this.checkOutDate = dto.getCheckOutDate();
         validateDates();
@@ -120,7 +119,6 @@ public class Reservation extends BaseEntity{
         if (dto.getCancelReason() != null) this.cancelReason = dto.getCancelReason();
         if (dto.getSpecialRequest() != null) this.specialRequest = dto.getSpecialRequest();
 
-        if (dto.getAccommodationId() != null)   this.accommodationId = dto.getAccommodationId();
         if (dto.getAccommodationName() != null) this.accommodationName = dto.getAccommodationName();
 
         // 예약번호는 보통 불변(변경 비권장). 정말 필요하면 아래 주석 해제
@@ -128,17 +126,19 @@ public class Reservation extends BaseEntity{
 
         if (newUser != null) this.user = newUser;
         if (newRoom != null) this.room = newRoom;
+        if (newAccommodation != null) this.accommodation = newAccommodation;
         if (newRoom != null && dto.getRoomId() != null) {
             // roomName은 보통 Room 엔티티의 필드에서 가져오거나 DTO로 받음
             // this.roomName = newRoom.getName(); // 필요 시
         }
     }
 
+    // 도메인 메서드
     public void cancel(String reason) {
-        if (this.status == ReservationStatus.CANCELLED) {
+        if ("CANCELLED".equalsIgnoreCase(this.status)) {
             throw new IllegalStateException("이미 취소된 예약입니다.");
         }
-        this.status = ReservationStatus.CANCELLED;
+        this.status ="CANCELLED";
         this.cancelReason = reason;
     }
 }

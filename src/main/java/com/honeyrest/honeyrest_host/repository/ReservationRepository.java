@@ -1,34 +1,27 @@
 package com.honeyrest.honeyrest_host.repository;
 
-import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
+
 import com.honeyrest.honeyrest_host.entity.Reservation;
-import com.honeyrest.honeyrest_host.entity.enums.ReservationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
-@Repository
+
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
-
-//    // 예약 번호로 조회
-//    Optional<Reservation> findByReservationNumber(String number);
-//
-//    // 예약 현황으로 예약 목록 조회
-//    Page<Reservation> findByStatus(String status, Pageable pageable);
-//
-//    // 예약 전체
-//    Page<Reservation> findAll(Pageable pageable);
-
     Optional<Reservation> findByReservationNumber(String number);
-    Page<Reservation> findByStatus(ReservationStatus status, Pageable pageable);
 
+    Page<Reservation> findByStatus(String status, Pageable pageable);
+
+    // 회사별 예약 목록 (검색/상태 필터)
     @Query("""
-      select r from Reservation r
+      select r
+      from Reservation r
       join r.room rm
       join rm.accommodation acc
       where acc.company.companyId = :companyId
@@ -41,8 +34,47 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
         )
       """)
     Page<Reservation> findCompanyReservations(@Param("companyId") Long companyId,
-                                              @Param("status") ReservationStatus status,
+                                              @Param("status") String status,
                                               @Param("q") String q,
                                               Pageable pageable);
+
+    // 취소 제외 전체 예약 수
+    @Query("""
+        select count(r)
+        from Reservation r
+        where r.status <> 'CANCELLED'
+    """)
+    long countActiveAll();
+
+    // 회사별(Company) 취소 제외 예약 수
+    @Query("""
+        select count(r)
+        from Reservation r
+        join r.room rm
+        join rm.accommodation a
+        join a.company c
+        where c.companyId = :companyId
+          and r.status <> 'CANCELLED'
+    """)
+    long countActiveByCompanyId(@Param("companyId") Long companyId);
+
+    // 회사(or 숙소) 객실의 월 범위에 걸친 예약들 싸그리
+    @Query("""
+        select r
+        from Reservation r
+        join r.room rm
+        join rm.accommodation a
+        where a.company.companyId = :companyId
+          and (:accommodationId is null or a.accommodationId = :accommodationId)
+          and r.status <> 'CANCELLED'
+          and (
+               r.checkInDate <= :endDate
+           and r.checkOutDate >  :startDate
+          )
+    """)
+    List<Reservation> findOverlappedReservationsForMonth(@Param("companyId") Long companyId,
+                                                         @Param("accommodationId") Long accommodationId,
+                                                         @Param("startDate") LocalDate startDate,
+                                                         @Param("endDate") LocalDate endDate);
 }
 

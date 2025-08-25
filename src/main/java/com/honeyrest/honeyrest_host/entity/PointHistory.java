@@ -1,7 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
-import com.honeyrest.honeyrest_host.entity.enums.PointType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,7 +29,7 @@ public class PointHistory extends BaseEntity {
     private Integer amount; // 변동 포인트
 
     @Column(nullable = false)
-    private PointType type; // 변동 유형
+    private String type; // 변동 유형
 
     @Column(length = 255)
     private String reason; // 변동 사유

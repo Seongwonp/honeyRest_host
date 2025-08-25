@@ -3,7 +3,6 @@ package com.honeyrest.honeyrest_host.service;
 
 import com.honeyrest.honeyrest_host.dto.CompanyDTO;
 import com.honeyrest.honeyrest_host.entity.Company;
-import com.honeyrest.honeyrest_host.entity.enums.ApprovalStatus;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
@@ -105,5 +104,9 @@ public class CompanyServiceImpl implements CompanyService {
             throw new EntityNotFoundException("업체가 존재하지 않습니다.");
         }
         companyRepository.deleteById(id);
+    }
+    @Override
+    public CompanyDTO getByUserEmail(String email){
+        return toDTO(companyRepository.findCompanyByEmail(email));
     }
 }

@@ -1,7 +1,6 @@
 package com.honeyrest.honeyrest_host.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.honeyrest.honeyrest_host.entity.enums.RoleType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +16,7 @@ import java.time.LocalDate;
 public class AdminSignupRequestDTO {
     @NotBlank
     private String email;
+
     @NotBlank private String password;
     @NotBlank private String name;
     private String phone;
@@ -26,7 +26,11 @@ public class AdminSignupRequestDTO {
     private LocalDate birthDate;
 
     // 선택 입력: 미입력시 COMPANY_ADMIN 기본 부여
-    private RoleType roleType; // COMPANY_ADMIN | SUPER_ADMIN
+    private String role; // COMPANY_ADMIN | SUPER_ADMIN
+
+    private int point; // 사용자에 대한 포인트
+
+    private Boolean isVerified = false; // 이메일 인증 여부
 
     private String gender;          // 성별 (예: "M", "F")
     private Boolean marketingAgree; // 마케팅 수신 동의

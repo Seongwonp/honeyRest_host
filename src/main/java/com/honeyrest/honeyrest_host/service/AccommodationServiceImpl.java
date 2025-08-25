@@ -3,10 +3,7 @@ package com.honeyrest.honeyrest_host.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dto.accommodation.*;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.entity.AccommodationImage;
-import com.honeyrest.honeyrest_host.entity.AccommodationTag;
-import com.honeyrest.honeyrest_host.entity.AccommodationTagMap;
+import com.honeyrest.honeyrest_host.entity.*;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.*;
@@ -14,10 +11,12 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -59,12 +58,12 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     /* ---------------------- 매핑: Entity -> Response ---------------------- */
-    private AccommodationResponseDTO toResponse(
+    private AccommodationCreateRequestDTO toResponse(
             Accommodation e,
             List<AccommodationImage> images,
             List<AccommodationTagMap> tagMaps
     ) {
-        return AccommodationResponseDTO.builder()
+        return AccommodationCreateRequestDTO.builder()
                 .accommodationId(e.getAccommodationId())
                 .companyId(e.getCompany() != null ? e.getCompany().getCompanyId() : null)
                 .categoryId(e.getCategory() != null ? e.getCategory().getCategoryId() : null)
@@ -83,23 +82,50 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .rating(e.getRating())
                 .minPrice(e.getMinPrice())
                 .images(images == null ? List.of() :
-                        images.stream().map(img -> new AccommodationImageDTO(
-                                img.getImageId(),
-                                img.getImageUrl(),
-                                img.getImageType(),
-                                img.getSortOrder()
-                        )).toList())
-                .tags(tagMaps == null ? List.of() :
-                        tagMaps.stream().map(m -> {
-                            AccommodationTag t = m.getTag();
-                            return new AccommodationTagMapDTO(
-                                    t.getTagId(),
-                                    t.getName(),
-                                    t.getCategory()
-                            );
-                        }).toList())
+                        images.stream().map(img -> AccommodationImageDTO.builder()
+                                        .imageId(img.getImageId())
+                                        .imageUrl(img.getImageUrl())
+                                        .imageType(img.getImageType())
+                                        .sortOrder(img.getSortOrder())
+                                        .build()
+                                )
+
+                                .toList())
+                .tags(
+                        tagMaps == null ? List.of() : tagMaps.stream().map(m ->
+                                {
+                                    AccommodationTag t = m.getTag();
+                                    return AccommodationTagMapDTO.builder()
+                                            .tagId(t.getTagId())
+                                            .name(t.getName()).category(t.getCategory())
+                                            .build();
+                                })
+                                .toList())
                 .build();
     }
+
+    private AccommodationCreateRequestDTO toListDTOWithThumbnail(Accommodation e) {
+        String thumb = accommodationImageRepository
+                .findFirstByAccommodation_AccommodationIdAndImageTypeOrderBySortOrderAscImageIdAsc(
+                        e.getAccommodationId(), "MAIN"
+                )
+                .map(AccommodationImage::getImageUrl)
+                .orElse(e.getThumbnail()); // MAIN 없으면 엔티티 thumbnail 필드 사용
+
+        return AccommodationCreateRequestDTO.builder()
+                .accommodationId(e.getAccommodationId())
+                .companyId(e.getCompany() != null ? e.getCompany().getCompanyId() : null)
+                .categoryId(e.getCategory() != null ? e.getCategory().getCategoryId() : null)
+                .mainRegionId(e.getMainRegion() != null ? e.getMainRegion().getRegionId() : null)
+                .subRegionId(e.getSubRegion() != null ? e.getSubRegion().getRegionId() : null)
+                .name(e.getName())
+                .address(e.getAddress())
+                .thumbnailUrl(thumb)     // ★ 리스트에서 썸네일로 사용
+                .minPrice(e.getMinPrice())
+                .status(e.getStatus())
+                .build();
+    }
+
 
     /* ---------------------- 조회 보조 ---------------------- */
     private Accommodation getEntityOrThrow(Long id) {
@@ -108,7 +134,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     private List<AccommodationImage> findImages(Long accId) {
-        return accommodationImageRepository.findByAccommodationAccommodationIdOrderBySortOrderAsc(accId);
+        return accommodationImageRepository.findByAccommodation_AccommodationIdOrderBySortOrderAsc(accId);
     }
 
     private List<AccommodationTagMap> findTagMaps(Long accId) {
@@ -117,24 +143,24 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     /* ---------------------- 서비스 구현 ---------------------- */
     @Override
-    public List<AccommodationResponseDTO> getAll() {
+    public List<AccommodationCreateRequestDTO> getAll() {
         return accommodationRepository.findAll().stream()
                 .map(e -> toResponse(e, List.of(), List.of()))
                 .toList();
     }
 
     @Override
-    public AccommodationResponseDTO getById(Long id) {
+    public AccommodationCreateRequestDTO getById(Long id) {
         Accommodation e = getEntityOrThrow(id);
         return toResponse(e, findImages(id), findTagMaps(id));
     }
 
     @Override
-    public AccommodationResponseDTO create(AccommodationCreateRequestDTO req) {
+    public AccommodationCreateRequestDTO create(AccommodationCreateRequestDTO req) {
         // 필수값 체크
         if (req.getCompanyId() == null || req.getCategoryId() == null ||
-                req.getMainRegionId() == null || req.getSubRegionId() == null ||
-                req.getName() == null || req.getAddress() == null) {
+            req.getMainRegionId() == null || req.getSubRegionId() == null ||
+            req.getName() == null || req.getAddress() == null) {
             throw new IllegalArgumentException("companyId, categoryId, mainRegionId, subRegionId, name, address 는 필수 입니다.");
         }
 
@@ -188,9 +214,20 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         return getById(saved.getAccommodationId()); // 이미지/태그 포함 응답
     }
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Page<AccommodationListDTO> findByManagerEmail(String email, Pageable pageable) {
+        Long companyId = companyRepository.findByEmail(email)
+                .map(Company::getCompanyId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 이메일로 등록된 없체가 없습니다." + email));
+
+        Page<AccommodationListDTO> page = accommodationRepository.findListByCompanyId(companyId, pageable);
+        // main 썸네일 주입 로직 필요하면 여기에 추가하기
+        return page;
+
+    }
 
     @Override
-    public AccommodationResponseDTO update(Long id, AccommodationUpdateRequestDTO req) {
+    public AccommodationCreateRequestDTO update(Long id, AccommodationUpdateRequestDTO req) {
         Accommodation cur = getEntityOrThrow(id);
 
         Accommodation updated = Accommodation.builder()
@@ -217,7 +254,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         // 정책: 이미지/태그 “덮어쓰기” 요청 시에만 교체
         if (req.getImages() != null) {
-            accommodationImageRepository.deleteByAccommodationAccommodationId(id);
+            accommodationImageRepository.deleteByAccommodation_AccommodationId(id);
             int idx = 0;
             for (AccommodationImageDTO img : req.getImages()) {
                 accommodationImageRepository.save(
@@ -248,7 +285,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Override
     public void delete(Long id) {
-        accommodationImageRepository.deleteByAccommodationAccommodationId(id);
+        accommodationImageRepository.deleteByAccommodation_AccommodationId(id);
         accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
         accommodationRepository.deleteById(id);
     }
@@ -289,6 +326,41 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     public long count() {
         return accommodationRepository.count(); // JpaRepository 기본 제공
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Page<AccommodationListDTO> findByCompanyId(Long companyId, Pageable pageable) {
+        Page<AccommodationListDTO> page = accommodationRepository.findListByCompanyId(companyId, pageable);
+
+        // 페이지 내용이 비어있으면 바로 반환
+        if (page.isEmpty()) return page;
+
+        // 1) 현재 페이지의 숙소 id들
+        List<Long> ids = page.stream()
+                .map(AccommodationListDTO::getAccommodationId)
+                .toList();
+
+        // 2) id들에 대한 MAIN 이미지들을 한 번에 조회
+        var mains = accommodationImageRepository
+                .findByAccommodation_AccommodationIdInAndImageTypeOrderBySortOrderAscImageIdAsc(ids, "MAIN");
+
+        // 3) id -> url 맵
+        Map<Long, String> thumbMap = mains.stream().collect(
+                java.util.stream.Collectors.toMap(
+                        img -> img.getAccommodation().getAccommodationId(),
+                        AccommodationImage::getImageUrl,
+                        (a, b) -> a // 중복 시 첫 번째 유지
+                )
+        );
+
+        // 4) DTO에 썸네일 주입 (없으면 null 유지 → 템플릿에서 '없음' 처리)
+        List<AccommodationListDTO> content = page.stream().map(dto -> {
+            dto.setThumbnailUrl(thumbMap.get(dto.getAccommodationId()));
+            return dto;
+        }).toList();
+
+        return new PageImpl<>(content, pageable, page.getTotalElements());
     }
 
 }

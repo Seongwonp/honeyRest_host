@@ -4,7 +4,6 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dto.ReservationDTO;
-import com.honeyrest.honeyrest_host.entity.enums.ReservationStatus;
 import com.honeyrest.honeyrest_host.service.ReservationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,7 @@ public class ReservationPageController {
                        @RequestParam(defaultValue = "10") int size,
                        Model model) {
 
-        model.addAttribute("statuses", ReservationStatus.values());
+       List<String> statues = List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED", "NO_SHOW");
 
         PageRequestDTO pr = PageRequestDTO.builder()
                 .page(page)
@@ -106,7 +105,7 @@ public class ReservationPageController {
         model.addAttribute("currentPage", currentPage);
         model.addAttribute("pageSize", pageSize);
         model.addAttribute("totalPages", totalPages);
-        model.addAttribute("statuses", ReservationStatus.values());
+        model.addAttribute("statuses",List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED"));
         model.addAttribute("selectedStatus", status);
         model.addAttribute("q", q == null ? "" : q);
 

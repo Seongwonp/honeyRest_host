@@ -1,7 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
-import com.honeyrest.honeyrest_host.entity.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,9 +23,8 @@ public class Notification extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Enumerated(EnumType.STRING)
     @Column(length = 50, nullable = false)
-    private NotificationType type; // 알림 유형 (RESERVATION_CONFIRM, REVIEW_REPLY, EVENT 등)
+    private String type; // 알림 유형 (RESERVATION_CONFIRM, REVIEW_REPLY, EVENT 등)
 
     @Column(length = 50, nullable = false)
     private String title; // 알림 제목

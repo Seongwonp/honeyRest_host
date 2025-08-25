@@ -11,4 +11,6 @@ public interface CompanyService {
     List<CompanyDTO> getAll();
     CompanyDTO update(Long id, CompanyDTO dto);
     void delete(Long id);
+
+    CompanyDTO getByUserEmail(String email);
 }

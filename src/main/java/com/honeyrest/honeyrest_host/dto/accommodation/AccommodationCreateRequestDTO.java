@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
@@ -30,6 +31,8 @@ public class AccommodationCreateRequestDTO {
     private Long mainRegionId;
     @NotNull
     private Long subRegionId;
+
+    private Long accommodationId;
 
     // 기본정보 (필수)
     @NotBlank
@@ -73,10 +76,16 @@ public class AccommodationCreateRequestDTO {
     // 초기 부가정보 (선택)
     @Digits(integer = 8, fraction = 2)
     private BigDecimal minPrice;
+    private BigDecimal rating;
 
     // 이미지 일괄 등록
     private List<AccommodationImageDTO> images;
 
     // 태그 매핑 (tag_id 목록)
     private List<Long> tagIds;
+    private MultipartFile file;
+
+    // 부가
+    private List<AccommodationTagMapDTO> tags;
+
 }

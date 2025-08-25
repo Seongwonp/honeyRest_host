@@ -5,7 +5,6 @@ import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dto.ReviewDTO;
 
 import com.honeyrest.honeyrest_host.entity.Review;
-import com.honeyrest.honeyrest_host.entity.enums.ReviewStatus;
 import com.honeyrest.honeyrest_host.repository.ReviewRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -57,9 +56,13 @@ public class ReviewServiceImpl implements ReviewService {
         Pageable pageable = pageRequestDTO.getPageable(sortSpec);
 
         // 2) 상태 파싱(옵션)
-        ReviewStatus st = null;
+        String st = null;
         if (status != null && !status.isBlank()) {
-            st = ReviewStatus.valueOf(status.toUpperCase()); // 잘못된 값이면 IllegalArgumentException
+            st = status.toUpperCase(); // 대문자로 통일하기
+           List<String> allowed = List.of("VISIBLE", "HIDDEN", "DELETED");
+           if (!allowed.contains(st)) {
+               throw new IllegalArgumentException("유효하지 않은 리뷰 상태: " + status);
+           }
         }
 
         // 3) 조건 조합에 따라 Repository 호출 분기
@@ -129,7 +132,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         // 2) (선택) 기본 상태값 주기 — DTO가 null 이면 PUBLISHED/PENDING 등 프로젝트 규칙대로
         if (reviewDTO.getStatus() == null) {
-            reviewDTO.setStatus(ReviewStatus.VISIBLE); // 이넘을 가지고 옴
+            reviewDTO.setStatus("VISIBLE"); // 문자열로 직접 지정
         }
 
         // 3) (중요) 연관관계가 엔티티(User/Room/Reservation)라면, id만 있는 DTO를 그대로 map하면

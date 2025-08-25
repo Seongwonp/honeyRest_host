@@ -69,11 +69,17 @@
                     </li>
 
                     <!-- 승인 전 -->
-                    <li class="sidebar-item">
-                        <a href="/calendar" class="sidebar-link">
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
                             <i class="bi bi-calendar-check"></i>
                             <span>가격/재고 캘린더</span>
                         </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/admin/price/page">월 캘린더</a></li>
+                            <li class="submenu-item">
+                                <a href="/admin/price/page?mode=bulk">벌크 업서트</a>
+                            </li>
+                        </ul>
                     </li>
 
                     <!-- 승인 후: 전부 활성화 -->

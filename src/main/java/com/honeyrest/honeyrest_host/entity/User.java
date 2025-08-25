@@ -1,9 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
-import com.honeyrest.honeyrest_host.entity.enums.RoleType;
-import com.honeyrest.honeyrest_host.entity.enums.SocialType;
-import com.honeyrest.honeyrest_host.entity.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,9 +29,9 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", length = 255)
     private String passwordHash; // 비밀번호 해시 (자체 가입용)
 
-    @Enumerated(EnumType.STRING)
+
     @Column(name = "social_type", length = 20)
-    private SocialType socialType; // 소셜 로그인 타입 (KAKAO, GOOGLE)
+    private String socialType; // 소셜 로그인 타입 (KAKAO, GOOGLE)
 
     @Column(name = "social_id", length = 100)
     private String socialId; // 소셜 서비스 고유 ID
@@ -59,14 +56,15 @@ public class User extends BaseEntity {
 
     private int point; // 현재 포인트
 
-    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private RoleType roleType; // 권한 (GENERAL, COMPANY_ADMIN, SUPER_ADMIN)
+    private String role; // 권한 (GENERAL, COMPANY_ADMIN, SUPER_ADMIN)
 
-    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private UserStatus status; // 계정 상태 (ACTIVE, SUSPENDED, DELETED)
+    private String status; // 계정 상태 (ACTIVE, SUSPENDED, DELETED)
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin; // 마지막 로그인 시간
+
+    @Column(name = "is_verified", nullable = false)
+    private Boolean isVerified = false; // 이메일 인증 여부
 }

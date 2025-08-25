@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+
+<head>
+  <title>가격/재고 캘린더</title>
+
+  <!-- 공통 CSS(절대 경로; 컨텍스트 패스 자동) -->
+  <link th:href="@{/assets/compiled/css/app.css}" rel="stylesheet"/>
+
+  <!-- 페이지 전용 스타일 -->
+  <th:block layout:fragment="head">
+    <style>
+      .toolbar{display:flex;gap:.75rem;align-items:center;justify-content:space-between;margin-bottom:16px}
+      .filters{display:flex;gap:.5rem}
+      .calendar-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+      .calendar-grid{display:grid;grid-auto-rows:minmax(72px,auto);gap:0;border-collapse:collapse;min-width:980px}
+      .calendar-head{position:sticky;top:0;background:#f8fafc;z-index:2;border-bottom:1px solid #e5e7eb}
+      .calendar-row{display:grid}
+      .cell{border-right:1px solid #eef0f2;border-bottom:1px solid #eef0f2;padding:8px}
+      .cell.sticky{position:sticky;left:0;z-index:1;background:#fff;border-right:1px solid #e5e7eb;min-width:220px}
+      .head-sticky{position:sticky;left:0;background:#f8fafc;z-index:3;border-right:1px solid #e5e7eb;min-width:220px}
+      .date-text{font-size:.8rem;color:#6b7280}
+      .price-text{font-weight:700}
+      .badge{display:inline-block;border-radius:999px;padding:2px 8px;font-size:.75rem}
+      .badge.ok{background:#e8f7ee;color:#1e7f3a}
+      .badge.low{background:#fff4e5;color:#a15c00}
+      .badge.zero{background:#fde8e8;color:#b42318}
+      .actions{display:flex;gap:.35rem;margin-top:6px}
+      .btn.icon{padding:.3rem .55rem}
+    </style>
+  </th:block>
+</head>
+
+<body>
+<th:block layout:fragment="content">
+
+  <!-- 토스트 -->
+  <div th:if="${toast}" class="alert alert-success" th:text="${toast}"></div>
+  <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+  <h2 class="mb-3">가격/재고 캘린더</h2>
+
+  <!-- 툴바 -->
+  <div class="toolbar">
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-primary"
+         th:href="@{|/admin/price/page?companyId=${companyId}&ym=${#temporals.format(preYm,'yyyy-MM')}|}">
+        « 이전달
+      </a>
+      <div class="btn btn-light fw-semibold" th:text="${#temporals.format(ym,'yyyy-MM')}">YYYY-MM</div>
+      <a class="btn btn-outline-primary"
+         th:href="@{|/admin/price/page?companyId=${companyId}&ym=${#temporals.format(nextYm,'yyyy-MM')}|}">
+        다음달 »
+      </a>
+    </div>
+
+    <!-- 조회 폼 (GET /admin/price/page) -->
+    <form method="get" th:action="@{/admin/price/page}" class="filters">
+      <input type="hidden" name="companyId" th:value="${companyId}"/>
+      <input type="text" name="ym" class="form-control" style="width:130px"
+             th:value="${#temporals.format(ym,'yyyy-MM')}" placeholder="YYYY-MM"/>
+      <input type="number" name="minAvailable" class="form-control" style="width:120px"
+             th:value="${minAvailable}" placeholder="최소재고"/>
+      <input type="text" name="accommodationId" class="form-control" style="width:160px"
+             th:value="${accommodationId}" placeholder="숙소ID(선택)"/>
+      <button class="btn btn-secondary">조회</button>
+    </form>
+  </div>
+
+  <!-- 캘린더 -->
+  <div class="calendar-wrap" th:if="${priceInventoryCalendarDTO != null}">
+    <div class="calendar-grid">
+
+      <!-- 헤더 행 -->
+      <div class="calendar-row" th:with="days=${ym.lengthOfMonth()}"
+           th:style="'grid-template-columns: 220px repeat(' + ${days} + ', 1fr);'">
+        <div class="cell calendar-head head-sticky fw-bold">객실</div>
+        <div class="cell calendar-head text-center" th:each="d : ${#numbers.sequence(1, ym.lengthOfMonth())}">
+          <span class="date-text" th:text="${d}"></span>
+        </div>
+      </div>
+
+      <!-- 객실별 행 -->
+      <div class="calendar-row"
+           th:each="roomCal : ${priceInventoryCalendarDTO.rooms}"
+           th:style="'grid-template-columns: 220px repeat(' + ${ym.lengthOfMonth()} + ', 1fr);'">
+
+        <!-- 객실 메타(고정 첫 열) -->
+        <div class="cell sticky">
+          <div class="fw-semibold" th:text="${roomCal.room.roomName}">객실명</div>
+          <div class="text-muted small"
+               th:text="'기본가 ' + ${#numbers.formatDecimal(roomCal.room.basePrice,0,'COMMA',0,'POINT')}"></div>
+          <div class="text-muted small" th:text="'총객실 ' + ${roomCal.room.totalRooms}"></div>
+        </div>
+
+        <!-- 날짜별 셀 -->
+        <div class="cell text-center" th:each="cell : ${roomCal.days}">
+          <div class="date-text" th:text="${#temporals.format(cell.date,'MM/dd')}"></div>
+          <div class="price-text"
+               th:text="${cell.price != null ? #numbers.formatDecimal(cell.price,0,'COMMA',0,'POINT') : '-'}">-</div>
+
+          <!-- 재고 배지(색상 분기: 0/낮음/정상) -->
+          <div th:with="av=${cell.available}">
+            <span th:if="${av == null}" class="badge">-</span>
+            <span th:if="${av != null and av == 0}" class="badge zero">품절</span>
+            <span th:if="${av != null and av > 0 and av <= 2}" class="badge low" th:text="'재고 ' + ${av}"></span>
+            <span th:if="${av != null and av > 2}" class="badge ok" th:text="'재고 ' + ${av}"></span>
+          </div>
+
+          <!-- 단건 업서트 -->
+          <form th:action="@{/admin/price/upsert}" method="post" class="actions">
+            <input type="hidden" name="companyId" th:value="${companyId}"/>
+            <input type="hidden" name="accommodationId" th:value="${accommodationId}"/>
+            <input type="hidden" name="ym" th:value="${#temporals.format(ym,'yyyy-MM')}"/>
+            <input type="hidden" name="roomId" th:value="${roomCal.room.roomId}"/>
+            <input type="hidden" name="date" th:value="${#temporals.format(cell.date,'yyyy-MM-dd')}"/>
+
+            <input type="number" name="available" class="form-control form-control-sm" style="width:78px"
+                   th:placeholder="${cell.available != null ? cell.available : '재고'}"/>
+
+            <input type="number" name="price" class="form-control form-control-sm" style="width:110px"
+                   th:placeholder="${cell.price != null ? cell.price : '가격'}" step="1000" min="0"/>
+
+            <button class="btn btn-sm btn-primary icon" title="저장">저장</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 데이터 없을 때 -->
+  <div th:if="${priceInventoryCalendarDTO == null or #lists.isEmpty(priceInventoryCalendarDTO.rooms)}"
+       class="alert alert-light border text-muted">
+    표시할 객실이 없습니다. 필터를 조정해 보세요.
+  </div>
+
+  <!-- 벌크 업서트 -->
+  <hr class="my-4"/>
+  <h5 class="mb-2">벌크 업서트(JSON)</h5>
+  <form th:action="@{/admin/price/bulk-upsert}" method="post" class="d-flex flex-column gap-2">
+    <input type="hidden" name="companyId" th:value="${companyId}"/>
+    <input type="hidden" name="accommodationId" th:value="${accommodationId}"/>
+    <input type="hidden" name="ym" th:value="${#temporals.format(ym,'yyyy-MM')}"/>
+    <textarea name="json" rows="6" class="form-control"
+              placeholder='{"companyId":1,"accommodationId":2,"yearMonth":"2025-09","rooms":[...]}'></textarea>
+    <div>
+      <button class="btn btn-outline-success">벌크 업서트 실행</button>
+    </div>
+  </form>
+
+</th:block>
+
+<!-- 공통 JS(절대 경로) -->
+<script th:src="@{/assets/static/js/initTheme.js}"></script>
+</body>
+</html>

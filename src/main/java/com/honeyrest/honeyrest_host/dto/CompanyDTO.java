@@ -1,10 +1,6 @@
 package com.honeyrest.honeyrest_host.dto;
 
 
-import com.honeyrest.honeyrest_host.entity.enums.ApprovalStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

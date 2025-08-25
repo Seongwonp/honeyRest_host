@@ -24,5 +24,8 @@ public class AccommodationTag {
     @Column(nullable = false, length = 50)
     private String category; // 태그 카테고리
 
+    @Column(nullable = true)
+    private String icon; // 태그 아이콘 (리액트 아이콘 이름 저장)
+
 
 }

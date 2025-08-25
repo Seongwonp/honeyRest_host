@@ -2,9 +2,12 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dto.RoomDTO;
+import com.honeyrest.honeyrest_host.dto.RoomImageDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
+import com.honeyrest.honeyrest_host.service.RoomImageService;
 import com.honeyrest.honeyrest_host.service.RoomService;
+import com.honeyrest.honeyrest_host.util.FileUploadUtil;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,8 @@ import java.util.List;
 public class RoomPageController {
     private final RoomService roomService;
     private final AccommodationRepository accommodationRepository;
+    private final FileUploadUtil fileUploadUtil;
+    private final RoomImageService roomImageService;
 
 
     /** 전체 객실 목록 (사이드바 진입) */
@@ -103,7 +108,9 @@ public class RoomPageController {
                          @Valid @ModelAttribute("form") RoomDTO form,
                          BindingResult binding,
                          Model model,
-                         RedirectAttributes ra) {
+                         RedirectAttributes ra) throws Exception {
+        // 이미지 업로드
+       String image =  fileUploadUtil.upload(form.getImage(),"room");
 
         if (binding.hasErrors()) {
             model.addAttribute("accommodations", accommodationRepository.findAll());
@@ -115,6 +122,9 @@ public class RoomPageController {
 
         roomService.modifyRoom(form);
 
+        RoomImageDTO roomImageDTO = RoomImageDTO.builder()
+                .image(image).build();
+        roomImageService.registerRoomImage(roomImageDTO);
         // 알림용 플래시 메시지
         ra.addFlashAttribute("msg", "객실이 수정되었습니다.");
 

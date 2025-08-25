@@ -1,6 +1,5 @@
 package com.honeyrest.honeyrest_host.entity;
 
-import com.honeyrest.honeyrest_host.entity.enums.RoomType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,9 +28,9 @@ public class Room extends BaseEntity {
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
-    @Enumerated(EnumType.STRING)
+
     @Column(name = "type", length = 60)
-    private RoomType type;
+    private String type;
 
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;

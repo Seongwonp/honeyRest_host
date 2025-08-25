@@ -40,7 +40,7 @@ public class GlobalViewModelAdvice {
                 new CurrentAdmin(
                         (u.getName() == null || u.getName().isBlank()) ? "관리자" : u.getName(),
                         email,
-                        (u.getRoleType() == null) ? "-" : u.getRoleType().name()
+                        (u.getRole() == null) ? "-" : u.getRole()
                 )
         );
     }

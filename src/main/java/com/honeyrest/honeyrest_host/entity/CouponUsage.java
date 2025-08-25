@@ -27,7 +27,7 @@ public class CouponUsage extends BaseEntity {
     private UserCoupon userCoupon;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reseration_id", nullable = false)
+    @JoinColumn(name = "reservation_id", nullable = false)
     private Reservation reservation;
 
 

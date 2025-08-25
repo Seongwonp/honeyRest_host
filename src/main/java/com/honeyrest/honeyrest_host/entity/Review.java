@@ -1,7 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
-import com.honeyrest.honeyrest_host.entity.enums.ReviewStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +15,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "review")
-public class Review {
+public class Review extends  BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,7 +63,6 @@ public class Review {
     @Column(name = "like_count")
     private Integer likeCount; // 좋아요 수
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
-    private ReviewStatus status; // 상태(PUBLISHED, HIDDEN)
+    private String status; // 상태(PUBLISHED, HIDDEN)
 }

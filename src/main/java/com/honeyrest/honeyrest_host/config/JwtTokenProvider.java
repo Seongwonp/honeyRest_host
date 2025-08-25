@@ -1,19 +1,16 @@
 package com.honeyrest.honeyrest_host.config;
 
-import com.honeyrest.honeyrest_host.entity.enums.RoleType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import javax.crypto.SecretKey;
 import java.time.Duration;
 import java.util.Date;
@@ -45,12 +42,12 @@ public class JwtTokenProvider {
 
     /*---------------생성 -------------*/
     /** 관리자/유저 공통 AccessToken 생성 (userId, email, role) */
-    public String createAccessToken(Long userId, String email, RoleType roleType) {
+    public String createAccessToken(Long userId, String email, String role) {
         return buildToken(
                 Map.of(
                         C_TYP, "access",
                         C_EMAIL, email,
-                        C_ROLE, roleType.name()
+                        C_ROLE, role
                 ),
                 String.valueOf(userId),
                 Duration.ofMillis(expirationMs)
@@ -58,12 +55,12 @@ public class JwtTokenProvider {
     }
 
     /* (선택) RefreshToken 생성 */
-    public String createRefreshToken(Long userId, String email, RoleType role) {
+    public String createRefreshToken(Long userId, String email, String role) {
         return buildToken(
                 Map.of(
                         C_TYP, "refresh",
                         C_EMAIL, email,
-                        C_ROLE, role.name()
+                        C_ROLE, role
                 ),
                 String.valueOf(userId),
                 Duration.ofMillis(refreshExpirationMs)
@@ -108,7 +105,7 @@ public class JwtTokenProvider {
     public String resolveToken(HttpServletRequest request) {
         // 1) Authorization: Bearer <token>
         String bearer = request.getHeader("Authorization");
-        if (bearer != null && bearer.startsWith("Bearer")) {
+        if (bearer != null && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
         // 2) 쿠키 (로그인 페이지에서 저장한 ACCESS_TOKEN)
@@ -130,9 +127,9 @@ public class JwtTokenProvider {
         return (sub == null) ? null : Long.valueOf(sub);
     }
 
-    public RoleType getRole(String token) {
+    public String getRole(String token) {
         String r = getClaim(token, C_ROLE, String.class);
-        return (r == null) ? null : RoleType.valueOf(r);
+        return (r == null) ? null : getRole(r);
     }
 
     public String getEmail(String token) {

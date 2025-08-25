@@ -26,6 +26,13 @@
     <div id="main">
 
         <div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+        <div class="sidebar-item">
+            <a href="#" class="btn btn-link"
+               onclick="document.getElementById('logoutForm').submit(); return false;">
+                <i class="bi bi-box-arrow-right"></i> 로그아웃
+            </a>
+            <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none"></form>
+        </div>
 
 
         <header class="mb-3">

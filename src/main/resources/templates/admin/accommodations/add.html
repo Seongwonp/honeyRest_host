@@ -154,8 +154,15 @@
                         </div>
                         <div class="row g-2 mt-1">
                             <div class="col-md-6">
-                                <input type="text" class="form-control" name="images[1].imageUrl" placeholder="이미지 URL">
+                                <label class="form-label required">썸네일 이미지</label>
+                                <input type="file" class="form-control" name="thumbnailFile" accept="image/*" required>
+                                <div class="help-text">JPG/PNG 등 이미지 1장 업로드</div>
                             </div>
+                            <div class="mb-3">
+                                <label for="file">피일찾기</label>
+                                <input type="file" class="form-control" id="file" name="file" required>
+                            </div>
+
                             <div class="col-md-3">
                                 <select class="form-select" name="images[1].imageType">
                                     <option value="">(선택)</option>

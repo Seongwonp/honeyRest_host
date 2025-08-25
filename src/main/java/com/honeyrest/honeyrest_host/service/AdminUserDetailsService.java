@@ -23,7 +23,7 @@ public class AdminUserDetailsService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User
                 .withUsername(u.getEmail())
                 .password(u.getPasswordHash())              // BCrypt 저장된 값
-                .roles(u.getRoleType().name())              // ROLE_COMPANY_ADMIN 등으로 매핑됨
+                .roles(u.getRole())              // ROLE_COMPANY_ADMIN 등으로 매핑됨
                 .accountLocked(false)
                 .disabled(false)
                 .build();

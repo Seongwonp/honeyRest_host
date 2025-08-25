@@ -3,13 +3,14 @@ package com.honeyrest.honeyrest_host.service;
 import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dto.ReservationDTO;
+import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Reservation;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.entity.User;
-import com.honeyrest.honeyrest_host.entity.enums.ReservationStatus;
 import com.honeyrest.honeyrest_host.repository.ReservationRepository;
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import com.honeyrest.honeyrest_host.repository.UserRepository;
+import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
 import jakarta.persistence.EntityNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final AccommodationRepository accommodationRepository;
 
     @Override
     public PageResponseDTO<ReservationDTO> getReservationsByStatus(String status, PageRequestDTO pageRequestDTO) {
@@ -45,12 +47,12 @@ public class ReservationServiceImpl implements ReservationService {
         if (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)) {
             page = reservationRepository.findAll(pageable);
         } else {
-            ReservationStatus st;
-            try {
-                st = ReservationStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("유효하지 않은 예약 상태: " + status);
+            List<String> allowedStatuses = List.of("CONFIRME", "PENDING", "COMLETED", "CANCELLED", "NO_SHOW");
+            String st = status.toUpperCase();
+            if (!allowedStatuses.contains(st)) {
+                throw new IllegalArgumentException("유효 하지 않은 예약 상태: " + status);
             }
+
             page = reservationRepository.findByStatus(st, pageable);
         }
 
@@ -86,6 +88,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         User newUser = null;
         Room newRoom = null;
+        Accommodation newAccommodation = null;
 
         if (dto.getUserId() != null) {
             newUser = userRepository.findById(dto.getUserId())
@@ -96,7 +99,7 @@ public class ReservationServiceImpl implements ReservationService {
                     .orElseThrow(() -> new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + dto.getRoomId()));
         }
 
-        reservation.update(dto, newUser, newRoom); // 변경감지
+        reservation.update(dto, newUser, newRoom, newAccommodation); // 변경감지
 
         return reservation; // @Transactional 이므로 save() 필요 없음
     }
@@ -108,17 +111,19 @@ public class ReservationServiceImpl implements ReservationService {
                 .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + reservationId));
 
         // 이미 취소면 중복 복구 방지
-        if (r.getStatus() == ReservationStatus.CANCELLED) return;
+        if ("CANCELLED".equals(r.getStatus())) return;
 
         // 2) 재고 복구가 필요한 상태인지 판단
-        //    - 생성 시 재고 차감 타이밍이 CONFIRMED에서만 발생했다면,
-        //      CONFIRMED였던 예약만 재고 복구 대상.
         boolean needRestock =
-                (r.getStatus() == ReservationStatus.CONFIRMED
-                        || r.getStatus() == ReservationStatus.COMPLETED); // 운영정책에 따라 포함/제외
+                ("CONFIRMED".equalsIgnoreCase(r.getStatus()));
+        // 만약 완료(COMPLETED)에서도 재고를 차감했다면 ↓ 이렇게 확장
+        // boolean needRestock = "CONFIRMED".equalsIgnoreCase(r.getStatus())
+        //  || "COMPLETED".equalsIgnoreCase(r.getStatus());
+
 
         // 3) 상태 변경(도메인 메서드 권장: 내부에서 status, cancelReason, updatedAt 등 세팅)
-        r.cancel(cancelReason);  // r.setStatus(CANCELLED) + r.setCancelReason(...) 등
+//        r.cancel("CANCELLED");
+        r.cancel(cancelReason);
 
         // 4) 재고 복구
         if (needRestock) {
@@ -134,7 +139,7 @@ public class ReservationServiceImpl implements ReservationService {
         if (dto.getRoomId() == null) throw new IllegalStateException("roomId는 필수입니다.");
         if (dto.getUserId() == null) throw new IllegalStateException("userId는 필수입니다.");
         if (dto.getCheckInDate() != null && dto.getCheckOutDate() != null
-                && !dto.getCheckInDate().isBefore(dto.getCheckOutDate())) {
+            && !dto.getCheckInDate().isBefore(dto.getCheckOutDate())) {
             throw new IllegalArgumentException("체크인 날짜는 체크아웃보다 이전이어야 합니다.");
         }
 
@@ -142,6 +147,8 @@ public class ReservationServiceImpl implements ReservationService {
                 .orElseThrow(() -> new EntityNotFoundException("유저를 찾을 수 없습니다. userId=" + dto.getUserId()));
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + dto.getRoomId()));
+        Accommodation accommodation = accommodationRepository.findById(dto.getAccommodationId())
+                .orElseThrow(() -> new EntityNotFoundException("숙소를 찾을 수 없습니다. accommodationId=" + dto.getAccommodationId()));
 
         // ✅ 여기에서 인원 검증
         if (dto.getGuestCount() != null) {
@@ -170,7 +177,7 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation newEntity = Reservation.builder()
                 .user(user)
                 .room(room)
-                .accommodationId(accId)
+                .accommodation(accommodation)
                 .accommodationName(accNm)
                 .roomName(roomName)
                 .reservationNumber(reservationNumber)
@@ -182,7 +189,7 @@ public class ReservationServiceImpl implements ReservationService {
                 .price(dto.getPrice())
                 .originalPrice(dto.getPrice())
                 .discountAmount(dto.getPrice() != null ? BigDecimal.ZERO : null)
-                .status(dto.getStatus() != null ? dto.getStatus() : ReservationStatus.CONFIRMED) // 생성과 동시에 확정
+                .status(dto.getStatus() != null ? dto.getStatus() : "CONFIRMED") // 생성과 동시에 확정
                 .cancelReason(dto.getCancelReason())
                 .specialRequest(dto.getSpecialRequest())
                 .build();
@@ -238,16 +245,16 @@ public class ReservationServiceImpl implements ReservationService {
                                                                   PageRequestDTO pageRequestDTO) {
         Pageable pageable = pageRequestDTO.getPageable(Sort.by("reservationId").descending());
 
-        ReservationStatus st = null;
+        String st = null;
         if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
-            try {
-                st = ReservationStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException e) {
+            st = status.toUpperCase();
+            List<String> validStatuses = List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED", "NO_SHOW");
+            if (!validStatuses.contains(st) ) {
                 throw new IllegalArgumentException("유효하지 않은 예약 상태: " + status);
             }
         }
 
-        Page<Reservation> page = reservationRepository.findCompanyReservations(companyId, st, q, pageable);
+        Page<Reservation> page = reservationRepository.findCompanyReservations(companyId, st , q, pageable);
 
         List<ReservationDTO> dtoList = page.getContent().stream()
                 .map(r -> modelMapper.map(r, ReservationDTO.class))

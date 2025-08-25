@@ -6,8 +6,6 @@ import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dto.AdminSignupRequestDTO;
 import com.honeyrest.honeyrest_host.dto.TokenResponseDTO;
 import com.honeyrest.honeyrest_host.entity.User;
-import com.honeyrest.honeyrest_host.entity.enums.RoleType;
-import com.honeyrest.honeyrest_host.entity.enums.UserStatus;
 import com.honeyrest.honeyrest_host.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,8 +37,8 @@ public class AdminAuthService {
             throw new IllegalArgumentException("이름은 필수입니다.");
         }
 
-        RoleType role = request.getRoleType() != null ? request.getRoleType() : RoleType.COMPANY_ADMIN;
-        if (role == RoleType.GENERAL) {
+        String role = request.getRole() != null ? request.getRole() : "COMPANY_ADMIN";
+        if (role == "GENERAL") {
             throw new IllegalArgumentException("관리자 가입은 GENERAL 권한을 허용하지 않습니다.");
         }
 
@@ -52,10 +50,11 @@ public class AdminAuthService {
                 .birthDate(request.getBirthDate())
                 .gender(request.getGender() != null ? request.getGender() : "UNKNOWN")
                 .marketingAgree(Boolean.TRUE.equals(request.getMarketingAgree()))
+                .isVerified(true)
                 .lastLogin(LocalDateTime.now())
                 .point(0)
-                .roleType(role) // COMPANY_ADMIN or SUPER_ADM
-                .status(UserStatus.ACTIVE)
+                .role("COMPANY_ADMIN") // COMPANY_ADMIN or SUPER_ADM
+                .status("ACTIVE")
                 .build();
 
         User saved = userRepository.save(admin);
@@ -65,24 +64,40 @@ public class AdminAuthService {
     /** 로그인 (관리자 전용) */
     @Transactional(readOnly = true)
     public TokenResponseDTO login(AdminLoginRequestDTO request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        // 이메일 정규화(권장)
+        String email = request.getEmail().trim().toLowerCase();
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
 
-        if (user.getStatus() != UserStatus.ACTIVE) {
+        //  status: String 비교
+        if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
             throw new IllegalStateException("비활성화된 계정입니다.");
         }
-        if (user.getRoleType() == null || user.getRoleType() == RoleType.GENERAL) {
+
+        // role: String 비교 (GENERAL이면 관리자 아님)
+        String roleType = user.getRole(); // String으로 가정
+        if (roleType == null || "GENERAL".equalsIgnoreCase(roleType)) {
             throw new IllegalStateException("관리자 권한이 없습니다.");
         }
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+
+        // 소셜 계정 대비: passwordHash null일 수 있으면 방어
+        if (user.getPasswordHash() == null ||
+            !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
 
-        String token = jwtTokenProvider.createAccessToken(user.getUserId(), user.getEmail(), user.getRoleType());
+        // ✅ 토큰 생성도 문자열 roleType 사용(메서드 시그니처를 문자열 받도록 수정/오버로드)
+        String token = jwtTokenProvider.createAccessToken(
+                user.getUserId(),
+                user.getEmail(),
+                roleType.toUpperCase()   // 표준화
+        );
+
         return TokenResponseDTO.builder()
                 .accessToken(token)
                 .tokenType("Bearer")
-                .expiresIn(3600_000L)
+                .expiresIn(3_600_000L)
                 .build();
     }
 }
