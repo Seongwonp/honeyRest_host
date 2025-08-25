@@ -28,7 +28,7 @@ public class ReservationService {
                 .reservationId(dto.getReservationId())
                 .user(userRepository.getReferenceById(dto.getUserId())) // userId는 DTO에 추가 필요
                 .room(roomRepository.getReferenceById(dto.getRoomId())) // roomId는 DTO에 추가 필요
-                .accommodationId(accommodationRepository.getReferenceById(dto.getAccommodationId()))
+                .accommodation(accommodationRepository.getReferenceById(dto.getAccommodationId()))
                 .accommodationName(dto.getAccommodationName())
                 .roomName(dto.getRoomName())
                 .reservationNumber(dto.getReservationNumber())
@@ -55,7 +55,7 @@ public class ReservationService {
                 .reservationId(reservation.getReservationId())
                 .userId(reservation.getUser().getUserId()) // 이름만 DTO에 담음
                 .roomId(reservation.getRoom().getRoomId())
-                .accommodationId(reservation.getAccommodationId().getAccommodationId())
+                .accommodationId(reservation.getAccommodation().getAccommodationId())
                 .accommodationName(reservation.getAccommodationName())
                 .roomName(reservation.getRoomName())
                 .reservationNumber(reservation.getReservationNumber())
@@ -88,9 +88,15 @@ public class ReservationService {
     }
 
     public List<ReservationDTO> getReservationsByAccommodationId(Long accommodationId) {
-        return reservationRepository.findReservationsByAccommodationId_AccommodationId(accommodationId)
+        return reservationRepository.findReservationsByAccommodation_AccommodationId(accommodationId)
                 .stream().map(this::toDTO).toList();
     }
+
+    public List<ReservationDTO> getReservationsByCompanyId(Long companyId) {
+        return reservationRepository.findReservationsByAccommodation_Company_CompanyId(companyId)
+                .stream().map(this::toDTO).toList();
+    }
+
 
     public void registerReservation(ReservationDTO dto) { reservationRepository.save(toEntity(dto));
     }

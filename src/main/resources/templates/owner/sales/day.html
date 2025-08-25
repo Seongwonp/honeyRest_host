@@ -18,28 +18,32 @@
 
 <body>
 <main layout:fragment="content">
-    <h3 class="mb-4"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
-
+    <h3 class="mb-4"  th:text="${companyId != null} ? ${company.name} + ' 매출 현황'
+             : (${accommodationId != null} ? ${accommodation.name} + ' 매출 현황'
+                                           : '전체 매출 현황')"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
     <div class="card p-4 mb-4 shadow-sm">
-        <form method="get" action="/owner/sales/day" class="row g-3 align-items-end">
-            <div class="col-auto">
-                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>
-                <input type="date" name="startDate" class="form-control">
-            </div>
-            <div class="col-auto">
-                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>
-                <input type="date" name="endDate" class="form-control">
-            </div>
+        <form method="get" action="/owner/sales/day" class="row g-3 align-items-end" id="searchForm">
+<!--            <div class="col-auto">-->
+<!--                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>-->
+<!--                <input type="date" name="startDate" class="form-control">-->
+<!--            </div>-->
+<!--            <div class="col-auto">-->
+<!--                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>-->
+<!--                <input type="date" name="endDate" class="form-control">-->
+<!--            </div>-->
             <div class="col-auto">
                 <label class="form-label"><i class="bi bi-filter-square me-1"></i>검색 조건</label>
-                <select name="searchType" class="form-select">
-                    <option value="categoryName">카테고리명</option>
-                    <option value="menuName">상품명</option>
+                <select name="searchType" class="form-select" id="searchTypeSelect">
+                    <option value="companyName" th:selected="${searchType == 'companyName'}">회사명</option>
+                    <option value="accommodationName" th:selected="${searchType == 'accommodationName'}">숙소명</option>
                 </select>
+
             </div>
             <div class="col-md-4 col-sm-8">
                 <label class="form-label"><i class="bi bi-search me-1"></i>검색어</label>
-                <input type="text" name="keyword" placeholder="검색어 입력" class="form-control">
+                <select name="keyword" class="form-select" id="keywordSelect">
+                    <!-- 옵션은 JS에서 넣어줌 -->
+                </select>
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
@@ -49,10 +53,15 @@
 
 
     <div class="mb-4">
-        <a href="/owner/sales/day"
+        <a th:href="${companyId != null} ? '/owner/sales/day/company/' + ${companyId}
+          : (${accommodationId != null} ? '/owner/sales/day/accommodation/' + ${accommodationId}
+                                        : '/owner/sales/day')"
            class="btn btn-warning text-dark custom-hover-dark me-2 active"
            aria-current="page"><i class="bi bi-calendar-day me-1"></i>일별</a>
-        <a href="/owner/sales/month" class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
+        <a th:href="${companyId != null} ? '/owner/sales/month/company/' + ${companyId}
+         : (${accommodationId != null} ? '/owner/sales/month/accommodation/' + ${accommodationId}
+                                       : '/owner/sales/month')"
+           class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
     </div>
 
     <div class="card p-4 mb-4 shadow-sm">
@@ -231,19 +240,118 @@
         const prevBtn = document.getElementById('prevMonthBtn');
         const nextBtn = document.getElementById('nextMonthBtn');
 
+        // Thymeleaf로 companyId 값을 JS 변수에 전달 (null일 수도 있으니 대비)
+        const companyId = /*[[${companyId}]]*/'';
+        const accommodationId = /*[[${accommodationId}]]*/'';
 
         prevBtn.addEventListener('click', () => {
             const {startDate, endDate} = changeMonth(currentYearMonth, -1);
             console.log(startDate);
-            window.location.href = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
+
+            let url;
+            if (companyId) {
+                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
+            } else if (accommodationId) {
+                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}`;
+            }
+            else {
+                url = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
+            }
+            window.location.href = url;
         });
 
         nextBtn.addEventListener('click', () => {
-            console.log(currentYearMonth);
             const {startDate, endDate} = changeMonth(currentYearMonth, 1);
-            window.location.href = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
+            let url;
+            if (companyId) {
+                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            } else if (accommodationId) {
+                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            }
+            else {
+                url = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
+            }
+            window.location.href = url;
+        });
+
+        const searchTypeSelect = document.getElementById("searchTypeSelect");
+        const keywordSelect = document.getElementById("keywordSelect");
+        const searchType = document.getElementById('searchTypeSelect').value;
+        const keyword = document.getElementById('keywordSelect').value;
+        // 회사명과 숙소명을 JS 배열로 변환
+        const companies = /*[[${companies}]]*/ [];
+        const accommodations = /*[[${accommodations}]]*/ [];
+        const selectedSearchType = /*[[${searchType}]]*/ 'companyName';
+
+        const company = /*[[${company}]]*/'';
+        const accommodation = /*[[${accommodation}]]*/'';
+
+        function getCompanyIdByName(name) {
+            if (!companies || !Array.isArray(companies)) return null;
+            const comp = companies.find(c => c.name === name);
+            return comp ? comp.companyId : null;
+        }
+
+        function getAccommodationIdByName(name) {
+            if (!accommodations || !Array.isArray(accommodations)) return null;
+            const accom = accommodations.find(a => a.name === name);
+            return accom ? accom.accommodationId : null;
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            console.log(keyword);
+            let actionUrl = '';
+
+            if (searchType === 'companyName') {
+                const companyId = getCompanyIdByName(keyword);
+                if (!companyId) {
+                    actionUrl = `/owner/sales/day`;
+                } else
+                actionUrl = `/owner/sales/day/company/${companyId}`;
+            } else if (searchType === 'accommodationName') {
+                const accommodationId = getAccommodationIdByName(keyword);
+                if (!accommodationId) {
+                    actionUrl = `/owner/sales/day`;
+                } else
+                actionUrl = `/owner/sales/day/accommodation/${accommodationId}`;
+            }
+
+            this.action = actionUrl;
+        })
+        console.log(companies);
+        console.log(accommodations)
+        function updateKeywordOptions(type) {
+            keywordSelect.innerHTML = '<option value="">전체</option>';
+
+            const keyword = /*[[${keyword}]]*/"";
+            let items = [];
+            if (type === "companyName") {
+                items = companies.map(c => c.name);
+            } else if (type === "accommodationName") {
+                items = accommodations.map(a => a.name);
+            }
+
+            items.forEach(name => {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.textContent = name;
+                if (name === keyword) {
+                    opt.selected = true;
+                }
+                keywordSelect.appendChild(opt);
+            });
+        }
+
+        // 초기화 시 기본 선택 (회사명)
+        updateKeywordOptions(searchTypeSelect.value);
+
+        // 변경 시 옵션 다시 로드
+        searchTypeSelect.addEventListener("change", function () {
+            updateKeywordOptions(this.value);
         });
     });
+
+
     /*]]>*/
 </script>
 </body>

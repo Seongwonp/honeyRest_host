@@ -61,6 +61,9 @@ public class User extends BaseEntity {
     @Column(length = 20)
     private String status; // 계정 상태 (ACTIVE, SUSPENDED, DELETED)
 
+    @Column
+    private boolean is_verified;
+
     @Column(name = "last_login")
     private LocalDateTime lastLogin; // 마지막 로그인 시간
 }

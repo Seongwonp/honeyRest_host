@@ -33,7 +33,7 @@ public class Reservation extends BaseEntity{
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accommodation_id", nullable = false)
-    private Accommodation accommodationId; // 숙소ID(중복 저장)
+    private Accommodation accommodation; // 숙소ID(중복 저장)
 
     @Column(name = "accommodation_name", nullable = false, length = 255)
     private String accommodationName; // 숙소명

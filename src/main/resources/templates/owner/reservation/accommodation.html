@@ -69,11 +69,11 @@
     document.getElementById('accommodationSelect').addEventListener('change', function () {
         const accommodationId = this.value;
         if (accommodationId === "0") {
-            window.location.href = `/owner/reservation/list`;
+            window.location.href = `/owner/reservation/accommodations`;
         } else if (accommodationId){
-            window.location.href = `/owner/reservation/list/${accommodationId}`;
+            window.location.href = `/owner/reservation/list/accommodation/${accommodationId}`;
         } else {
-            window.location.href = `/owner/reservation/list`;
+            window.location.href = `/owner/reservation/accommodations`;
         }
     });
 </script>

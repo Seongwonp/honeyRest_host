@@ -82,11 +82,11 @@ public class AccommodationController {
             accommodationService.registerAccommodationImage(accommodationImageDTO);
 
 
-            return "redirect:/owner/accommodation/list"; // 성공 페이지
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
-            return "redirect:/owner/accommodation/list";
         }
+        return "redirect:/owner/accommodation/list"; // 성공 페이지
+
     }
 
     @GetMapping("/accommodation/{accommodationId}/modify")

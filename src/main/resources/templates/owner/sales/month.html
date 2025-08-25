@@ -50,10 +50,11 @@
 
 
     <div class="mb-4">
-        <a href="/owner/sales/day"
+        <a th:href="${companyId} != null ? '/owner/sales/day/company/' + ${companyId} : '/owner/sales/day'"
            class="btn btn-outline-warning  me-2"
            aria-current="page"><i class="bi bi-calendar-day me-1"></i>일별</a>
-        <a href="/owner/sales/month" class="btn btn-warning text-dark custom-hover-dark me-2 active"><i class="bi bi-calendar3 me-1"></i>월별</a>
+        <a th:href="${companyId} != null ? '/owner/sales/month/company/' + ${companyId} : '/owner/sales/month'"
+           class="btn btn-warning text-dark custom-hover-dark me-2 active"><i class="bi bi-calendar3 me-1"></i>월별</a>
 
     </div>
 
@@ -124,7 +125,7 @@
 <script layout:fragment="script" th:inline="javascript">
     /*<![CDATA[*/
     let monthSales = /*[[${monthSales}]]*/ [];
-
+    console.log(monthSales)
     if (monthSales && monthSales.length > 0) {
         const allMonths = Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0'));
         const salesMap = {};
@@ -191,14 +192,31 @@
         const prevBtn = document.getElementById('prevYearBtn');
         const nextBtn = document.getElementById('nextYearBtn');
 
+        // Thymeleaf에서 companyId 받아오기
+        let companyId = /*[[${companyId}]]*/'';
+
         prevBtn.addEventListener('click', () => {
             const {startDate, endDate} = changeYear(currentYear, -1);
-            window.location.href = `/owner/sales/month?startDate=${startDate}&endDate=${endDate}`;
+
+            let url;
+            if (companyId) {
+                url = `/owner/sales/month/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
+            } else {
+                url = `/owner/sales/month?startDate=${startDate}&endDate=${endDate}`;
+            }
+            window.location.href = url;
         });
 
         nextBtn.addEventListener('click', () => {
             const {startDate, endDate} = changeYear(currentYear, 1);
-            window.location.href = `/owner/sales/month?startDate=${startDate}&endDate=${endDate}`;
+
+            let url;
+            if (companyId) {
+                url = `/owner/sales/month/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
+            } else {
+                url = `/owner/sales/month?startDate=${startDate}&endDate=${endDate}`;
+            }
+            window.location.href = url;
         });
     });
     /*]]>*/

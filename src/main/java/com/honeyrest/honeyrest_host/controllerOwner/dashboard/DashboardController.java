@@ -1,9 +1,9 @@
 package com.honeyrest.honeyrest_host.controllerOwner.dashboard;
 
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CouponDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -52,17 +52,21 @@ public class DashboardController {
         return "redirect:/owner/coupon/list";
     }
 
+    @GetMapping("/review/list")
+    public String reviews(Model model) {
+        return "owner/review/list";
+    }
 
-    @GetMapping("/reservation/list")
+    @GetMapping("/reservation/accommodations")
     public String reservations(Model model) {
         model.addAttribute("accommodationId", 0);
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         model.addAttribute("reservations", reservationService.getReservations());
-        return "owner/reservation/list";
+        return "/owner/reservation/accommodation";
     }
 
-    @GetMapping("/reservation/list/{accommodationId}")
-    public String reservation(@PathVariable Long accommodationId, Model model) {
+    @GetMapping("/reservation/accommodation/{accommodationId}")
+    public String accommodationReservations(@PathVariable Long accommodationId, Model model) {
         List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
         List<ReservationDTO> reservations;
         if (accommodationId != null) {
@@ -76,8 +80,33 @@ public class DashboardController {
         model.addAttribute("reservations", reservations);
         model.addAttribute("accommodations", accommodations);
         model.addAttribute("accommodationId", accommodationId);
-        return "owner/reservation/list";
+        return "/owner/reservation/accommodation";
     }
 
+    @GetMapping("/reservation/companies")
+    public String companies(Model model) {
+        model.addAttribute("companyId", 0);
+        model.addAttribute("companies", companyService.getAllCompanies());
+        model.addAttribute("reservations", reservationService.getReservations());
+        return "/owner/reservation/company";
+    }
+
+    @GetMapping("/reservation/company/{companyId}")
+    public String companyReservations(@PathVariable Long companyId, Model model) {
+        List<CompanyDTO> companies = companyService.getAllCompanies();
+        List<ReservationDTO> reservations;
+        if (companyId != null) {
+            reservations = reservationService.getReservationsByCompanyId(companyId);
+            CompanyDTO company = companyService.getCompany(companyId);
+            model.addAttribute("reservation", reservations);
+            model.addAttribute("company", company);
+        } else {
+            reservations = reservationService.getReservations();
+        }
+        model.addAttribute("reservations", reservations);
+        model.addAttribute("companies", companies);
+        model.addAttribute("companyId", companyId);
+        return "/owner/reservation/company";
+    }
 
 }
