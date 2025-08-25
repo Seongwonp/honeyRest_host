@@ -99,7 +99,7 @@
                             <a class="btn btn-outline-secondary"
                                th:href="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}">수정</a>
                             <a class="btn btn-outline-info"
-                               th:href="@{|/admin/rooms/list/by-accommodation?accommodationId=${acc.accommodationId}|}">객실관리</a>
+                               th:href="@{|/admin/rooms/list/by-accommodation?accommodationId=${acc.accommodationId}|}">객실목록</a>
 
                             <form th:action="@{/admin/accommodations/delete/{id}(id=${acc.accommodationId})}"
                                   method="post" class="d-inline"

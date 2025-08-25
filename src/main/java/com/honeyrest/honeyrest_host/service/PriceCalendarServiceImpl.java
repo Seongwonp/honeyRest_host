@@ -7,6 +7,8 @@ import com.honeyrest.honeyrest_host.repository.PriceCalendarRepository;
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +37,8 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
         LocalDate end   = ym.atEndOfMonth();
 
         // 회사(+선택: 숙소)의 객실 전체
-        List<Room> rooms = roomRepository.findRoomsOfCompany(companyId, accommodationId);
+        Page<Room> page = roomRepository.findRoomsOfCompany(companyId, accommodationId,Pageable.unpaged());
+        List<Room> rooms = page.getContent();
 
         // 월 범위 price_calendar
         List<PriceCalendar> rows = priceCalendarRepository.findMonth(start, end, null);

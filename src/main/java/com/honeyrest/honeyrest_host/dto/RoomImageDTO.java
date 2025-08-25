@@ -13,4 +13,5 @@ import org.springframework.web.multipart.MultipartFile;
 @Builder
 public class RoomImageDTO {
     private String image;
+    private Long roomId;
 }

@@ -3,178 +3,98 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
-
 <head>
   <title>객실 전체 목록</title>
-
-  <!-- 페이지 전용 CSS가 필요하면 base의 head 슬롯 이름에 맞춰 넣기 -->
   <th:block layout:fragment="head">
     <style>
-      .table td, .table th { vertical-align: middle; }
-      .bg-success-subtle { background:#e8f5e9!important;color:#2e7d32!important; }
-      .bg-secondary-subtle { background:#f1f3f5!important;color:#495057!important; }
-      .bg-warning-subtle { background:#fff8e1!important;color:#8d6e63!important; }
+      .status-badge{padding:.35em .65em;border-radius:.25rem;font-size:.75rem;font-weight:500}
+      .status-active{background:#e7f1ff;color:#0a58ca}
+      .status-inactive{background:#f8d7da;color:#721c24}
+      .acc-header{background:#f0f3f7;font-weight:700}
+      .acc-title{font-size:1.05rem}
+      .room-table thead th{background:#f8f9fb}
     </style>
   </th:block>
 </head>
-
 <body>
-<!-- ★★★ base가 기대하는 슬롯 이름과 동일하게! 예: content -->
 <th:block layout:fragment="content">
-  <script th:if="${msg}" th:inline="javascript">
-    alert([[${msg}]]);
-  </script>
-
-  <!-- 여기부터 이전에 준 "카드+테이블" 마크업을 넣습니다 -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0 fw-bold">객실 전체 목록</h3>
-    <div class="d-flex gap-2">
-      <a class="btn btn-outline-secondary" href="/admin/accommodations/list">← 숙소 목록</a>
-      <a class="btn btn-primary" href="/admin/rooms/add">+ 객실 등록</a>
-    </div>
+  <div class="page-heading d-flex justify-content-between align-items-center">
+    <h3 class="mb-0">객실 전체 목록</h3>
+    <a th:href="@{/admin/rooms/add}" class="btn btn-primary">+ 새 객실 등록</a>
   </div>
 
-  <div class="card mb-3 shadow-sm">
-    <div class="card-body">
-      <form class="row g-2 align-items-center" onsubmit="return false;">
-        <div class="col-md-4">
-          <input type="text" class="form-control" id="q" placeholder="객실명 검색…" oninput="filterRooms(this.value)">
-        </div>
-        <div class="col-md-3">
-          <select class="form-select" id="statusFilter" onchange="filterRooms(document.getElementById('q').value)">
-            <option value="">상태 전체</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </div>
-        <div class="col-md-5 text-muted small text-end">
-          총 <span th:text="${page.totalElements}">0</span>개 /
-          페이지 <span th:text="${page.number + 1}">1</span> /
-          <span th:text="${page.totalPages}">1</span>
-        </div>
-      </form>
-    </div>
-  </div>
+  <!-- 숙소별 그룹 출력 -->
+  <!-- 숙소별 그룹 출력 -->
+  <div th:if="${groups != null}">
+    <div th:each="entry : ${groups.entrySet()}">
+      <!-- 숙소명 헤더 (없으면 '(숙소 미지정)') -->
+      <h4 class="mt-4 mb-3" th:text="${entry.key != null ? entry.key : '(숙소 미지정)'}">숙소명</h4>
 
-  <div class="card shadow-sm">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" id="roomsTable">
-          <thead class="table-light">
-          <tr>
-            <th class="text-center" style="width:60px">#</th>
-            <th>객실명</th>
-            <th style="width:160px">타입</th>
-            <th style="width:140px">기준/최대</th>
-            <th style="width:140px" class="text-end">가격</th>
-            <th style="width:110px" class="text-center">보유수</th>
-            <th style="width:120px" class="text-center">상태</th>
-            <th style="width:120px" class="text-center">관리</th>
-          </tr>
-          </thead>
-          <tbody>
-
-          <tr th:each="room, idx : ${page.content}"
-              th:attr="data-name=${room.name},data-status=${room.status}">
-            <td class="text-center"
-                th:text="${(page.number * page.size) + idx.index + 1}">1</td>
-            <td>
-              <div class="fw-semibold" th:text="${room.name}">디럭스 트윈</div>
-              <div class="text-muted small">
-                ID: <span th:text="${room.roomId}">1</span> · 숙소명: <span th:text="${room.accommodationId}">10</span>
+      <!-- 객실 카드들 -->
+      <div class="row g-3">
+        <div class="col-md-4" th:each="room : ${entry.value}">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between mb-2">
+                <h5 class="card-title mb-0" th:text="${room.roomName}">객실명</h5>
+                <span class="badge text-bg-secondary" th:text="${room.status}">ACTIVE</span>
               </div>
-            </td>
-            <td>
-              <span class="badge rounded-pill bg-secondary-subtle text-secondary"
-                    th:text="${room.type} ?: '—'">Standard</span>
-            </td>
-            <td>
-              <span class="badge bg-light text-dark">
-                <span th:text="${room.standardOccupancy} ?: 0">2</span> /
-                <span th:text="${room.maxOccupancy} ?: 0">3</span>
-              </span>
-            </td>
-            <td class="text-end">
-              <span class="fw-semibold"
-                    th:text="${room.price != null ? #numbers.formatInteger(room.price.intValue(), 3, 'COMMA') : '0'}">50,000</span>
-            </td>
-            <td class="text-center">
-              <span class="badge bg-light text-dark" th:text="${room.totalRooms} ?: 0">10</span>
-            </td>
-            <td class="text-center">
-              <span class="badge rounded-pill"
-                    th:classappend="${room.status} == 'ACTIVE' ? ' bg-success-subtle text-success' :
-                                    (${room.status} == 'INACTIVE' ? ' bg-secondary-subtle text-secondary' : ' bg-warning-subtle text-warning')"
-                    th:text="${room.status} ?: '미설정'">ACTIVE</span>
-            </td>
-            <td class="text-center">
-              <div class="btn-group btn-group-sm">
-                <a class="btn btn-outline-primary" th:href="@{|/admin/rooms/detail/${room.roomId}|}">보기</a>
-                <a class="btn btn-outline-secondary" th:href="@{|/admin/rooms/edit/${room.roomId}|}">수정</a>
-                <a class="btn btn-success"
-                   th:classappend="${room.totalRooms > 0} ? '' : ' disabled'"
-                   th:href="@{/admin/reservations/new(roomId=${room.roomId})}">
-                  예약
-                </a>
+              <div class="text-muted small mb-2">
+                정원:
+                <span th:text="${room.standardOccupancy}">2</span> /
+                최대:
+                <span th:text="${room.maxOccupancy}">4</span>
               </div>
-            </td>
-          </tr>
-
-          <tr th:if="${#lists.isEmpty(page.content)}">
-            <td colspan="8" class="text-center py-5">
-              <div class="text-muted">등록된 객실이 없습니다.</div>
-              <a class="btn btn-primary btn-sm mt-2" href="/admin/rooms/add">객실 등록</a>
-            </td>
-          </tr>
-          </tbody>
-        </table>
+              <div class="fw-semibold"
+                   th:text="${room.price != null ? #numbers.formatInteger(room.price, 3, 'COMMA') + '원' : '-'}">
+                0원
+              </div>
+            </div>
+            <div class="card-footer bg-white d-flex gap-2">
+              <a class="btn btn-outline-primary btn-sm"
+                 th:href="@{/admin/rooms/edit/{id}(id=${room.roomId})}">수정</a>
+              <form th:action="@{/admin/rooms/{id}/delete(id=${room.roomId})}"
+                    method="post" class="ms-auto"
+                    onsubmit="return confirm('삭제하시겠습니까?');">
+                <input type="hidden" name="accommodationId" th:value="${room.accommodationId}">
+                <button class="btn btn-outline-danger btn-sm" type="submit">삭제</button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-
-    <div class="card-footer d-flex justify-content-between align-items-center">
-      <div class="small text-muted">
-        페이지 <span th:text="${page.number + 1}">1</span> / <span th:text="${page.totalPages}">1</span>
-      </div>
-      <nav th:if="${page.totalPages > 1}">
-        <ul class="pagination mb-0">
-          <li class="page-item" th:classappend="${page.first}? 'disabled'">
-            <a class="page-link"
-               th:href="@{/admin/rooms/list_all(page=${page.number - 1}, size=${page.size})}">이전</a>
-          </li>
-          <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages-1)}"
-              th:classappend="${i == page.number}? 'active'">
-            <a class="page-link" th:text="${i + 1}"
-               th:href="@{/admin/rooms/list_all(page=${i}, size=${page.size})}">1</a>
-          </li>
-          <li class="page-item" th:classappend="${page.last}? 'disabled'">
-            <a class="page-link"
-               th:href="@{/admin/rooms/list_all(page=${page.number + 1}, size=${page.size})}">다음</a>
-          </li>
-        </ul>
-      </nav>
+      <hr class="my-4"/>
     </div>
   </div>
 
-</th:block>
+  <!-- 데이터 없을 때 -->
+  <div th:if="${groups == null or #maps.isEmpty(groups)}" class="text-center text-muted py-4">
+    표시할 객실이 없습니다.
+  </div>
 
-<!-- 페이지 전용 스크립트가 있다면 base의 scripts 슬롯 이름에 맞춰 넣기 -->
-<th:block layout:fragment="scripts">
-  <script>
-    function filterRooms(q) {
-      const query = (q || '').toLowerCase();
-      const status = document.getElementById('statusFilter').value;
-      document.querySelectorAll('#roomsTable tbody tr').forEach(tr => {
-        const isDataRow = !!tr.querySelector('.btn-group');
-        if (!isDataRow) return;
-        const name = (tr.dataset.name || '').toLowerCase();
-        const st = (tr.dataset.status || '');
-        const okName = !query || name.includes(query);
-        const okStatus = !status || st === status;
-        tr.style.display = (okName && okStatus) ? '' : 'none';
-      });
-    }
-  </script>
+  <!-- 페이지네이션 (그대로 사용) -->
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted">
+      총 <span th:text="${page.totalElements}">0</span>개 /
+      <span th:text="${page.number + 1}">1</span> /
+      <span th:text="${page.totalPages}">1</span> 페이지
+    </div>
+    <nav th:if="${page.totalPages > 0}">
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item" th:classappend="${page.first} ? ' disabled'">
+          <a class="page-link" th:href="@{/admin/rooms/list_all(page=${page.number - 1}, size=${page.size})}">&laquo;</a>
+        </li>
+        <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+            th:classappend="${i == page.number} ? ' active'">
+          <a class="page-link" th:text="${i + 1}"
+             th:href="@{/admin/rooms/list_all(page=${i}, size=${page.size})}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${page.last} ? ' disabled'">
+          <a class="page-link" th:href="@{/admin/rooms/list_all(page=${page.number + 1}, size=${page.size})}">&raquo;</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
 </th:block>
-
 </body>
 </html>

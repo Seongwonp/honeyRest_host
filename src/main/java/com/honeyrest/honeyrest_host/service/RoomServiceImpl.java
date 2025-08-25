@@ -15,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +22,6 @@ import java.util.List;
 public class RoomServiceImpl implements RoomService {
     private final RoomRepository roomRepository;
     private final AccommodationRepository accommodationRepository;
-    private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private JsonNode stringToJsonNode(String json) {
@@ -68,9 +66,9 @@ public class RoomServiceImpl implements RoomService {
         return RoomDTO.builder()
                 .roomId(e.getRoomId())
                 .accommodationId(e.getAccommodation().getAccommodationId())
-                // ✅ 전체 목록에서 보기 좋도록 숙소명도 같이 내려주자 (DTO에 필드 하나 추가)
-                .name(e.getAccommodation().getName())
-                .name(e.getName())
+                //전체 목록에서 보기 좋도록 숙소명도 같이 내려주자 (DTO에 필드 하나 추가)
+                .accommodationName(e.getAccommodation().getName())
+                .roomName(e.getName())
                 .type(e.getType())
                 .price(e.getPrice())
                 .maxOccupancy(e.getMaxOccupancy())
@@ -88,7 +86,7 @@ public class RoomServiceImpl implements RoomService {
         return Room.builder()
                 .roomId(d.getRoomId())
                 .accommodation(accommodationRepository.getReferenceById(d.getAccommodationId()))
-                .name(d.getName())
+                .name(d.getRoomName())
                 .type(d.getType())
                 .price(d.getPrice())
                 .maxOccupancy(d.getMaxOccupancy())
@@ -104,6 +102,7 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    @Transactional
     public RoomDTO getByRoomId(Long id) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
@@ -121,7 +120,7 @@ public class RoomServiceImpl implements RoomService {
         // DTO -> Entity는 빌더로 수동 생성 (연관관계 명시적으로 주입)
         Room room = Room.builder()
                 .accommodation(acc)
-                .name(dto.getName())
+                .name(dto.getRoomName())
                 .type(dto.getType())
                 .price(dto.getPrice())
                 .maxOccupancy(dto.getMaxOccupancy())
@@ -133,8 +132,7 @@ public class RoomServiceImpl implements RoomService {
                 .totalRooms(dto.getTotalRooms())
                 .status(dto.getStatus() == null ? "ACTIVE" : dto.getStatus())
                 .build();
-        Room saved = roomRepository.save(room);
-        return toDTO(saved);
+       return toDTO(roomRepository.save(room));
     }
 
     @Override
@@ -150,7 +148,7 @@ public class RoomServiceImpl implements RoomService {
                 .accommodation(dto.getAccommodationId() != null
                         ? accommodationRepository.getReferenceById(dto.getAccommodationId())
                         : current.getAccommodation())
-                .name(dto.getName() != null ? dto.getName() : current.getName())
+                .name(dto.getRoomName() != null ? dto.getRoomName() : current.getName())
                 .type(dto.getType() != null ? dto.getType() : current.getType())
                 .price(dto.getPrice() != null ? dto.getPrice() : current.getPrice())
                 .maxOccupancy(dto.getMaxOccupancy() != null ? dto.getMaxOccupancy() : current.getMaxOccupancy())
@@ -173,9 +171,10 @@ public class RoomServiceImpl implements RoomService {
         roomRepository.delete(room);
     }
 
+    // 회사 전체/ 특정 숙소 커버 동시에 페이징
     @Override
-    public Page<RoomDTO> findPageAll(Pageable pageable) {
-        return roomRepository.findAll(pageable).map(this::toDTO);
+    public Page<RoomDTO> findPageByCompany(Long companyId, Long accommodationId, Pageable pageable) {
+        return roomRepository.findRoomsOfCompany(companyId,accommodationId,pageable).map(this::toDTO);
     }
 
     @Override

@@ -11,7 +11,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface RoomRepository extends JpaRepository<Room, Long> {
-    List<Room> findByAccommodation_AccommodationId(Long accommodationId);
 
     // 페이징
     Page<Room> findByAccommodation_AccommodationId(Long accommodationId, Pageable pageable);
@@ -26,26 +25,6 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @Query("update Room r set r.totalRooms = r.totalRooms + 1 where r.roomId = :roomId")
     int increaseStock(@Param("roomId") Long roomId);
 
-    // 회사 전체 객실
-    @Query("""
-        select r
-        from Room r
-        join r.accommodation a
-        where a.company.companyId = :companyId
-    """)
-    List<Room> findAllByCompany(@Param("companyId") Long companyId);
-
-    // 특정 숙소만
-    @Query("""
-        select r
-        from Room r
-        join r.accommodation a
-        where a.company.companyId = :companyId
-          and a.accommodationId = :accommodationId
-    """)
-    List<Room> findAllByCompanyAndAccommodation(@Param("companyId") Long companyId,
-                                                @Param("accommodationId") Long accommodationId);
-
     // companyId는 accommodation → company 로 타고 감 (엔티티 매핑 기준)
     @Query("""
         select r from Room r
@@ -54,6 +33,15 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
         where c.companyId = :companyId
           and (:accommodationId is null or a.accommodationId = :accommodationId)
     """)
+    Page<Room> findRoomsOfCompany(@Param("companyId") Long companyId,
+                                  @Param("accommodationId") Long accommodationId, Pageable pageable);
+    @Query("""
+    select r from Room r
+    join r.accommodation a
+    join a.company c
+    where c.companyId = :companyId
+      and (:accommodationId is null or a.accommodationId = :accommodationId)
+""")
     List<Room> findRoomsOfCompany(@Param("companyId") Long companyId,
                                   @Param("accommodationId") Long accommodationId);
 }

@@ -21,7 +21,8 @@ public class RoomDTO {
     private Long accommodationId;
 
     // @NotBlank(message = "객실 이름은 필수입니다.")  // ← 선택
-    private String name;
+    private String roomName; // 객실 명
+    private String accommodationName; // 숙소명
 
     private String type; // Standard, Deluxe...
     private BigDecimal price;            // @NotNull 붙여도 OK (선택)
