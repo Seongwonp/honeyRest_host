@@ -22,7 +22,7 @@
 
                         <form th:action="@{|/admin/accommodations/edit/${acc.accommodationId}|}"
                               th:object="${form}" method="post">
-<!--                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>-->
+                            <!--                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>-->
 
                             <!-- 기본 정보 -->
                             <div class="row g-3">
@@ -84,8 +84,9 @@
 
                                     <!-- 파일 선택 + 업로드 버튼 -->
                                     <div class="mt-2 d-flex gap-2">
-                                        <input type="file" id="thumbFile" accept="image/*" class="form-control" style="max-width:320px;">
-                                        <button type="button" id="btnUploadThumb" class="btn btn-outline-primary">업로드</button>
+                                        <input type="file" id="thumbFile" accept="image/*" class="form-control"
+                                               style="max-width:320px;">
+                                        <!--                                        <button type="button" id="btnUploadThumb" class="btn btn-outline-primary">업로드</button>-->
                                     </div>
 
                                     <!-- 진행률 -->
@@ -115,18 +116,32 @@
                                     <label class="form-label">최저가(원)</label>
                                     <input type="number" class="form-control" th:field="*{minPrice}">
                                 </div>
+                                <!-- 카테고리/주소 아래 아무 데나 섹션 추가 -->
+                                <div class="col-12">
+                                    <label class="form-label">태그</label>
+                                    <select id="tagSelect" class="form-select" multiple size="10" th:field="*{tagIds}">
+                                        <!-- optgroup 방식이라면 -->
+                                        <optgroup th:each="e : ${tagsByCategory}" th:label="${e.key}">
+                                            <option th:each="t : ${e.value}"
+                                                    th:value="${t.tagId}"
+                                                    th:text="${t.name}">
+                                            </option>
+                                        </optgroup>
+                                    </select>
+                                    <div class="form-text">여러 개 선택 가능 (Ctrl/⌘)</div>
 
+                                    <!-- 선택 미리보기 영역 -->
+                                    <div id="tagSelected" class="d-flex flex-wrap gap-2 mt-2"></div>
+                                </div>
                             </div>
 
                             <div class="mt-4 d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">저장</button>
-                                <a th:href="@{|/admin/accommodations/detail/${acc.accommodationId}|}" class="btn btn-light">
+                                <button type="submit" class="btn btn-primary">수정</button>
+                                <a th:href="@{|/admin/accommodations/list|}" class="btn btn-light">
                                     취소
                                 </a>
                             </div>
-
                         </form>
-
                     </div>
                 </div>
             </div>
@@ -135,24 +150,25 @@
 </main>
 
 <th:block layout:fragment="script">
-        <script th:if="${updated}">
-            alert('수정되었습니다.');
-
-        (function(){
+    <script>
+        (function () {
             const main = document.getElementById('mainRegion');
-            const sub  = document.getElementById('subRegion');
-            if(!main || !sub) return;
+            const sub = document.getElementById('subRegion');
+            if (!main || !sub) return;
 
             const dataUrl = main.getAttribute('data-url'); // /admin/accommodations/regions/children
 
-            main.addEventListener('change', async function(){
+            main.addEventListener('change', async function () {
                 const parentId = this.value;
                 sub.innerHTML = '<option value="">불러오는 중...</option>';
-                if(!parentId){ sub.innerHTML = '<option value="">상위를 먼저 선택하세요</option>'; return; }
+                if (!parentId) {
+                    sub.innerHTML = '<option value="">상위를 먼저 선택하세요</option>';
+                    return;
+                }
 
-                try{
-                    const res = await fetch(`${dataUrl}?parentId=${parentId}`, {headers: {'Accept':'application/json'}});
-                    if(!res.ok) throw new Error(res.status);
+                try {
+                    const res = await fetch(`${dataUrl}?parentId=${parentId}`, {headers: {'Accept': 'application/json'}});
+                    if (!res.ok) throw new Error(res.status);
                     const list = await res.json();
 
                     const selected = sub.getAttribute('data-selected'); // 기존 선택값
@@ -161,15 +177,58 @@
                         const opt = document.createElement('option');
                         opt.value = item.id;
                         opt.textContent = item.name;
-                        if(selected && String(item.id) === String(selected)) opt.selected = true;
+                        if (selected && String(item.id) === String(selected)) opt.selected = true;
                         sub.appendChild(opt);
                     });
-                }catch(e){
+                } catch (e) {
                     console.error('지역(소) 로드 실패:', e);
                     sub.innerHTML = '<option value="">불러오기 실패</option>';
                 }
             });
         })();
+
+        //  태그 미리보기
+            document.addEventListener('DOMContentLoaded', function(){
+            const sel = document.getElementById('tagSelect');
+            const box = document.getElementById('tagSelected');
+            if(!sel || !box) return;
+
+            function renderSelected(){
+            box.innerHTML = '';
+            const selected = [...sel.selectedOptions].map(o => ({
+            value: o.value,
+            label: o.textContent.trim(),
+            category: o.closest('optgroup') ? o.closest('optgroup').label : ''
+        }));
+
+            if(selected.length === 0){
+            box.innerHTML = '<span class="text-muted">선택된 태그가 없습니다.</span>';
+            return;
+        }
+            selected.forEach(s => {
+            const chip = document.createElement('span');
+            chip.className = 'badge bg-primary-subtle text-primary border rounded-pill px-2 py-1 d-inline-flex align-items-center';
+            chip.textContent = (s.category ? (s.category + ' - ') : '') + s.label;
+
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'btn-close btn-sm ms-2';
+            close.setAttribute('aria-label', 'remove');
+            close.addEventListener('click', () => {
+            const opt = [...sel.options].find(o => o.value === s.value);
+            if(opt){ opt.selected = false; }
+            renderSelected(); // 재랜더
+        });
+
+            chip.appendChild(close);
+            box.appendChild(chip);
+        });
+        }
+
+            // 초기 표시 + 변경 시 업데이트
+            renderSelected();
+            sel.addEventListener('change', renderSelected);
+        });
     </script>
 </th:block>
 </body>

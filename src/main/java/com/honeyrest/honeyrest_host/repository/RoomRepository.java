@@ -15,6 +15,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     // 페이징
     Page<Room> findByAccommodation_AccommodationId(Long accommodationId, Pageable pageable);
 
+    void deleteByAccommodation_AccommodationId(Long accommodationId);
+
     // 재고 차감: 재고가 0 초과일 때만 1 감소. 성공 시 1 반환, 실패 시 0
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Room r set r.totalRooms = r.totalRooms - 1 where r.roomId = :roomId and r.totalRooms > 0")

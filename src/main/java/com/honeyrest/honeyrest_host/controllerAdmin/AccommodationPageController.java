@@ -6,11 +6,13 @@ import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequest
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationImageDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationListDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationUpdateRequestDTO;
+import com.honeyrest.honeyrest_host.entity.AccommodationTag;
 import com.honeyrest.honeyrest_host.entity.Region;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
 import com.honeyrest.honeyrest_host.repository.UserRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationCategoryRepository;
+import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationTagRepository;
 import com.honeyrest.honeyrest_host.service.AccommodationImageService;
 import com.honeyrest.honeyrest_host.service.AccommodationService;
 import com.honeyrest.honeyrest_host.service.CompanyService;
@@ -34,6 +36,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Controller
@@ -42,13 +45,13 @@ import java.util.Map;
 public class AccommodationPageController {
 
     private final AccommodationService accommodationService;
-    private final RegionRepository regionRepository;
     private final AccommodationCategoryRepository accommodationCategoryRepository;
-    private final FileUploadUtil fileUploadUtil;
     private final AccommodationImageService accommodationImageService;
+    private final AccommodationTagRepository accommodationTagRepository;
+    private final RegionRepository regionRepository;
     private final CompanyService companyService;
-    private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
+    private final FileUploadUtil fileUploadUtil;
 
 
     /**
@@ -129,10 +132,6 @@ public class AccommodationPageController {
             return "redirect:/admin/accommodations/add";
         }
 
-//        // 이미지 업로드
-//        fileUploadUtil.upload((MultipartFile) form.getImages(), "accommodation");
-//        accommodationService.create(form);
-//        return "redirect:/admin/accommodations/list";
     }
 
     /**
@@ -272,6 +271,13 @@ public class AccommodationPageController {
         var subRegions = (dto.getMainRegionId() != null)
                 ? regionRepository.findByParentId(dto.getMainRegionId())
                 : Collections.<Region>emptyList();
+        // 전체 태그 목록 조회
+        var all = accommodationTagRepository.findAll(Sort.by("category","name").ascending());
+        var tagsByCategory = all.stream().collect(java.util.stream.Collectors.groupingBy(
+                AccommodationTag::getCategory,
+                java.util.TreeMap::new,
+                java.util.stream.Collectors.toList()
+                ));
 
         // 4) 모델
         model.addAttribute("acc", dto);        // 상단 표시용(읽기)
@@ -280,6 +286,8 @@ public class AccommodationPageController {
         model.addAttribute("categories", categories);
         model.addAttribute("mainRegions", mainRegions);
         model.addAttribute("subRegions", subRegions);
+        model.addAttribute("tagsByCategory", tagsByCategory);
+
 
         return "admin/accommodations/edit"; // edit.html
     }
@@ -291,9 +299,9 @@ public class AccommodationPageController {
     public String editSubmit(@PathVariable Long id,
                              @ModelAttribute("form") AccommodationUpdateRequestDTO form,
                              RedirectAttributes ra) {
-        form.setAmenities(csvToJsonArray(form.getAmenities()));
         accommodationService.update(id, form);
-        ra.addAttribute("updated", "1");
+
+        ra.addAttribute("updated", true);
         return "redirect:/admin/accommodations/list";
     }
 
@@ -303,6 +311,19 @@ public class AccommodationPageController {
         return "redirect:/admin/accommodations/list?status=PENDING";
 
     }
+
+    @PostMapping("/{id}/delete")
+    public String delete(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            accommodationService.delete(id);
+            ra.addAttribute("success","숙소가 삭제되었습니다.");
+        } catch (Exception e) {
+            ra.addAttribute("error","삭제 중 오류: " + e.getMessage());
+        }
+        return "redirect:/admin/accommodations/list";
+    }
+
+
     // CSV("와이파이, 주차") -> ["와이파이","주차"] -> string 으로 변환
     private String csvToJsonArray(String csv) {
         try {

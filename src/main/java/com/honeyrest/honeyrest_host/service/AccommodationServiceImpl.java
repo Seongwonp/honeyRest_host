@@ -289,13 +289,16 @@ public class AccommodationServiceImpl implements AccommodationService {
             }
         }
 
+
         if (req.getTagIds() != null) {
             accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
+            Accommodation accRef = accommodationRepository.getReferenceById(id);
             for (Long tagId : req.getTagIds()) {
+                AccommodationTag tagRef = accommodationTagRepository.getReferenceById(tagId);
                 accommodationTagMapRepository.save(
                         AccommodationTagMap.builder()
-                                .accommodation(updated)
-                                .tag(accommodationTagRepository.getReferenceById(tagId))
+                                .accommodation(accRef)
+                                .tag(tagRef)
                                 .build()
                 );
             }
@@ -305,9 +308,12 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
+    @Transactional // 삭제 메서드가 업데이트,삭제 쿼리를 실행하므로 트랜잭션이 필요함
     public void delete(Long id) {
+        // 연관 데이터 먼저 삭제
         accommodationImageRepository.deleteByAccommodation_AccommodationId(id);
         accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
+        // 마지막에 본체 삭제
         accommodationRepository.deleteById(id);
     }
 

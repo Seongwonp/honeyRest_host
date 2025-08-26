@@ -87,14 +87,14 @@
                 </thead>
 
                 <tbody>
-                <tr th:each="acc : ${accommodations}"
+                <tr th:each="acc, iterStat : ${accommodations}"
                     th:with="badgeClass=
                         ${#strings.equalsIgnoreCase(acc.status,'PENDING') ? ' status-pending'
                         : (#strings.equalsIgnoreCase(acc.status,'APPROVED') ? ' status-approved'
                         : (#strings.equalsIgnoreCase(acc.status,'ACTIVE') ? ' status-active'
                         : ' status-rejected'))}">
-                    <!-- 번호 -->
-                    <td class="text-center" th:text="${acc.accommodationId}">1</td>
+                    <!-- 순번 -->
+                    <td th:text="${iterStat.index + 1}"></td>
 
                     <!-- 썸네일 -->
                     <td class="text-center">
@@ -133,9 +133,10 @@
                             <a class="btn btn-outline-info"
                                th:href="@{|/admin/rooms/list/by-accommodation?accommodationId=${acc.accommodationId}|}">객실목록</a>
 
-                            <form th:action="@{/admin/accommodations/delete/{id}(id=${acc.accommodationId})}"
+                            <form th:action="@{/admin/accommodations/{id}/delete(id=${acc.accommodationId})}"
                                   method="post" class="d-inline"
                                   onsubmit="return confirm('정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');">
+<!--                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>-->
                                 <button type="submit" class="btn btn-outline-danger">삭제</button>
                             </form>
                         </div>
@@ -182,6 +183,11 @@
             </div>
         </div>
     </div>
+</th:block>
+<th:block layout:fragment="script">
+<script th:if="${param.updated}">
+    alert('수정되었습니다.');
+</script>
 </th:block>
 </body>
 </html>
