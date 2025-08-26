@@ -13,9 +13,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,20 +28,35 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final ObjectMapper objectMapper;
 
 
-    private String parseAmenitiesJson(String json) {
-        if (json == null || json.isBlank()) return "";
+    private String parseAmenitiesToJson(String input) {
+        if (input == null || input.isBlank()) return "[]";
         try {
-            // JSON을 Map으로 변환
-            Map<String, Object> map = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
-            // "key:value" 형식으로 변환 후 join
-            return map.entrySet().stream()
-                    .map(e -> e.getKey() + ":" + e.getValue())
-                    .collect(Collectors.joining(", "));
+            List<String> amenitiesList = Arrays.stream(input.split("[,\\s]+"))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+
+            return objectMapper.writeValueAsString(amenitiesList);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-            return json; // 실패하면 그냥 원본 JSON 반환
+            return "[]"; // 실패 시 빈 배열 반환
         }
     }
+
+//    private String parseAmenitiesToJson(String json) {
+//        if (json == null || json.isBlank()) return "";
+//        try {
+//            // JSON을 Map으로 변환
+//            Map<String, Object> map = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+//            // "key:value" 형식으로 변환 후 join
+//            return map.entrySet().stream()
+//                    .map(e -> e.getKey() + ":" + e.getValue())
+//                    .collect(Collectors.joining(", "));
+//        } catch (JsonProcessingException e) {
+//            e.printStackTrace();
+//            return json; // 실패하면 그냥 원본 JSON 반환
+//        }
+//    }
     // ===== Mapper =====
     private AccommodationDTO toDTO(Accommodation e) {
         return AccommodationDTO.builder()
@@ -57,7 +70,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .latitude(e.getLatitude())
                 .longitude(e.getLongitude())
                 .thumbnailUrl(e.getThumbnail())
-                .amenities(parseAmenitiesJson(e.getAmenities()))
+                .amenities(parseAmenitiesToString(e.getAmenities()))
                 .description(e.getDescription())
                 .checkInTime(e.getCheckInTime())
                 .checkOutTime(e.getCheckOutTime())
@@ -70,20 +83,20 @@ public class AccommodationServiceImpl implements AccommodationService {
     /**
      * "wifi:true, tv:true" -> Map<String,Object> 변환
      */
-    private Map<String, Object> parseAmenitiesString(String str) {
-        Map<String, Object> map = new HashMap<>();
-        String[] entries = str.split(",");
-        for (String entry : entries) {
-            String[] kv = entry.trim().split(":");
-            if (kv.length == 2) {
-                String key = kv[0].trim();
-                String valueStr = kv[1].trim();
-                Object value = "true".equalsIgnoreCase(valueStr) ? true :
-                        "false".equalsIgnoreCase(valueStr) ? false : valueStr;
-                map.put(key, value);
-            }
+    private List<String> parseAmenitiesToList(String jsonInput) {
+        if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
+
+        try {
+            // JSON 배열 문자열을 List<String>으로 역직렬화
+            return objectMapper.readValue(jsonInput, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return Collections.emptyList(); // 실패 시 빈 리스트 반환
         }
-        return map;
+    }
+    private String parseAmenitiesToString(String jsonInput) {
+        List<String> list = parseAmenitiesToList(jsonInput);
+        return String.join(", ", list);
     }
 
     private Accommodation toEntity(AccommodationDTO d) {
@@ -91,7 +104,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         try {
             if (d.getAmenities() != null && !d.getAmenities().isBlank()) {
-                amenitiesJson = objectMapper.writeValueAsString(parseAmenitiesString(d.getAmenities()));
+                amenitiesJson = objectMapper.writeValueAsString(parseAmenitiesToJson(d.getAmenities()));
             }
         } catch (JsonProcessingException e) {
             e.printStackTrace(); // 변환 실패 시 로그 출력

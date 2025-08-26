@@ -18,28 +18,32 @@
 
 <body>
 <main layout:fragment="content">
-    <h3 class="mb-4"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
+    <h3 class="mb-4"  th:text="${companyId != null} ? ${company.name} + ' 매출 현황'
+             : (${accommodationId != null} ? ${accommodation.name} + ' 매출 현황'
+                                           : '전체 매출 현황')"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
 
     <div class="card p-4 mb-4 shadow-sm">
-        <form method="get" action="/owner/sales/month" class="row g-3 align-items-end">
-            <div class="col-auto">
-                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>
-                <input type="date" name="startDate"  class="form-control">
-            </div>
-            <div class="col-auto">
-                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>
-                <input type="date" name="endDate"  class="form-control">
-            </div>
+        <form method="get" action="/owner/sales/month" class="row g-3 align-items-end" id="searchForm">
+<!--            <div class="col-auto">-->
+<!--                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>-->
+<!--                <input type="date" name="startDate"  class="form-control">-->
+<!--            </div>-->
+<!--            <div class="col-auto">-->
+<!--                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>-->
+<!--                <input type="date" name="endDate"  class="form-control">-->
+<!--            </div>-->
             <div class="col-auto">
                 <label class="form-label"><i class="bi bi-filter-square me-1"></i>검색 조건</label>
-                <select name="searchType" class="form-select">
-                    <option value="categoryName" >카테고리명</option>
-                    <option value="menuName" >상품명</option>
+                <select name="searchType" class="form-select" id="searchTypeSelect">
+                    <option value="companyName" th:selected="${searchType == 'companyName'}">회사명</option>
+                    <option value="accommodationName" th:selected="${searchType == 'accommodationName'}">숙소명</option>
                 </select>
             </div>
             <div class="col-md-4 col-sm-8">
                 <label class="form-label"><i class="bi bi-search me-1"></i>검색어</label>
-                <input type="text" name="keyword" placeholder="검색어 입력"  class="form-control">
+                <select name="keyword" class="form-select" id="keywordSelect">
+                    <!-- 옵션은 JS에서 넣어줌 -->
+                </select>
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
@@ -50,12 +54,15 @@
 
 
     <div class="mb-4">
-        <a th:href="${companyId} != null ? '/owner/sales/day/company/' + ${companyId} : '/owner/sales/day'"
+        <a th:href="${companyId != null} ? '/owner/sales/day/company/' + ${companyId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+          : (${accommodationId != null} ? '/owner/sales/day/accommodation/' + ${accommodationId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+                                        : '/owner/sales/day')"
            class="btn btn-outline-warning  me-2"
            aria-current="page"><i class="bi bi-calendar-day me-1"></i>일별</a>
-        <a th:href="${companyId} != null ? '/owner/sales/month/company/' + ${companyId} : '/owner/sales/month'"
+        <a th:href="${companyId != null} ? '/owner/sales/month/company/' + ${companyId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+         : (${accommodationId != null} ? '/owner/sales/month/accommodation/' + ${accommodationId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+                                       : '/owner/sales/month')"
            class="btn btn-warning text-dark custom-hover-dark me-2 active"><i class="bi bi-calendar3 me-1"></i>월별</a>
-
     </div>
 
     <div class="card p-4 mb-4 shadow-sm">
@@ -120,7 +127,20 @@
             </table>
         </div>
     </div>
-
+    <div class="card mt-3 p-3 shadow-sm">
+        <h6 class="card-title mb-2"><i class="bi bi-percent me-2"></i>회사별 수수료율 및 수수료 금액</h6>
+        <div th:if="${company != null and monthPrice != null}">
+            <p>회사명: <strong th:text="${company.name}">회사명</strong></p>
+            <p>수수료율: <strong th:text="${company.commissionRate}">0</strong>%</p>
+            <p>
+                수수료 금액:
+                <strong th:text="${#numbers.formatInteger(monthPrice * company.commissionRate / 100, 0, 'COMMA')}">0</strong>₩
+            </p>
+        </div>
+        <p th:if="${company == null or monthPrice == null}" class="text-muted">
+            회사 정보 또는 매출액 데이터가 없습니다.
+        </p>
+    </div>
 </main>
 <script layout:fragment="script" th:inline="javascript">
     /*<![CDATA[*/
@@ -194,14 +214,20 @@
 
         // Thymeleaf에서 companyId 받아오기
         let companyId = /*[[${companyId}]]*/'';
+        const accommodationId = /*[[${accommodationId}]]*/'';
 
         prevBtn.addEventListener('click', () => {
             const {startDate, endDate} = changeYear(currentYear, -1);
 
             let url;
+            const searchType = document.getElementById('searchTypeSelect').value;
+            const keyword = document.getElementById('keywordSelect').value;
             if (companyId) {
-                url = `/owner/sales/month/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
-            } else {
+                url = `/owner/sales/month/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            } else if (accommodationId) {
+                url = `/owner/sales/month/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            }
+            else {
                 url = `/owner/sales/month?startDate=${startDate}&endDate=${endDate}`;
             }
             window.location.href = url;
@@ -211,13 +237,94 @@
             const {startDate, endDate} = changeYear(currentYear, 1);
 
             let url;
+            const searchType = document.getElementById('searchTypeSelect').value;
+            const keyword = document.getElementById('keywordSelect').value;
             if (companyId) {
-                url = `/owner/sales/month/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
-            } else {
+                url = `/owner/sales/month/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            } else if (accommodationId) {
+                url = `/owner/sales/month/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            }
+            else {
                 url = `/owner/sales/month?startDate=${startDate}&endDate=${endDate}`;
             }
             window.location.href = url;
         });
+        const searchTypeSelect = document.getElementById("searchTypeSelect");
+        const keywordSelect = document.getElementById("keywordSelect");
+
+        // 회사명과 숙소명을 JS 배열로 변환
+        const companies = /*[[${companies}]]*/ [];
+        const accommodations = /*[[${accommodations}]]*/ [];
+        const selectedSearchType = /*[[${searchType}]]*/ 'companyName';
+
+        const company = /*[[${company}]]*/'';
+        const accommodation = /*[[${accommodation}]]*/'';
+
+        function getCompanyIdByName(name) {
+            if (!companies || !Array.isArray(companies)) return null;
+            const comp = companies.find(c => c.name === name);
+            return comp ? comp.companyId : null;
+        }
+
+        function getAccommodationIdByName(name) {
+            if (!accommodations || !Array.isArray(accommodations)) return null;
+            const accom = accommodations.find(a => a.name === name);
+            return accom ? accom.accommodationId : null;
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            const searchType = document.getElementById('searchTypeSelect').value;
+            const keyword = document.getElementById('keywordSelect').value;
+            console.log(keyword);
+            let actionUrl = '';
+
+            if (searchType === 'companyName') {
+                const companyId = getCompanyIdByName(keyword);
+                if (!companyId) {
+                    actionUrl = `/owner/sales/month`;
+                } else
+                    actionUrl = `/owner/sales/month/company/${companyId}`;
+            } else if (searchType === 'accommodationName') {
+                const accommodationId = getAccommodationIdByName(keyword);
+                if (!accommodationId) {
+                    actionUrl = `/owner/sales/month`;
+                } else
+                    actionUrl = `/owner/sales/month/accommodation/${accommodationId}`;
+            }
+
+            this.action = actionUrl;
+        })
+
+        function updateKeywordOptions(type) {
+            keywordSelect.innerHTML = '<option value="">전체</option>';
+
+            const keyword = /*[[${keyword}]]*/"";
+            let items = [];
+            if (type === "companyName") {
+                items = companies.map(c => c.name);
+            } else if (type === "accommodationName") {
+                items = accommodations.map(a => a.name);
+            }
+
+            items.forEach(name => {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.textContent = name;
+                if (name === keyword) {
+                    opt.selected = true;
+                }
+                keywordSelect.appendChild(opt);
+            });
+        }
+
+        // 초기화 시 기본 선택 (회사명)
+        updateKeywordOptions(searchTypeSelect.value);
+
+        // 변경 시 옵션 다시 로드
+        searchTypeSelect.addEventListener("change", function () {
+            updateKeywordOptions(this.value);
+        });
+
     });
     /*]]>*/
 </script>

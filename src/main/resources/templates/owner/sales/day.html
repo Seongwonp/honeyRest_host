@@ -53,13 +53,13 @@
 
 
     <div class="mb-4">
-        <a th:href="${companyId != null} ? '/owner/sales/day/company/' + ${companyId}
-          : (${accommodationId != null} ? '/owner/sales/day/accommodation/' + ${accommodationId}
+        <a th:href="${companyId != null} ? '/owner/sales/day/company/' + ${companyId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+          : (${accommodationId != null} ? '/owner/sales/day/accommodation/' + ${accommodationId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
                                         : '/owner/sales/day')"
            class="btn btn-warning text-dark custom-hover-dark me-2 active"
            aria-current="page"><i class="bi bi-calendar-day me-1"></i>일별</a>
-        <a th:href="${companyId != null} ? '/owner/sales/month/company/' + ${companyId}
-         : (${accommodationId != null} ? '/owner/sales/month/accommodation/' + ${accommodationId}
+        <a th:href="${companyId != null} ? '/owner/sales/month/company/' + ${companyId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+         : (${accommodationId != null} ? '/owner/sales/month/accommodation/' + ${accommodationId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
                                        : '/owner/sales/month')"
            class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
     </div>
@@ -95,6 +95,7 @@
 
 
     <div class="card mt-4 p-4 mb-4 shadow-sm">
+
         <h6 class="card-title mb-3"><i class="bi bi-list-ul me-2"></i>📄 일별 매출 상세 리스트</h6>
         <div class="table-responsive">
             <table class="table table-sm table-striped table-hover align-middle text-center">
@@ -118,13 +119,15 @@
                 <tfoot th:if="${daySales != null and !#lists.isEmpty(daySales)}">
                 <tr class="fw-bold">
                     <td>합계</td>
-                    <td th:text="${quantity}">0</td>
+                    <td th:text="${0}">0</td>
                     <td th:text="${#numbers.formatInteger(dayPrice, 0, 'COMMA')}">0</td>
                 </tr>
                 </tfoot>
             </table>
         </div>
     </div>
+    <!-- 기존 일별 매출 상세 리스트 밑에 추가 -->
+
 
 </main>
 <script layout:fragment="script" th:inline="javascript">
@@ -239,8 +242,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const prevBtn = document.getElementById('prevMonthBtn');
         const nextBtn = document.getElementById('nextMonthBtn');
-        const searchType = document.getElementById('searchTypeSelect').value;
-        const keyword = document.getElementById('keywordSelect').value;
+
         // Thymeleaf로 companyId 값을 JS 변수에 전달 (null일 수도 있으니 대비)
         const companyId = /*[[${companyId}]]*/'';
         const accommodationId = /*[[${accommodationId}]]*/'';
@@ -248,12 +250,13 @@
         prevBtn.addEventListener('click', () => {
             const {startDate, endDate} = changeMonth(currentYearMonth, -1);
             console.log(startDate);
-
+            const searchType = document.getElementById('searchTypeSelect').value;
+            const keyword = document.getElementById('keywordSelect').value;
             let url;
             if (companyId) {
-                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
+                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
             } else if (accommodationId) {
-                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}`;
+                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
             }
             else {
                 url = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
@@ -264,6 +267,8 @@
         nextBtn.addEventListener('click', () => {
             const {startDate, endDate} = changeMonth(currentYearMonth, 1);
             let url;
+            const searchType = document.getElementById('searchTypeSelect').value;
+            const keyword = document.getElementById('keywordSelect').value;
             if (companyId) {
                 url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
             } else if (accommodationId) {
@@ -320,8 +325,7 @@
 
             this.action = actionUrl;
         })
-        console.log(companies);
-        console.log(accommodations)
+
         function updateKeywordOptions(type) {
             keywordSelect.innerHTML = '<option value="">전체</option>';
 
@@ -352,8 +356,6 @@
             updateKeywordOptions(this.value);
         });
     });
-
-
     /*]]>*/
 </script>
 </body>

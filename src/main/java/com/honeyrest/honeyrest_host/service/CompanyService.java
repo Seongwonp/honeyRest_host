@@ -9,12 +9,9 @@ import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,20 +21,35 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
     private final ObjectMapper objectMapper;
 
-    private String parseCompanyJson(String json) {
-        if (json == null || json.isBlank()) return "";
+    private String parseBankInfoToJson(String input) {
+        if (input == null || input.isBlank()) return "[]";
         try {
-            // JSON을 Map으로 변환
-            Map<String, Object> map = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
-            // "key:value" 형식으로 변환 후 join
-            return map.entrySet().stream()
-                    .map(e -> e.getKey() + ":" + e.getValue())
-                    .collect(Collectors.joining(", "));
+            List<String> amenitiesList = Arrays.stream(input.split("[,\\s]+"))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+
+            return objectMapper.writeValueAsString(amenitiesList);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-            return json; // 실패하면 그냥 원본 JSON 반환
+            return "[]"; // 실패 시 빈 배열 반환
         }
     }
+
+//    private String parseBankInfoToJson(String json) {
+//        if (json == null || json.isBlank()) return "";
+//        try {
+//            // JSON을 Map으로 변환
+//            Map<String, Object> map = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+//            // "key:value" 형식으로 변환 후 join
+//            return map.entrySet().stream()
+//                    .map(e -> e.getKey() + ":" + e.getValue())
+//                    .collect(Collectors.joining(", "));
+//        } catch (JsonProcessingException e) {
+//            e.printStackTrace();
+//            return json; // 실패하면 그냥 원본 JSON 반환
+//        }
+//    }
 
     private CompanyDTO toDTO(Company company) {
         return CompanyDTO.builder()
@@ -48,27 +60,27 @@ public class CompanyService {
                 .email(company.getEmail())
                 .status(company.getStatus())
                 .ownerName(company.getOwnerName())
-                .bankInfo(parseCompanyJson(company.getBankInfo()))
+                .bankInfo(parseBankInfoToString(company.getBankInfo()))
                 .businessNumber(company.getBusinessNumber())
                 .commissionRate(company.getCommissionRate())
                 .build();
     }
 
 
-    private Map<String, Object> parseBankInfoString(String str) {
-        Map<String, Object> map = new HashMap<>();
-        String[] entries = str.split(",");
-        for (String entry : entries) {
-            String[] kv = entry.trim().split(":");
-            if (kv.length == 2) {
-                String key = kv[0].trim();
-                String valueStr = kv[1].trim();
-                Object value = "true".equalsIgnoreCase(valueStr) ? true :
-                        "false".equalsIgnoreCase(valueStr) ? false : valueStr;
-                map.put(key, value);
-            }
+    private List<String> parseBankInfoToList(String jsonInput) {
+        if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
+
+        try {
+            // JSON 배열 문자열을 List<String>으로 역직렬화
+            return objectMapper.readValue(jsonInput, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return Collections.emptyList(); // 실패 시 빈 리스트 반환
         }
-        return map;
+    }
+    private String parseBankInfoToString(String jsonInput) {
+        List<String> list = parseBankInfoToList(jsonInput);
+        return String.join(", ", list);
     }
 
     private Company toEntity(CompanyDTO dto) {
@@ -76,7 +88,7 @@ public class CompanyService {
 
         try {
             if (dto.getBankInfo() != null && !dto.getBankInfo().isBlank()) {
-                BankInfoJson = objectMapper.writeValueAsString(parseBankInfoString(dto.getBankInfo()));
+                BankInfoJson = objectMapper.writeValueAsString(parseBankInfoToJson(dto.getBankInfo()));
             }
         } catch (JsonProcessingException e) {
             e.printStackTrace(); // 변환 실패 시 로그 출력

@@ -87,6 +87,14 @@ public class ReservationService {
                 .toList();
     }
 
+    public List<ReservationDTO> getReservationsByActive() {
+        return reservationRepository.findAll()
+                .stream()
+                .filter(reservation -> !"CANCEL".equals(reservation.getStatus()))
+                .map(this::toDTO)
+                .toList();
+    }
+
     public List<ReservationDTO> getReservationsByAccommodationId(Long accommodationId) {
         return reservationRepository.findReservationsByAccommodation_AccommodationId(accommodationId)
                 .stream().map(this::toDTO).toList();

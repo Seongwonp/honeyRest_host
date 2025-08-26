@@ -6,122 +6,119 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <h3>예약 수정</h3>
-        <p class="text-subtitle text-muted">등록된 예약 정보를 수정합니다.</p>
+        <h3>예약 생성</h3>
+        <p class="text-subtitle text-muted">새로운 예약 정보를 등록합니다.</p>
     </div>
     <div class="page-content">
 
-        <form th:action="@{/owner/reservation/modify}" method="post">
-
-            <!-- 예약 ID (hidden) -->
-            <input type="hidden" id="reservationId" name="reservationId" th:value="${reservation.reservationId}">
+        <form th:action="@{/owner/reservation/create}" method="post">
 
             <!-- 사용자 ID -->
             <div class="mb-3">
                 <label for="userId" class="form-label">사용자 ID</label>
                 <input type="number" name="userId" id="userId" class="form-control" required
-                       th:value="${reservation.userId}" readonly>
+                       th:value="${reservation?.userId}">
             </div>
 
             <!-- 숙소 ID -->
             <div class="mb-3">
                 <label for="accommodationId" class="form-label">숙소 ID</label>
                 <input type="number" name="accommodationId" id="accommodationId" class="form-control" required
-                       th:value="${reservation.accommodationId}" readonly>
+                       th:value="${reservation?.accommodationId}">
             </div>
 
             <!-- 숙소명 -->
             <div class="mb-3">
                 <label for="accommodationName" class="form-label">숙소명</label>
                 <input type="text" name="accommodationName" id="accommodationName" class="form-control" required
-                       th:value="${reservation.accommodationName}" readonly>
+                       th:value="${reservation?.accommodationName}">
             </div>
 
             <!-- 객실 ID -->
             <div class="mb-3">
                 <label for="roomId" class="form-label">객실 ID</label>
                 <input type="number" name="roomId" id="roomId" class="form-control" required
-                       th:value="${reservation.roomId}" readonly>
+                       th:value="${reservation?.roomId}">
             </div>
 
             <!-- 객실명 -->
             <div class="mb-3">
                 <label for="roomName" class="form-label">객실명</label>
                 <input type="text" name="roomName" id="roomName" class="form-control" required
-                       th:value="${reservation.roomName}" readonly>
+                       th:value="${reservation?.roomName}">
             </div>
 
             <!-- 예약 번호 -->
             <div class="mb-3">
                 <label for="reservationNumber" class="form-label">예약 번호</label>
-                <input type="text" name="reservationNumber" id="reservationNumber" class="form-control" readonly
-                       th:value="${reservation.reservationNumber}">
+                <input type="text" name="reservationNumber" id="reservationNumber" class="form-control"
+                       th:value="${reservation?.reservationNumber}">
             </div>
 
             <!-- 체크인 날짜 -->
             <div class="mb-3">
                 <label for="checkInDate" class="form-label">체크인 날짜</label>
                 <input type="date" name="checkInDate" id="checkInDate" class="form-control" required
-                       th:value="${reservation.checkInDate}">
+                       th:value="${reservation?.checkInDate}">
             </div>
 
             <!-- 체크아웃 날짜 -->
             <div class="mb-3">
                 <label for="checkOutDate" class="form-label">체크아웃 날짜</label>
                 <input type="date" name="checkOutDate" id="checkOutDate" class="form-control" required
-                       th:value="${reservation.checkOutDate}">
+                       th:value="${reservation?.checkOutDate}">
             </div>
 
-            <!-- 인원 수 -->
+            <!-- 투숙 인원 수 -->
             <div class="mb-3">
                 <label for="guestCount" class="form-label">투숙 인원 수</label>
                 <input type="number" min="1" name="guestCount" id="guestCount" class="form-control" required
-                       th:value="${reservation.guestCount}">
+                       th:value="${reservation?.guestCount}">
             </div>
 
             <!-- 투숙자 이름 -->
             <div class="mb-3">
                 <label for="guestName" class="form-label">투숙자 이름</label>
                 <input type="text" name="guestName" id="guestName" class="form-control" required
-                       th:value="${reservation.guestName}">
+                       th:value="${reservation?.guestName}">
             </div>
 
             <!-- 투숙자 연락처 -->
             <div class="mb-3">
                 <label for="guestPhone" class="form-label">투숙자 연락처</label>
                 <input type="tel" name="guestPhone" id="guestPhone" class="form-control" required
-                       th:value="${reservation.guestPhone}">
+                       th:value="${reservation?.guestPhone}">
             </div>
 
             <!-- 최종 결제 금액 -->
             <div class="mb-3">
                 <label for="price" class="form-label">최종 결제 금액</label>
                 <input type="number" step="0.01" min="0" name="price" id="price" class="form-control" required
-                       th:value="${reservation.price}">
+                       th:value="${reservation?.price}">
             </div>
 
             <!-- 원가 -->
             <div class="mb-3">
                 <label for="originalPrice" class="form-label">원가</label>
                 <input type="number" step="0.01" min="0" name="originalPrice" id="originalPrice" class="form-control"
-                       th:value="${reservation.originalPrice}">
+                       th:value="${reservation?.originalPrice}">
             </div>
 
             <!-- 할인 금액 -->
             <div class="mb-3">
                 <label for="discountAmount" class="form-label">할인 금액</label>
                 <input type="number" step="0.01" min="0" name="discountAmount" id="discountAmount" class="form-control"
-                       th:value="${reservation.discountAmount}">
+                       th:value="${reservation?.discountAmount}">
             </div>
 
             <!-- 예약 상태 -->
             <div class="mb-3">
                 <label for="status" class="form-label">예약 상태</label>
                 <select name="status" id="status" class="form-select" required>
-                    <option value="RESERVED" th:selected="${reservation.status == 'RESERVED'}">예약 완료</option>
-                    <option value="CANCELLED" th:selected="${reservation.status == 'CANCELLED'}">취소</option>
-                    <option value="CHECKED_IN" th:selected="${reservation.status == 'CHECKED_IN'}">체크인</option>
-                    <option value="CHECKED_OUT" th:selected="${reservation.status == 'CHECKED_OUT'}">체크아웃</option>
+                    <option value="RESERVED" th:selected="${reservation?.status == 'RESERVED'}">예약 완료</option>
+                    <option value="CANCELLED" th:selected="${reservation?.status == 'CANCELLED'}">취소</option>
+                    <option value="CHECKED_IN" th:selected="${reservation?.status == 'CHECKED_IN'}">체크인</option>
+                    <option value="CHECKED_OUT" th:selected="${reservation?.status == 'CHECKED_OUT'}">체크아웃</option>
                 </select>
             </div>
 
@@ -129,17 +126,17 @@
             <div class="mb-3">
                 <label for="cancelReason" class="form-label">취소 사유</label>
                 <textarea name="cancelReason" id="cancelReason" class="form-control"
-                          th:text="${reservation.cancelReason}"></textarea>
+                          th:text="${reservation?.cancelReason}"></textarea>
             </div>
 
             <!-- 특별 요청 사항 -->
             <div class="mb-3">
                 <label for="specialRequest" class="form-label">특별 요청 사항</label>
                 <textarea name="specialRequest" id="specialRequest" class="form-control"
-                          th:text="${reservation.specialRequest}"></textarea>
+                          th:text="${reservation?.specialRequest}"></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary">예약 수정 완료</button>
+            <button type="submit" class="btn btn-primary">예약 생성 완료</button>
         </form>
 
     </div>

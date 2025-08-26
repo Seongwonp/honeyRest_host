@@ -5,7 +5,6 @@ import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationImageDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.service.AccommodationCategory;
 import com.honeyrest.honeyrest_host.service.AccommodationService;
 import com.honeyrest.honeyrest_host.service.CompanyService;
@@ -71,16 +70,31 @@ public class AccommodationController {
             String imageUrl = fileUploadUtil.upload(file, "accommodation");
             accommodationDTO.setThumbnailUrl(imageUrl);
 
-            Long a = accommodationService.registerAccommodation(accommodationDTO);
+            Long accommodationId = accommodationService.registerAccommodation(accommodationDTO);
 
             AccommodationImageDTO accommodationImageDTO = AccommodationImageDTO.builder()
                     .imageUrl(imageUrl)
-                    .accommodationId(a)
-//                    .imageType()
-//                    .sortOrder()
+                    .accommodationId(accommodationId)
+                    .imageType("MAIN")
+                    .sortOrder(0)
                     .build();
             accommodationService.registerAccommodationImage(accommodationImageDTO);
-
+            MultipartFile[] images = accommodationDTO.getImages();
+            if (images != null && images.length > 0) {
+                int sortOrder = 1; // MAIN 이미지 다음부터
+                for (MultipartFile img : images) {
+                    if (!img.isEmpty()) {
+                        String subImageUrl = fileUploadUtil.upload(img, "accommodation");
+                        AccommodationImageDTO dto = AccommodationImageDTO.builder()
+                                .imageUrl(subImageUrl)
+                                .accommodationId(accommodationId)
+                                .imageType("SUB") // 보조 이미지
+                                .sortOrder(sortOrder++)
+                                .build();
+                        accommodationService.registerAccommodationImage(dto);
+                    }
+                }
+            }
 
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());

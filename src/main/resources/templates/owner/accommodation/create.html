@@ -73,13 +73,19 @@
                 <label for="file">로고 업로드:</label>
                 <input type="file" class="form-control" id="file" name="file" ><br/><br/>
             </div>
+            <!-- 추가 숙소 이미지 업로드 -->
+            <div class="mb-3">
+                <label for="images">숙소 이미지들:</label>
+                <input type="file" class="form-control" id="images" name="images" multiple>
+            </div>
+
             <div class="mb-3">
                 <label for="description" class="form-label">설명</label>
                 <textarea name="description" class="form-control" id="description" rows="3"></textarea>
             </div>
             <div class="mb-3">
                 <label for="amenities" class="form-label">편의시설 (JSON)</label>
-                <textarea name="amenities" class="form-control" id="amenities" placeholder='wifi:true,tv:true'></textarea>
+                <textarea name="amenities" class="form-control" id="amenities" placeholder='wifi,tv'></textarea>
             </div>
 
             <!-- 체크인/체크아웃 -->

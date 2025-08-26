@@ -51,6 +51,17 @@
                             <td th:text="${res.accommodationName}"></td>
                             <td th:text="${res.guestPhone}"></td>
                             <td th:text="${#numbers.formatInteger(res.price, 3, 'COMMA')} + ' 원'"></td>
+                            <td>
+                                <a th:href="@{'/owner/reservation/' + ${res.reservationId} + '/modify'}"
+                                   class="btn btn-primary btn-sm">수정</a>
+                            </td>
+                            <td>
+                                <form th:action="@{'/owner/reservation/' + ${res.reservationId} + '/delete'}"
+                                      method="post"
+                                      onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                                </form>
+                            </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(reservations)}">
                             <td colspan="5" class="text-center">예약 내역이 없습니다.</td>
