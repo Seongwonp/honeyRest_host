@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -43,7 +44,7 @@ public class AccommodationCreateRequestDTO {
     @Size(max = 500)
     private String address;
 
-    private Room totalRooms;
+//    private Room totalRooms; -> 이미지 업로드를 위해 바인딩이 불가해서 주석처리함.
     // 위치
     @DecimalMin(value = "-90.0")
     @DecimalMax(value = "90.0")
@@ -60,13 +61,15 @@ public class AccommodationCreateRequestDTO {
     private String description;
 
     // 편의시설(JSON) — 예: ["wifi","parking"]
-    private JsonNode amenities;
+    private String amenities;
 
     @Schema(type = "string", example = "15:00", description = "open (HH:mm)")
+    @DateTimeFormat(pattern = "HH:mm")   // ★ 폼 바인딩용
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkInTime;
 
     @Schema(type = "string", example = "11:00", description = "close (HH:mm)")
+    @DateTimeFormat(pattern = "HH:mm")   // ★ 폼 바인딩용
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkOutTime;
 
@@ -87,5 +90,6 @@ public class AccommodationCreateRequestDTO {
 
     // 부가
     private List<AccommodationTagMapDTO> tags;
+
 
 }

@@ -8,7 +8,7 @@ import java.util.List;
 public interface AccommodationImageService {
 
     // 단건 업로드(파일 → URL 저장 → 엔티티 저장)
-    AccommodationImageDTO upload(Long accommodationId, AccommodationImageDTO accommodationImageDTO);
+    AccommodationImageDTO saveOrUpload(Long accommodationId, AccommodationImageDTO dto);
 
 
     @Transactional(readOnly = true)

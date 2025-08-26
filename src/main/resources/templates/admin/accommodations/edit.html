@@ -72,14 +72,30 @@
                                 </div>
 
                                 <!-- 썸네일/설명 -->
-                                <div class="col-md-4">
-                                    <label class="form-label">썸네일 URL</label>
-                                    <input type="text" class="form-control" th:field="*{thumbnailUrl}">
-                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">썸네일</label>
 
-                                <div class="col-md-8">
-                                    <label class="form-label">설명</label>
-                                    <textarea class="form-control" rows="3" th:field="*{description}"></textarea>
+                                    <!-- 미리보기 -->
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img id="thumbPreview" src="#" alt="preview"
+                                             style="width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;display:none;">
+                                        <span id="thumbEmpty" class="text-muted">이미지 없음</span>
+                                    </div>
+
+                                    <!-- 파일 선택 + 업로드 버튼 -->
+                                    <div class="mt-2 d-flex gap-2">
+                                        <input type="file" id="thumbFile" accept="image/*" class="form-control" style="max-width:320px;">
+                                        <button type="button" id="btnUploadThumb" class="btn btn-outline-primary">업로드</button>
+                                    </div>
+
+                                    <!-- 진행률 -->
+                                    <div class="progress mt-2" style="height:6px;display:none;" id="thumbProgWrap">
+                                        <div class="progress-bar" id="thumbProg" style="width:0%"></div>
+                                    </div>
+
+                                    <!-- 서버에 같이 보낼 hidden 입력 -->
+                                    <input type="hidden" name="thumbnailUrl" id="thumbnailUrl"
+                                           th:value="${accommodation?.thumbnailUrl}">
                                 </div>
 
 

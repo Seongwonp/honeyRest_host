@@ -3,9 +3,9 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 import com.honeyrest.honeyrest_host.dto.CompanyDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationImageDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationListDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationUpdateRequestDTO;
-import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.entity.Region;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
@@ -17,20 +17,17 @@ import com.honeyrest.honeyrest_host.service.CompanyService;
 import com.honeyrest.honeyrest_host.util.FileUploadUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
@@ -38,7 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-
+@Log4j2
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/admin/accommodations")
@@ -68,11 +65,74 @@ public class AccommodationPageController {
      * 등록 제출 (승인상태는 서비스에서 PENDING 으로 고정됨)
      */
     @PostMapping("/add")
-    public String addSubmit(@ModelAttribute("form") @Valid AccommodationCreateRequestDTO form) throws Exception {
-        // 이미지 업로드
-        fileUploadUtil.upload((MultipartFile) form.getImages(), "accommodation");
-        accommodationService.create(form);
-        return "redirect:/admin/accommodations/list";
+    public String addSubmit(@ModelAttribute("form") @Valid AccommodationCreateRequestDTO form, BindingResult binding,
+                            Model model,
+                            RedirectAttributes ra) {
+        if (binding.hasErrors()) {
+            binding.getAllErrors().forEach(err -> log.warn("bind err: {}", err));
+            // 화면 다시 그릴 때 필요한 데이터 다시 주입
+            model.addAttribute("mainRegions", regionRepository.findByLevel(1));
+            return "admin/accommodations/add"; // redirect 대신 포워드
+        }
+
+        try {
+            // 1) 대표 썸네일 업로드 (파일이 올라온 경우)
+            if (form.getFile() != null && !form.getFile().isEmpty()) {
+                log.info("aaaaaaaaaaaaaaaaaaa");
+                String url = fileUploadUtil.upload(form.getFile(), "accommodation");
+                form.setThumbnailUrl(url); // DB에 저장될 썸네일 URL
+                log.info("bbbbbbbbbbbbbbbbbb");
+            }
+
+            // 2) 숙소 등록 (서비스에서 상태 PENDING 처리)
+            form.setAmenities(csvToJsonArray(form.getAmenities()));
+            AccommodationCreateRequestDTO saved = accommodationService.create(form);
+            Long accId = saved.getAccommodationId(); // create가 id를 리턴하도록 하세요.
+
+            log.info("ccccccccccccccccccc");
+
+            // (3) 메인 썸네일을 이미지 테이블에 upsert
+            if (form.getThumbnailUrl() != null && !form.getThumbnailUrl().isBlank()) {
+                accommodationImageService.upsertMainThumbnail(
+                        accId,
+                        AccommodationImageDTO.builder()
+                                .imageUrl(form.getThumbnailUrl())  // 파일 없이 URL만 들어와도 됨
+                                .imageType("MAIN")
+                                .sortOrder(0)
+                                .build()
+
+                );
+                log.info("dddddddddddddddddd");
+            }
+
+            // (4) 추가 이미지들 업로드 → 이미지 테이블 저장
+            if (form.getImages() != null && !form.getImages().isEmpty()) {
+                int order = 1;
+                for (AccommodationImageDTO imgDto : form.getImages()) {
+                    imgDto.setAccommodationId(accId);
+                    if (imgDto.getSortOrder() == null) imgDto.setSortOrder(order++);
+                    if (imgDto.getImageType() == null || imgDto.getImageType().isBlank()) {
+                        imgDto.setImageType("SUB");
+                    }
+                    accommodationImageService.upsertMainThumbnail(accId, imgDto);
+                }
+            }
+
+
+            ra.addFlashAttribute("success", "숙소 등록이 요청되었습니다.");
+            return "redirect:/admin/accommodations/list?status=PENDING";
+
+        } catch (Exception e) {
+            log.error("add error",e);
+            ra.addFlashAttribute("error", "등록 중 오류: " + e.getMessage());
+            ra.addAttribute("form", form);
+            return "redirect:/admin/accommodations/add";
+        }
+
+//        // 이미지 업로드
+//        fileUploadUtil.upload((MultipartFile) form.getImages(), "accommodation");
+//        accommodationService.create(form);
+//        return "redirect:/admin/accommodations/list";
     }
 
     /**
@@ -83,6 +143,7 @@ public class AccommodationPageController {
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
             Model model
     ) {
         // 1) 로그인 체크
@@ -116,13 +177,20 @@ public class AccommodationPageController {
 
         // 5) 페이징 조회
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "accommodationId"));
-        Page<AccommodationListDTO> result = accommodationService.findByCompanyId(companyDTO.getCompanyId(), pageable);
+        Page<AccommodationListDTO> result;
+        if(status == null || status.isBlank()) {
+            // 상태 미지정이면 기존 전체 호출
+            result = accommodationService.findByCompanyId(companyDTO.getCompanyId(), pageable);
+        } else {
+            // 상태 지정 되면 회사+ 상태 조회
+            result = accommodationService.findByCategoryIdAndStatus(companyDTO.getCompanyId(), status, pageable);
+        }
 
         // 6) 모델 바인딩 — ★중요: 리스트는 getContent()로!
         model.addAttribute("page", result);                 // Page 객체 전체
         model.addAttribute("accommodations", result.getContent()); // 목록 아이템
         model.addAttribute("loginEmail", email);
-
+        model.addAttribute("status", status);
         return "admin/accommodations/list";
     }
 
@@ -169,7 +237,9 @@ public class AccommodationPageController {
     }
 
 
-    /** 수정 폼 (GET)*/
+    /**
+     * 수정 폼 (GET)
+     */
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model) {
         AccommodationCreateRequestDTO dto = accommodationService.getById(id);
@@ -221,25 +291,42 @@ public class AccommodationPageController {
     public String editSubmit(@PathVariable Long id,
                              @ModelAttribute("form") AccommodationUpdateRequestDTO form,
                              RedirectAttributes ra) {
+        form.setAmenities(csvToJsonArray(form.getAmenities()));
         accommodationService.update(id, form);
         ra.addAttribute("updated", "1");
         return "redirect:/admin/accommodations/list";
     }
 
 
-//    @GetMapping("/my")
-//    public String myList(@AuthenticationPrincipal UserDetails me,
-//                         @PageableDefault(size = 10, sort = "accommodationId", direction = Sort.Direction.DESC) Pageable pageable,
-//                         Model model) {
-//        String email = me.getUsername();
-//        Long companyId = companyRepository.findByEmail(email).map(Company::getCompanyId)
-//                .orElseThrow(() -> new UsernameNotFoundException("업체 관리자 이메일에 해당하는 회사가 없습니다."));
-//        var page = accommodationService.findByCompanyId(companyId, pageable);
-//
-//        model.addAttribute("page", page);
-//        model.addAttribute("list", page.getContent());
-//        model.addAttribute("companyId", companyId);
-//
-//        return "admin/accommodations/list";
+    @GetMapping("/list/pending")
+    public String listPending() {
+        return "redirect:/admin/accommodations/list?status=PENDING";
 
     }
+    // CSV("와이파이, 주차") -> ["와이파이","주차"] -> string 으로 변환
+    private String csvToJsonArray(String csv) {
+        try {
+            if (csv == null) return "[]";
+            String s = csv.trim();
+            if (s.isEmpty()) return "[]";
+
+            // 이미 JSON 배열이면 유효성만 확인하고 그대로
+            if (s.startsWith("[") && s.endsWith("]")) {
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(s);
+                return s;
+            }
+
+            java.util.List<String> list = java.util.Arrays.stream(s.split(","))
+                    .map(String::trim)
+                    .filter(x -> !x.isEmpty())
+                    .toList();
+
+            return list.isEmpty()
+                    ? "[]"
+                    : new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(list);
+        } catch (Exception e) {
+            return "[]";
+        }
+    }
+
+}

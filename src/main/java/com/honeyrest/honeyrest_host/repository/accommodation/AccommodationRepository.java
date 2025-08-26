@@ -18,6 +18,8 @@ import java.util.List;
 
 public interface AccommodationRepository extends JpaRepository<Accommodation, Long>, AccommodationQuery {
 
+    Page<Accommodation> findByCompany_CompanyIdAndStatus(Long companyId, String status, Pageable pageable);
+
     long countByCompany_CompanyId(Long companyId);
 
     @Query(value = """

@@ -32,7 +32,7 @@ public class AccommodationUpdateRequestDTO {
     private String thumbnailUrl;
     private String description;
 
-    private JsonNode amenities;         // ["wifi", ...]
+    private String amenities;         // ["wifi", ...]
     @Schema(type = "string", example = "15:00", description = "체크인 시간 (HH:mm)")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkInTime;

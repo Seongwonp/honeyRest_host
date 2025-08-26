@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -75,7 +76,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .longitude(e.getLongitude())
                 .thumbnailUrl(e.getThumbnail())
                 .description(e.getDescription())
-                .amenities(stringToJsonNode(e.getAmenities()))
+                .amenities(e.getAmenities())
                 .checkInTime(e.getCheckInTime())
                 .checkOutTime(e.getCheckOutTime())
                 .status(e.getStatus())
@@ -103,14 +104,14 @@ public class AccommodationServiceImpl implements AccommodationService {
                                 .toList())
                 .build();
     }
-
-    private AccommodationCreateRequestDTO toListDTOWithThumbnail(Accommodation e) {
+    // 등록/수정 폼에 바인딩할 때 쓰는 DTO
+    private AccommodationCreateRequestDTO toCreateFormDTO(Accommodation e) {
         String thumb = accommodationImageRepository
                 .findFirstByAccommodation_AccommodationIdAndImageTypeOrderBySortOrderAscImageIdAsc(
                         e.getAccommodationId(), "MAIN"
                 )
                 .map(AccommodationImage::getImageUrl)
-                .orElse(e.getThumbnail()); // MAIN 없으면 엔티티 thumbnail 필드 사용
+                .orElse(e.getThumbnail());
 
         return AccommodationCreateRequestDTO.builder()
                 .accommodationId(e.getAccommodationId())
@@ -120,10 +121,30 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .subRegionId(e.getSubRegion() != null ? e.getSubRegion().getRegionId() : null)
                 .name(e.getName())
                 .address(e.getAddress())
+                .thumbnailUrl(thumb)
+                .minPrice(e.getMinPrice())
+                .status(e.getStatus())
+                .build();
+    }
+
+    private AccommodationListDTO toListDTOWithThumbnail(Accommodation e) {
+        String thumb = accommodationImageRepository
+                .findFirstByAccommodation_AccommodationIdAndImageTypeOrderBySortOrderAscImageIdAsc(
+                        e.getAccommodationId(), "MAIN"
+                )
+                .map(AccommodationImage::getImageUrl)
+                .orElse(e.getThumbnail()); // MAIN 없으면 엔티티 thumbnail 필드 사용
+
+        return AccommodationListDTO.builder()
+                .accommodationId(e.getAccommodationId())
+                .name(e.getName())
+                .categoryName(e.getCategory().getName())
+                .regionName(e.getMainRegion().getName())
                 .thumbnailUrl(thumb)     // ★ 리스트에서 썸네일로 사용
                 .minPrice(e.getMinPrice())
                 .status(e.getStatus())
                 .build();
+
     }
 
 
@@ -176,10 +197,10 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .longitude(req.getLongitude())
                 .thumbnail(req.getThumbnailUrl())
                 .description(req.getDescription())
-                .amenities(jsonNodeToString(req.getAmenities()))
+                .amenities(req.getAmenities())
                 .checkInTime(req.getCheckInTime())
                 .checkOutTime(req.getCheckOutTime())
-                .status(req.getStatus() == null ? "ACTIVE" : req.getStatus())
+                .status(req.getStatus() == null ? "PENDING" : req.getStatus())
                 .minPrice(req.getMinPrice())
                 .build();
 
@@ -242,7 +263,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .longitude(req.getLongitude() != null ? req.getLongitude() : cur.getLongitude())
                 .thumbnail(req.getThumbnailUrl() != null ? req.getThumbnailUrl() : cur.getThumbnail())
                 .description(req.getDescription() != null ? req.getDescription() : cur.getDescription())
-                .amenities(req.getAmenities() != null ? jsonNodeToString(req.getAmenities()) : cur.getAmenities())
+                .amenities(req.getAmenities() != null ? (req.getAmenities()) : cur.getAmenities())
                 .checkInTime(req.getCheckInTime() != null ? req.getCheckInTime() : cur.getCheckInTime())
                 .checkOutTime(req.getCheckOutTime() != null ? req.getCheckOutTime() : cur.getCheckOutTime())
                 .status(req.getStatus() != null ? req.getStatus() : cur.getStatus())
@@ -361,6 +382,12 @@ public class AccommodationServiceImpl implements AccommodationService {
         }).toList();
 
         return new PageImpl<>(content, pageable, page.getTotalElements());
+    }
+
+    @Override
+    public Page<AccommodationListDTO> findByCategoryIdAndStatus(Long companyId, String status, Pageable pageable) {
+        return accommodationRepository.findByCompany_CompanyIdAndStatus(companyId, status,pageable)
+                .map(this::toListDTOWithThumbnail);
     }
 
 }

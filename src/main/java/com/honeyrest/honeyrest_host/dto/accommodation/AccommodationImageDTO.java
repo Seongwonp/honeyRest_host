@@ -19,7 +19,7 @@ public class AccommodationImageDTO {
 
     private Long accommodationId;
 
-    @NotBlank @Size(max = 500)
+    @Size(max = 500)
     private String imageUrl; // 저장 이미지 경로
 
     @Size(max = 50)

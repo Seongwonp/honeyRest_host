@@ -8,12 +8,45 @@
     <title>숙소 목록</title>
     <th:block layout:fragment="head">
         <style>
-            .status-badge{padding:.35em .65em;border-radius:.25rem;font-size:.75rem;font-weight:500}
-            .status-pending{background:#fff3cd;color:#856404}
-            .status-approved{background:#d4edda;color:#155724}
-            .status-rejected{background:#f8d7da;color:#721c24}
-            .status-active{background:#e7f1ff;color:#0a58ca}
-            .thumb{width:56px;height:56px;object-fit:cover;border-radius:6px;background:#f6f6f6}
+            .thumb-sm{
+                width:48px;height:48px;object-fit:cover;border-radius:6px;background:#f6f6f6;
+                display:inline-block;
+            }
+
+            .status-badge {
+                padding: .35em .65em;
+                border-radius: .25rem;
+                font-size: .75rem;
+                font-weight: 500
+            }
+
+            .status-pending {
+                background: #fff3cd;
+                color: #856404
+            }
+
+            .status-approved {
+                background: #d4edda;
+                color: #155724
+            }
+
+            .status-rejected {
+                background: #f8d7da;
+                color: #721c24
+            }
+
+            .status-active {
+                background: #e7f1ff;
+                color: #0a58ca
+            }
+
+            .thumb {
+                width: 56px;
+                height: 56px;
+                object-fit: cover;
+                border-radius: 6px;
+                background: #f6f6f6
+            }
         </style>
     </th:block>
 </head>
@@ -33,7 +66,6 @@
                 <colgroup>
                     <col style="width:70px;"/>
                     <col style="width:80px;"/>
-                    <col/>
                     <col style="width:160px;"/>
                     <col style="width:180px;"/>
                     <col style="width:140px;"/>
@@ -67,9 +99,9 @@
                     <!-- 썸네일 -->
                     <td class="text-center">
                         <img th:if="${acc.thumbnailUrl != null and !#strings.isEmpty(acc.thumbnailUrl)}"
-                             th:src="${acc.thumbnailUrl}" alt="썸네일" class="thumb">
-                        <div th:if="${acc.thumbnailUrl == null or #strings.isEmpty(acc.thumbnailUrl)}"
-                             class="text-muted small">없음</div>
+                             th:src="@{${acc.thumbnailUrl}}"
+                             alt="썸네일" class="thumb-sm">
+                        <span th:if="${acc.thumbnailUrl == null or #strings.isEmpty(acc.thumbnailUrl)}">없음</span>
                     </td>
 
                     <!-- 숙소명 -->

@@ -32,4 +32,7 @@ public interface AccommodationService {
     long count();
     // 회사별 객실 조회
     Page<AccommodationListDTO> findByCompanyId(Long companyId, Pageable pageable);
+
+    // 회사 + 상태별 조회(승인 대기 목록)
+    Page<AccommodationListDTO> findByCategoryIdAndStatus(Long companyId, String status, Pageable pageable);
 }
