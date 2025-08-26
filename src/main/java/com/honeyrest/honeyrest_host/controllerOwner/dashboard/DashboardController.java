@@ -51,7 +51,7 @@ public class DashboardController {
             companyCount = companyService.getAllCompanies().size();
             accommodationCount = accommodationService.getAllAccommodations().size();
             roomCount = roomService.getAllRooms().size();
-            reservationCount = reservationService.getReservations().size(); // 취소 제외 예시
+            reservationCount = reservationService.getReservationsByActive().size(); // 취소 제외 예시
         } else {
             // 그 외 ROLE이면 필요에 맞게
             companyCount = 0;

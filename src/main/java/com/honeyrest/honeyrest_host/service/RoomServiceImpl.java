@@ -14,9 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,18 +25,18 @@ public class RoomServiceImpl implements RoomService{
     private final AccommodationRepository accommodationRepository;
     private final ObjectMapper objectMapper;
 
-    private String parseJson(String json) {
-        if (json == null || json.isBlank()) return "";
+    private String parseJson(String input) {
+        if (input == null || input.isBlank()) return "[]";
         try {
-            // JSON을 Map으로 변환
-            Map<String, Object> map = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
-            // "key:value" 형식으로 변환 후 join
-            return map.entrySet().stream()
-                    .map(e -> e.getKey() + ":" + e.getValue())
-                    .collect(Collectors.joining(", "));
+            List<String> amenitiesList = Arrays.stream(input.split("[,\\s]+"))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+
+            return objectMapper.writeValueAsString(amenitiesList);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-            return json; // 실패하면 그냥 원본 JSON 반환
+            return "[]"; // 실패 시 빈 배열 반환
         }
     }
     // ===== Mapper =====
@@ -52,8 +50,8 @@ public class RoomServiceImpl implements RoomService{
                 .maxOccupancy(e.getMaxOccupancy())
                 .standardOccupancy(e.getStandardOccupancy())
                 .extraPersonFee(e.getExtraPersonFee())
-                .bedInfo(parseJson(e.getBedInfo()))
-                .amenities(parseJson(e.getAmenities()))
+                .bedInfo(parseString(e.getBedInfo()))
+                .amenities(parseString(e.getAmenities()))
                 .description(e.getDescription())
                 .totalRooms(e.getTotalRooms())
                 .status(e.getStatus())
@@ -63,22 +61,21 @@ public class RoomServiceImpl implements RoomService{
     /**
      * "wifi:true, tv:true" -> Map<String,Object> 변환
      */
-    private Map<String, Object> parseString(String str) {
-        Map<String, Object> map = new HashMap<>();
-        String[] entries = str.split(",");
-        for (String entry : entries) {
-            String[] kv = entry.trim().split(":");
-            if (kv.length == 2) {
-                String key = kv[0].trim();
-                String valueStr = kv[1].trim();
-                Object value = "true".equalsIgnoreCase(valueStr) ? true :
-                        "false".equalsIgnoreCase(valueStr) ? false : valueStr;
-                map.put(key, value);
-            }
-        }
-        return map;
-    }
+    private List<String> parseList(String jsonInput) {
+        if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
 
+        try {
+            // JSON 배열 문자열을 List<String>으로 역직렬화
+            return objectMapper.readValue(jsonInput, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return Collections.emptyList(); // 실패 시 빈 리스트 반환
+        }
+    }
+    private String parseString(String jsonInput) {
+        List<String> list = parseList(jsonInput);
+        return String.join(", ", list);
+    }
     private Room toEntity(RoomDTO d) {
         String amenitiesJson = "[]"; // 기본값
         String bedInfoJson = "[]"; // 기본값
@@ -86,8 +83,8 @@ public class RoomServiceImpl implements RoomService{
 
         try {
             if (d.getAmenities() != null && !d.getAmenities().isBlank()) {
-                amenitiesJson = objectMapper.writeValueAsString(parseString(d.getAmenities()));
-                bedInfoJson = objectMapper.writeValueAsString(parseString(d.getBedInfo()));
+                amenitiesJson = objectMapper.writeValueAsString(parseJson(d.getAmenities()));
+                bedInfoJson = objectMapper.writeValueAsString(parseJson(d.getBedInfo()));
             }
         } catch (JsonProcessingException e) {
             e.printStackTrace(); // 변환 실패 시 로그 출력

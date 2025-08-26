@@ -90,7 +90,7 @@ public class ReservationController {
         return "owner/room/create";
     }
 
-    @PostMapping("/room/create")
+    @PostMapping("/reservation/create")
     public String createRoom(@ModelAttribute RoomDTO roomDTO) {
         roomService.registerRoom(roomDTO);
         return "redirect:/owner/room/list";

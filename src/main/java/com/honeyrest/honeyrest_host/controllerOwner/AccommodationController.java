@@ -5,6 +5,7 @@ import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationImageDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
+import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.service.AccommodationCategory;
 import com.honeyrest.honeyrest_host.service.AccommodationService;
 import com.honeyrest.honeyrest_host.service.CompanyService;
@@ -63,7 +64,7 @@ public class AccommodationController {
     }
 
     @PostMapping("/accommodation/create")
-    public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO, Model model) throws JsonProcessingException {
+    public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO, Model model) {
         try {
             // Firebase 업로드
             MultipartFile file = accommodationDTO.getFile();

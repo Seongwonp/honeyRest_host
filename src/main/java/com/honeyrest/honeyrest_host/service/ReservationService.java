@@ -1,8 +1,10 @@
 package com.honeyrest.honeyrest_host.service;
 
 import com.amazonaws.services.kms.model.NotFoundException;
+import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.Reservation;
+import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
 import com.honeyrest.honeyrest_host.repository.ReservationRepository;
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
@@ -11,7 +13,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -115,5 +120,39 @@ public class ReservationService {
 
     public void removeReservation(Long id) {
         reservationRepository.deleteById(id);
+    }
+
+    public Map<LocalDate, PriceCalendarDTO> getCalendarData(Long roomId, LocalDate startDate, LocalDate endDate) {
+        Map<LocalDate, PriceCalendarDTO> calendarMap = new HashMap<>();
+
+        // 1. 방(Room) 조회
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 Room ID: " + roomId));
+
+        // 2. 해당 기간 예약 조회
+        List<Reservation> reservations = reservationRepository.findByRoomIdAndDateBetween(roomId, startDate, endDate);
+
+        // 3. 날짜별 처리
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+
+            // ✅ 해당 날짜에 걸려 있는 예약 수 (체크인 <= date < 체크아웃)
+            LocalDate finalDate = date;
+            long reservedCount = reservations.stream()
+                    .filter(r -> !r.getCheckInDate().isAfter(finalDate) && r.getCheckOutDate().isAfter(finalDate))
+                    .count();
+
+            int availableRooms = room.getTotalRooms() - (int) reservedCount;
+
+            PriceCalendarDTO dto = PriceCalendarDTO.builder()
+                    .roomId(room.getRoomId())
+                    .date(date)
+                    .price(room.getPrice())
+                    .availableRoom(Math.max(availableRooms, 0))
+                    .build();
+
+            calendarMap.put(date, dto);
+        }
+
+        return calendarMap;
     }
 }
