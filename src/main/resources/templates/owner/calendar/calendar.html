@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+<head>
+    <title>객실 캘린더</title>
+    <style>
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .day {
+            border: 1px solid #ccc;
+            min-height: 100px;
+            padding: 5px;
+        }
+
+        .header {
+            font-weight: bold;
+            background: #f8f9fa;
+            text-align: center;
+        }
+
+        .soldout {
+            color: red;
+        }
+
+        .available {
+            color: green;
+        }
+
+        .day-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+<th:block layout:fragment="content">
+    <h2 th:text="'객실 캘린더 - ' + ${company.name} + ' / ' + ${accommodation.name}"></h2>
+
+    <!-- 각 방별 달력 -->
+    <th:block th:each="room : ${roomList}">
+        <h3 th:text="${room.name}"></h3>
+
+        <div class="calendar">
+            <!-- 요일 헤더 -->
+            <div class="header">일</div>
+            <div class="header">월</div>
+            <div class="header">화</div>
+            <div class="header">수</div>
+            <div class="header">목</div>
+            <div class="header">금</div>
+            <div class="header">토</div>
+
+            <!-- 날짜 셀 -->
+            <th:block th:each="d : ${#numbers.sequence(1, endDate.lengthOfMonth())}">
+                <div class="day">
+                    <div class="day-number" th:text="${d}"></div>
+
+                    <!-- 안전한 중첩 Map 접근 -->
+                    <th:block th:with="roomCalendar=${calendarDataMap.get(room.roomId)},
+                                    date=${startDate.withDayOfMonth(d)},
+                                    data=${roomCalendar != null ? roomCalendar.get(date) : null}">
+                        <div th:if="${data != null}">
+                            <div>가격: <span th:text="${#numbers.formatInteger(data.price, 0, 'COMMA')} + '원'"></span>
+                            </div>
+                            <div th:classappend="${data.availableRoom > 0} ? 'available' : 'soldout'">
+                                <span th:text="${data.availableRoom > 0 ? '잔여 ' + data.availableRoom + '실' : '매진'}"></span>
+                            </div>
+                            <button type="button"
+                                    th:attr="data-date=${date}, data-roomid=${room.roomId}"
+                                    class="editBtn">수정
+                            </button>
+                        </div>
+                        <div th:if="${data == null}">
+                            <span class="text-muted">데이터 없음</span>
+                            <button type="button"
+                                    th:attr="data-date=${date}, data-roomid=${room.roomId}"
+                                    class="editBtn">등록
+                            </button>
+                        </div>
+                    </th:block>
+                </div>
+            </th:block>
+        </div>
+    </th:block>
+
+    <!-- 수정 모달 -->
+    <div id="editModal"
+         style="display:none; position:fixed; top:20%; left:30%; background:white; padding:20px; border:1px solid #ccc; z-index:1000;">
+        <h3>가격/재고 수정</h3>
+        <form id="editForm" method="post" action="/owner/rooms/calendar/update">
+            <input type="hidden" name="roomId" id="roomId">
+            <input type="hidden" name="date" id="date">
+
+            <div>
+                <label>가격</label>
+                <input type="number" name="price" required>
+            </div>
+            <div>
+                <label>잔여 객실 수</label>
+                <input type="number" name="availableRoom" required>
+            </div>
+            <button type="submit">저장</button>
+            <button type="button" onclick="closeEditModal()">닫기</button>
+        </form>
+    </div>
+</th:block>
+</body>
+</html>
+<script>
+    // Modal 열기
+    function openEditModal(btn) {
+        if (!btn) return;
+        const roomId = btn.getAttribute("data-roomid");
+        const date = btn.getAttribute("data-date");
+        if (!roomId || !date) return;
+
+        document.getElementById("roomId").value = roomId;
+        document.getElementById("date").value = date;
+        const modal = document.getElementById("editModal");
+        if (modal) modal.style.display = "block";
+    }
+
+    function closeEditModal() {
+        const modal = document.getElementById("editModal");
+        if (modal) modal.style.display = "none";
+    }
+
+    // DOMContentLoaded 후 버튼 이벤트 바인딩
+    document.addEventListener("DOMContentLoaded", () => {
+        const buttons = document.querySelectorAll(".editBtn");
+        buttons.forEach(btn => btn.addEventListener("click", () => openEditModal(btn)));
+    });
+</script>

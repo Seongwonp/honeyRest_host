@@ -4,7 +4,6 @@ import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
-import com.honeyrest.honeyrest_host.entity.PriceCalendar;
 import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -17,7 +16,6 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/owner")
@@ -84,46 +82,4 @@ public class RoomController {
         return "redirect:/owner/room/list";
     }
 
-    @GetMapping("/room/calendar")
-    public String roomCalendar(Model model) {
-        return "owner/room/calendar";
-    }
-
-    @GetMapping("/room/{companyId}/{accommodationId}/calendar")
-    public String roomCalendar(@PathVariable Long companyId,
-                               @PathVariable Long accommodationId,
-                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
-                               Model model) {
-
-        if (startDate == null) {
-            startDate = LocalDate.now().withDayOfMonth(1);
-            endDate = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
-        }
-        CompanyDTO company = companyService.getCompany(companyId);
-        AccommodationDTO accommodation = accommodationService.getByAccommodationId(accommodationId);
-
-        List<RoomDTO> roomList = roomService.getRoomsByAccommodationId(accommodationId);
-
-        Map<Long, Map<LocalDate, PriceCalendarDTO>> calendarDataMap = new HashMap<>();
-        for (RoomDTO room : roomList) {
-            Map<LocalDate, PriceCalendarDTO> roomCalendar = reservationService.getCalendarData(room.getRoomId(), startDate, endDate);
-            calendarDataMap.put(room.getRoomId(), roomCalendar);
-        }
-
-        model.addAttribute("company", company);
-        model.addAttribute("accommodation", accommodation);
-        model.addAttribute("roomList", roomList);
-        model.addAttribute("calendarDataMap", calendarDataMap);
-        model.addAttribute("startDate", startDate);
-        model.addAttribute("endDate", endDate);
-        log.info(company);
-        log.info(accommodation);
-        log.info(roomList);
-        log.info(calendarDataMap);
-        log.info(startDate);
-        log.info(endDate);
-
-        return "owner/room/calendar";
-    }
 }

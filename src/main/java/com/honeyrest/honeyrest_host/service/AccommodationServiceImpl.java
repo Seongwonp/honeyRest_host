@@ -104,10 +104,10 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         try {
             if (d.getAmenities() != null && !d.getAmenities().isBlank()) {
-                amenitiesJson = objectMapper.writeValueAsString(parseAmenitiesToJson(d.getAmenities()));
+                amenitiesJson = (parseAmenitiesToJson(d.getAmenities()));
             }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace(); // 변환 실패 시 로그 출력
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         return Accommodation.builder()

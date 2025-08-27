@@ -81,13 +81,9 @@ public class RoomServiceImpl implements RoomService{
         String bedInfoJson = "[]"; // 기본값
 
 
-        try {
-            if (d.getAmenities() != null && !d.getAmenities().isBlank()) {
-                amenitiesJson = objectMapper.writeValueAsString(parseJson(d.getAmenities()));
-                bedInfoJson = objectMapper.writeValueAsString(parseJson(d.getBedInfo()));
-            }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace(); // 변환 실패 시 로그 출력
+        if (d.getAmenities() != null && !d.getAmenities().isBlank()) {
+            amenitiesJson = (parseJson(d.getAmenities()));
+            bedInfoJson = (parseJson(d.getBedInfo()));
         }
         return Room.builder()
                 .roomId(d.getRoomId())

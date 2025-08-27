@@ -21,7 +21,8 @@
                 <option th:each="a : ${accommodations}"
                         th:value="${a.accommodationId}"
                         th:text="${a.name}"
-                        th:selected="${a.accommodationId == accommodationId}"></option>
+                        th:selected="${a.accommodationId == accommodationId}"
+                        th:attr="data-price=${a.minPrice}">></option>
             </select>
         </div>
 
@@ -64,13 +65,13 @@
         <!-- 침대 정보 (JSON 문자열로 입력받음) -->
         <div class="mb-3">
             <label for="bedInfo" class="form-label">침대 정보(JSON)</label>
-            <textarea name="bedInfo" id="bedInfo" class="form-control" placeholder='예: {"싱글":2, "더블":1}'></textarea>
+            <textarea name="bedInfo" id="bedInfo" class="form-control" placeholder='예: 싱글 침대'></textarea>
         </div>
 
         <!-- 편의시설 (JSON 문자열로 입력받음) -->
         <div class="mb-3">
             <label for="amenities" class="form-label">편의시설(JSON)</label>
-            <textarea name="amenities" id="amenities" class="form-control" placeholder='예: ["와이파이","TV","에어컨"]'></textarea>
+            <textarea name="amenities" id="amenities" class="form-control" placeholder='예: 와이파이,TV,에어컨'></textarea>
         </div>
 
         <!-- 설명 -->
@@ -101,3 +102,23 @@
 </th:block>
 </body>
 </html>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.querySelector("form");
+        const accommodationSelect = document.getElementById("accommodationId");
+        const priceInput = document.getElementById("price");
+
+        form.addEventListener("submit", function (e) {
+            const selectedOption = accommodationSelect.options[accommodationSelect.selectedIndex];
+            const accommodationPrice = parseFloat(selectedOption.getAttribute("data-price"));
+            const roomPrice = parseFloat(priceInput.value);
+
+            if (!isNaN(accommodationPrice) && roomPrice < accommodationPrice) {
+                e.preventDefault();
+                alert(`방의 가격은 숙소 가격(${accommodationPrice.toLocaleString()}원)보다 같거나 커야 합니다.`);
+                priceInput.focus();
+            }
+        });
+    });
+</script>
+

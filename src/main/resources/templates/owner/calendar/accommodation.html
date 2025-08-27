@@ -39,7 +39,6 @@
                         <thead>
                         <tr>
                             <th>숙소 ID</th>
-                            <th>메인 사진</th>
                             <th>숙소명</th>
                             <th>주소</th>
                             <th>가격</th>
@@ -49,7 +48,6 @@
                         <tbody>
                         <tr th:each="acc : ${accommodations}">
                             <td th:text="${acc.accommodationId}"></td>
-                            <td> <img th:src="${acc.thumbnailUrl}" alt="썸네일" width="50px"/> </td>
                             <td><a th:href="@{'/owner/accommodation/' + ${acc.accommodationId} + '/rooms'}"
                                    th:text="${acc.name}"></a></td>
                             <td th:text="${acc.address}"></td>
