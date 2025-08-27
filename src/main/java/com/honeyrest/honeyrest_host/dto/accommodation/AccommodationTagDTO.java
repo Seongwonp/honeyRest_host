@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccommodationTagMapDTO {
+public class AccommodationTagDTO {
     private Long tagId;
     private String name;
     private String category;

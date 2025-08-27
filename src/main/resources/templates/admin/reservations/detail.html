@@ -125,7 +125,7 @@
                      th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
               <input type="hidden" name="reason" value="관리자 취소"/>
               <button type="submit" class="btn btn-outline-danger"
-                      th:disabled="${reservation.status.name() == 'CANCELLED'}">
+                      th:disabled="${r.status == 'CANCELLED'}">
                 예약 취소
               </button>
             </form>

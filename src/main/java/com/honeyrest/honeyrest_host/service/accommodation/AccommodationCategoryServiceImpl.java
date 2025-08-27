@@ -1,4 +1,4 @@
-package com.honeyrest.honeyrest_host.service;
+package com.honeyrest.honeyrest_host.service.accommodation;
 
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCategoryDTO;
 

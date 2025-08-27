@@ -29,7 +29,7 @@ public class GlobalViewModelAdvice {
         }
 
         String email = authentication.getName();
-        User u = userRepository.findByEmail(email).orElse(null);
+        User u = userRepository.findByEmail(email);
 
         if (u == null) {
             model.addAttribute("currentAdmin", fallback);

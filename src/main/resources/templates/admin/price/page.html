@@ -47,18 +47,18 @@
   <div class="toolbar">
     <div class="d-flex gap-2">
       <a class="btn btn-outline-primary"
-         th:href="@{|/admin/price/page?companyId=${companyId}&ym=${#temporals.format(preYm,'yyyy-MM')}|}">
+         th:href="@{|/templates/admin/price/page?companyId=${companyId}&ym=${#temporals.format(preYm,'yyyy-MM')}|}">
         « 이전달
       </a>
       <div class="btn btn-light fw-semibold" th:text="${#temporals.format(ym,'yyyy-MM')}">YYYY-MM</div>
       <a class="btn btn-outline-primary"
-         th:href="@{|/admin/price/page?companyId=${companyId}&ym=${#temporals.format(nextYm,'yyyy-MM')}|}">
+         th:href="@{|/templates/admin/price/page?companyId=${companyId}&ym=${#temporals.format(nextYm,'yyyy-MM')}|}">
         다음달 »
       </a>
     </div>
 
     <!-- 조회 폼 (GET /admin/price/page) -->
-    <form method="get" th:action="@{/admin/price/page}" class="filters">
+    <form method="get" th:action="@{/templates/admin/price/page}" class="filters">
       <input type="hidden" name="companyId" th:value="${companyId}"/>
       <input type="text" name="ym" class="form-control" style="width:130px"
              th:value="${#temporals.format(ym,'yyyy-MM')}" placeholder="YYYY-MM"/>
@@ -111,7 +111,7 @@
           </div>
 
           <!-- 단건 업서트 -->
-          <form th:action="@{/admin/price/upsert}" method="post" class="actions">
+          <form th:action="@{/templates/admin/price/upsert}" method="post" class="actions">
             <input type="hidden" name="companyId" th:value="${companyId}"/>
             <input type="hidden" name="accommodationId" th:value="${accommodationId}"/>
             <input type="hidden" name="ym" th:value="${#temporals.format(ym,'yyyy-MM')}"/>
@@ -140,7 +140,7 @@
   <!-- 벌크 업서트 -->
   <hr class="my-4"/>
   <h5 class="mb-2">벌크 업서트(JSON)</h5>
-  <form th:action="@{/admin/price/bulk-upsert}" method="post" class="d-flex flex-column gap-2">
+  <form th:action="@{/templates/admin/price/bulk-upsert}" method="post" class="d-flex flex-column gap-2">
     <input type="hidden" name="companyId" th:value="${companyId}"/>
     <input type="hidden" name="accommodationId" th:value="${accommodationId}"/>
     <input type="hidden" name="ym" th:value="${#temporals.format(ym,'yyyy-MM')}"/>

@@ -37,13 +37,18 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     """)
     Page<Room> findRoomsOfCompany(@Param("companyId") Long companyId,
                                   @Param("accommodationId") Long accommodationId, Pageable pageable);
-    @Query("""
-    select r from Room r
-    join r.accommodation a
-    join a.company c
-    where c.companyId = :companyId
-      and (:accommodationId is null or a.accommodationId = :accommodationId)
-""")
-    List<Room> findRoomsOfCompany(@Param("companyId") Long companyId,
-                                  @Param("accommodationId") Long accommodationId);
+
+//    @Query("""
+//    select r from Room r
+//    join r.accommodation a
+//    join a.company c
+//    where c.companyId = :companyId
+//      and (:accommodationId is null or a.accommodationId = :accommodationId)
+//""")
+//    List<Room> findRoomsOfCompany(@Param("companyId") Long companyId,
+//                                  @Param("accommodationId") Long accommodationId);
+
+
+    List<Room> findAllByAccommodation_Company_CompanyId(Long companyId);
 }
+

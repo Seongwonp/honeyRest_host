@@ -10,10 +10,12 @@ import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationReposi
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -180,5 +182,9 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public Page<RoomDTO> findPageByAccommodationId(Long accommodationId, Pageable pageable) {
         return roomRepository.findByAccommodation_AccommodationId(accommodationId, pageable).map(this::toDTO);
+    }
+    @Override
+    public List<RoomDTO> findAllByCompanyId(Long companyId){
+        return roomRepository.findAllByAccommodation_Company_CompanyId(companyId).stream().map(this::toDTO).collect(Collectors.toList());
     }
 }

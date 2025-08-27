@@ -151,17 +151,25 @@
                     </div>
 
                     <!-- 태그(복수 선택) : name=tagIds 다중 -->
-                    <div class="col-md-3">
-                        <label class="form-label">태그 선택</label>
-                        <select class="form-select" th:field="*{tagIds}" multiple size="4">
-                            <option value="1">오션뷰</option>
-                            <option value="2">바베큐</option>
-                            <option value="3">수영장</option>
-                            <option value="4">조식 포함</option>
-                            <!-- 실제 태그로 교체 -->
+                    <!-- 카테고리/주소 아래 아무 데나 섹션 추가 -->
+                    <div class="col-12">
+                        <label class="form-label">태그</label>
+                        <select id="tagSelect" class="form-select" multiple size="10" th:field="*{tagIds}">
+                            <!-- optgroup 방식이라면 -->
+                            <optgroup th:each="e : ${tagsByCategory}" th:label="${e.key}">
+                                <option th:each="t : ${e.value}"
+                                        th:value="${t.tagId}"
+                                        th:text="${t.name}">
+                                </option>
+                            </optgroup>
                         </select>
-                        <div class="help-text">Ctrl(⌘)로 다중 선택</div>
+                        <div class="form-text">여러 개 선택 가능 (Ctrl/⌘)</div>
+
+                        <!-- 선택 미리보기 영역 -->
+                        <div id="tagSelected" class="d-flex flex-wrap gap-2 mt-2"></div>
                     </div>
+                </div>
+
 
                     <!-- 이미지(간단 3개 슬롯 예시) -->
 <!--                                        <div class="col-12">-->

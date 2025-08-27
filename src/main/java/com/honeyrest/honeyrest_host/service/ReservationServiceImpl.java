@@ -1,12 +1,10 @@
 package com.honeyrest.honeyrest_host.service;
 
+import com.honeyrest.honeyrest_host.dto.CompanyDTO;
 import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dto.ReservationDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.entity.Reservation;
-import com.honeyrest.honeyrest_host.entity.Room;
-import com.honeyrest.honeyrest_host.entity.User;
+import com.honeyrest.honeyrest_host.entity.*;
 import com.honeyrest.honeyrest_host.repository.ReservationRepository;
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import com.honeyrest.honeyrest_host.repository.UserRepository;
@@ -75,9 +73,10 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public Reservation getReservationById(Long reservationId) {
-        return reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + reservationId));
+    public ReservationDTO getReservationById(Long reservationId) {
+        Reservation r = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new EntityNotFoundException("예약이없습니다"));
+        return toDto(r);
     }
 
     // ✅ 수정: 세터 대신 도메인 메서드 사용
@@ -232,6 +231,51 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
 
+     private ReservationDTO toDto(Reservation r) {
+        return ReservationDTO.builder()
+                .accommodationId(r.getRoom().getAccommodation().getAccommodationId())
+                .accommodationName(r.getRoom().getAccommodation().getName())
+                .reservationNumber(r.getReservationNumber())
+                .reservationId(r.getReservationId())
+                .roomName(r.getRoom().getName())
+                .discountAmount(r.getDiscountAmount())
+                .price(r.getPrice())
+                .originalPrice(r.getPrice())
+                .cancelReason(r.getCancelReason())
+                .checkInDate(r.getCheckInDate())
+                .checkOutDate(r.getCheckOutDate())
+                .guestName(r.getGuestName())
+                .guestPhone(r.getGuestPhone())
+                .guestCount(r.getGuestCount())
+                .price(r.getPrice())
+                .specialRequest(r.getSpecialRequest())
+                .status(r.getStatus())
+                .build();
+
+    }
+
+    private Reservation toEntity(ReservationDTO d){
+        return Reservation.builder()
+                .accommodation(accommodationRepository.getReferenceById(d.getAccommodationId()))
+                .user(userRepository.getReferenceById(d.getUserId()))
+                .room(roomRepository.getReferenceById(d.getRoomId()))
+                .price(d.getPrice())
+                .originalPrice(d.getOriginalPrice())
+                .discountAmount(d.getDiscountAmount())
+                .accommodationName(d.getAccommodationName())
+                .roomName(d.getRoomName())
+                .cancelReason(d.getCancelReason())
+                .checkInDate(d.getCheckInDate())
+                .checkOutDate(d.getCheckOutDate())
+                .guestName(d.getGuestName())
+                .guestPhone(d.getGuestPhone())
+                .guestCount(d.getGuestCount())
+                .price(d.getPrice())
+                .specialRequest(d.getSpecialRequest())
+                .status(d.getStatus())
+                .build();
+    }
+
     @Override
     @Transactional(readOnly = true)
     public long countAll() {
@@ -257,7 +301,7 @@ public class ReservationServiceImpl implements ReservationService {
         Page<Reservation> page = reservationRepository.findCompanyReservations(companyId, st , q, pageable);
 
         List<ReservationDTO> dtoList = page.getContent().stream()
-                .map(r -> modelMapper.map(r, ReservationDTO.class))
+                .map(this::toDto)
                 .toList();
 
         return PageResponseDTO.<ReservationDTO>withALl()

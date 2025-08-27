@@ -1,17 +1,18 @@
 package com.honeyrest.honeyrest_host.dto;
+import com.honeyrest.honeyrest_host.entity.Room;
+import lombok.*;
 
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class RoomImageDTO {
-    private String image;
-    private Long roomId;
+
+    private Long roomId;       // FK
+    private String imageUrl;   // 업로드 후 저장된 URL
+    private Integer sortOrder; // 정렬 순서
+    private String imageType;  // MAIN,SUB
 }
+
+

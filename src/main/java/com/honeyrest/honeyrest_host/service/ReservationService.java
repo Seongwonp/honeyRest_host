@@ -16,7 +16,7 @@ public interface ReservationService {
     ReservationDTO getReservationByNumber(String number);
 
     // 예약 id로 조회
-    Reservation getReservationById(Long reservationId);
+    ReservationDTO getReservationById(Long reservationId);
 
     // 예약 변경
     Reservation updateReservation(ReservationDTO reservationDTO);

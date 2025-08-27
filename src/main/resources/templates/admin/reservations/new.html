@@ -34,8 +34,9 @@
                         <div class="col-md-4">
                             <label class="form-label">상태</label>
                             <select class="form-select" th:field="*{status}">
-                                <option th:each="st : ${T(com.honeyrest.honeyrest_host.entity.enums.ReservationStatus).values()}"
-                                        th:value="${st}" th:text="${st}">CONFIRMED</option>
+                                <option value="">선택</option>
+                                <option th:each="st : ${reservationStatuses}"
+                                        th:value="${st}" th:text="${st}"></option>
                             </select>
                         </div>
 

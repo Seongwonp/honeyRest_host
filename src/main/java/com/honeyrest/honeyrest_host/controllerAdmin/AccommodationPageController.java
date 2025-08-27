@@ -1,21 +1,19 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
+import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dto.CompanyDTO;
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationImageDTO;
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationListDTO;
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationUpdateRequestDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.*;
 import com.honeyrest.honeyrest_host.entity.AccommodationTag;
 import com.honeyrest.honeyrest_host.entity.Region;
-import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
-import com.honeyrest.honeyrest_host.repository.UserRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationCategoryRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationTagRepository;
-import com.honeyrest.honeyrest_host.service.AccommodationImageService;
-import com.honeyrest.honeyrest_host.service.AccommodationService;
+import com.honeyrest.honeyrest_host.service.accommodation.AccommodationImageService;
+import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import com.honeyrest.honeyrest_host.service.CompanyService;
+import com.honeyrest.honeyrest_host.service.UserService;
+import com.honeyrest.honeyrest_host.service.accommodation.AccommodationTagService;
 import com.honeyrest.honeyrest_host.util.FileUploadUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +34,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 
 @Log4j2
 @Controller
@@ -45,26 +43,29 @@ import java.util.stream.Collectors;
 public class AccommodationPageController {
 
     private final AccommodationService accommodationService;
-    private final AccommodationCategoryRepository accommodationCategoryRepository;
     private final AccommodationImageService accommodationImageService;
+    private final CompanyService companyService;
+    private final FileUploadUtil fileUploadUtil;
+    private final UserService userService;
+    private final AccommodationTagService accommodationTagService;
+
+
+    private final AccommodationCategoryRepository accommodationCategoryRepository;
     private final AccommodationTagRepository accommodationTagRepository;
     private final RegionRepository regionRepository;
-    private final CompanyService companyService;
-    private final UserRepository userRepository;
-    private final FileUploadUtil fileUploadUtil;
 
-
-    /**
+    /*
      * 등록 화면
      */
     @GetMapping("/add")
     public String addPage(Model model) {
         model.addAttribute("mainRegions", regionRepository.findByLevel(1));
         model.addAttribute("form", new AccommodationCreateRequestDTO());
+        model.addAttribute("tagsByCategory", accommodationTagService.findAllGroupedByCategory());
         return "admin/accommodations/add";
     }
 
-    /**
+    /*
      * 등록 제출 (승인상태는 서비스에서 PENDING 으로 고정됨)
      */
     @PostMapping("/add")
@@ -73,8 +74,11 @@ public class AccommodationPageController {
                             RedirectAttributes ra) {
         if (binding.hasErrors()) {
             binding.getAllErrors().forEach(err -> log.warn("bind err: {}", err));
+            accommodationTagService.findAll();
+
             // 화면 다시 그릴 때 필요한 데이터 다시 주입
             model.addAttribute("mainRegions", regionRepository.findByLevel(1));
+            model.addAttribute("tagsByCategory",accommodationTagService.findAllGroupedByCategory());
             return "admin/accommodations/add"; // redirect 대신 포워드
         }
 
@@ -134,7 +138,7 @@ public class AccommodationPageController {
 
     }
 
-    /**
+    /*
      * 내 명의(회사)의 숙소 목록 가져오기
      */
     @GetMapping("/list")
@@ -161,11 +165,10 @@ public class AccommodationPageController {
         }
 
         // 3) 관리자/유저 검증
-        var adminOpt = userRepository.findByEmail(email);
-        if (adminOpt.isEmpty()) {
+        AdminLoginRequestDTO admin = userService.getUserByEmail(email);
+        if (admin == null) {
             return "redirect:/admin/auth/login";
         }
-        var admin = adminOpt.get();
 
         // 4) 이메일 -> 회사 DTO (null 방지)
         CompanyDTO companyDTO = companyService.getByUserEmail(admin.getEmail());
@@ -204,8 +207,8 @@ public class AccommodationPageController {
         return "admin/accommodations/detail";
     }
 
-    /**
-     * ✅ 총관리자에게 승인요청 (DRAFT/REJECTED → PENDING)
+    /*
+     *  총관리자에게 승인요청 (DRAFT/REJECTED → PENDING)
      */
     @PostMapping("/{id}/request")
     public String requestApproval(@PathVariable Long id,
@@ -214,7 +217,7 @@ public class AccommodationPageController {
         return "redirect:/admin/accommodations/list?status=PENDING";
     }
 
-    /**
+    /*
      * (선택) 다건 승인요청
      */
     @PostMapping("/request")
@@ -236,7 +239,7 @@ public class AccommodationPageController {
     }
 
 
-    /**
+    /*
      * 수정 폼 (GET)
      */
     @GetMapping("/edit/{id}")
@@ -292,7 +295,7 @@ public class AccommodationPageController {
         return "admin/accommodations/edit"; // edit.html
     }
 
-    /**
+    /*
      * 수정 제출
      */
     @PostMapping("/edit/{id}")

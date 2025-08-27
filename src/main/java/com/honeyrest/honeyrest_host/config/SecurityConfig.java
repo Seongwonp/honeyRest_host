@@ -94,8 +94,7 @@ public class SecurityConfig {
                             log.info("==============3========");
                             // 필요하면 DB에서 user 조회하여 id/role 꺼내세요 (email->user)
                             // 2) DB에서 사용자 조회
-                            var user = userRepository.findByEmail(email)
-                                    .orElseThrow(() -> new RuntimeException("User not found: " + email));
+                            var user = userRepository.findByEmail(email);
                             log.info("==============4========");
 
                             // 간단히 role은 GrantedAuthority에서 읽어도 됨: auth.getAuthorities()

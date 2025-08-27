@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <meta charset="UTF-8">
+    <title>결제 수단</title>
+    <th:block layout:fragment="head">
+    </th:block>
+</head>
+
+<body>
+<th:block layout:fragment="content">
+    <table class="table">
+        <thead>
+        <tr>
+            <th>ID</th><th>예약번호</th><th>고객</th><th>숙소/객실</th>
+            <th class="text-end">금액</th><th>수단</th><th>상태</th><th>결제일시</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="p : ${items}">
+            <td th:text="${p.paymentId}">1</td>
+            <td th:text="${p.reservationNumber}">HR-123</td>
+            <td th:text="${p.guestName}">홍길동</td>
+            <td>
+                <div th:text="${p.accommodationName}">숙소</div>
+                <div class="text-muted small" th:text="${p.roomName}">객실</div>
+            </td>
+            <td class="text-end"
+                th:classappend="${p.amount.signum() < 0} ? 'text-danger' : ''"
+                th:text="${#numbers.formatDecimal(p.amount, 0, 'COMMA', 0, 'POINT')}">0</td>
+            <td th:text="${p.paymentMethod}">CARD</td>
+            <td>
+        <span th:text="${p.paymentStatus}"
+              th:classappend="${p.paymentStatus}=='REFUNDED' ? 'badge bg-secondary' : 'badge bg-success'">
+        </span>
+            </td>
+            <td th:text="${#temporals.format(p.paymentDate, 'yyyy-MM-dd HH:mm')}">-</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(items)}">
+            <td colspan="8" class="text-center text-muted py-5">결제 내역이 없습니다.</td>
+        </tr>
+        </tbody>
+    </table>
+</th:block>
+
+</body>
+</html>

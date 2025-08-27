@@ -1,12 +1,13 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
-import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
-import com.honeyrest.honeyrest_host.dto.ReservationDTO;
-import com.honeyrest.honeyrest_host.service.ReservationService;
+import com.honeyrest.honeyrest_host.dto.*;
+import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
+import com.honeyrest.honeyrest_host.service.*;
+import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,10 @@ import java.util.List;
 public class ReservationPageController {
 
     private final ReservationService reservationService;
+    private final UserService userService;
+    private final CompanyService companyService;
+    private final AccommodationService accommodationService;
+    private final RoomService roomService;
 
 
     /** 예약 목록 페이지 + 조회 */
@@ -31,7 +36,8 @@ public class ReservationPageController {
                        @RequestParam(defaultValue = "10") int size,
                        Model model) {
 
-       List<String> statues = List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED", "NO_SHOW");
+
+        model.addAttribute("reservationStatuses", List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED", "NO_SHOW"));
 
         PageRequestDTO pr = PageRequestDTO.builder()
                 .page(page)
@@ -133,10 +139,24 @@ public class ReservationPageController {
 
     /** 신규 예약 폼 */
     @GetMapping("/new")
-    public String newReservation(@RequestParam Long roomId, Model model) {
+    public String newReservation(Authentication authentication, Model model) {
+
+        String email = (authentication.getPrincipal() instanceof String s) ? s : authentication.getName();
+
+        AdminLoginRequestDTO admin = userService.getUserByEmail(email);
+        CompanyDTO companyDTO = companyService.getByUserEmail(admin.getEmail());
+        Long companyId = companyDTO.getCompanyId();
+        AccommodationCreateRequestDTO accDto = accommodationService.getById(companyId);
+        Long accommodationId = accDto.getAccommodationId();
+        RoomDTO roomDTO = roomService.getByRoomId(accommodationId);
+        Long roomId = roomDTO.getRoomId();
         ReservationDTO form = new ReservationDTO();
-        form.setRoomId(roomId);
         model.addAttribute("form", form);
+        model.addAttribute("roomId", roomId); // 위에 꺼를 html 로 넘기기 위해 model 로 넘겨주어야 함.
+        model.addAttribute("accommodations", accommodationService.getAllById(companyId));
+        model.addAttribute("rooms", roomService.findAllByCompanyId(companyId));
+
+
         return "admin/reservations/new";
     }
 

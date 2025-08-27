@@ -26,9 +26,9 @@ public class AdminAuthService {
     /** 관리자 가입 */
     public Long adminSignup(AdminSignupRequestDTO request) {
         // 이메일 중복 체크
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
-        }
+//        if (userRepository.findByEmail(request.getEmail())) {
+//            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+//        }
 
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new IllegalArgumentException("비밀번호는 필수입니다.");
@@ -67,8 +67,7 @@ public class AdminAuthService {
         // 이메일 정규화(권장)
         String email = request.getEmail().trim().toLowerCase();
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
+        User user = userRepository.findByEmail(email);
 
         //  status: String 비교
         if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {

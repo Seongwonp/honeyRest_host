@@ -1,4 +1,4 @@
-package com.honeyrest.honeyrest_host.service;
+package com.honeyrest.honeyrest_host.service.accommodation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,7 +15,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -59,6 +58,26 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     /* ---------------------- 매핑: Entity -> Response ---------------------- */
+
+    private AccommodationCreateRequestDTO toDto(Accommodation a) {
+        return AccommodationCreateRequestDTO.builder()
+                .accommodationId(a.getAccommodationId())
+                .name(a.getName())
+                .companyId(a.getCompany().getCompanyId())
+                .mainRegionId(a.getMainRegion().getRegionId())
+                .subRegionId(a.getSubRegion().getRegionId())
+                .categoryId(a.getCategory().getCategoryId())
+                .address(a.getAddress())
+                .description(a.getDescription())
+                .amenities(a.getAmenities())
+                .checkInTime(a.getCheckInTime())
+                .checkOutTime(a.getCheckOutTime())
+                .status(a.getStatus())
+                .minPrice(a.getMinPrice())
+                .build();
+
+    }
+
     private AccommodationCreateRequestDTO toResponse(
             Accommodation e,
             List<AccommodationImage> images,
@@ -96,7 +115,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                         tagMaps == null ? List.of() : tagMaps.stream().map(m ->
                                 {
                                     AccommodationTag t = m.getTag();
-                                    return AccommodationTagMapDTO.builder()
+                                    return AccommodationTagDTO.builder()
                                             .tagId(t.getTagId())
                                             .name(t.getName()).category(t.getCategory())
                                             .build();
@@ -104,6 +123,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                                 .toList())
                 .build();
     }
+
     // 등록/수정 폼에 바인딩할 때 쓰는 DTO
     private AccommodationCreateRequestDTO toCreateFormDTO(Accommodation e) {
         String thumb = accommodationImageRepository
@@ -159,7 +179,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     private List<AccommodationTagMap> findTagMaps(Long accId) {
-        return accommodationTagMapRepository.findByAccommodationAccommodationId(accId);
+        return accommodationTagMapRepository.findByAccommodation_AccommodationId(accId);
     }
 
     /* ---------------------- 서비스 구현 ---------------------- */
@@ -168,6 +188,12 @@ public class AccommodationServiceImpl implements AccommodationService {
         return accommodationRepository.findAll().stream()
                 .map(e -> toResponse(e, List.of(), List.of()))
                 .toList();
+    }
+
+    @Override
+    public List<AccommodationCreateRequestDTO> getAllById(Long companyId) {
+        return accommodationRepository.findAllByCompany_CompanyId(companyId).stream().map(this::toDto).toList();
+
     }
 
     @Override
@@ -235,6 +261,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         return getById(saved.getAccommodationId()); // 이미지/태그 포함 응답
     }
+
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<AccommodationListDTO> findByManagerEmail(String email, Pageable pageable) {
         Long companyId = companyRepository.findByEmail(email)
@@ -291,7 +318,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
 
         if (req.getTagIds() != null) {
-            accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
+            accommodationTagMapRepository.deleteByAccommodation_AccommodationId(id);
             Accommodation accRef = accommodationRepository.getReferenceById(id);
             for (Long tagId : req.getTagIds()) {
                 AccommodationTag tagRef = accommodationTagRepository.getReferenceById(tagId);
@@ -312,7 +339,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     public void delete(Long id) {
         // 연관 데이터 먼저 삭제
         accommodationImageRepository.deleteByAccommodation_AccommodationId(id);
-        accommodationTagMapRepository.deleteByAccommodationAccommodationId(id);
+        accommodationTagMapRepository.deleteByAccommodation_AccommodationId(id);
         // 마지막에 본체 삭제
         accommodationRepository.deleteById(id);
     }
@@ -392,7 +419,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Override
     public Page<AccommodationListDTO> findByCategoryIdAndStatus(Long companyId, String status, Pageable pageable) {
-        return accommodationRepository.findByCompany_CompanyIdAndStatus(companyId, status,pageable)
+        return accommodationRepository.findByCompany_CompanyIdAndStatus(companyId, status, pageable)
                 .map(this::toListDTOWithThumbnail);
     }
 

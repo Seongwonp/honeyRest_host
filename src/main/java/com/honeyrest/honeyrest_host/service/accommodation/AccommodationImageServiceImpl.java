@@ -1,7 +1,6 @@
-package com.honeyrest.honeyrest_host.service;
+package com.honeyrest.honeyrest_host.service.accommodation;
 
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationImageDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationImage;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationImageRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
@@ -9,7 +8,6 @@ import com.honeyrest.honeyrest_host.util.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;

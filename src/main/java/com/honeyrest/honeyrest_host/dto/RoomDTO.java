@@ -25,16 +25,18 @@ public class RoomDTO {
     private String accommodationName; // 숙소명
 
     private String type; // Standard, Deluxe...
-    private BigDecimal price;            // @NotNull 붙여도 OK (선택)
-    private Integer maxOccupancy;        // @NotNull 붙여도 OK (선택)
-    private Integer standardOccupancy;
-    private BigDecimal extraPersonFee;
+    private BigDecimal price;            // 객실 기본 요금
+    private Integer maxOccupancy;        // 최대 수용 인원
+    private Integer standardOccupancy; // 기존 인원
+    private BigDecimal extraPersonFee; // 추가 인원 요금
     private String bedInfo; // JSON String
     private String amenities; // JSON String
-    private String description;
-    private Integer totalRooms;
+    private String description; // 설명
+    private Integer totalRooms; // 총객실수
     private String status; // ACTIVE / INACTIVE
 
-    private MultipartFile image;
+    private MultipartFile file;
+
+
 
 }

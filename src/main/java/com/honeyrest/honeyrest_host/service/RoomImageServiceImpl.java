@@ -17,7 +17,7 @@ public class RoomImageServiceImpl implements RoomImageService {
 
     private RoomImage roomImageEntity(RoomImageDTO roomImageDTO) {
         return RoomImage.builder()
-                .imageUrl(roomImageDTO.getImage())
+                .imageUrl(roomImageDTO.getImageUrl())
                 .build();
     }
 

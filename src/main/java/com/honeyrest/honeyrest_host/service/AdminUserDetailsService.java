@@ -16,8 +16,8 @@ public class AdminUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User u = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("not found: " + email));
+        User u = userRepository.findByEmail(email);
+
 
         // 비활성/권한 체크는 Provider/Handler에서 추가로 해도 됨
         return org.springframework.security.core.userdetails.User

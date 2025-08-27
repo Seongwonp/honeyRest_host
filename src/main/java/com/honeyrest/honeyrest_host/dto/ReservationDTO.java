@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.dto;
 
 
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -45,7 +46,12 @@ public class ReservationDTO {
     private String guestPhone; // 예약자 연락처
 
 
-    private BigDecimal price; // 예약 금액
+
+    private BigDecimal price; // 최종 결제 금액
+
+    private BigDecimal originalPrice; // 할인 전 원가
+
+    private BigDecimal discountAmount; // 총 할인 금액
 
 
     private String status; // 예약 상태(예약, 취소, 체크인, 체크아웃 등)

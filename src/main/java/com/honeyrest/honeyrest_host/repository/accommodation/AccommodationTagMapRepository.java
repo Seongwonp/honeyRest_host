@@ -9,10 +9,10 @@ import java.util.List;
 
 public interface AccommodationTagMapRepository extends JpaRepository<AccommodationTagMap, Long> {
     // 조회
-    List<AccommodationTagMap> findByAccommodationAccommodationId(Long accId);
+    List<AccommodationTagMap> findByAccommodation_AccommodationId(Long accId);
 
     // 삭제 (대량 삭제 시 성능/영속성 컨텍스트 동기화)
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
-    void deleteByAccommodationAccommodationId(Long accId);
+    void deleteByAccommodation_AccommodationId(Long accId);
 }

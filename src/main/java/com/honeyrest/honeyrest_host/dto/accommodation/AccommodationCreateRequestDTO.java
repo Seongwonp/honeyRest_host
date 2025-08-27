@@ -1,8 +1,6 @@
 package com.honeyrest.honeyrest_host.dto.accommodation;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.honeyrest.honeyrest_host.entity.Room;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -89,7 +87,7 @@ public class AccommodationCreateRequestDTO {
     private MultipartFile file;
 
     // 부가
-    private List<AccommodationTagMapDTO> tags;
+    private List<AccommodationTagDTO> tags;
 
 
 }

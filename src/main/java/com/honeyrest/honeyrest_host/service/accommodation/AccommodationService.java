@@ -1,4 +1,4 @@
-package com.honeyrest.honeyrest_host.service;
+package com.honeyrest.honeyrest_host.service.accommodation;
 
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationListDTO;
@@ -11,6 +11,8 @@ import java.util.List;
 public interface AccommodationService {
     // 목록
     List<AccommodationCreateRequestDTO> getAll();
+
+    List<AccommodationCreateRequestDTO> getAllById(Long companyId);
 
     // id 조회
     AccommodationCreateRequestDTO getById(Long id);

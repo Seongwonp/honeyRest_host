@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCategoryDTO;
-import com.honeyrest.honeyrest_host.service.AccommodationCategoryService;
+import com.honeyrest.honeyrest_host.service.accommodation.AccommodationCategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

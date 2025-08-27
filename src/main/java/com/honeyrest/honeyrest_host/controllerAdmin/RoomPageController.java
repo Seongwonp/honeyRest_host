@@ -1,18 +1,19 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
+import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
+import com.honeyrest.honeyrest_host.dto.CompanyDTO;
 import com.honeyrest.honeyrest_host.dto.RoomDTO;
 import com.honeyrest.honeyrest_host.dto.RoomImageDTO;
 import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
-import com.honeyrest.honeyrest_host.service.RoomImageService;
-import com.honeyrest.honeyrest_host.service.RoomService;
+import com.honeyrest.honeyrest_host.service.*;
+import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import com.honeyrest.honeyrest_host.util.FileUploadUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -39,6 +40,9 @@ public class RoomPageController {
     private final FileUploadUtil fileUploadUtil;
     private final RoomImageService roomImageService;
     private final CompanyRepository companyRepository;
+    private final AccommodationService accommodationService;
+    private final CompanyService companyService;
+    private final UserService userService;
 
 
     /**
@@ -54,15 +58,15 @@ public class RoomPageController {
                 : authentication.getName());
 
         // 2) 이메일 -> companyId
-        Long companyId = companyRepository.findByEmail(email).map(Company::getCompanyId).orElseThrow(() -> new UsernameNotFoundException("업체 관리자 이메일에 해당하는 회사가 없습니다."));
+        Long companyId = companyService.getByUserEmail(email).getCompanyId();
 
         // 3) '내' 회사 객실만 페이징 조회
-        Page<RoomDTO> page = roomService.findPageByCompany(companyId,null, pageable);
+        Page<RoomDTO> page = roomService.findPageByCompany(companyId, null, pageable);
         // 4) 숙소명으로 그룹핑
         Map<String, List<RoomDTO>> groups = page.getContent().stream()
                 .collect(java.util.stream.Collectors.groupingBy(
-                       r -> (r.getAccommodationName() == null || r.getAccommodationName().isBlank())
-                        ? "(숙소 미지정)" : r.getAccommodationName(),
+                        r -> (r.getAccommodationName() == null || r.getAccommodationName().isBlank())
+                                ? "(숙소 미지정)" : r.getAccommodationName(),
                         java.util.LinkedHashMap::new,
                         java.util.stream.Collectors.toList()
                 ));
@@ -123,12 +127,20 @@ public class RoomPageController {
      * 등록 폼
      */
     @GetMapping("/add")
-    public String addForm(@RequestParam(value = "accommodationId", required = false) Long accommodationId,
+    public String addForm(Authentication authentication, @RequestParam(value = "accommodationId", required = false) Long accommodationId,
+                          Pageable pageable,
                           Model model) {
+
+        String email = (authentication.getPrincipal() instanceof String s) ? s : authentication.getName();
+
+        AdminLoginRequestDTO admin = userService.getUserByEmail(email);
+        CompanyDTO companyDTO = companyService.getByUserEmail(admin.getEmail());
+        Long companyId = companyDTO.getCompanyId();
+
         RoomDTO form = new RoomDTO();
         form.setAccommodationId(accommodationId);
         model.addAttribute("form", form);
-        model.addAttribute("accommodations", accommodationRepository.findAll());
+        model.addAttribute("accommodations", accommodationService.getAllById(companyId));
         return "admin/rooms/add";
     }
 
@@ -147,7 +159,7 @@ public class RoomPageController {
         }
         RoomDTO saved = roomService.registerRoom(form);
         ra.addFlashAttribute("msg", "객실이 등록되었습니다.");
-        // ✅ 숙소별 목록으로 리다이렉트
+        // 숙소별 목록으로 리다이렉트
         return "redirect:/admin/rooms/list/by-accommodation?accommodationId=" + saved.getAccommodationId();
     }
 
@@ -172,7 +184,7 @@ public class RoomPageController {
             return "admin/rooms/edit";
         }
         // 이미지 업로드
-        String image = fileUploadUtil.upload(form.getImage(), "room");
+        String image = fileUploadUtil.upload(form.getFile(), "room");
 
         if (binding.hasErrors()) {
             model.addAttribute("accommodations", accommodationRepository.findAll());
@@ -185,14 +197,14 @@ public class RoomPageController {
 
         // 이미지 저장(필요시에)
         RoomImageDTO roomImageDTO = RoomImageDTO.builder()
-                .image(image)
+                .imageUrl(image)
                 .roomId(roomId)
                 .build();
         roomImageService.registerRoomImage(roomImageDTO);
         // 알림용 플래시 메시지
         ra.addFlashAttribute("msg", "객실이 수정되었습니다.");
 
-        // ✅ 전체 객실 목록으로 이동
+        // 전체 객실 목록으로 이동
         return "redirect:/admin/rooms/list_all";
 //        return "redirect:/admin/rooms/list?accommodationId=" + form.getAccommodationId();
     }

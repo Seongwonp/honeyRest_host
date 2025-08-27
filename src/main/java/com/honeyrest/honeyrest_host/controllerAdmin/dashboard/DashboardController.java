@@ -5,6 +5,7 @@ import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.ReservationRepository;
 import com.honeyrest.honeyrest_host.repository.UserRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
+import com.honeyrest.honeyrest_host.service.UserService;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.log4j.Log4j2;
@@ -26,16 +27,14 @@ public class DashboardController {
     private final AccommodationRepository accommodationRepository;
     private final ReservationRepository reservationRepository;
     private final CompanyRepository companyRepository;
+    private final UserService userService;
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
-        if (authentication == null) {
-            return "redirect:/admin/auth/login";
-        }
 
         String email = (authentication.getPrincipal() instanceof String s) ? s : authentication.getName();
 
-        var admin = userRepository.findByEmail(email).orElse(null);
+        var admin = userService.getUserByEmail(email);
         if (admin == null) return "redirect:/admin/auth/login";
 
         long accCount;
