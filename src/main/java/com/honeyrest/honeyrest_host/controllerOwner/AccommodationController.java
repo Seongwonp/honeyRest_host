@@ -2,15 +2,13 @@ package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.honeyrest.honeyrest_host.config.FileUploadUtil;
-import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.AccommodationImageDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
+import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.service.AccommodationCategory;
 import com.honeyrest.honeyrest_host.service.AccommodationService;
 import com.honeyrest.honeyrest_host.service.CompanyService;
 import com.honeyrest.honeyrest_host.service.RegionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +19,7 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/owner")
+@Log4j2
 public class AccommodationController {
 
     private final AccommodationService accommodationService;
@@ -29,30 +28,27 @@ public class AccommodationController {
     private final RegionService regionService;
     private final FileUploadUtil fileUploadUtil;
 
-    @GetMapping("/company/{companyId}/accommodations")
-    public String accommodationsByCompany(@PathVariable Long companyId, Model model) {
-        List<CompanyDTO> companies = companyService.getAllCompanies();
-        List<AccommodationDTO> accommodations;
+    @GetMapping({"/accommodation/list", "/company/{companyId}/accommodations"})
+    public String accommodations(@PathVariable(required = false) Long companyId,
+                                 @ModelAttribute PageRequestDTO pageRequestDTO,
+                                 Model model) {
 
-        if (companyId != null) {
-            accommodations = accommodationService.getAccommodationsByCompanyId(companyId);
-            model.addAttribute("company", companyService.getCompany(companyId));
-        } else {
-            accommodations = accommodationService.getAllAccommodations();
-        }
-        model.addAttribute("companyId", companyId);
-        model.addAttribute("companies", companies);
-        model.addAttribute("accommodations", accommodations);
+        // 기본 페이지 처리
+        if (pageRequestDTO.getPage() <= 0) pageRequestDTO.setPage(1);
+        if (pageRequestDTO.getSize() <= 0) pageRequestDTO.setSize(10);
 
-        return "owner/accommodation/list";
-    }
-    @GetMapping("/accommodation/list")
-    public String accommodations(Model model) {
-        model.addAttribute("companyId", 0);
+        PageResponseDTO<AccommodationDTO> responseDTO =
+                accommodationService.getAccommodationsWithPageable(companyId, pageRequestDTO);
+
+        model.addAttribute("companyId", companyId != null ? companyId : 0);
         model.addAttribute("companies", companyService.getAllCompanies());
-        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+        model.addAttribute("company", companyId != null ? companyService.getCompany(companyId) : null);
+        model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("accommodations", responseDTO.getDtoList());
+
         return "owner/accommodation/list";
     }
+
 
     @GetMapping("/accommodation/create")
     public String createAccommodation(@RequestParam Long companyId, Model model) {
@@ -80,22 +76,8 @@ public class AccommodationController {
                     .sortOrder(0)
                     .build();
             accommodationService.registerAccommodationImage(accommodationImageDTO);
-            MultipartFile[] images = accommodationDTO.getImages();
-            if (images != null && images.length > 0) {
-                int sortOrder = 1; // MAIN 이미지 다음부터
-                for (MultipartFile img : images) {
-                    if (!img.isEmpty()) {
-                        String subImageUrl = fileUploadUtil.upload(img, "accommodation");
-                        AccommodationImageDTO dto = AccommodationImageDTO.builder()
-                                .imageUrl(subImageUrl)
-                                .accommodationId(accommodationId)
-                                .imageType("SUB") // 보조 이미지
-                                .sortOrder(sortOrder++)
-                                .build();
-                        accommodationService.registerAccommodationImage(dto);
-                    }
-                }
-            }
+            List<MultipartFile> images = accommodationDTO.getImages();
+            accommodationService.updateSubImages(accommodationId, images);
 
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
@@ -108,6 +90,7 @@ public class AccommodationController {
     public String modifyAccommodation(@PathVariable Long accommodationId, Model model) {
         model.addAttribute("accommodationId", accommodationId);
         model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
+        model.addAttribute("accommodationImages", accommodationService.getImagesByAccommodationId(accommodationId));
         model.addAttribute("companies", companyService.getAllCompanies());
         model.addAttribute("categories", accommodationCategory.getAllAccommodationCategory());
         model.addAttribute("regions", regionService.getAllRegions());
@@ -115,8 +98,11 @@ public class AccommodationController {
     }
 
     @PostMapping("/accommodation/modify")
-    public String modifyAccommodation(@ModelAttribute AccommodationDTO dto) throws JsonProcessingException {
+    public String modifyAccommodation(@ModelAttribute AccommodationDTO dto) throws Exception {
         accommodationService.modifyAccommodation(dto);
+        Long accommodationId = dto.getAccommodationId();
+        List<MultipartFile> images = dto.getImages();
+        accommodationService.updateSubImages(accommodationId, images);
         return "redirect:/owner/accommodation/list";
     }
 

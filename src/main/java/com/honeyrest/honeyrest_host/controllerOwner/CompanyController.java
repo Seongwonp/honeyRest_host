@@ -1,6 +1,8 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.service.CompanyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -14,10 +16,18 @@ public class CompanyController {
     private final CompanyService companyService;
 
     @GetMapping("/company/list")
-    public String company(Model model) {
-        model.addAttribute("companies", companyService.getAllCompanies());
+    public String companyList(@ModelAttribute PageRequestDTO pageRequestDTO, Model model) {
+        if (pageRequestDTO.getPage() <= 0) pageRequestDTO.setPage(1);
+        if (pageRequestDTO.getSize() <= 0) pageRequestDTO.setSize(10);
+
+        PageResponseDTO<CompanyDTO> responseDTO = companyService.getCompaniesWithPage(pageRequestDTO);
+
+        model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("companies", responseDTO.getDtoList());
+
         return "owner/company/list";
     }
+
 
     @GetMapping("/company/create")
     public String createCompany(Model model) {

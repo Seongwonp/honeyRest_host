@@ -12,11 +12,37 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <h3>업체 리스트</h3>
-        <p class="text-subtitle text-muted">관리자용 숙소 및 예약 현황</p>
+        <h3>캘린더</h3>
     </div>
-    <div>
-        <a th:href="@{/owner/company/create}" class="btn btn-primary">업체 등록</a>
+    <div class="card p-4 mb-4 shadow-sm">
+        <form method="get" action="/owner/sales/day" class="row g-3 align-items-end" id="searchForm">
+            <!--            <div class="col-auto">-->
+            <!--                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>-->
+            <!--                <input type="date" name="startDate" class="form-control">-->
+            <!--            </div>-->
+            <!--            <div class="col-auto">-->
+            <!--                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>-->
+            <!--                <input type="date" name="endDate" class="form-control">-->
+            <!--            </div>-->
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
+                <select name="companyName" class="form-select" id="companySelect">
+                    <option value="">전체</option>
+                    <!-- 회사 목록은 JS로 채움 -->
+                </select>
+            </div>
+
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
+                <select name="accommodationName" class="form-select" id="accommodationSelect">
+                    <option value="">전체</option>
+                    <!-- 선택한 회사의 숙소 목록만 JS로 채움 -->
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+            </div>
+        </form>
     </div>
     <div class="page-content">
         <section class="section">
@@ -58,6 +84,27 @@
                 </div>
             </div>
         </section>
+    </div>
+    <div class="pagination mt-3">
+        <ul class="pagination">
+            <li class="page-item" th:if="${responseDTO.prev}">
+                <a class="page-link"
+                   th:href="@{/owner/company/list(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size})}">이전</a>
+            </li>
+
+            <li class="page-item"
+                th:each="num : ${responseDTO.pageNumList}"
+                th:classappend="${num == responseDTO.current} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/owner/company/list(page=${num}, size=${responseDTO.pageRequestDTO.size})}"
+                   th:text="${num}"></a>
+            </li>
+
+            <li class="page-item" th:if="${responseDTO.next}">
+                <a class="page-link"
+                   th:href="@{/owner/company/list(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size})}">다음</a>
+            </li>
+        </ul>
     </div>
 </th:block>
 </body>

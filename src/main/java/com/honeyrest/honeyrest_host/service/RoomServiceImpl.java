@@ -4,14 +4,22 @@ import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.RoomImageDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Room;
+import com.honeyrest.honeyrest_host.entity.RoomImage;
 import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
+import com.honeyrest.honeyrest_host.repository.RoomImageRepository;
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -24,6 +32,7 @@ public class RoomServiceImpl implements RoomService{
     private final RoomRepository roomRepository;
     private final AccommodationRepository accommodationRepository;
     private final ObjectMapper objectMapper;
+    private final RoomImageRepository roomImageRepository;
 
     private String parseJson(String input) {
         if (input == null || input.isBlank()) return "[]";
@@ -102,6 +111,15 @@ public class RoomServiceImpl implements RoomService{
                 .build();
     }
 
+    private RoomImage toRoomImageEntity(RoomImageDTO d) {
+        return RoomImage.builder()
+                .imageId(d.getImageId())
+                .imageUrl(d.getImageUrl())
+                .sortOrder(d.getSortOrder())
+                .room(roomRepository.getReferenceById(d.getRoomId()))
+                .build();
+    }
+
     @Override
     public List<RoomDTO> getAllRooms() {
         return roomRepository.findAll().stream().map(this::toDTO).toList();
@@ -121,11 +139,12 @@ public class RoomServiceImpl implements RoomService{
     }
 
     @Override
-    public void registerRoom(RoomDTO dto) {
+    public Long registerRoom(RoomDTO dto) {
         Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
                 .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
         dto.setAccommodationId(acc.getAccommodationId());
-        roomRepository.save(toEntity(dto));
+        return roomRepository.save(toEntity(dto)).getRoomId();
+
     }
 
     @Override
@@ -140,5 +159,35 @@ public class RoomServiceImpl implements RoomService{
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("객실이 존재하지 않습니다."));
         roomRepository.delete(room); // RoomImage는 orphanRemoval=true로 함께 삭제
+    }
+
+    @Override
+    public PageResponseDTO<RoomDTO> getRoomsByAccommodationIdWithPageable(Long accommodationId, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("roomId").descending());
+
+        Page<Room> page;
+        if (accommodationId != null && accommodationId > 0) {
+            page = roomRepository.findByAccommodation_AccommodationId(accommodationId, pageable);
+        } else {
+            page = roomRepository.findAll(pageable);
+        }
+
+        List<RoomDTO> list = page.getContent().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+
+        long total = page.getTotalElements();
+
+        return PageResponseDTO.<RoomDTO>withAll()
+                .dtoList(list)
+                .pageRequestDTO(pageRequestDTO)
+                .totalCount(total)
+                .build();
+    }
+
+    @Override
+    public void updateRoomImage(RoomImageDTO dto){
+        roomImageRepository.save(toRoomImageEntity(dto));
     }
 }

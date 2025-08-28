@@ -17,44 +17,44 @@
             <input type="hidden" id="reservationId" name="reservationId" th:value="${reservation.reservationId}">
 
             <!-- 사용자 ID -->
-            <div class="mb-3">
-                <label for="userId" class="form-label">사용자 ID</label>
-                <input type="number" name="userId" id="userId" class="form-control" required
-                       th:value="${reservation.userId}" readonly>
-            </div>
+<!--            <div class="mb-3">-->
+<!--                <label for="userId" class="form-label">사용자 ID</label>-->
+<!--                <input type="number" name="userId" id="userId" class="form-control" required-->
+<!--                       th:value="${reservation.userId}" readonly>-->
+<!--            </div>-->
 
             <!-- 숙소 ID -->
-            <div class="mb-3">
-                <label for="accommodationId" class="form-label">숙소 ID</label>
-                <input type="number" name="accommodationId" id="accommodationId" class="form-control" required
-                       th:value="${reservation.accommodationId}" readonly>
-            </div>
+<!--            <div class="mb-3">-->
+<!--                <label for="accommodationId" class="form-label">숙소 ID</label>-->
+<!--                <input type="number" name="accommodationId" id="accommodationId" class="form-control" required-->
+<!--                       th:value="${reservation.accommodationId}">-->
+<!--            </div>-->
 
             <!-- 숙소명 -->
             <div class="mb-3">
                 <label for="accommodationName" class="form-label">숙소명</label>
                 <input type="text" name="accommodationName" id="accommodationName" class="form-control" required
-                       th:value="${reservation.accommodationName}" readonly>
+                       th:value="${reservation.accommodationName}" >
             </div>
 
             <!-- 객실 ID -->
             <div class="mb-3">
                 <label for="roomId" class="form-label">객실 ID</label>
                 <input type="number" name="roomId" id="roomId" class="form-control" required
-                       th:value="${reservation.roomId}" readonly>
+                       th:value="${reservation.roomId}" >
             </div>
 
             <!-- 객실명 -->
             <div class="mb-3">
                 <label for="roomName" class="form-label">객실명</label>
                 <input type="text" name="roomName" id="roomName" class="form-control" required
-                       th:value="${reservation.roomName}" readonly>
+                       th:value="${reservation.roomName}" >
             </div>
 
             <!-- 예약 번호 -->
             <div class="mb-3">
                 <label for="reservationNumber" class="form-label">예약 번호</label>
-                <input type="text" name="reservationNumber" id="reservationNumber" class="form-control" readonly
+                <input type="text" name="reservationNumber" id="reservationNumber" class="form-control"
                        th:value="${reservation.reservationNumber}">
             </div>
 

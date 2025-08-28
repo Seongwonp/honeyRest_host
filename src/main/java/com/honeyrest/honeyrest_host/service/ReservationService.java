@@ -1,6 +1,8 @@
 package com.honeyrest.honeyrest_host.service;
 
 import com.amazonaws.services.kms.model.NotFoundException;
+import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.Reservation;
@@ -11,6 +13,10 @@ import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import com.honeyrest.honeyrest_host.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -154,5 +160,28 @@ public class ReservationService {
         }
 
         return calendarMap;
+    }
+
+    public PageResponseDTO<ReservationDTO> getReservationsByCompanyIdWithPageable(Long companyId, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("reservationId").descending());
+        Page<Reservation> page;
+        if (companyId != null && companyId > 0) {
+            page = reservationRepository.findByAccommodation_AccommodationId(companyId, pageable);
+        } else {
+            page = reservationRepository.findAll(pageable);
+        }
+
+        List<ReservationDTO> list = page.getContent().stream()
+                .map(this::toDTO)
+                .toList();
+
+        long total = page.getTotalElements();
+
+        return PageResponseDTO.<ReservationDTO>withAll()
+                .dtoList(list)
+                .totalCount(total)
+                .pageRequestDTO(pageRequestDTO)
+                .build();
     }
 }

@@ -1,9 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
-import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
+import com.honeyrest.honeyrest_host.config.FileUploadUtil;
+import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -11,6 +9,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -27,33 +26,34 @@ public class RoomController {
     private final CompanyService companyService;
     private final PriceCalendarService priceCalendarService;
     private final ReservationService reservationService;
+    private final FileUploadUtil fileUploadUtil;
 
-    @GetMapping("/accommodation/{accommodationId}/rooms")
-    public String roomsByAccommodation(@PathVariable Long accommodationId, Model model) {
+    @GetMapping({"/room/list", "/accommodation/{accommodationId}/rooms"})
+    public String rooms(
+            @PathVariable(required = false) Long accommodationId,
+            @ModelAttribute PageRequestDTO pageRequestDTO,
+            Model model) {
+
         List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
-        List<CompanyDTO> companies = companyService.getAllCompanies();
-        List<RoomDTO> roomDTOS;
 
-        if (accommodationId != null) {
-            roomDTOS = roomService.getRoomsByAccommodationId(accommodationId);
+        PageResponseDTO<RoomDTO> roomPage;
+
+        if (accommodationId != null && accommodationId > 0) {
+            roomPage = roomService.getRoomsByAccommodationIdWithPageable(accommodationId, pageRequestDTO);
             model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
+            model.addAttribute("accommodationId", accommodationId);
         } else {
-            roomDTOS = roomService.getAllRooms();
+            roomPage = roomService.getRoomsByAccommodationIdWithPageable(accommodationId ,pageRequestDTO);
+            model.addAttribute("accommodationId", 0);
         }
-        model.addAttribute("accommodationId", accommodationId);
+
         model.addAttribute("accommodations", accommodations);
-        model.addAttribute("rooms", roomDTOS);
+        model.addAttribute("rooms", roomPage.getDtoList());
+        model.addAttribute("pageResponse", roomPage);
 
         return "owner/room/list";
     }
 
-    @GetMapping("/room/list")
-    public String rooms(Model model) {
-        model.addAttribute("accommodationId", 0);
-        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
-        model.addAttribute("rooms", roomService.getAllRooms());
-        return "owner/room/list";
-    }
 
     @GetMapping("/room/create")
     public String createRoom(@RequestParam Long accommodationId, Model model) {
@@ -63,8 +63,25 @@ public class RoomController {
     }
 
     @PostMapping("/room/create")
-    public String createRoom(@ModelAttribute RoomDTO roomDTO) {
-        roomService.registerRoom(roomDTO);
+    public String createRoom(@ModelAttribute RoomDTO roomDTO) throws Exception {
+        Long roomId = roomService.registerRoom(roomDTO);
+
+        List<MultipartFile> images = roomDTO.getImages();
+        if (images != null && !images.isEmpty()) {
+            int sortOrder = 1; // MAIN 이미지 다음부터
+            for (MultipartFile image : images) {
+                if (!image.isEmpty()) {
+                    String roomImageUrl = fileUploadUtil.upload(image,"room");
+                    RoomImageDTO dto = RoomImageDTO.builder()
+                            .roomId(roomId)
+                            .imageUrl(roomImageUrl)
+                            .sortOrder(sortOrder)
+                            .build();
+                    roomService.updateRoomImage(dto);
+                }
+            }
+        }
+
         return "redirect:/owner/room/list";
     }
 

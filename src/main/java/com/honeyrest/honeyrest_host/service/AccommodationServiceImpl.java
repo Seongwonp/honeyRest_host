@@ -4,14 +4,22 @@ import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationImageDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationImage;
 import com.honeyrest.honeyrest_host.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,6 +34,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationCategoryRepository accommodationCategoryRepository;
     private final AccommodationImageRepository accommodationImageRepository;
     private final ObjectMapper objectMapper;
+    private final FileUploadUtil fileUploadUtil;
 
 
     private String parseAmenitiesToJson(String input) {
@@ -181,11 +190,25 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public void modifyAccommodation(AccommodationDTO dto) throws JsonProcessingException {
+    public void modifyAccommodation(AccommodationDTO dto) throws Exception {
         Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
                 .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
-        accommodationRepository.save(toEntity(dto));
+
+        // 썸네일 이미지가 새로 업로드된 경우 처리
+        MultipartFile newFile = dto.getFile();
+        if (newFile != null && !newFile.isEmpty()) {
+            String newThumbnailUrl = fileUploadUtil.upload(newFile, "accommodation");
+            dto.setThumbnailUrl(newThumbnailUrl); // 새로운 썸네일로 덮어쓰기
+        } else {
+            // 새로 업로드한 파일이 없으면 기존 썸네일 유지
+            dto.setThumbnailUrl(acc.getThumbnail());
+        }
+
+        // Entity로 변환 후 저장
+        Accommodation updated = toEntity(dto);
+        accommodationRepository.save(updated);
     }
+
 
     @Override
     public void removeAccommodation(Long id) {
@@ -199,4 +222,61 @@ public class AccommodationServiceImpl implements AccommodationService {
     public void registerAccommodationImage(AccommodationImageDTO dto) throws JsonProcessingException {
         accommodationImageRepository.save(toImageEntity(dto));
     }
+
+    @Override
+    public PageResponseDTO<AccommodationDTO> getAccommodationsWithPageable(Long companyId, PageRequestDTO pageRequestDTO){
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("accommodationId").descending());
+
+        Page<Accommodation> page;
+
+        if (companyId != null && companyId > 0) {
+            page = accommodationRepository.findByCompany_CompanyId(companyId, pageable); // 쿼리 메서드 필요
+        } else {
+            page = accommodationRepository.findAll(pageable);
+        }
+
+        List<AccommodationDTO> list = page.getContent().stream().map(accommodation -> toDTO(accommodation)).toList();
+
+        long total = page.getTotalElements();
+
+        PageResponseDTO<AccommodationDTO> responseDTO = PageResponseDTO.<AccommodationDTO>withAll()
+                .dtoList(list)
+                .pageRequestDTO(pageRequestDTO)
+                .totalCount(total)
+                .build();
+
+        return responseDTO;
+    }
+
+    @Override
+    public List<AccommodationImageDTO> getImagesByAccommodationId(Long id){
+        return accommodationImageRepository.findByAccommodation_AccommodationId(id)
+                .stream().map(this::toImageDTO).toList();
+
+    }
+
+    @Override
+    public void updateSubImages(Long accommodationId, List<MultipartFile> images) throws Exception {
+        if (images == null || images.isEmpty()) return;
+        int sortOrder = 1; // MAIN 이미지 다음부터 시작
+
+
+
+        for (MultipartFile image : images) {
+            if (!image.isEmpty()) {
+                String subImageUrl = fileUploadUtil.upload(image, "accommodation");
+
+                AccommodationImageDTO imageDTO = AccommodationImageDTO.builder()
+                        .imageUrl(subImageUrl)
+                        .accommodationId(accommodationId)
+                        .imageType("SUB")
+                        .sortOrder(sortOrder++)
+                        .build();
+
+                registerAccommodationImage(imageDTO); // 또는 service.registerAccommodationImage
+            }
+        }
+    }
+
 }

@@ -22,7 +22,7 @@
                         th:value="${a.accommodationId}"
                         th:text="${a.name}"
                         th:selected="${a.accommodationId == accommodationId}"
-                        th:attr="data-price=${a.minPrice}">></option>
+                        th:attr="data-price=${a.minPrice}"></option>
             </select>
         </div>
 
@@ -41,7 +41,7 @@
         <!-- 가격 -->
         <div class="mb-3">
             <label for="price" class="form-label">가격</label>
-            <input type="number" step="0.01" name="price" id="price" class="form-control" required>
+            <input type="number" step="100" name="price" id="price" class="form-control" required>
         </div>
 
         <!-- 기준 인원 -->
@@ -72,6 +72,12 @@
         <div class="mb-3">
             <label for="amenities" class="form-label">편의시설(JSON)</label>
             <textarea name="amenities" id="amenities" class="form-control" placeholder='예: 와이파이,TV,에어컨'></textarea>
+        </div>
+
+        <!-- 객실 이미지 -->
+        <div class="mb-3">
+            <label for="file">사진 업로드</label>
+            <input type="file" class="form-control" id="file" name="file" multiple><br/><br/>
         </div>
 
         <!-- 설명 -->
@@ -112,13 +118,23 @@
             const selectedOption = accommodationSelect.options[accommodationSelect.selectedIndex];
             const accommodationPrice = parseFloat(selectedOption.getAttribute("data-price"));
             const roomPrice = parseFloat(priceInput.value);
+            const standardOccupancy = document.getElementById("standardOccupancy");
+            const maxOccupancy = document.getElementById("maxOccupancy");
 
             if (!isNaN(accommodationPrice) && roomPrice < accommodationPrice) {
                 e.preventDefault();
                 alert(`방의 가격은 숙소 가격(${accommodationPrice.toLocaleString()}원)보다 같거나 커야 합니다.`);
                 priceInput.focus();
             }
+
+            if (standardOccupancy>maxOccupancy) {
+                e.preventDefault();
+                alert("기준 인원이 최대 인원보다 많습니다")
+                priceInput.focus();
+            }
         });
+
     });
+
 </script>
 

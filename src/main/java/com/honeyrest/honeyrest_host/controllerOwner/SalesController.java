@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -99,8 +97,7 @@ public class SalesController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             // 추가: 검색 조건 파라미터 받기
-            @RequestParam(required = false, defaultValue = "companyName") String searchType,
-            @RequestParam(required = false, defaultValue = "") String keyword,
+            @RequestParam(required = false) Long accommodationId,
             Model model) {
 
         if (startDate == null || endDate == null) {
@@ -123,8 +120,8 @@ public class SalesController {
         model.addAttribute("endDate", endDate);
 
         // 추가: 검색 조건 모델에 담기 (현재 선택값 유지용)
-        model.addAttribute("searchType", searchType);
-        model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedCompanyId", companyId);
+        model.addAttribute("selectedAccommodationId", accommodationId);
         return "/owner/sales/day";
     }
 
@@ -134,8 +131,8 @@ public class SalesController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             // 추가: 검색 조건 파라미터 받기
-            @RequestParam(required = false, defaultValue = "companyName") String searchType,
-            @RequestParam(required = false, defaultValue = "") String keyword,
+            @RequestParam(required = false) Long accommodationId,
+
             Model model) {
         if (startDate == null || endDate == null) {
             // 올해 전체: 1월 1일 ~ 12월 31일
@@ -157,8 +154,8 @@ public class SalesController {
         model.addAttribute("endDate", endDate);
 
         // 추가: 검색 조건 모델에 담기 (현재 선택값 유지용)
-        model.addAttribute("searchType", searchType);
-        model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedCompanyId", companyId);
+        model.addAttribute("selectedAccommodationId", accommodationId);
         return "owner/sales/month";
     }
 
@@ -168,16 +165,14 @@ public class SalesController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             // 추가: 검색 조건 파라미터 받기
-            @RequestParam(required = false, defaultValue = "companyName") String searchType,
-            @RequestParam(required = false, defaultValue = "") String keyword,
             Model model) {
 
+        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
         if (startDate == null || endDate == null) {
             LocalDate now = LocalDate.now();
             startDate = now.withDayOfMonth(1);
             endDate = now.withDayOfMonth(now.lengthOfMonth());
         }
-
         // daySales 조회 로직 (startDate ~ endDate 범위)
         List<DaySalesDTO> daySales = salesService.getAccommodationDaySales(accommodationId, startDate, endDate);
         List<CompanyDTO> companies = companyService.getAllCompanies();
@@ -191,8 +186,8 @@ public class SalesController {
         model.addAttribute("endDate", endDate);
 
         // 추가: 검색 조건 모델에 담기 (현재 선택값 유지용)
-        model.addAttribute("searchType", searchType);
-        model.addAttribute("keyword", keyword);
+        model.addAttribute("selectedCompanyId", companyId);
+        model.addAttribute("selectedAccommodationId", accommodationId);
         return "/owner/sales/day";
     }
 
@@ -202,9 +197,9 @@ public class SalesController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             // 추가: 검색 조건 파라미터 받기
-            @RequestParam(required = false, defaultValue = "companyName") String searchType,
-            @RequestParam(required = false, defaultValue = "") String keyword,
             Model model){
+        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+
         if (startDate == null || endDate == null) {
             // 올해 전체: 1월 1일 ~ 12월 31일
             int year = LocalDate.now().getYear();
@@ -224,8 +219,9 @@ public class SalesController {
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
         // 추가: 검색 조건 모델에 담기 (현재 선택값 유지용)
-        model.addAttribute("searchType", searchType);
-        model.addAttribute("keyword", keyword);
+
+        model.addAttribute("selectedCompanyId", companyId);
+        model.addAttribute("selectedAccommodationId", accommodationId);
 
         return "owner/sales/month";
     }

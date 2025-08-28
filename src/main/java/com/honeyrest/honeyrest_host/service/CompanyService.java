@@ -5,10 +5,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
+import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Company;
+import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -20,6 +28,7 @@ import java.util.stream.Collectors;
 public class CompanyService {
     private final CompanyRepository companyRepository;
     private final ObjectMapper objectMapper;
+    private final AccommodationRepository accommodationRepository;
 
     private String parseBankInfoToJson(String input) {
         if (input == null || input.isBlank()) return "[]";
@@ -131,4 +140,27 @@ public class CompanyService {
                 .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
         return toDTO(company);
     }
+
+    public PageResponseDTO<CompanyDTO> getCompaniesWithPage(PageRequestDTO requestDTO){
+
+        Pageable pageable = PageRequest.of(requestDTO.getPage() - 1, requestDTO.getSize(), Sort.by("companyId").descending());
+
+        Page<Company> page = companyRepository.findAll(pageable);
+
+        List<CompanyDTO> dtoList = page.getContent().stream()
+                .map(this::toDTO) // Company -> CompanyDTO 변환 메서드 필요
+                .toList();
+
+        return PageResponseDTO.<CompanyDTO>withAll()
+                .dtoList(dtoList)
+                .pageRequestDTO(requestDTO)
+                .totalCount(page.getTotalElements())
+                .build();
+    }
+
+    public Long getCompanyIdByAccommodationId(Long accommodationId) {
+        Accommodation accommodation = accommodationRepository.findByAccommodationId(accommodationId);
+        return accommodation.getCompany().getCompanyId();
+    }
+
 }

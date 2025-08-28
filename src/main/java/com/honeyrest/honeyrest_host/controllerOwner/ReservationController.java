@@ -1,11 +1,9 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
-import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -48,29 +46,26 @@ public class ReservationController {
         return "/owner/reservation/accommodation";
     }
 
-    @GetMapping("/reservation/companies")
-    public String companies(Model model) {
-        model.addAttribute("companyId", 0);
-        model.addAttribute("companies", companyService.getAllCompanies());
-        model.addAttribute("reservations", reservationService.getReservations());
-        return "/owner/reservation/company";
-    }
-
-    @GetMapping("/reservation/company/{companyId}")
-    public String companyReservations(@PathVariable Long companyId, Model model) {
+    @GetMapping({ "/reservation/companies","/reservation/company/{companyId}"})
+    public String companyReservations(
+            @PathVariable(required = false) Long companyId,
+            @ModelAttribute PageRequestDTO pageRequestDTO,
+            Model model) {
         List<CompanyDTO> companies = companyService.getAllCompanies();
-        List<ReservationDTO> reservations;
+        PageResponseDTO<ReservationDTO> reservationPage;
         if (companyId != null) {
-            reservations = reservationService.getReservationsByCompanyId(companyId);
+            reservationPage = reservationService.getReservationsByCompanyIdWithPageable(companyId, pageRequestDTO);
             CompanyDTO company = companyService.getCompany(companyId);
-            model.addAttribute("reservation", reservations);
+            model.addAttribute("reservation", reservationPage.getDtoList());
             model.addAttribute("company", company);
+            model.addAttribute("companyId", companyId);
         } else {
-            reservations = reservationService.getReservations();
+            reservationPage = reservationService.getReservationsByCompanyIdWithPageable(companyId, pageRequestDTO);
+            model.addAttribute("companyId", 0);
         }
-        model.addAttribute("reservations", reservations);
+        model.addAttribute("reservations", reservationPage.getDtoList());
         model.addAttribute("companies", companies);
-        model.addAttribute("companyId", companyId);
+        model.addAttribute("reservationPage", reservationPage);
         return "/owner/reservation/company";
     }
 
@@ -84,15 +79,16 @@ public class ReservationController {
     }
 
     @GetMapping("/reservation/create")
-    public String createRoom(@RequestParam Long roomId, Model model) {
-        model.addAttribute("roomId", roomId);
+    public String createRoom(Model model) {
+        model.addAttribute("rooms", roomService.getAllRooms());
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
-        return "owner/room/create";
+        model.addAttribute("companies", companyService.getAllCompanies());
+        return "owner/reservation/create";
     }
 
     @PostMapping("/reservation/create")
     public String createRoom(@ModelAttribute RoomDTO roomDTO) {
         roomService.registerRoom(roomDTO);
-        return "redirect:/owner/room/list";
+        return "redirect:/owner/reservation/list";
     }
 }

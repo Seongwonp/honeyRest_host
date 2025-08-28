@@ -59,6 +59,29 @@
       </div>
     </section>
   </div>
+    <div class="pagination mt-3">
+        <ul class="pagination">
+            <li class="page-item" th:if="${responseDTO.prev}">
+                <a class="page-link"
+                   th:href="@{/owner/company/list(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size})}">이전</a>
+            </li>
+
+            <li class="page-item"
+                th:each="num : ${responseDTO.pageNumList}"
+                th:classappend="${num == responseDTO.current} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/owner/company/list(page=${num}, size=${responseDTO.pageRequestDTO.size})}"
+                   th:text="${num}"></a>
+            </li>
+
+            <li class="page-item" th:if="${responseDTO.next}">
+                <a class="page-link"
+                   th:href="@{/owner/company/list(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size})}">다음</a>
+            </li>
+        </ul>
+    </div>
+
 </th:block>
+
 </body>
 </html>

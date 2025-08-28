@@ -31,18 +31,19 @@
 <!--                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>-->
 <!--                <input type="date" name="endDate" class="form-control">-->
 <!--            </div>-->
-            <div class="col-auto">
-                <label class="form-label"><i class="bi bi-filter-square me-1"></i>검색 조건</label>
-                <select name="searchType" class="form-select" id="searchTypeSelect">
-                    <option value="companyName" th:selected="${searchType == 'companyName'}">회사명</option>
-                    <option value="accommodationName" th:selected="${searchType == 'accommodationName'}">숙소명</option>
-                </select>
-
-            </div>
             <div class="col-md-4 col-sm-8">
-                <label class="form-label"><i class="bi bi-search me-1"></i>검색어</label>
-                <select name="keyword" class="form-select" id="keywordSelect">
-                    <!-- 옵션은 JS에서 넣어줌 -->
+                <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
+                <select name="companyName" class="form-select" id="companySelect">
+                    <option value="">전체</option>
+                    <!-- 회사 목록은 JS로 채움 -->
+                </select>
+            </div>
+
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
+                <select name="accommodationName" class="form-select" id="accommodationSelect">
+                    <option value="">전체</option>
+                    <!-- 선택한 회사의 숙소 목록만 JS로 채움 -->
                 </select>
             </div>
             <div class="col-auto">
@@ -250,13 +251,13 @@
         prevBtn.addEventListener('click', () => {
             const {startDate, endDate} = changeMonth(currentYearMonth, -1);
             console.log(startDate);
-            const searchType = document.getElementById('searchTypeSelect').value;
-            const keyword = document.getElementById('keywordSelect').value;
+            const companySelect = document.getElementById('companySelect').value;
+            const accommodationSelect = document.getElementById('accommodationSelect').value;
             let url;
             if (companyId) {
-                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${companySelect}&keyword=${accommodationSelect}`;
             } else if (accommodationId) {
-                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${companySelect}&keyword=${accommodationSelect}`;
             }
             else {
                 url = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
@@ -267,12 +268,12 @@
         nextBtn.addEventListener('click', () => {
             const {startDate, endDate} = changeMonth(currentYearMonth, 1);
             let url;
-            const searchType = document.getElementById('searchTypeSelect').value;
-            const keyword = document.getElementById('keywordSelect').value;
+            const companySelect = document.getElementById('companySelect').value;
+            const accommodationSelect = document.getElementById('accommodationSelect').value;
             if (companyId) {
-                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${companySelect}&keyword=${accommodationSelect}`;
             } else if (accommodationId) {
-                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${companySelect}&keyword=${accommodationSelect}`;
             }
             else {
                 url = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
@@ -280,81 +281,66 @@
             window.location.href = url;
         });
 
-        const searchTypeSelect = document.getElementById("searchTypeSelect");
-        const keywordSelect = document.getElementById("keywordSelect");
+        const companySelect = document.getElementById("companySelect");
+        const accommodationSelect = document.getElementById("accommodationSelect");
 
-        // 회사명과 숙소명을 JS 배열로 변환
         const companies = /*[[${companies}]]*/ [];
         const accommodations = /*[[${accommodations}]]*/ [];
-        const selectedSearchType = /*[[${searchType}]]*/ 'companyName';
-
         const company = /*[[${company}]]*/'';
         const accommodation = /*[[${accommodation}]]*/'';
 
-        function getCompanyIdByName(name) {
-            if (!companies || !Array.isArray(companies)) return null;
-            const comp = companies.find(c => c.name === name);
-            return comp ? comp.companyId : null;
-        }
+        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+        const selectedAccommodationId = /*[[${selectedAccommodationId}]]*/ '';
 
-        function getAccommodationIdByName(name) {
-            if (!accommodations || !Array.isArray(accommodations)) return null;
-            const accom = accommodations.find(a => a.name === name);
-            return accom ? accom.accommodationId : null;
-        }
-
-        document.getElementById('searchForm').addEventListener('submit', function(event) {
-            const searchType = document.getElementById('searchTypeSelect').value;
-            const keyword = document.getElementById('keywordSelect').value;
-            console.log(keyword);
-            let actionUrl = '';
-
-            if (searchType === 'companyName') {
-                const companyId = getCompanyIdByName(keyword);
-                if (!companyId) {
-                    actionUrl = `/owner/sales/day`;
-                } else
-                actionUrl = `/owner/sales/day/company/${companyId}`;
-            } else if (searchType === 'accommodationName') {
-                const accommodationId = getAccommodationIdByName(keyword);
-                if (!accommodationId) {
-                    actionUrl = `/owner/sales/day`;
-                } else
-                actionUrl = `/owner/sales/day/accommodation/${accommodationId}`;
-            }
-
-            this.action = actionUrl;
-        })
-
-        function updateKeywordOptions(type) {
-            keywordSelect.innerHTML = '<option value="">전체</option>';
-
-            const keyword = /*[[${keyword}]]*/"";
-            let items = [];
-            if (type === "companyName") {
-                items = companies.map(c => c.name);
-            } else if (type === "accommodationName") {
-                items = accommodations.map(a => a.name);
-            }
-
-            items.forEach(name => {
+        function loadCompanyOptions() {
+            companySelect.innerHTML = '<option value="">전체</option>';
+            companies.forEach(c => {
                 const opt = document.createElement("option");
-                opt.value = name;
-                opt.textContent = name;
-                if (name === keyword) {
-                    opt.selected = true;
-                }
-                keywordSelect.appendChild(opt);
+                opt.value = c.companyId;
+                opt.textContent = c.name;
+                if (c.companyId == selectedCompanyId) opt.selected = true;
+                companySelect.appendChild(opt);
             });
         }
 
-        // 초기화 시 기본 선택 (회사명)
-        updateKeywordOptions(searchTypeSelect.value);
+        function loadAccommodationOptions(companyId) {
+            accommodationSelect.innerHTML = '<option value="">전체</option>';
+            let filtered = accommodations;
+            if (companyId) {
+                filtered = accommodations.filter(a => a.companyId == companyId);
+            }
+            filtered.forEach(a => {
+                const opt = document.createElement("option");
+                opt.value = a.accommodationId;
+                opt.textContent = a.name;
+                if (a.accommodationId == selectedAccommodationId) opt.selected = true;
+                accommodationSelect.appendChild(opt);
+            });
+        }
 
-        // 변경 시 옵션 다시 로드
-        searchTypeSelect.addEventListener("change", function () {
-            updateKeywordOptions(this.value);
+// 회사 선택 시 숙소 옵션 갱신
+        companySelect.addEventListener("change", function() {
+            loadAccommodationOptions(this.value);
         });
+
+// 초기 로딩
+        loadCompanyOptions();
+        loadAccommodationOptions(companySelect.value);
+
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            const companyId = companySelect.value;
+            const accommodationId = accommodationSelect.value;
+            let actionUrl = "/owner/sales/day";
+
+            if (accommodationId) {
+                actionUrl = `/owner/sales/day/accommodation/${accommodationId}`;
+            } else if (companyId) {
+                actionUrl = `/owner/sales/day/company/${companyId}`;
+            }
+
+            this.action = actionUrl;
+        });
+
     });
     /*]]>*/
 </script>

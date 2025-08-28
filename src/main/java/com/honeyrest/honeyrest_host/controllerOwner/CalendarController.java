@@ -1,9 +1,6 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
-import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.service.AccommodationService;
 import com.honeyrest.honeyrest_host.service.CompanyService;
 import com.honeyrest.honeyrest_host.service.ReservationService;
@@ -12,10 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -32,10 +26,15 @@ public class CalendarController {
     private final ReservationService reservationService;
 
     @GetMapping("/calendar/list")
-    public String roomCalendar(Model model) {
-        model.addAttribute("companies", companyService.getAllCompanies());
+    public String roomCalendar(@ModelAttribute PageRequestDTO pageRequestDTO, Model model) {
+        if (pageRequestDTO.getPage() <= 0) pageRequestDTO.setPage(1);
+        if (pageRequestDTO.getSize() <= 0) pageRequestDTO.setSize(10);
 
-        return "owner/company/list";
+        PageResponseDTO<CompanyDTO> responseDTO = companyService.getCompaniesWithPage(pageRequestDTO);
+
+        model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("companies", responseDTO.getDtoList());
+        return "owner/calendar/company";
     }
 
     @GetMapping("/calendar/accommodation")
@@ -55,26 +54,36 @@ public class CalendarController {
 
         if (startDate == null) {
             startDate = LocalDate.now().withDayOfMonth(1);
-            endDate = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+            endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
         }
+
         CompanyDTO company = companyService.getCompany(companyId);
         AccommodationDTO accommodation = accommodationService.getByAccommodationId(accommodationId);
 
+        // 해당 숙소의 방 리스트
         List<RoomDTO> roomList = roomService.getRoomsByAccommodationId(accommodationId);
 
+        // 방별 캘린더 데이터 (날짜별 가격/재고)
         Map<Long, Map<LocalDate, PriceCalendarDTO>> calendarDataMap = new HashMap<>();
         for (RoomDTO room : roomList) {
-            Map<LocalDate, PriceCalendarDTO> roomCalendar = reservationService.getCalendarData(room.getRoomId(), startDate, endDate);
+            Map<LocalDate, PriceCalendarDTO> roomCalendar =
+                    reservationService.getCalendarData(room.getRoomId(), startDate, endDate);
             calendarDataMap.put(room.getRoomId(), roomCalendar);
         }
 
+        // 드롭다운용 전체 회사/숙소 목록
+        model.addAttribute("companies", companyService.getAllCompanies());
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+
+        // 선택된 값
         model.addAttribute("company", company);
         model.addAttribute("accommodation", accommodation);
+
+        // 캘린더 데이터
         model.addAttribute("roomList", roomList);
         model.addAttribute("calendarDataMap", calendarDataMap);
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
-
 
         return "owner/calendar/calendar";
     }

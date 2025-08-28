@@ -47,18 +47,16 @@
                         <tbody>
                         <tr th:each="room : ${rooms}">
                             <td th:text="${room.roomId}"></td>
+
                             <td th:text="${room.name}"></td>
                             <td th:text="${room.maxOccupancy}"></td>
                             <td th:text="${room.price}"></td>
                             <td th:text="${room.status}"></td>
                             <td>
-                                <a th:href="@{'/owner/room/' + ${room.roomId} + '/modify'}"
-                                   class="btn btn-primary btn-sm">수정</a>
+                                <a th:href="@{'/owner/room/' + ${room.roomId} + '/modify'}" class="btn btn-primary btn-sm">수정</a>
                             </td>
                             <td>
-                                <form th:action="@{'/owner/room/' + ${room.roomId} + '/delete'}"
-                                      method="post"
-                                      onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                <form th:action="@{'/owner/room/' + ${room.roomId} + '/delete'}" method="post" onsubmit="return confirm('정말 삭제하시겠습니까?');">
                                     <button type="submit" class="btn btn-danger btn-sm">삭제</button>
                                 </form>
                             </td>
@@ -68,6 +66,27 @@
                 </div>
             </div>
         </section>
+    </div>
+    <div class="pagination mt-3">
+        <ul class="pagination">
+            <li class="page-item" th:if="${pageResponse.prev}">
+                <a class="page-link"
+                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${pageResponse.prevPage}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}">이전</a>
+            </li>
+
+            <li class="page-item"
+                th:each="num : ${pageResponse.pageNumList}"
+                th:classappend="${num == pageResponse.current} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${num}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}"
+                   th:text="${num}"></a>
+            </li>
+
+            <li class="page-item" th:if="${pageResponse.next}">
+                <a class="page-link"
+                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${pageResponse.nextPage}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}">다음</a>
+            </li>
+        </ul>
     </div>
 </th:block>
 </body>

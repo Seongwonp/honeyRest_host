@@ -4,8 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 // RoomDto.java
 @Data
@@ -26,4 +28,5 @@ public class RoomDTO {
     private String description;
     private Integer totalRooms;
     private String status; // ACTIVE / INACTIVE
+    private List<MultipartFile> images;
 }

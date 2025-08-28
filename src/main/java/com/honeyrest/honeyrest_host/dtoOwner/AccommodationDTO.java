@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 // AccommodationDto.java
 @Data
@@ -27,7 +28,7 @@ public class AccommodationDTO {
     private BigDecimal longitude;
     private MultipartFile file;
     private String thumbnailUrl; // 저장된 이미지 URL
-    private MultipartFile[] images; // 여러 장의 숙소 이미지
+    private List<MultipartFile> images; // 여러 장의 숙소 이미지
     private String amenities; // JSON String
     private String description;
     private LocalTime checkInTime;
