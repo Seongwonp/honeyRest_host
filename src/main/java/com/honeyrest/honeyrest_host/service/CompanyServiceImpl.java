@@ -5,6 +5,8 @@ import com.honeyrest.honeyrest_host.dto.CompanyDTO;
 import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -108,5 +110,19 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public CompanyDTO getByUserEmail(String email){
         return toDTO(companyRepository.findCompanyByEmail(email));
+    }
+
+    @Override
+    public Long getCompanyIdByUserEmail(String email) {
+        return companyRepository.findCompanyIdByUserEmail(email)
+                .orElseThrow(()-> new IllegalArgumentException("업체 아아디인 이메일을 찾을 수 없습니다" +
+                                                                                                               "."));
+    }
+
+    @Override
+    public Long getCompanyIdByOfCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(auth == null) throw new IllegalArgumentException("사용자권한없음.");
+        return getCompanyIdByUserEmail(auth.getName()); // 로그인 username(email)로 회사 ID 조회
     }
 }

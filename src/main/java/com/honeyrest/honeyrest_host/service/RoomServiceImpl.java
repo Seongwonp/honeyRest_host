@@ -2,6 +2,9 @@ package com.honeyrest.honeyrest_host.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.honeyrest.honeyrest_host.dto.RoomImageDTO;
+import com.honeyrest.honeyrest_host.entity.RoomImage;
+import com.honeyrest.honeyrest_host.repository.RoomImageRepository;
 import jakarta.persistence.EntityNotFoundException;
 import com.honeyrest.honeyrest_host.dto.RoomDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
@@ -25,6 +28,7 @@ public class RoomServiceImpl implements RoomService {
     private final RoomRepository roomRepository;
     private final AccommodationRepository accommodationRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RoomImageRepository roomImageRepository;
 
     private JsonNode stringToJsonNode(String json) {
         try {
@@ -65,7 +69,7 @@ public class RoomServiceImpl implements RoomService {
 
     // ===== Mapper =====
     private RoomDTO toDTO(Room e) {
-        return RoomDTO.builder()
+        RoomDTO dto = RoomDTO.builder()
                 .roomId(e.getRoomId())
                 .accommodationId(e.getAccommodation().getAccommodationId())
                 //전체 목록에서 보기 좋도록 숙소명도 같이 내려주자 (DTO에 필드 하나 추가)
@@ -81,6 +85,21 @@ public class RoomServiceImpl implements RoomService {
                 .description(e.getDescription())
                 .totalRooms(e.getTotalRooms())
                 .status(e.getStatus())
+                .build();
+
+        // 이미지 조회해서 dto 세팅하기
+        List<RoomImageDTO> images = roomImageRepository.findByRoomRoomIdOrderBySortOrderAsc(e.getRoomId())
+                .stream().map(this::toImageDTO).toList();
+
+        dto.setImages(images);
+        return dto;
+    }
+    private RoomImageDTO toImageDTO(RoomImage entity) {
+        return RoomImageDTO.builder()
+                .roomId(entity.getRoom().getRoomId())
+                .imageUrl(entity.getImageUrl())
+                .sortOrder(entity.getSortOrder())
+//                .imageType("MAIN") // 우리에겐 imageType이 없음.
                 .build();
     }
 

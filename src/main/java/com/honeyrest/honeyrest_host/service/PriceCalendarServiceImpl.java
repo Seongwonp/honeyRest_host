@@ -29,10 +29,10 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     private final EntityManager em;
 
     @Override
-    public PriceInventoryCalendarDTO getMonth(Long companyId,
-                                              Long accommodationId,
-                                              YearMonth ym,
-                                              Integer minAvailable) {
+    public PriceCalendarDTO getMonth(Long companyId,
+                                     Long accommodationId,
+                                     YearMonth ym,
+                                     Integer minAvailable) {
         LocalDate start = ym.atDay(1);
         LocalDate end   = ym.atEndOfMonth();
 
@@ -83,7 +83,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
                     .build());
         }
 
-        return PriceInventoryCalendarDTO.builder()
+        return PriceCalendarDTO.builder()
                 .companyId(companyId)
                 .accommodationId(accommodationId)
                 .yearMonth(ym)
@@ -120,7 +120,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
 
     @Override
     @Transactional
-    public void bulkUpsert(PriceInventoryCalendarDTO payload) {
+    public void bulkUpsert(PriceCalendarDTO payload) {
         if (payload == null || payload.getRooms() == null) return;
         List<BulkItem> items = new ArrayList<>();
         payload.getRooms().forEach(roomDTO ->

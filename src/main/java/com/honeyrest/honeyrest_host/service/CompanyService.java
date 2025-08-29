@@ -13,4 +13,7 @@ public interface CompanyService {
     void delete(Long id);
 
     CompanyDTO getByUserEmail(String email);
+
+    Long getCompanyIdByUserEmail(String email);
+    Long getCompanyIdByOfCurrentUser();
 }

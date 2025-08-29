@@ -26,4 +26,7 @@ public interface AccommodationImageService {
     AccommodationImageDTO upsertMainThumbnail(Long accommodationId, AccommodationImageDTO accommodationImageDTO);
 
     List<AccommodationImageDTO> getByAccommodation_AccommodationId(Long accommodationId,String imageType);
+
+    @Transactional
+    void updateThumbnailUrl(Long accommodationId, String thumbnailUrl);
 }

@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.service;
 
 
-import com.honeyrest.honeyrest_host.dto.PriceInventoryCalendarDTO;
+import com.honeyrest.honeyrest_host.dto.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.dto.SalesStatDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,16 +14,16 @@ import java.util.List;
 
 public interface PriceCalendarService {
 
-    PriceInventoryCalendarDTO getMonth(Long companyId,
-                                       Long accommodationId,
-                                       YearMonth ym,
-                                       Integer minAvailable);
+    PriceCalendarDTO getMonth(Long companyId,
+                              Long accommodationId,
+                              YearMonth ym,
+                              Integer minAvailable);
 
     boolean upsert(Long roomId, LocalDate date, BigDecimal price, Integer available);
 
     void bulkUpsert(List<BulkItem> items);
 
-    void bulkUpsert(PriceInventoryCalendarDTO payload);
+    void bulkUpsert(PriceCalendarDTO payload);
 
     List<SalesStatDTO> stats(Long accommodationId,
                              Long roomId,

@@ -37,4 +37,7 @@ public interface AccommodationService {
 
     // 회사 + 상태별 조회(승인 대기 목록)
     Page<AccommodationListDTO> findByCategoryIdAndStatus(Long companyId, String status, Pageable pageable);
+
+    // 숙소 이름만 필요, 아무것도 말고 숙소명만 가져오기
+    String getNameById(Long accommodationId);
 }

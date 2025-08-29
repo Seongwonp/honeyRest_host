@@ -3,12 +3,16 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dto.CompanyDTO;
+import com.honeyrest.honeyrest_host.dto.RegionDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.*;
+import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationTag;
 import com.honeyrest.honeyrest_host.entity.Region;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationCategoryRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationTagRepository;
+import com.honeyrest.honeyrest_host.service.RegionService;
+import com.honeyrest.honeyrest_host.service.accommodation.AccommodationCategoryService;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationImageService;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import com.honeyrest.honeyrest_host.service.CompanyService;
@@ -28,6 +32,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
@@ -53,6 +58,8 @@ public class AccommodationPageController {
     private final AccommodationCategoryRepository accommodationCategoryRepository;
     private final AccommodationTagRepository accommodationTagRepository;
     private final RegionRepository regionRepository;
+    private final AccommodationCategoryService accommodationCategoryService;
+    private final RegionService regionService;
 
     /*
      * 등록 화면
@@ -78,7 +85,7 @@ public class AccommodationPageController {
 
             // 화면 다시 그릴 때 필요한 데이터 다시 주입
             model.addAttribute("mainRegions", regionRepository.findByLevel(1));
-            model.addAttribute("tagsByCategory",accommodationTagService.findAllGroupedByCategory());
+            model.addAttribute("tagsByCategory", accommodationTagService.findAllGroupedByCategory());
             return "admin/accommodations/add"; // redirect 대신 포워드
         }
 
@@ -130,7 +137,7 @@ public class AccommodationPageController {
             return "redirect:/admin/accommodations/list?status=PENDING";
 
         } catch (Exception e) {
-            log.error("add error",e);
+            log.error("add error", e);
             ra.addFlashAttribute("error", "등록 중 오류: " + e.getMessage());
             ra.addAttribute("form", form);
             return "redirect:/admin/accommodations/add";
@@ -180,7 +187,7 @@ public class AccommodationPageController {
         // 5) 페이징 조회
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "accommodationId"));
         Page<AccommodationListDTO> result;
-        if(status == null || status.isBlank()) {
+        if (status == null || status.isBlank()) {
             // 상태 미지정이면 기존 전체 호출
             result = accommodationService.findByCompanyId(companyDTO.getCompanyId(), pageable);
         } else {
@@ -226,7 +233,7 @@ public class AccommodationPageController {
         return "redirect:/admin/accommodations/list?status=PENDING";
     }
 
-    // 지역(대)의 하위(소) 목록 JSON
+    // 지역(대)의 하위(소) 목록 JSON (select 연동)
     @GetMapping(value = "/regions/children", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public List<Map<String, Object>> regionChildren(@RequestParam("parentId") Long parentId) {
@@ -244,6 +251,7 @@ public class AccommodationPageController {
      */
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model) {
+        // 기본 dto 조회
         AccommodationCreateRequestDTO dto = accommodationService.getById(id);
 
         // 2) 화면 폼용으로 기존 DTO 재활용
@@ -258,34 +266,31 @@ public class AccommodationPageController {
                 .longitude(dto.getLongitude())
                 .thumbnailUrl(dto.getThumbnailUrl())
                 .description(dto.getDescription())
-                .amenities(dto.getAmenities())
+                .amenities(dto.getAmenities() == null ? "" : dto.getAmenities())
                 .checkInTime(dto.getCheckInTime())
                 .checkOutTime(dto.getCheckOutTime())
                 .status(dto.getStatus())
                 .minPrice(dto.getMinPrice())
-                .images(dto.getImages())
-                .tagIds(dto.getTags() == null ? List.of()
+                .images(dto.getImages() == null ? java.util.Collections.emptyList() : dto.getImages())
+                .tagIds(dto.getTags() == null ? java.util.Collections.emptyList()
                         : dto.getTags().stream().map(t -> t.getTagId()).toList())
                 .build();
 
         // 3) 셀렉트박스 데이터
-        var categories = accommodationCategoryRepository.findAll(Sort.by("name").ascending());
-        var mainRegions = regionRepository.findByLevel(1);
-        var subRegions = (dto.getMainRegionId() != null)
-                ? regionRepository.findByParentId(dto.getMainRegionId())
-                : Collections.<Region>emptyList();
+        List<AccommodationCategoryDTO> categories = accommodationCategoryService.list();
+        List<RegionDTO> mainRegions = regionService.listMainRegions();
+        List<RegionDTO> subRegions = dto.getMainRegionId() == null ? Collections.emptyList() : regionService.listSubRegions(dto.getMainRegionId());
+
         // 전체 태그 목록 조회
-        var all = accommodationTagRepository.findAll(Sort.by("category","name").ascending());
-        var tagsByCategory = all.stream().collect(java.util.stream.Collectors.groupingBy(
-                AccommodationTag::getCategory,
-                java.util.TreeMap::new,
-                java.util.stream.Collectors.toList()
-                ));
+        Map<String, List<AccommodationTagDTO>> tagsByCategory = accommodationTagService.findAllGroupedByCategory();
+
+        // 현제 등록된 이미지 목록
+        List<AccommodationImageDTO> images = accommodationImageService.getImages(id);
 
         // 4) 모델
         model.addAttribute("acc", dto);        // 상단 표시용(읽기)
-        model.addAttribute("form", form);// 폼 바인딩용
-        model.addAttribute("images", accommodationImageService.getImages(id));
+        model.addAttribute("form", form);       // 폼 바인딩용
+        model.addAttribute("images", images);
         model.addAttribute("categories", categories);
         model.addAttribute("mainRegions", mainRegions);
         model.addAttribute("subRegions", subRegions);
@@ -301,11 +306,56 @@ public class AccommodationPageController {
     @PostMapping("/edit/{id}")
     public String editSubmit(@PathVariable Long id,
                              @ModelAttribute("form") AccommodationUpdateRequestDTO form,
+                             @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+                             @RequestParam(value = "subImages", required = false) List<MultipartFile> subImages,
                              RedirectAttributes ra) {
-        accommodationService.update(id, form);
+        log.info("== editSubmit id={} name={} thumbnail?={}", id, form.getName(),
+                (thumbnail != null ? thumbnail.getOriginalFilename() : "none"));
+        // 1) 텍스트/기본 필드 수정
+//        accommodationService.update(accommodationId, form);
 
-        ra.addAttribute("updated", true);
-        return "redirect:/admin/accommodations/list";
+        try {
+            // 1) 텍스트 업데이트
+            accommodationService.update(id, form);
+
+            // 2) 썸네일 파일이 올라온 경우만 업로드+DB 반영
+            if (thumbnail != null && !thumbnail.isEmpty()) {
+                AccommodationImageDTO mainDto = AccommodationImageDTO.builder()
+                        .imageType("MAIN")
+                        .sortOrder(0)
+                        .file(thumbnail)
+                        .build();
+
+                // 이미지 테이블 MAIN upsert
+                AccommodationImageDTO savedMain = accommodationImageService.upsertMainThumbnail(id, mainDto);
+
+                // 숙소 테이블의 thumbnailUrl도 동기화 (서비스에 메서드 있어야 함)
+                accommodationImageService.updateThumbnailUrl(id, savedMain.getImageUrl());
+            }
+
+
+            // 3) SUB 이미지들 추가/수정
+            if (subImages != null && !subImages.isEmpty()) {
+                int sortSeed = 1; // MAIN=0 이후부터
+                for (MultipartFile file : subImages) {
+                    if (file == null || file.isEmpty()) continue;
+                    AccommodationImageDTO subDto = AccommodationImageDTO.builder()
+                            .imageType("SUB")
+                            .sortOrder(sortSeed++)
+                            .file(file)
+                            .build();
+                    accommodationImageService.saveOrUpload(id, subDto);
+                }
+            }
+            ra.addFlashAttribute("success", "수정이 완료되었습니다.");
+            return "redirect:/admin/accommodations/list";
+
+        } catch (Exception e) {
+            log.error("==============editSubmit error", e);   // ★ stacktrace 확인용
+
+            ra.addFlashAttribute("error", "이미지 처리 중 오류: " + e.getMessage());
+            return "redirect:/admin/accommodations/edit" + id;
+        }
     }
 
 
@@ -319,9 +369,9 @@ public class AccommodationPageController {
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         try {
             accommodationService.delete(id);
-            ra.addAttribute("success","숙소가 삭제되었습니다.");
+            ra.addAttribute("success", "숙소가 삭제되었습니다.");
         } catch (Exception e) {
-            ra.addAttribute("error","삭제 중 오류: " + e.getMessage());
+            ra.addAttribute("error", "삭제 중 오류: " + e.getMessage());
         }
         return "redirect:/admin/accommodations/list";
     }

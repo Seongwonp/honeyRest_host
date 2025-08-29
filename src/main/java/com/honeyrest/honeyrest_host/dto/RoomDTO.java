@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.dto;
 
+import com.honeyrest.honeyrest_host.entity.RoomImage;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 
 @Data
@@ -35,7 +37,10 @@ public class RoomDTO {
     private Integer totalRooms; // 총객실수
     private String status; // ACTIVE / INACTIVE
 
-    private MultipartFile file;
+    private MultipartFile file; // 메인 이미지
+    private List<MultipartFile> files; // 이미지 여러개
+
+    private List<RoomImageDTO> images; // 이미지 타입들
 
 
 

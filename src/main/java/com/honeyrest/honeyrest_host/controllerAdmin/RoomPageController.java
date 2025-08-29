@@ -13,6 +13,7 @@ import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import com.honeyrest.honeyrest_host.util.FileUploadUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -25,25 +26,28 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
+@Log4j2
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/admin/rooms")
 public class RoomPageController {
+
     private final RoomService roomService;
-    private final AccommodationRepository accommodationRepository;
-    private final FileUploadUtil fileUploadUtil;
     private final RoomImageService roomImageService;
+    private final AccommodationRepository accommodationRepository;
     private final CompanyRepository companyRepository;
     private final AccommodationService accommodationService;
     private final CompanyService companyService;
     private final UserService userService;
 
+    private final FileUploadUtil fileUploadUtil;
 
     /**
      * 전체 객실 목록 (사이드바 진입)
@@ -131,7 +135,13 @@ public class RoomPageController {
                           Pageable pageable,
                           Model model) {
 
-        String email = (authentication.getPrincipal() instanceof String s) ? s : authentication.getName();
+        String email;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails ud) {
+            email = ud.getUsername();
+        } else {
+            email = authentication.getName();
+        }
 
         AdminLoginRequestDTO admin = userService.getUserByEmail(email);
         CompanyDTO companyDTO = companyService.getByUserEmail(admin.getEmail());
@@ -157,10 +167,52 @@ public class RoomPageController {
             model.addAttribute("accommodations", accommodationRepository.findAll());
             return "admin/rooms/add";
         }
-        RoomDTO saved = roomService.registerRoom(form);
-        ra.addFlashAttribute("msg", "객실이 등록되었습니다.");
-        // 숙소별 목록으로 리다이렉트
-        return "redirect:/admin/rooms/list/by-accommodation?accommodationId=" + saved.getAccommodationId();
+        try {
+            // 1) 우선 방을 생성 (이미지는 나중에)
+            RoomDTO saved = roomService.registerRoom(form);  // 서비스는 RoomDTO를 반환
+            Long roomId = saved.getRoomId();
+
+            // 2) 이미지가 들어온 경우에만 업로드 + DB 저장 (교체)
+            List<RoomImageDTO> images = new ArrayList<>();
+
+            // 메인(단일) 파일
+            MultipartFile main = form.getFile();
+            if (main != null && !main.isEmpty()) {
+                String url = fileUploadUtil.upload(main, "room");
+                images.add(RoomImageDTO.builder()
+                        .roomId(roomId)
+                        .imageUrl(url)
+                        .sortOrder(0)  // MAIN
+                        .build());
+            }
+
+            // 서브(다중) 파일
+            if (form.getFiles() != null && !form.getFiles().isEmpty()) {
+                int idx = images.isEmpty() ? 0 : 1; // 메인 넣었으면 1부터, 없었으면 0부터
+                for (MultipartFile f : form.getFiles()) {
+                    if (f != null && !f.isEmpty()) {
+                        String url = fileUploadUtil.upload(f, "room");
+                        images.add(RoomImageDTO.builder()
+                                .roomId(roomId)
+                                .imageUrl(url)
+                                .sortOrder(idx++) // SUB
+                                .build());
+                    }
+                }
+            }
+
+            if (!images.isEmpty()) {
+                roomImageService.replaceAll(roomId, images); // 전체 교체(메인=0 보장)
+            }
+
+            ra.addFlashAttribute("success", "객실이 등록되었습니다.");
+            return "redirect:/admin/rooms/list";
+
+        } catch (Exception e) {
+            log.error("room create error", e);
+            ra.addFlashAttribute("error", "등록 중 오류: " + e.getMessage());
+            return "redirect:/admin/rooms/add";
+        }
     }
 
     /* ========== 수정 ========== */
@@ -183,39 +235,62 @@ public class RoomPageController {
             model.addAttribute("accommodations", accommodationRepository.findAll());
             return "admin/rooms/edit";
         }
-        // 이미지 업로드
-        String image = fileUploadUtil.upload(form.getFile(), "room");
+            try {
+                // 1) 우선 방 정보 업데이트
+                form.setRoomId(roomId);          // 서비스 시그니처에 맞춰 DTO에 id 세팅
+                roomService.modifyRoom(form);    // 서비스 구현 이름과 일치
 
-        if (binding.hasErrors()) {
-            model.addAttribute("accommodations", accommodationRepository.findAll());
-            return "admin/rooms/edit";
+                // 2) 이미지 파일이 들어온 경우에만 이미지 교체 수행
+                boolean hasMain = (form.getFile() != null && !form.getFile().isEmpty());
+                boolean hasSubs = (form.getFiles() != null && form.getFiles().stream().anyMatch(f -> f != null && !f.isEmpty()));
+
+                if (hasMain || hasSubs) {
+                    List<RoomImageDTO> images = new ArrayList<>();
+
+                    if (hasMain) {
+                        String url = fileUploadUtil.upload(form.getFile(), "room");
+                        images.add(RoomImageDTO.builder()
+                                .roomId(roomId)
+                                .imageUrl(url)
+                                .sortOrder(0)
+                                .build());
+                    }
+
+                    if (hasSubs) {
+                        int idx = images.isEmpty() ? 0 : 1;
+                        for (MultipartFile f : form.getFiles()) {
+                            if (f != null && !f.isEmpty()) {
+                                String url = fileUploadUtil.upload(f, "room");
+                                images.add(RoomImageDTO.builder()
+                                        .roomId(roomId)
+                                        .imageUrl(url)
+                                        .sortOrder(idx++)
+                                        .build());
+                            }
+                        }
+                    }
+
+                    roomImageService.replaceAll(roomId, images); // 새로 들어온 파일들로 전체 교체
+                }
+
+                ra.addFlashAttribute("success", "객실이 수정되었습니다.");
+                return "redirect:/admin/rooms/list";
+
+            } catch (Exception e) {
+                log.error("room update error", e);
+                ra.addFlashAttribute("error", "수정 중 오류: " + e.getMessage());
+                return "redirect:/admin/rooms/edit/" + roomId;
+            }
         }
 
-        // form에 roomId 수정
-        form.setRoomId(roomId);
-        roomService.modifyRoom(form);
 
-        // 이미지 저장(필요시에)
-        RoomImageDTO roomImageDTO = RoomImageDTO.builder()
-                .imageUrl(image)
-                .roomId(roomId)
-                .build();
-        roomImageService.registerRoomImage(roomImageDTO);
-        // 알림용 플래시 메시지
-        ra.addFlashAttribute("msg", "객실이 수정되었습니다.");
-
-        // 전체 객실 목록으로 이동
-        return "redirect:/admin/rooms/list_all";
-//        return "redirect:/admin/rooms/list?accommodationId=" + form.getAccommodationId();
+        /* ========== 삭제 ========== */
+        @PostMapping("/{roomId}/delete")
+        public String delete (@PathVariable Long roomId,
+                @RequestParam("accommodationId") Long accommodationId,
+                RedirectAttributes ra){
+            roomService.removeRoom(roomId);
+            ra.addFlashAttribute("msg", "객실이 삭제되었습니다.");
+            return "redirect:/admin/rooms/list?accommodationId=" + accommodationId;
+        }
     }
-
-    /* ========== 삭제 ========== */
-    @PostMapping("/{roomId}/delete")
-    public String delete(@PathVariable Long roomId,
-                         @RequestParam("accommodationId") Long accommodationId,
-                         RedirectAttributes ra) {
-        roomService.removeRoom(roomId);
-        ra.addFlashAttribute("msg", "객실이 삭제되었습니다.");
-        return "redirect:/admin/rooms/list?accommodationId=" + accommodationId;
-    }
-}

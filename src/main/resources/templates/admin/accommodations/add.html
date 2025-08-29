@@ -110,24 +110,19 @@
                              th:errors="*{address}">에러</div>
                     </div>
 
-                    <!--                    <div class="col-md-6">-->
-                    <!--                        <label class="form-label">썸네일 URL</label>-->
-                    <!--                        <input type="text" class="form-control" th:field="*{file}" placeholder="https://...">-->
-                    <!--                    </div>-->
-
                     <div class="col-12">
-                        <label class="form-label">설명</label>
+                        <label class="form-label">숙소 소개</label>
                         <textarea class="form-control" th:field="*{description}" rows="3"
                                   placeholder="숙소 소개, 편의시설 등"></textarea>
                     </div>
-
                     <!-- 편의시설(JSON) -->
                     <div class="col-12">
-                        <label class="form-label">편의시설</label>
+                        <label class="form-label">확인사항 및 기타</label>
                         <textarea class="form-control" th:field="*{amenities}" rows="2"
                                   placeholder="예) 와이파이,주차,수영장"></textarea>
                         <div class="help-text">쉼표(,)로 구분해서 입력하세요. 비워두면 저장 시 자동으로 빈 목록 처리됩니다.</div>
                     </div>
+
 
                     <!-- 운영 시간 / 가격 -->
                     <div class="col-md-3">
@@ -170,44 +165,22 @@
                     </div>
                 </div>
 
-
-                    <!-- 이미지(간단 3개 슬롯 예시) -->
-<!--                                        <div class="col-12">-->
-                    <!--                        <label class="form-label">이미지</label>-->
-                    <!--                        <div class="row g-2 align-items-end">-->
-                    <!--                            <div class="col-md-6">-->
-                    <!--                                <input type="text" class="form-control" name="images[0].imageUrl" placeholder="이미지 URL">-->
-                    <!--                            </div>-->
-<!--                                                <div class="col-md-3">-->
-<!--                                                    <input type="number" class="form-control" name="images[0].sortOrder"-->
-<!--                                                           placeholder="정렬(숫자)">-->
-<!--                                                </div>-->
-<!--                                            </div>-->
                     <div class="row g-2 mt-1">
                         <div class="col-md-6">
                             <label class="form-label required">썸네일 이미지</label>
                             <input type="file" class="form-control" th:field="*{file}" accept="image/*" required>
                             <div class="help-text">JPG/PNG 등 이미지 1장 업로드</div>
                         </div>
-                        <!--                            <div class="col-md-3">-->
-                        <!--                                <select class="form-select" name="images[0].imageType">-->
-                        <!--                                    <option value="">(선택)</option>-->
-                        <!--                                    <option value="MAIN">MAIN</option>-->
-                        <!--                                    <option value="EXTERIOR">EXTERIOR</option>-->
-                        <!--                                    <option value="COMMON">COMMON</option>-->
-                        <!--                                </select>-->
-                        <!--                            </div>-->
+
                          추가 이미지(여러 장 업로드용)
                         <div class="col-12">
                             <label class="form-label">추가 이미지(여러 장)</label>
                             <input type="file" class="form-control" th:field="*{file}" accept="image/*" multiple>
                             <div class="help-text">여러 장 선택 가능. 서버에서 순서대로 SUB(1,2,3...)로 저장합니다.</div>
                             <div class="col-md-3">
-                                <select class="form-select" name="images[1].imageType">
-                                    <option value="">(선택)</option>
-                                    <option value="MAIN">MAIN</option>
-                                    <option value="EXTERIOR">EXTERIOR</option>
-                                    <option value="COMMON">COMMON</option>
+                                <label class="form-label">상태</label>
+                                <select class="form-select" th:field="*{status}">
+                                    <option value="PENDING">PENDING</option>
                                 </select>
                             </div>
                         </div>
@@ -265,6 +238,48 @@
                     console.error('지역(소) 로드 실패:', e);
                 }
             });
+        });
+        //  태그 미리보기
+        document.addEventListener('DOMContentLoaded', function(){
+            const sel = document.getElementById('tagSelect');
+            const box = document.getElementById('tagSelected');
+            if(!sel || !box) return;
+
+            function renderSelected(){
+                box.innerHTML = '';
+                const selected = [...sel.selectedOptions].map(o => ({
+                    value: o.value,
+                    label: o.textContent.trim(),
+                    category: o.closest('optgroup') ? o.closest('optgroup').label : ''
+                }));
+
+                if(selected.length === 0){
+                    box.innerHTML = '<span class="text-muted">선택된 태그가 없습니다.</span>';
+                    return;
+                }
+                selected.forEach(s => {
+                    const chip = document.createElement('span');
+                    chip.className = 'badge bg-primary-subtle text-primary border rounded-pill px-2 py-1 d-inline-flex align-items-center';
+                    chip.textContent = (s.category ? (s.category + ' - ') : '') + s.label;
+
+                    const close = document.createElement('button');
+                    close.type = 'button';
+                    close.className = 'btn-close btn-sm ms-2';
+                    close.setAttribute('aria-label', 'remove');
+                    close.addEventListener('click', () => {
+                        const opt = [...sel.options].find(o => o.value === s.value);
+                        if(opt){ opt.selected = false; }
+                        renderSelected(); // 재랜더
+                    });
+
+                    chip.appendChild(close);
+                    box.appendChild(chip);
+                });
+            }
+
+            // 초기 표시 + 변경 시 업데이트
+            renderSelected();
+            sel.addEventListener('change', renderSelected);
         });
     </script>
 </th:block>

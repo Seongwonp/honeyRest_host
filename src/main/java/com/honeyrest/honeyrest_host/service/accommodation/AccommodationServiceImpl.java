@@ -423,4 +423,10 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .map(this::toListDTOWithThumbnail);
     }
 
+    @Override
+    public String getNameById(Long accommodationId) {
+        if (accommodationId == null) return null;
+        return accommodationRepository.findById(accommodationId).map(Accommodation::getName).orElse("알수없음");
+
+    }
 }
