@@ -1,0 +1,99 @@
+package com.honeyrest.honeyrest_host.service;
+
+import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.ReviewDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
+import com.honeyrest.honeyrest_host.entity.Review;
+import com.honeyrest.honeyrest_host.entity.Room;
+import com.honeyrest.honeyrest_host.repository.ReservationRepository;
+import com.honeyrest.honeyrest_host.repository.ReviewRepository;
+import com.honeyrest.honeyrest_host.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class ReviewService {
+    private final ReviewRepository reviewRepository;
+    private final ReservationRepository reservationRepository;
+    private final UserRepository userRepository;
+
+    private ReviewDTO toDTO(Review r) {
+        return ReviewDTO.builder()
+                .reviewId(r.getReviewId())
+                .reservationId(r.getReservation().getReservationId())
+                .userId(r.getUser().getUserId())
+                .accommodationId(r.getAccommodationId())
+                .roomId(r.getRoomId())
+                .rating(r.getRating())
+                .cleanlinessRating(r.getCleanlinessRating())
+                .serviceRating(r.getServiceRating())
+                .facilitiesRating(r.getFacilitiesRating())
+                .locationRating(r.getLocationRating())
+                .content(r.getContent())
+                .reply(r.getReply())
+                .likeCount(r.getLikeCount())
+                .status(r.getStatus())
+                .build();
+    }
+
+    private Review toEntity(ReviewDTO r) {
+        return Review.builder()
+                .reviewId(r.getReviewId())
+                .reservation(reservationRepository.getReferenceById(r.getReservationId()))
+                .user(userRepository.getReferenceById(r.getUserId()))
+                .accommodationId(r.getAccommodationId())
+                .roomId(r.getRoomId())
+                .rating(r.getRating())
+                .cleanlinessRating(r.getCleanlinessRating())
+                .serviceRating(r.getServiceRating())
+                .facilitiesRating(r.getFacilitiesRating())
+                .locationRating(r.getLocationRating())
+                .content(r.getContent())
+                .reply(r.getReply())
+                .likeCount(r.getLikeCount())
+                .status(r.getStatus())
+                .build();
+    }
+
+    public void create(ReviewDTO reviewDTO) {
+        reviewRepository.save(toEntity(reviewDTO));
+    }
+
+
+    public PageResponseDTO<ReviewDTO> getReviewsByAccommodationIdWithPageable(Long accommodationId, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("reviewId").descending());
+
+        Page<Review> page;
+        if (accommodationId != null && accommodationId > 0) {
+            page = reviewRepository.findByAccommodationId(accommodationId, pageable);
+        } else {
+            page = reviewRepository.findAll(pageable);
+        }
+
+        List<ReviewDTO> list = page.getContent().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+
+        long total = page.getTotalElements();
+
+        return PageResponseDTO.<ReviewDTO>withAll()
+                .dtoList(list)
+                .pageRequestDTO(pageRequestDTO)
+                .totalCount(total)
+                .build();
+
+    }
+}

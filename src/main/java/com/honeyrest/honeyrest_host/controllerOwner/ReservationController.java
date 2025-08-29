@@ -3,7 +3,6 @@ package com.honeyrest.honeyrest_host.controllerOwner;
 import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -25,30 +24,44 @@ public class ReservationController {
         model.addAttribute("accommodationId", 0);
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         model.addAttribute("reservations", reservationService.getReservations());
-        return "/owner/reservation/accommodation";
+        return "/owner/reservation/list";
     }
 
     @GetMapping("/reservation/accommodation/{accommodationId}")
-    public String accommodationReservations(@PathVariable Long accommodationId, Model model) {
-        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
-        List<ReservationDTO> reservations;
+    public String accommodationReservations(
+            @PathVariable Long accommodationId,
+            @ModelAttribute PageRequestDTO pageRequestDTO,
+            Model model) {
+        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+
+        PageResponseDTO<ReservationDTO> reservationPage;
+
         if (accommodationId != null) {
-            reservations = reservationService.getReservationsByAccommodationId(accommodationId);
+            reservationPage = reservationService.getReservationsByCompanyIdWithPageable(accommodationId, pageRequestDTO);
             AccommodationDTO accommodation = accommodationService.getByAccommodationId(accommodationId);
-            model.addAttribute("reservation", reservations);
+
+            model.addAttribute("reservation", reservationPage.getDtoList());
             model.addAttribute("accommodation", accommodation);
         } else {
-            reservations = reservationService.getReservations();
+            reservationPage = reservationService.getReservationsByCompanyIdWithPageable(accommodationId, pageRequestDTO);
+
         }
-        model.addAttribute("reservations", reservations);
-        model.addAttribute("accommodations", accommodations);
-        model.addAttribute("accommodationId", accommodationId);
-        return "/owner/reservation/accommodation";
+        model.addAttribute("reservationPage", reservationPage);
+        model.addAttribute("reservations", reservationPage.getDtoList());
+
+        model.addAttribute("companies",  companyService.getAllCompanies());
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+
+        model.addAttribute("selectedCompanyId",  companyId);
+        model.addAttribute("selectedAccommodationId", accommodationId);
+
+        return "/owner/reservation/list";
     }
 
-    @GetMapping({ "/reservation/companies","/reservation/company/{companyId}"})
+    @GetMapping({ "/reservation/list","/reservation/company/{companyId}"})
     public String companyReservations(
             @PathVariable(required = false) Long companyId,
+            @RequestParam(required = false) Long accommodationId,
             @ModelAttribute PageRequestDTO pageRequestDTO,
             Model model) {
         List<CompanyDTO> companies = companyService.getAllCompanies();
@@ -63,10 +76,19 @@ public class ReservationController {
             reservationPage = reservationService.getReservationsByCompanyIdWithPageable(companyId, pageRequestDTO);
             model.addAttribute("companyId", 0);
         }
+
+        // 회사/숙소 리스트
+        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
+
+        // 선택값 유지용
+        model.addAttribute("accommodations", accommodations);
+        model.addAttribute("selectedCompanyId", companyId);
+        model.addAttribute("selectedAccommodationId", accommodationId);
+
         model.addAttribute("reservations", reservationPage.getDtoList());
         model.addAttribute("companies", companies);
         model.addAttribute("reservationPage", reservationPage);
-        return "/owner/reservation/company";
+        return "/owner/reservation/list";
     }
 
     @GetMapping("/reservation/{reservationId}/modify")

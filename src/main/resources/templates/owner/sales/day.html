@@ -33,7 +33,7 @@
 <!--            </div>-->
             <div class="col-md-4 col-sm-8">
                 <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
-                <select name="companyName" class="form-select" id="companySelect">
+                <select name="companyId" class="form-select" id="companySelect">
                     <option value="">전체</option>
                     <!-- 회사 목록은 JS로 채움 -->
                 </select>
@@ -41,7 +41,7 @@
 
             <div class="col-md-4 col-sm-8">
                 <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
-                <select name="accommodationName" class="form-select" id="accommodationSelect">
+                <select name="accommodationId" class="form-select" id="accommodationSelect">
                     <option value="">전체</option>
                     <!-- 선택한 회사의 숙소 목록만 JS로 채움 -->
                 </select>
@@ -54,13 +54,13 @@
 
 
     <div class="mb-4">
-        <a th:href="${companyId != null} ? '/owner/sales/day/company/' + ${companyId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
-          : (${accommodationId != null} ? '/owner/sales/day/accommodation/' + ${accommodationId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+        <a th:href="${companyId != null} ? '/owner/sales/day/company/' + ${companyId}
+          : (${accommodationId != null} ? '/owner/sales/day/accommodation/' + ${accommodationId}
                                         : '/owner/sales/day')"
            class="btn btn-warning text-dark custom-hover-dark me-2 active"
            aria-current="page"><i class="bi bi-calendar-day me-1"></i>일별</a>
-        <a th:href="${companyId != null} ? '/owner/sales/month/company/' + ${companyId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
-         : (${accommodationId != null} ? '/owner/sales/month/accommodation/' + ${accommodationId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+        <a th:href="${companyId != null} ? '/owner/sales/month/company/' + ${companyId}
+         : (${accommodationId != null} ? '/owner/sales/month/accommodation/' + ${accommodationId}
                                        : '/owner/sales/month')"
            class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
     </div>
@@ -255,9 +255,9 @@
             const accommodationSelect = document.getElementById('accommodationSelect').value;
             let url;
             if (companyId) {
-                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${companySelect}&keyword=${accommodationSelect}`;
+                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
             } else if (accommodationId) {
-                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${companySelect}&keyword=${accommodationSelect}`;
+                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}`;
             }
             else {
                 url = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
@@ -271,9 +271,9 @@
             const companySelect = document.getElementById('companySelect').value;
             const accommodationSelect = document.getElementById('accommodationSelect').value;
             if (companyId) {
-                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${companySelect}&keyword=${accommodationSelect}`;
+                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
             } else if (accommodationId) {
-                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${companySelect}&keyword=${accommodationSelect}`;
+                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}`;
             }
             else {
                 url = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;

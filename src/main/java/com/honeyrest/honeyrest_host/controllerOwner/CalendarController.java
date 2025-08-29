@@ -6,11 +6,13 @@ import com.honeyrest.honeyrest_host.service.CompanyService;
 import com.honeyrest.honeyrest_host.service.ReservationService;
 import com.honeyrest.honeyrest_host.service.RoomService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +21,7 @@ import java.util.Map;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/owner")
+@Log4j2
 public class CalendarController {
     private final RoomService roomService;
     private final CompanyService companyService;
@@ -34,7 +37,9 @@ public class CalendarController {
 
         model.addAttribute("responseDTO", responseDTO);
         model.addAttribute("companies", responseDTO.getDtoList());
-        return "owner/calendar/company";
+        log.info("responseDTO.getDtoList() = " + responseDTO.getDtoList());
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+        return "owner/calendar/list";
     }
 
     @GetMapping("/calendar/accommodation")
@@ -45,9 +50,8 @@ public class CalendarController {
         return "owner/calendar/accommodation";
     }
 
-    @GetMapping("/calendar/{companyId}/{accommodationId}/calendar")
-    public String roomCalendar(@PathVariable Long companyId,
-                               @PathVariable Long accommodationId,
+    @GetMapping("/calendar/accommodation/{accommodationId}/calendar")
+    public String roomCalendar(@PathVariable Long accommodationId,
                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
                                Model model) {
@@ -56,9 +60,7 @@ public class CalendarController {
             startDate = LocalDate.now().withDayOfMonth(1);
             endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
         }
-
-        CompanyDTO company = companyService.getCompany(companyId);
-        AccommodationDTO accommodation = accommodationService.getByAccommodationId(accommodationId);
+        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
 
         // 해당 숙소의 방 리스트
         List<RoomDTO> roomList = roomService.getRoomsByAccommodationId(accommodationId);
@@ -71,19 +73,77 @@ public class CalendarController {
             calendarDataMap.put(room.getRoomId(), roomCalendar);
         }
 
+        model.addAttribute("companyId", companyId);
+
         // 드롭다운용 전체 회사/숙소 목록
         model.addAttribute("companies", companyService.getAllCompanies());
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
-
-        // 선택된 값
-        model.addAttribute("company", company);
-        model.addAttribute("accommodation", accommodation);
 
         // 캘린더 데이터
         model.addAttribute("roomList", roomList);
         model.addAttribute("calendarDataMap", calendarDataMap);
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
+
+        LocalDate firstDayOfMonth = startDate.withDayOfMonth(1);
+        DayOfWeek firstWeekday = firstDayOfMonth.getDayOfWeek();
+        int startOffset = firstWeekday.getValue() % 7; // 일요일=0
+
+        int daysInMonth = startDate.lengthOfMonth();
+        int totalCells = daysInMonth + startOffset;
+
+        model.addAttribute("startOffset", startOffset);
+        model.addAttribute("daysInMonth", daysInMonth);
+        model.addAttribute("totalCells", totalCells);
+
+
+        return "owner/calendar/calendar";
+    }
+
+    @GetMapping("/calendar/company/{companyId}/calendar")
+    public String roomCalendar(@PathVariable Long companyId,
+                               @RequestParam(required = false) Long accommodationId,
+                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+                               Model model) {
+
+        if (startDate == null) {
+            startDate = LocalDate.now().withDayOfMonth(1);
+            endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+        }
+        // 해당 숙소의 방 리스트
+        List<RoomDTO> roomList = roomService.getRoomsByAccommodationId(accommodationId);
+
+        // 방별 캘린더 데이터 (날짜별 가격/재고)
+        Map<Long, Map<LocalDate, PriceCalendarDTO>> calendarDataMap = new HashMap<>();
+        for (RoomDTO room : roomList) {
+            Map<LocalDate, PriceCalendarDTO> roomCalendar =
+                    reservationService.getCalendarData(room.getRoomId(), startDate, endDate);
+            calendarDataMap.put(room.getRoomId(), roomCalendar);
+        }
+        model.addAttribute("companyId", companyId);
+
+        // 드롭다운용 전체 회사/숙소 목록
+        model.addAttribute("companies", companyService.getAllCompanies());
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+
+        // 캘린더 데이터
+        model.addAttribute("roomList", roomList);
+        model.addAttribute("calendarDataMap", calendarDataMap);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
+        LocalDate firstDayOfMonth = startDate.withDayOfMonth(1);
+        DayOfWeek firstWeekday = firstDayOfMonth.getDayOfWeek();
+        int startOffset = firstWeekday.getValue() % 7; // 일요일=0
+
+        int daysInMonth = startDate.lengthOfMonth();
+        int totalCells = daysInMonth + startOffset;
+
+        model.addAttribute("startOffset", startOffset);
+        model.addAttribute("daysInMonth", daysInMonth);
+        model.addAttribute("totalCells", totalCells);
+
 
         return "owner/calendar/calendar";
     }

@@ -20,20 +20,9 @@
             <a th:href="@{/owner/reservation/create}" class="btn btn-primary">예약 등록</a>
         </div>
         <!-- 숙소 선택 폼 -->
-        <form id="accommodationForm">
-            <select id="accommodationSelect" class="form-select">
-                <option value="0" th:selected="${companyId == 0}">전체 예약</option>
-                <option th:each="a : ${companies}"
-                        th:value="${a.companyId}"
-                        th:text="${a.name}"
-                        th:selected="${a.companyId == companyId}">
-                </option>
-
-            </select>
-        </form>
     </div>
     <div class="card p-4 mb-4 shadow-sm">
-        <form method="get" action="/owner/sales/day" class="row g-3 align-items-end" id="searchForm">
+        <form method="get" action="/owner/reservation/list" class="row g-3 align-items-end" id="searchForm">
             <!--            <div class="col-auto">-->
             <!--                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>-->
             <!--                <input type="date" name="startDate" class="form-control">-->
@@ -44,7 +33,7 @@
             <!--            </div>-->
             <div class="col-md-4 col-sm-8">
                 <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
-                <select name="companyName" class="form-select" id="companySelect">
+                <select name="companyId" class="form-select" id="companySelect">
                     <option value="">전체</option>
                     <!-- 회사 목록은 JS로 채움 -->
                 </select>
@@ -52,7 +41,7 @@
 
             <div class="col-md-4 col-sm-8">
                 <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
-                <select name="accommodationName" class="form-select" id="accommodationSelect">
+                <select name="accommodationId" class="form-select" id="accommodationSelect">
                     <option value="">전체</option>
                     <!-- 선택한 회사의 숙소 목록만 JS로 채움 -->
                 </select>
@@ -129,16 +118,65 @@
 </th:block>
 </body>
 </html>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function () {
+        const companies = /*[[${companies}]]*/ [];
+        const accommodations = /*[[${accommodations}]]*/ [];
+        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+        const selectedAccommodationId = /*[[${selectedAccommodationId}]]*/ '';
 
-<script>
-    document.getElementById('accommodationSelect').addEventListener('change', function () {
-        const companyId = this.value;
-        if (companyId === "0") {
-            window.location.href = `/owner/reservation/companies`;
-        } else if (companyId){
-            window.location.href = `/owner/reservation/company/${companyId}`;
-        } else {
-            window.location.href = `/owner/reservation/companies`;
+        const companySelect = document.getElementById("companySelect");
+        const accommodationSelect = document.getElementById("accommodationSelect");
+
+        function loadCompanyOptions() {
+            companySelect.innerHTML = '<option value="">전체</option>';
+            companies.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.companyId;
+                opt.textContent = c.name;
+                if (c.companyId == selectedCompanyId) opt.selected = true;
+                companySelect.appendChild(opt);
+            });
         }
+
+        function loadAccommodationOptions(companyId) {
+            accommodationSelect.innerHTML = '<option value="">전체</option>';
+            let filtered = accommodations;
+            if (companyId) {
+                filtered = accommodations.filter(a => a.companyId == companyId);
+            }
+            filtered.forEach(a => {
+                const opt = document.createElement("option");
+                opt.value = a.accommodationId;
+                opt.textContent = a.name;
+                if (a.accommodationId == selectedAccommodationId) opt.selected = true;
+                accommodationSelect.appendChild(opt);
+            });
+        }
+
+        // 회사 선택 시 숙소 드랍다운 갱신
+        companySelect.addEventListener("change", function () {
+            loadAccommodationOptions(this.value);
+        });
+
+        // 초기 로딩
+        loadCompanyOptions();
+        loadAccommodationOptions(companySelect.value);
+
+        document.getElementById('searchForm').addEventListener('submit', function (event) {
+            const companyId = companySelect.value;
+            const accommodationId = accommodationSelect.value;
+            let actionUrl = "/owner/reservation/list";
+
+            if (accommodationId) {
+                actionUrl = `/owner/reservation/accommodation/${accommodationId}`;
+            } else if (companyId) {
+                actionUrl = `/owner/reservation/company/${companyId}`;
+            }
+            this.action = actionUrl;
+        });
     });
+
+    /*]]>*/
 </script>

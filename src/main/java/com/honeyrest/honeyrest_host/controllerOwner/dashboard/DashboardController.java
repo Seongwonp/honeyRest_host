@@ -1,9 +1,6 @@
 package com.honeyrest.honeyrest_host.controllerOwner.dashboard;
 
-import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.CouponDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.ReservationRepository;
@@ -28,7 +25,7 @@ public class DashboardController {
     private final RoomService roomService;
     private final CouponService couponService;
     private final ReservationService reservationService;
-
+    private final ReviewService reviewService;
     private final UserRepository userRepository;
 
     @GetMapping("/dashboard")
@@ -84,8 +81,5 @@ public class DashboardController {
         return "redirect:/owner/coupon/list";
     }
 
-    @GetMapping("/review/list")
-    public String reviews(Model model) {
-        return "owner/review/list";
-    }
+
 }

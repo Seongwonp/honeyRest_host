@@ -141,7 +141,7 @@ public class ReservationService {
         // 3. 날짜별 처리
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
 
-            // ✅ 해당 날짜에 걸려 있는 예약 수 (체크인 <= date < 체크아웃)
+            // 해당 날짜에 걸려 있는 예약 수 (체크인 <= date < 체크아웃)
             LocalDate finalDate = date;
             long reservedCount = reservations.stream()
                     .filter(r -> !r.getCheckInDate().isAfter(finalDate) && r.getCheckOutDate().isAfter(finalDate))

@@ -1,10 +1,171 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
 
+<head>
+    <title>숙소 관리자 대시보드 - 리뷰 목록</title>
+    <th:block layout:fragment="head"></th:block>
+</head>
+
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading">
+        <h3 th:text="${accommodation != null} ? ${accommodation.name} + ' 리뷰 목록' : '전체 리뷰 목록'">리뷰 목록</h3>
+        <p class="text-subtitle text-muted">관리자용 숙소 리뷰 현황</p>
+    </div>
+        <!-- 숙소 선택 폼 -->
+    <div class="card p-4 mb-4 shadow-sm">
+    <form id="searchForm"
+          class="row g-3 align-items-end">
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
+                <select name="companyId" class="form-select" id="companySelect">
+                    <option value="">전체</option>
+                    <!-- 회사 목록은 JS로 채움 -->
+                </select>
+            </div>
+
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
+                <select name="accommodationId" class="form-select" id="accommodationSelect">
+                    <option value="">전체</option>
+                    <!-- 선택한 회사의 숙소 목록만 JS로 채움 -->
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+            </div>
+        </form>
+    </div>
+
+
+    <div class="page-content">
+        <section class="section">
+            <div class="row">
+                <div class="col-12">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>리뷰 ID</th>
+                            <th>숙소명</th>
+                            <th>방 ID</th>
+                            <th>사용자 ID</th>
+                            <th>평점</th>
+                            <th>리뷰 내용</th>
+                            <th>답글</th>
+                            <th>좋아요 수</th>
+                            <th>상태</th>
+                            <th>관리</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="review : ${reviews}">
+                            <td th:text="${review.reviewId}"></td>
+                            <td th:text="${review.accommodationId}"></td> <!-- 숙소 이름으로 바꾸려면 DTO 또는 Model 필요 -->
+                            <td th:text="${review.roomId}"></td>
+                            <td th:text="${review.userId}"></td>
+                            <td th:text="${review.rating}"></td>
+                            <td th:text="${review.content}"></td>
+                            <td th:text="${review.reply}"></td>
+                            <td th:text="${review.likeCount}"></td>
+                            <td th:text="${review.status}"></td>
+                            <td>
+                                <a th:href="@{'/owner/review/' + ${review.reviewId} + '/modify'}" class="btn btn-primary btn-sm">수정</a>
+                                <form th:action="@{'/owner/review/' + ${review.reviewId} + '/delete'}" method="post" onsubmit="return confirm('정말 삭제하시겠습니까?');" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 페이지네이션 -->
+    <div class="pagination mt-3">
+        <ul class="pagination">
+            <li class="page-item" th:if="${pageResponse.prev}">
+                <a class="page-link"
+                   th:href="@{/owner/accommodation/{accommodationId}/reviews(page=${pageResponse.prevPage}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}">이전</a>
+            </li>
+
+            <li class="page-item"
+                th:each="num : ${pageResponse.pageNumList}"
+                th:classappend="${num == pageResponse.current} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/owner/accommodation/{accommodationId}/reviews(page=${num}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}"
+                   th:text="${num}"></a>
+            </li>
+
+            <li class="page-item" th:if="${pageResponse.next}">
+                <a class="page-link"
+                   th:href="@{/owner/accommodation/{accommodationId}/reviews(page=${pageResponse.nextPage}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}">다음</a>
+            </li>
+        </ul>
+    </div>
+</th:block>
 </body>
 </html>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const companies = /*[[${companies}]]*/ [];
+    const accommodations = /*[[${accommodations}]]*/ [];
+    const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+    const selectedAccommodationId = /*[[${selectedAccommodationId}]]*/ '';
+
+    const companySelect = document.getElementById("companySelect");
+    const accommodationSelect = document.getElementById("accommodationSelect");
+
+    function loadCompanyOptions() {
+        companySelect.innerHTML = '<option value="">전체</option>';
+        companies.forEach(c => {
+            const opt = document.createElement("option");
+            opt.value = c.companyId;
+            opt.textContent = c.name;
+            if (c.companyId == selectedCompanyId) opt.selected = true;
+            companySelect.appendChild(opt);
+        });
+    }
+
+    function loadAccommodationOptions(companyId) {
+        accommodationSelect.innerHTML = '<option value="">전체</option>';
+        let filtered = accommodations;
+        if (companyId) {
+            filtered = accommodations.filter(a => a.companyId == companyId);
+        }
+        filtered.forEach(a => {
+            const opt = document.createElement("option");
+            opt.value = a.accommodationId;
+            opt.textContent = a.name;
+            if (a.accommodationId == selectedAccommodationId) opt.selected = true;
+            accommodationSelect.appendChild(opt);
+        });
+    }
+
+    // 회사 선택 시 숙소 드랍다운 갱신
+    companySelect.addEventListener("change", function() {
+        loadAccommodationOptions(this.value);
+    });
+
+    // 초기 로딩
+    loadCompanyOptions();
+    loadAccommodationOptions(companySelect.value);
+
+    document.getElementById('searchForm').addEventListener('submit', function(event) {
+        const companyId = companySelect.value;
+        const accommodationId = accommodationSelect.value;
+        let actionUrl = "/owner/review/list";
+
+        if (accommodationId) {
+            actionUrl = `/owner/review/accommodation/${accommodationId}`;
+        } else if (companyId) {
+            actionUrl = `/owner/review/company/${companyId}`;
+        }
+        this.action = actionUrl;
+    });
+    /*]]>*/
+</script>

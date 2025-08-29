@@ -26,7 +26,6 @@ public class Review {
     @JoinColumn(name = "reservation_id", nullable = false)
     private Reservation reservation;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
