@@ -2,8 +2,10 @@ package com.honeyrest.honeyrest_host.service;
 
 
 import com.honeyrest.honeyrest_host.dto.CompanyDTO;
+import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
 import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
+import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,6 +23,7 @@ import java.util.List;
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
+    private final AccommodationRepository accommodationRepository;
 
     // == mapper ==
     private CompanyDTO toDTO(Company e){
@@ -124,5 +127,10 @@ public class CompanyServiceImpl implements CompanyService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if(auth == null) throw new IllegalArgumentException("사용자권한없음.");
         return getCompanyIdByUserEmail(auth.getName()); // 로그인 username(email)로 회사 ID 조회
+    }
+
+    @Override
+    public Long getCompanyIdByAccommodationId(Long accommodationId) {
+        return accommodationRepository.findCompanyIdByAccommodationId(accommodationId);
     }
 }

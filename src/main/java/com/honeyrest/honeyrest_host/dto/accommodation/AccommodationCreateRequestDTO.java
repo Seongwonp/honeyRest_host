@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.dto.accommodation;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -75,7 +76,7 @@ public class AccommodationCreateRequestDTO {
     private String status;
 
     // 초기 부가정보 (선택)
-    @Digits(integer = 8, fraction = 2)
+    @Digits(integer = 8, fraction = 0)
     private BigDecimal minPrice;
     private BigDecimal rating;
 
@@ -88,6 +89,11 @@ public class AccommodationCreateRequestDTO {
 
     // 부가
     private List<AccommodationTagDTO> tags;
+
+//    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    /* 상세 페이지에서 사용할 리스트용 getter */
+
 
 
 }

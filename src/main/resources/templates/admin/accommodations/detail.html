@@ -37,9 +37,13 @@
         <div>
           <h4 class="mb-1" th:text="${acc.name}">숙소명</h4>
           <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span th:text="|카테고리ID: ${acc.categoryId}|">카테고리ID</span>
             <span>·</span>
-            <span th:text="|지역ID: ${acc.mainRegionId}|">지역ID</span>
+            카테고리:
+            <span th:text="${categoryName != null ? categoryName : '-'}"></span>
+            <span>·</span>
+            &nbsp;·&nbsp;지역:
+            <span th:text="${mainRegionName != null ? mainRegionName : '-'}"></span>
+            <span th:if="${subRegionName != null}" th:text="' / ' + ${subRegionName}"></span>
             <span>·</span>
             <strong th:text="|최저가 ${#numbers.formatDecimal(acc.minPrice,0,'COMMA',0,'POINT')}원|">최저가</strong>
             <span class="status-badge"
@@ -58,8 +62,8 @@
         <div class="col-lg-6">
           <h6 class="mb-3">기본 정보</h6>
           <dl class="row kv">
-            <dt class="col-sm-3">회사 ID</dt>
-            <dd class="col-sm-9" th:text="${acc.companyId}">1</dd>
+            <dt class="col-sm-3">업체명</dt>
+            <dd class="col-sm-9" th:text="${companyName}">1</dd>
 
             <dt class="col-sm-3">주소</dt>
             <dd class="col-sm-9" th:text="${acc.address}">주소</dd>
@@ -79,10 +83,13 @@
           <p class="text-muted" th:text="${acc.description}">설명</p>
 
           <h6 class="mt-4 mb-2">확인사항 및 기타</h6>
-          <div>
-            <span class="tag" th:each="amen : ${acc.amenities}" th:text="${amen}">wifi</span>
-            <span th:if="${acc.amenities == null or #lists.isEmpty(acc.amenities)}" class="text-muted">등록된 편의시설 없음</span>
-          </div>
+          <ul th:if="${amenitiesList != null}">
+            <li th:each="a : ${amenitiesList}" th:text="${a}"></li>
+          </ul>
+<!--          <div>-->
+<!--            <span class="tag" th:each="amen : ${acc.amenities}" th:text="${amen}">wifi</span>-->
+<!--            <span th:if="${acc.amenities == null or #lists.isEmpty(acc.amenities)}" class="text-muted">등록된 편의시설 없음</span>-->
+<!--          </div>-->
 
 
         </div>

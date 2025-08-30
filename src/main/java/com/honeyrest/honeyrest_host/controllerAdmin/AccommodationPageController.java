@@ -1,11 +1,16 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dto.CompanyDTO;
 import com.honeyrest.honeyrest_host.dto.RegionDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.*;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
+import com.honeyrest.honeyrest_host.entity.AccommodationImage;
 import com.honeyrest.honeyrest_host.entity.AccommodationTag;
 import com.honeyrest.honeyrest_host.entity.Region;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
@@ -36,9 +41,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Log4j2
@@ -53,10 +60,9 @@ public class AccommodationPageController {
     private final FileUploadUtil fileUploadUtil;
     private final UserService userService;
     private final AccommodationTagService accommodationTagService;
+    private final ObjectMapper objectMapper;
 
 
-    private final AccommodationCategoryRepository accommodationCategoryRepository;
-    private final AccommodationTagRepository accommodationTagRepository;
     private final RegionRepository regionRepository;
     private final AccommodationCategoryService accommodationCategoryService;
     private final RegionService regionService;
@@ -98,8 +104,8 @@ public class AccommodationPageController {
                 log.info("bbbbbbbbbbbbbbbbbb");
             }
 
-            // 2) 숙소 등록 (서비스에서 상태 PENDING 처리)
-            form.setAmenities(csvToJsonArray(form.getAmenities()));
+            // 2) 숙소 등록 json 배열 문자열로 정규화
+            form.setAmenities(parseAmenitiesToJson(form.getAmenities()));
             AccommodationCreateRequestDTO saved = accommodationService.create(form);
             Long accId = saved.getAccommodationId(); // create가 id를 리턴하도록 하세요.
 
@@ -116,7 +122,7 @@ public class AccommodationPageController {
                                 .build()
 
                 );
-                log.info("dddddddddddddddddd");
+                accommodationImageService.updateThumbnailUrl(accId, form.getThumbnailUrl());
             }
 
             // (4) 추가 이미지들 업로드 → 이미지 테이블 저장
@@ -210,7 +216,44 @@ public class AccommodationPageController {
     public String detail(@PathVariable Long id, Model model) {
         // DTO에 name, categoryName, regionName, minPrice, status, address, description, amenities, images, tags ...을 채워서 반환
         AccommodationCreateRequestDTO acc = accommodationService.getById(id);
+
+
+        // 카테고리 이름
+        String categoryName = null;
+        if (acc.getCategoryId() != null) {
+            AccommodationCategoryDTO cat = accommodationCategoryService.get(acc.getCategoryId());
+            categoryName = (cat != null ? cat.getName() : null);
+        }
+
+        String mainRegionName = null;
+        if (acc.getMainRegionId() != null) {
+            RegionDTO main = regionService.get(acc.getMainRegionId());
+            mainRegionName = (main != null ? main.getName() : null);
+        }
+
+        String subRegionName = null;
+        if (acc.getSubRegionId() != null) {
+            RegionDTO sub = regionService.get(acc.getSubRegionId());
+            subRegionName = (sub != null ? sub.getName() : null);
+        }
+        // 회사 이름
+        String companyName = null;
+        if (acc.getCompanyId() != null) {
+            CompanyDTO com = companyService.getById(acc.getCompanyId());
+            companyName = (com != null ? com.getName() : null);
+        }
+
+        // ← JSON 문자열을 List<String>으로 변환해서 모델에 담기
+        List<String> amenitiesList = parseAmenitiesToList(acc.getAmenities());
+
+
         model.addAttribute("acc", acc);
+        model.addAttribute("categoryName", categoryName);
+        model.addAttribute("mainRegionName", mainRegionName);
+        model.addAttribute("subRegionName", subRegionName);
+        model.addAttribute("companyName", companyName);
+        model.addAttribute("amenitiesList", amenitiesList);
+
         return "admin/accommodations/detail";
     }
 
@@ -253,6 +296,9 @@ public class AccommodationPageController {
     public String editForm(@PathVariable Long id, Model model) {
         // 기본 dto 조회
         AccommodationCreateRequestDTO dto = accommodationService.getById(id);
+        // dto amenities(json) -> list -> \n 문자열
+        List<String> amenListForForm = parseAmenitiesToList(dto.getAmenities());
+        String amenitiesMultiline = amenitiesListToMultiline(amenListForForm);
 
         // 2) 화면 폼용으로 기존 DTO 재활용
         AccommodationUpdateRequestDTO form = AccommodationUpdateRequestDTO.builder()
@@ -266,7 +312,7 @@ public class AccommodationPageController {
                 .longitude(dto.getLongitude())
                 .thumbnailUrl(dto.getThumbnailUrl())
                 .description(dto.getDescription())
-                .amenities(dto.getAmenities() == null ? "" : dto.getAmenities())
+                .amenities(amenitiesMultiline)
                 .checkInTime(dto.getCheckInTime())
                 .checkOutTime(dto.getCheckOutTime())
                 .status(dto.getStatus())
@@ -295,6 +341,8 @@ public class AccommodationPageController {
         model.addAttribute("mainRegions", mainRegions);
         model.addAttribute("subRegions", subRegions);
         model.addAttribute("tagsByCategory", tagsByCategory);
+        log.info("checkin {} : ", form.getCheckInTime());
+        log.info("checkout {} : ", form.getCheckOutTime());
 
 
         return "admin/accommodations/edit"; // edit.html
@@ -309,53 +357,55 @@ public class AccommodationPageController {
                              @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
                              @RequestParam(value = "subImages", required = false) List<MultipartFile> subImages,
                              RedirectAttributes ra) {
-        log.info("== editSubmit id={} name={} thumbnail?={}", id, form.getName(),
-                (thumbnail != null ? thumbnail.getOriginalFilename() : "none"));
-        // 1) 텍스트/기본 필드 수정
-//        accommodationService.update(accommodationId, form);
-
         try {
             // 1) 텍스트 업데이트
-            accommodationService.update(id, form);
+            form.setAmenities(parseAmenitiesToJson(form.getAmenities()));
 
             // 2) 썸네일 파일이 올라온 경우만 업로드+DB 반영
             if (thumbnail != null && !thumbnail.isEmpty()) {
-                AccommodationImageDTO mainDto = AccommodationImageDTO.builder()
-                        .imageType("MAIN")
-                        .sortOrder(0)
-                        .file(thumbnail)
-                        .build();
-
-                // 이미지 테이블 MAIN upsert
-                AccommodationImageDTO savedMain = accommodationImageService.upsertMainThumbnail(id, mainDto);
-
-                // 숙소 테이블의 thumbnailUrl도 동기화 (서비스에 메서드 있어야 함)
-                accommodationImageService.updateThumbnailUrl(id, savedMain.getImageUrl());
-            }
-
-
-            // 3) SUB 이미지들 추가/수정
-            if (subImages != null && !subImages.isEmpty()) {
-                int sortSeed = 1; // MAIN=0 이후부터
-                for (MultipartFile file : subImages) {
-                    if (file == null || file.isEmpty()) continue;
-                    AccommodationImageDTO subDto = AccommodationImageDTO.builder()
-                            .imageType("SUB")
-                            .sortOrder(sortSeed++)
-                            .file(file)
-                            .build();
-                    accommodationImageService.saveOrUpload(id, subDto);
+                // 파일 업로드 한 경우
+                String newMainUrl = null;
+                if (thumbnail != null && !thumbnail.isEmpty()) {
+                    String uploadedUrl = fileUploadUtil.upload(thumbnail, "accommodation");
+                    newMainUrl = uploadedUrl;
+                    form.setThumbnailUrl(newMainUrl); // 서비스 update가 썸네일도 갱신 가능하도록 하기 위함.
+                } else if (form.getThumbnailUrl() != null && !form.getThumbnailUrl().isEmpty()) {
+                    newMainUrl = form.getThumbnailUrl(); // 파일 없이 기존/ 새 url 유지 하기 위함
                 }
+                accommodationService.update(id, form);
+
+                // main 이미지 upsert + 숙소 썸네일 url 동기화
+                if (newMainUrl != null) {
+                    AccommodationImageDTO mainDto = AccommodationImageDTO.builder()
+                            .imageType("MAIN")
+                            .sortOrder(0)
+                            .imageUrl(newMainUrl)
+                            .build();
+
+                    AccommodationImageDTO savedMain = accommodationImageService.upsertMainThumbnail(id, mainDto);
+                    // 숙소 테이블의 thumbnail.url 을 메인과 동일하게 맞추기 위함(썸네일=메인)
+                    accommodationImageService.updateThumbnailUrl(id, savedMain.getImageUrl());
+                }
+
+                // 4) SUB 이미지들 추가/수정
+                if (subImages != null && !subImages.isEmpty()) {
+                    int sortSeed = 1; // MAIN=0 이후부터
+                    for (MultipartFile file : subImages) {
+                        if (file == null || file.isEmpty()) continue;
+                        accommodationImageService.saveOrUpload(id, AccommodationImageDTO.builder()
+                                .imageUrl("SUB").sortOrder(sortSeed++).file(file).build());
+                    }
+                }
+                ra.addFlashAttribute("success", "수정이 완료되었습니다.");
+                return "redirect:/admin/accommodations/list";
             }
-            ra.addFlashAttribute("success", "수정이 완료되었습니다.");
-            return "redirect:/admin/accommodations/list";
 
-        } catch (Exception e) {
-            log.error("==============editSubmit error", e);   // ★ stacktrace 확인용
-
-            ra.addFlashAttribute("error", "이미지 처리 중 오류: " + e.getMessage());
-            return "redirect:/admin/accommodations/edit" + id;
-        }
+            } catch(Exception e){
+                log.error("==============editSubmit error", e);   // ★ stacktrace 확인용
+                ra.addFlashAttribute("error", "이미지 처리 중 오류: " + e.getMessage());
+                return "redirect:/admin/accommodations/edit/" + id;
+            }
+        return "";
     }
 
 
@@ -377,30 +427,38 @@ public class AccommodationPageController {
     }
 
 
-    // CSV("와이파이, 주차") -> ["와이파이","주차"] -> string 으로 변환
-    private String csvToJsonArray(String csv) {
+    //json문자열을 List로 변환
+    private List<String> parseAmenitiesToList(String jsonInput) {
+        if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
+
         try {
-            if (csv == null) return "[]";
-            String s = csv.trim();
-            if (s.isEmpty()) return "[]";
-
-            // 이미 JSON 배열이면 유효성만 확인하고 그대로
-            if (s.startsWith("[") && s.endsWith("]")) {
-                new com.fasterxml.jackson.databind.ObjectMapper().readTree(s);
-                return s;
-            }
-
-            java.util.List<String> list = java.util.Arrays.stream(s.split(","))
-                    .map(String::trim)
-                    .filter(x -> !x.isEmpty())
-                    .toList();
-
-            return list.isEmpty()
-                    ? "[]"
-                    : new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(list);
-        } catch (Exception e) {
-            return "[]";
+            // JSON 배열 문자열을 List<String>으로 역직렬화
+            return objectMapper.readValue
+                    (jsonInput, new TypeReference<List<String>>() {
+                    });
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return Collections.emptyList(); // 실패 시 빈 리스트 반환
         }
     }
 
+    //List를 문자열로 변환(textarea)
+    private String amenitiesListToMultiline(List<String> list) {
+        return String.join("\n ", list);
+    }
+
+
+    // 줄바꿈/쉼표 섞인 입력 -> josn 문자열(저장용)
+    private String parseAmenitiesToJson(String input) {
+        if (input == null || input.isBlank()) return "[]";
+        List<String> amenitiesList = Arrays.stream(input.split("[,\\r?\\n]+"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        try {
+            return objectMapper.writeValueAsString(amenitiesList);
+        } catch (JsonProcessingException e) {
+            return "[]"; // 실패 시 빈 배열 반환
+        }
+    }
 }

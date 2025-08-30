@@ -22,10 +22,11 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
 
     Page<Accommodation> findByCompany_CompanyIdAndStatus(Long companyId, String status, Pageable pageable);
 
-    long countByCompany_CompanyId(Long companyId);
+    Long countByCompany_CompanyId(Long companyId);
 
     List<Accommodation> findAllByCompany_CompanyId(Long companyId);
 
+    Long findCompanyIdByAccommodationId(Long accommodationId);
 
 
     @Query(value = """

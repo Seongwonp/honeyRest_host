@@ -68,7 +68,7 @@ public class Accommodation {
     @Column(precision = 2, scale = 1)
     private BigDecimal rating; // 평균 평점
 
-    @Column(name = "min_price", precision = 10, scale = 2)
+    @Column(name = "min_price", precision = 10, scale = 1)
     private BigDecimal minPrice; // 최저 가격
 
     @Column(length = 20)

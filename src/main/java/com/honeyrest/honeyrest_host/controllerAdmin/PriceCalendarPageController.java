@@ -1,32 +1,38 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.honeyrest.honeyrest_host.dto.DailyOverviewDTO;
+import com.honeyrest.honeyrest_host.dto.GridCellDTO;
 import com.honeyrest.honeyrest_host.dto.PriceCalendarDTO;
+import com.honeyrest.honeyrest_host.dto.RoomDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
 import com.honeyrest.honeyrest_host.service.CompanyService;
 import com.honeyrest.honeyrest_host.service.PriceCalendarService;
+import com.honeyrest.honeyrest_host.service.RoomService;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Controller
@@ -35,11 +41,13 @@ import java.time.YearMonth;
 public class PriceCalendarPageController {
 
     private final PriceCalendarService priceCalendarService;
-    private final AccommodationRepository accommodationRepository;
-    private final CompanyRepository companyRepository;
+    private final RoomService roomService;
     private final ObjectMapper objectMapper;
     private final CompanyService companyService;
     private final AccommodationService accommodationService;
+
+
+
 
     /**
      * companyId 없이 들어오면 로그인 사용자 기준으로 채워서 리다이렉트
@@ -55,7 +63,7 @@ public class PriceCalendarPageController {
         return "redirect:/admin/price/page?companyId=" + companyId + "&ym=" + resolvedYm;
     }
 
-    /**
+    /*
      * 월 캘린더 페이지 (companyId 필수 버전)
      */
     @GetMapping(value = "/page", params = "companyId")
@@ -67,14 +75,15 @@ public class PriceCalendarPageController {
                        @RequestParam(required = false, defaultValue = "calendar") String mode,
                        Model model) {
 
+        // 1) 파라미터 해석
         Long resolvedRoomId = (roomId == null || roomId.isBlank() || "null".equalsIgnoreCase(roomId) ? null : Long.valueOf(roomId));
 
         YearMonth yearMonth = (ym == null || ym.isBlank() || "null".equalsIgnoreCase(ym)) ? YearMonth.now() : YearMonth.parse(ym);
         YearMonth preYm = yearMonth.minusMonths(1);   // 이전달
         YearMonth nextYm = yearMonth.plusMonths(1);   // 다음달은 plus
 
+        // 2) 숙소 드롭다운(회사 소속 숙소들)
         model.addAttribute("accommodations", accommodationService.getAllById(companyId));
-
 
         PriceCalendarDTO priceCalendarDTO =
                 priceCalendarService.getMonth(companyId, accommodationId, yearMonth, minAvailable);
@@ -97,7 +106,7 @@ public class PriceCalendarPageController {
     }
 
     /**
-     * 단건 업서트 (페이지 내 인라인 폼용)
+     * 단건 (페이지 내 인라인 폼용)
      */
     @PostMapping("/upsert")
     public String upsert(@RequestParam Long companyId,
@@ -158,4 +167,77 @@ public class PriceCalendarPageController {
         if (minAvailable != null) redirect.append("&minAvailable=").append(minAvailable);
         return redirect.toString();
     }
+
+    @GetMapping("/{accommodationId}")
+    public String roomCalendar(@PathVariable Long accommodationId,
+                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+                               Model model) {
+
+        if (startDate == null) {
+            startDate = LocalDate.now().withDayOfMonth(1);
+            endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+        }
+        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+
+        // 해당 숙소의 방 리스트
+        List<RoomDTO> roomList = roomService.getRoomsByAccommodationId(accommodationId);
+
+        // 방별 캘린더 데이터 (날짜별 가격/재고)
+        Map<Long, Map<LocalDate, PriceCalendarDTO>> calendarDataMap = new HashMap<>();
+        for (RoomDTO room : roomList) {
+            Map<LocalDate, PriceCalendarDTO> roomCalendar =
+                    priceCalendarService.getCalendarData(room.getRoomId(), startDate, endDate);
+            calendarDataMap.put(room.getRoomId(), roomCalendar);
+        }
+
+        model.addAttribute("companyId", companyId);
+
+        // 드롭다운용 전체 회사/숙소 목록
+        model.addAttribute("accommodations", accommodationService.getAllById(companyId));
+
+        // 캘린더 데이터
+        model.addAttribute("roomList", roomList);
+        model.addAttribute("calendarDataMap", calendarDataMap);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
+        LocalDate firstDayOfMonth = startDate.withDayOfMonth(1);
+        DayOfWeek firstWeekday = firstDayOfMonth.getDayOfWeek();
+        int startOffset = firstWeekday.getValue() % 7; // 일요일=0
+
+        int daysInMonth = startDate.lengthOfMonth();
+        int totalCells = daysInMonth + startOffset;
+
+        model.addAttribute("startOffset", startOffset);
+        model.addAttribute("daysInMonth", daysInMonth);
+        model.addAttribute("totalCells", totalCells);
+
+
+        return "admin/price/page";
+    }
+
+    // 4) 일자별 요약 (Daily Overview)
+
+    @GetMapping("/daily-overview")
+    @ResponseBody   // JSON 응답
+    public List<DailyOverviewDTO> getDailyOverview(@RequestParam Long companyId,
+                                                   @RequestParam(required = false) Long accommodationId,
+                                                   @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
+                                                   @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
+        return priceCalendarService.getDailyOverview(companyId, accommodationId, start, end);
+    }
+
+
+    // 5) 그리드 셀 데이터 (Grid Cells)
+    @GetMapping("/grid-cells")
+    @ResponseBody   // JSON 응답
+    public List<GridCellDTO> getGridCells(@RequestParam Long companyId,
+                                          @RequestParam(required = false) Long accommodationId,
+                                          @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
+                                          @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
+        return priceCalendarService.getGridCells(companyId, accommodationId, start, end);
+    }
+
+
 }

@@ -14,11 +14,26 @@ import java.util.Optional;
 
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
+    // 예약번호로 단건 예약 찾기
     Optional<Reservation> findByReservationNumber(String number);
 
+    // 예약 상태에 따라 예약 목록 페이징
     Page<Reservation> findByStatus(String status, Pageable pageable);
 
-    // 회사별 예약 목록 (검색/상태 필터)
+    // 기간과 "겹치는" 예약들 조회 (체크인 < ednDate and 체크아웃 > startDate) -> 구간 겹침)
+    @Query("""
+        select r
+          from Reservation r
+         where r.room.roomId = :roomId
+           and r.checkInDate < :endDate
+           and r.checkOutDate > :startDate
+    """)
+    List<Reservation> findByRoomIdAndDateBetween(@Param("roomId") Long roomId,
+                                      @Param("startDate") LocalDate startDate,
+                                      @Param("endDate") LocalDate endDate);
+
+
+    // 회사별 예약 목록 (검색/상태 필터) ->예약 목록 페이지(검색창 + 상태 필터)
     @Query("""
       select r
       from Reservation r
@@ -38,7 +53,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                               @Param("q") String q,
                                               Pageable pageable);
 
-    // 취소 제외 전체 예약 수
+    // 전체 예약 중 취소되지 않은 예약 개수 ->전체  대시보드 통계용
     @Query("""
         select count(r)
         from Reservation r
@@ -46,7 +61,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     """)
     long countActiveAll();
 
-    // 회사별(Company) 취소 제외 예약 수
+    // 회사별(Company) 취소 되지 않은 예약 . -> 회사별 대시보드 (내 예약이 몇건 있는지 알기 위함)
     @Query("""
         select count(r)
         from Reservation r
@@ -59,6 +74,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     long countActiveByCompanyId(@Param("companyId") Long companyId);
 
     // 회사(or 숙소) 객실의 월 범위에 걸친 예약들 싸그리
+    // 체크인/ 체크아웃 날짜가 그달과 겹치는 모든 예약 포함. -> 월단위 캘린더 재고/예약 표시
     @Query("""
         select r
         from Reservation r

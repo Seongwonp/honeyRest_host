@@ -22,7 +22,8 @@
 
                         <!-- ★ 반드시 multipart/form-data -->
                         <form th:action="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}"
-                              th:object="${form}" method="post" enctype="multipart/form-data" >
+                              th:object="${form}" method="post" enctype="multipart/form-data">
+                            <input type="hidden" th:field="*{thumbnailUrl}">
 
                             <div class="row g-3">
                                 <!-- 숙소명 -->
@@ -85,20 +86,31 @@
                                     <textarea class="form-control" th:field="*{amenities}" rows="2"
                                               placeholder="예) 와이파이,주차,수영장"></textarea>
                                     <div class="form-text">쉼표(,)로 구분해서 입력하거나, 이미 JSON 배열이면 그대로 저장됩니다.</div>
+                                    <!--                                    <p th:text="${acc.amenities}" style="white-space: pre-line;"></p>-->
                                 </div>
 
                                 <!-- 영업시간/최저가 -->
                                 <div class="col-md-3">
-                                    <label class="form-label required">영업시작</label>
-                                    <input type="time" class="form-control" th:field="*{checkInTime}">
+                                    <label class="form-label">체크인</label>
+                                    <input type="time"
+                                           class="form-control"
+                                           name="checkInTime"
+                                           th:value="${form.checkInTime != null ? #temporals.format(form.checkInTime,'HH:mm') : ''}"
+                                           step="300">
+
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label required">영업종료</label>
-                                    <input type="time" class="form-control" th:field="*{checkOutTime}">
+
+                                    <label class="form-label">체크아웃</label>
+                                    <input type="time"
+                                           class="form-control"
+                                           name="checkOutTime"
+                                           th:value="${form.checkOutTime != null ? #temporals.format(form.checkOutTime,'HH:mm') : ''}"
+                                           step="300">
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">최저가(원)</label>
-                                    <input type="number" step="100" min="0" class="form-control" th:field="*{minPrice}"
+                                    <input type="number" step="5" min="0" class="form-control" th:field="*{minPrice}"
                                            placeholder="예) 80000">
                                 </div>
 
@@ -109,7 +121,7 @@
                                     <!-- 현재 썸네일 미리보기 -->
                                     <div class="d-flex align-items-center gap-3">
                                         <!-- 이미지가 있을 때 -->
-                                        <img th:if="${acc != null and #strings.length(acc.thumbnailUrl) > 0}"
+                                        <img id="thumbPreview" th:if="${acc != null and #strings.length(acc.thumbnailUrl) > 0}"
                                              th:src="${acc.thumbnailUrl}"
                                              alt="preview"
                                              style="width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;">
@@ -122,7 +134,8 @@
                                     <!-- 파일 선택 (서버로 바로 제출) -->
                                     <div class="mt-2" style="max-width:360px">
                                         <!-- ★ name="thumbnail" : 컨트롤러 파라미터와 동일 -->
-                                        <input type="file" id="thumbFile" name="thumbnail" accept="image/*" class="form-control">
+                                        <input type="file" id="thumbFile" name="thumbnail" accept="image/*"
+                                               class="form-control">
                                     </div>
                                     <div class="form-text">파일을 선택하고 저장하면 메인 썸네일이 교체됩니다. (MAIN / sortOrder=0)</div>
                                 </div>
@@ -134,7 +147,8 @@
                                     <div class="d-flex flex-wrap gap-2 mb-2">
                                         <div th:each="img : ${images}" th:if="${img.imageType == 'SUB'}"
                                              class="position-relative" style="width:96px;height:96px">
-                                            <img th:src="${img.imageUrl}" alt="sub" style="width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;">
+                                            <img th:src="${img.imageUrl}" alt="sub"
+                                                 style="width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;">
                                         </div>
                                         <span th:if="${images != null and #lists.size(images) > 0}"
                                               class="text-muted">등록된 서브 이미지가 없습니다.</span>
@@ -142,11 +156,14 @@
 
                                     <!-- 새 서브 이미지 업로드 (여러 장) -->
                                     <!-- ★ name="subImages" / multiple : 컨트롤러와 일치 -->
-                                    <input type="file" name="subImages" id="subImages" accept="image/*" multiple class="form-control" style="max-width:480px">
+                                    <input type="file" name="subImages" id="subImages" accept="image/*" multiple
+                                           class="form-control" style="max-width:480px">
 
                                     <!-- 선택한 파일들 로컬 미리보기 -->
                                     <div id="subPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
-                                    <div class="form-text">여러 장 선택 가능. 저장하면 서브 이미지로 추가됩니다 (imageType=SUB, sortOrder는 1부터 자동부여).</div>
+                                    <div class="form-text">여러 장 선택 가능. 저장하면 서브 이미지로 추가됩니다 (imageType=SUB, sortOrder는 1부터
+                                        자동부여).
+                                    </div>
                                 </div>
 
                                 <!-- 태그 -->
@@ -168,7 +185,9 @@
                                 <div class="col-md-3">
                                     <label class="form-label">상태</label>
                                     <select class="form-select" th:field="*{status}">
+                                        <option value="">선택</option>
                                         <option value="PENDING">PENDING</option>
+                                        <option value="ACTIVE">ACTIVE</option>
                                     </select>
                                 </div>
                             </div>
@@ -178,7 +197,6 @@
                                 <a th:href="@{/admin/accommodations/list}" class="btn btn-light">취소</a>
                             </div>
                         </form>
-
                     </div><!-- card-body -->
                 </div><!-- card -->
             </div>
@@ -226,19 +244,19 @@
         })();
 
         // 태그 선택 미리보기
-        document.addEventListener('DOMContentLoaded', function(){
+        document.addEventListener('DOMContentLoaded', function () {
             const sel = document.getElementById('tagSelect');
             const box = document.getElementById('tagSelected');
-            if(!sel || !box) return;
+            if (!sel || !box) return;
 
-            function renderSelected(){
+            function renderSelected() {
                 box.innerHTML = '';
                 const selected = [...sel.selectedOptions].map(o => ({
                     value: o.value,
                     label: o.textContent.trim(),
                     category: o.closest('optgroup') ? o.closest('optgroup').label : ''
                 }));
-                if(selected.length === 0){
+                if (selected.length === 0) {
                     box.innerHTML = '<span class="text-muted">선택된 태그가 없습니다.</span>';
                     return;
                 }
@@ -253,7 +271,9 @@
                     close.setAttribute('aria-label', 'remove');
                     close.addEventListener('click', () => {
                         const opt = [...sel.options].find(o => o.value === s.value);
-                        if(opt){ opt.selected = false; }
+                        if (opt) {
+                            opt.selected = false;
+                        }
                         renderSelected();
                     });
 
@@ -271,7 +291,7 @@
             const input = document.getElementById('thumbFile');
             const preview = document.getElementById('thumbPreview');
             const empty = document.getElementById('thumbEmpty');
-            if(!input) return;
+            if (!input) return;
 
             input.addEventListener('change', function () {
                 const f = this.files && this.files[0];
@@ -287,12 +307,12 @@
     </script>
     <script>
         // 서브 이미지 로컬 미리보기
-        (function(){
+        (function () {
             const input = document.getElementById('subImages');
             const box = document.getElementById('subPreview');
-            if(!input || !box) return;
+            if (!input || !box) return;
 
-            input.addEventListener('change', function(){
+            input.addEventListener('change', function () {
                 box.innerHTML = '';
                 const files = Array.from(this.files || []);
                 files.forEach(f => {

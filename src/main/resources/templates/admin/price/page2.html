@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+<head>
+  <title>숙소 캘린더</title>
+  <style>
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .day {
+      border: 1px solid #ccc;
+      min-height: 100px;
+      padding: 5px;
+    }
+    .header {
+      font-weight: bold;
+      background: #f8f9fa;
+      text-align: center;
+    }
+    .soldout {
+      color: red;
+    }
+    .available {
+      color: green;
+    }
+    .day-number {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .empty-day {
+      background: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+<th:block layout:fragment="content">
+  <div class="page-heading">
+    <h3>캘린더</h3>
+  </div>
+
+  <!-- 검색 폼 -->
+  <div class="card p-4 mb-4 shadow-sm">
+    <form method="get"
+          th:action="@{/owner/calendar/{companyId}/{accommodationId}/calendar(companyId=${companyId}, accommodationId=${accommodationId})}"
+          class="row g-3 align-items-end"
+          id="searchForm">
+
+      <!-- 회사 선택 -->
+      <div class="col-md-4 col-sm-8">
+        <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
+        <select name="companyId" class="form-select" id="companySelect">
+          <option value="">회사 선택</option>
+        </select>
+      </div>
+
+      <!-- 숙소 선택 -->
+      <div class="col-md-4 col-sm-8">
+        <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
+        <select name="accommodationId" class="form-select" id="accommodationSelect">
+          <option value="">숙소 선택</option>
+        </select>
+      </div>
+
+      <div class="col-auto">
+        <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+      </div>
+    </form>
+  </div>
+  <!-- 월 이동 -->
+  <div class="calendar-nav mb-2">
+    <button id="prevMonth" class="btn btn-secondary">&lt; 이전달</button>
+    <button id="nextMonth" class="btn btn-secondary">다음달 &gt;</button>
+  </div>
+  <!-- 방별 캘린더 -->
+  <th:block th:each="room : ${roomList}">
+    <h4 th:text="${room.name}"></h4>
+
+    <div class="calendar">
+      <!-- 요일 헤더 -->
+      <div class="header">일</div>
+      <div class="header">월</div>
+      <div class="header">화</div>
+      <div class="header">수</div>
+      <div class="header">목</div>
+      <div class="header">금</div>
+      <div class="header">토</div>
+
+      <!-- 빈 칸 채우기 -->
+      <th:block th:each="i : ${#numbers.sequence(0, totalCells - 1)}">
+        <div class="day" th:class="${i < startOffset} ? 'empty-day' : ''">
+          <th:block th:if="${i >= startOffset}"
+                    th:with="day=${i - startOffset + 1},
+                                       date=${startDate.withDayOfMonth(day)},
+                                       data=${calendarDataMap.get(room.roomId) != null ? calendarDataMap.get(room.roomId).get(date) : null}">
+            <div class="day-number" th:text="${day}"></div>
+            <div th:if="${data != null}">
+              <div>가격: <span th:text="${#numbers.formatInteger(data.price, 0, 'COMMA')} + '원'"></span></div>
+              <div th:classappend="${data.availableRoom > 0} ? 'available' : 'soldout'">
+                <span th:text="${data.availableRoom > 0 ? '잔여 ' + data.availableRoom + '실' : '매진'}"></span>
+              </div>
+              <button type="button"
+                      th:attr="data-date=${date}, data-roomid=${room.roomId}"
+                      class="editBtn"
+                      onclick="openEditModal(this)">수정</button>
+            </div>
+            <div th:if="${data == null}">
+              <span class="text-muted">데이터 없음</span>
+              <button type="button"
+                      th:attr="data-date=${date}, data-roomid=${room.roomId}"
+                      class="editBtn"
+                      onclick="openEditModal(this)">등록</button>
+            </div>
+          </th:block>
+        </div>
+      </th:block>
+    </div>
+  </th:block>
+
+  <!-- 수정 모달 -->
+  <div id="editModal" style="display:none; position:fixed; top:20%; left:30%; background:white; padding:20px; border:1px solid #ccc;">
+    <h3>가격/재고 수정</h3>
+    <form id="editForm" method="post" action="/owner/rooms/calendar/update">
+      <input type="hidden" name="roomId" id="roomId">
+      <input type="hidden" name="date" id="date">
+      <div>
+        <label>가격</label>
+        <input type="number" name="price" required>
+      </div>
+      <div>
+        <label>잔여 객실 수</label>
+        <input type="number" name="availableRoom" required>
+      </div>
+      <button type="submit">저장</button>
+      <button type="button" onclick="closeEditModal()">닫기</button>
+    </form>
+  </div>
+
+</th:block>
+
+
+</body>
+</html>
+
+<script th:inline="javascript">
+  const companySelect = document.getElementById("companySelect");
+  const accommodationSelect = document.getElementById("accommodationSelect");
+
+  const companies = /*[[${companies}]]*/ [];
+  const accommodations = /*[[${accommodations}]]*/ [];
+
+  const selectedCompanyId = /*[[${companyId}]]*/ '';
+  const selectedAccommodationId = /*[[${accommodationId}]]*/ '';
+
+  function loadCompanyOptions() {
+    companySelect.innerHTML = '<option value="">회사 선택</option>';
+    companies.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.companyId;
+      opt.textContent = c.name;
+      if(c.companyId == selectedCompanyId) opt.selected = true;
+      companySelect.appendChild(opt);
+    });
+  }
+
+  function loadAccommodationOptions(companyId) {
+    accommodationSelect.innerHTML = '<option value="">숙소 선택</option>';
+    let filtered = accommodations;
+    if(companyId) filtered = accommodations.filter(a => a.companyId == companyId);
+    filtered.forEach(a => {
+      const opt = document.createElement("option");
+      opt.value = a.accommodationId;
+      opt.textContent = a.name;
+      if(a.accommodationId == selectedAccommodationId) opt.selected = true;
+      accommodationSelect.appendChild(opt);
+    });
+  }
+
+  companySelect.addEventListener("change", function() {
+    loadAccommodationOptions(this.value);
+  });
+
+  // 초기 로딩
+  loadCompanyOptions();
+  loadAccommodationOptions(selectedCompanyId);
+
+  function openEditModal(btn) {
+    document.getElementById("roomId").value = btn.getAttribute("data-roomId");
+    document.getElementById("date").value = btn.getAttribute("data-date");
+    document.getElementById("editModal").style.display = "block";
+  }
+  function closeEditModal() {
+    document.getElementById("editModal").style.display = "none";
+  }
+
+  // 전월/다음달 이동
+  const prevBtn = document.getElementById("prevMonth");
+  const nextBtn = document.getElementById("nextMonth");
+
+  prevBtn.addEventListener("click", function() {
+    const current = new Date(/*[[${startDate}]]*/);
+    current.setMonth(current.getMonth() - 1);
+    submitMonth(current);
+  });
+
+  nextBtn.addEventListener("click", function() {
+    const current = new Date(/*[[${startDate}]]*/);
+    current.setMonth(current.getMonth() + 1);
+    submitMonth(current);
+  });
+
+  function submitMonth(date) {
+    const companyId = companySelect.value;
+    const accommodationId = accommodationSelect.value;
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+
+    const form = document.getElementById("searchForm");
+    form.action = `/owner/calendar/${companyId}/${accommodationId}/calendar?year=${year}&month=${month}`;
+    form.submit();
+  }
+  document.getElementById('searchForm').addEventListener('submit', function(event) {
+    const companyId = companySelect.value;
+    const accommodationId = accommodationSelect.value;
+    let actionUrl = "/owner/calendar/list";
+
+    if (accommodationId) {
+      actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar`;
+    } else if (companyId) {
+      actionUrl = `/owner/calendar/company/${companyId}/calendar`;
+    }
+
+    this.action = actionUrl;
+  });
+</script>

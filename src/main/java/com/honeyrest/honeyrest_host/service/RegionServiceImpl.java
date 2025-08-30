@@ -31,4 +31,11 @@ public class RegionServiceImpl implements RegionService {
         List<Region> regions = regionRepository.findByParentId(parentId);
         return regions.stream().map(RegionDTO::of).toList();
     }
+
+    @Override
+    public RegionDTO get(Long regionId) {
+        Region region = regionRepository.findById(regionId)
+                .orElse(null); // 못 찾으면 null 리턴(혹은 예외 던져도 OK)
+        return (region != null ? RegionDTO.of(region) : null);
+    }
 }

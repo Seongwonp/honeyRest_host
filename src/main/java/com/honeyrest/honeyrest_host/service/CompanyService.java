@@ -16,4 +16,5 @@ public interface CompanyService {
 
     Long getCompanyIdByUserEmail(String email);
     Long getCompanyIdByOfCurrentUser();
+    Long getCompanyIdByAccommodationId(Long accommodationId);
 }

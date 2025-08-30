@@ -2,8 +2,10 @@ package com.honeyrest.honeyrest_host.service;
 
 import com.honeyrest.honeyrest_host.dto.*;
 import com.honeyrest.honeyrest_host.entity.PriceCalendar;
+import com.honeyrest.honeyrest_host.entity.Reservation;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repository.PriceCalendarRepository;
+import com.honeyrest.honeyrest_host.repository.ReservationRepository;
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
@@ -27,6 +30,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     private final PriceCalendarRepository priceCalendarRepository;
     private final RoomRepository roomRepository;
     private final EntityManager em;
+    private final ReservationRepository reservationRepository;
 
     @Override
     public PriceCalendarDTO getMonth(Long companyId,
@@ -34,10 +38,10 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
                                      YearMonth ym,
                                      Integer minAvailable) {
         LocalDate start = ym.atDay(1);
-        LocalDate end   = ym.atEndOfMonth();
+        LocalDate end = ym.atEndOfMonth();
 
         // 회사(+선택: 숙소)의 객실 전체
-        Page<Room> page = roomRepository.findRoomsOfCompany(companyId, accommodationId,Pageable.unpaged());
+        Page<Room> page = roomRepository.findRoomsOfCompany(companyId, accommodationId, Pageable.unpaged());
         List<Room> rooms = page.getContent();
 
         // 월 범위 price_calendar
@@ -50,7 +54,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
                 .filter(pc -> minAvailable == null ||
                               (pc.getAvailableRoom() != null && pc.getAvailableRoom() >= minAvailable))
                 .collect(Collectors.groupingBy(pc -> pc.getRoom().getRoomId(),
-                        Collectors.toMap(PriceCalendar::getDate, Function.identity(), (a,b)->a)));
+                        Collectors.toMap(PriceCalendar::getDate, Function.identity(), (a, b) -> a)));
 
         // DTO 조립
         List<RoomCalendarDTO> roomCalendars = new ArrayList<>();
@@ -142,4 +146,65 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
                                     String granularity) {
         throw new UnsupportedOperationException("매출/정산 통계는 다음 단계에서 구현");
     }
+
+    @Override
+    public Map<LocalDate, PriceCalendarDTO> getCalendarData(Long roomId, LocalDate startDate, LocalDate endDate) {
+        Map<LocalDate, PriceCalendarDTO> calendarMap = new LinkedHashMap<>();
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 Room ID: " + roomId));
+
+        // 기간과 겹치는 예약 전체
+        List<Reservation> reservations = reservationRepository.findByRoomIdAndDateBetween(roomId, startDate, endDate);
+
+
+        // 날짜 쿠폰
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            final LocalDate d = date;
+
+            // 체크인 <= d < 체크아웃
+            long reservedCount = reservations.stream()
+                    .filter(r -> !r.getCheckInDate().isAfter(d) && r.getCheckOutDate().isAfter(d))
+                    .count();
+
+            int available = Math.max(room.getTotalRooms() - (int) reservedCount, 0);
+
+            calendarMap.put(date, PriceCalendarDTO.builder()
+                    .roomId(room.getRoomId())
+                    .date(date)
+                    .price(room.getPrice())    // 가격을 price_calendar에 덮어 씌우기
+                    .availableRoom(available)
+                    .build());
+        }
+
+        return calendarMap;
+    }
+
+    @Override
+    public List<DailyOverviewDTO> getDailyOverview(Long companyId, Long accommodationId, LocalDate start, LocalDate end) {
+        return priceCalendarRepository.findDailyOverview(companyId, accommodationId, Date.valueOf(start), Date.valueOf(end))
+                .stream().map(p -> DailyOverviewDTO.builder()
+                        .date(p.getDate().toLocalDate())
+                        .totalRoomsSum(p.getTotalRoomsSum())
+                        .availableSum(p.getAvailableSum())
+                        .maxPrice(p.getMaxPrice())
+                        .minPrice(p.getMinPrice())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    public List<GridCellDTO> getGridCells(Long companyId, Long accommodationId, LocalDate start, LocalDate end) {
+        return priceCalendarRepository.findGridCells(companyId, accommodationId, Date.valueOf(start), Date.valueOf(end))
+                .stream().map(p -> GridCellDTO.builder()
+                        .roomId(p.getRoomId())
+                        .roomName(p.getRoomName())
+                        .date(p.getDate().toLocalDate())
+                        .price(p.getPrice())
+                        .available(p.getAvailable())
+                        .totalRooms(p.getTotalRooms())
+                        .build()).toList();
+    }
+
+
 }

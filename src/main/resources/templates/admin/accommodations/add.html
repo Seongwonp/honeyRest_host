@@ -27,13 +27,6 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-1">
-                <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">대시보드</a></li>
-                <li class="breadcrumb-item">숙소</li>
-                <li class="breadcrumb-item active" aria-current="page">등록</li>
-            </ol>
-        </nav>
         <h3 class="mb-2">숙소 등록</h3>
         <p class="text-muted">필수 항목은 <span class="text-danger">*</span> 표시가 있어요.</p>
     </div>
@@ -121,19 +114,20 @@
                         <textarea class="form-control" th:field="*{amenities}" rows="2"
                                   placeholder="예) 와이파이,주차,수영장"></textarea>
                         <div class="help-text">쉼표(,)로 구분해서 입력하세요. 비워두면 저장 시 자동으로 빈 목록 처리됩니다.</div>
+                        <p th:text="*{amenities}" style="white-space: pre-line;"></p>
                     </div>
 
 
                     <!-- 운영 시간 / 가격 -->
                     <div class="col-md-3">
-                        <label class="form-label required">영업시작</label>
+                        <label class="form-label required">체크인</label>
                         <input type="time" class="form-control" th:field="*{checkInTime}"
                                th:classappend="${#fields.hasErrors('checkInTime')}? 'is-invalid'">
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('checkInTime')}"
                              th:errors="*{checkInTime}">에러</div>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label required">영업종료</label>
+                        <label class="form-label required">체크아웃</label>
                         <input type="time" class="form-control" th:field="*{checkOutTime}"
                                th:classappend="${#fields.hasErrors('checkOutTime')}? 'is-invalid'">
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('checkOutTime')}"
@@ -172,15 +166,18 @@
                             <div class="help-text">JPG/PNG 등 이미지 1장 업로드</div>
                         </div>
 
-                         추가 이미지(여러 장 업로드용)
                         <div class="col-12">
                             <label class="form-label">추가 이미지(여러 장)</label>
-                            <input type="file" class="form-control" th:field="*{file}" accept="image/*" multiple>
-                            <div class="help-text">여러 장 선택 가능. 서버에서 순서대로 SUB(1,2,3...)로 저장합니다.</div>
+                            <input type="file" name="subImages" id="subImages" accept="image/*" multiple class="form-control" style="max-width:480px">
+                            <div id="subPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                            <div class="form-text">여러 장 선택 가능. 저장하면 서브 이미지로 추가됩니다 (imageType=SUB, sortOrder는 1부터 자동부여).</div>
                             <div class="col-md-3">
+
                                 <label class="form-label">상태</label>
                                 <select class="form-select" th:field="*{status}">
+                                    <option value="">선텍</option>
                                     <option value="PENDING">PENDING</option>
+                                    <option value="ACTIVE">ACTIVE</option>
                                 </select>
                             </div>
                         </div>
@@ -240,12 +237,12 @@
             });
         });
         //  태그 미리보기
-        document.addEventListener('DOMContentLoaded', function(){
+        document.addEventListener('DOMContentLoaded', function() {
             const sel = document.getElementById('tagSelect');
             const box = document.getElementById('tagSelected');
-            if(!sel || !box) return;
+            if (!sel || !box) return;
 
-            function renderSelected(){
+            function renderSelected() {
                 box.innerHTML = '';
                 const selected = [...sel.selectedOptions].map(o => ({
                     value: o.value,
@@ -253,7 +250,7 @@
                     category: o.closest('optgroup') ? o.closest('optgroup').label : ''
                 }));
 
-                if(selected.length === 0){
+                if (selected.length === 0) {
                     box.innerHTML = '<span class="text-muted">선택된 태그가 없습니다.</span>';
                     return;
                 }
@@ -268,7 +265,9 @@
                     close.setAttribute('aria-label', 'remove');
                     close.addEventListener('click', () => {
                         const opt = [...sel.options].find(o => o.value === s.value);
-                        if(opt){ opt.selected = false; }
+                        if (opt) {
+                            opt.selected = false;
+                        }
                         renderSelected(); // 재랜더
                     });
 
@@ -277,9 +276,48 @@
                 });
             }
 
-            // 초기 표시 + 변경 시 업데이트
-            renderSelected();
-            sel.addEventListener('change', renderSelected);
+            // 썸네일 로컬 미리보기 (선택 시 즉시 화면에만 반영)
+            (function () {
+                const input = document.getElementById('thumbFile');
+                const preview = document.getElementById('thumbPreview');
+                const empty = document.getElementById('thumbEmpty');
+                if (!input) return;
+
+                input.addEventListener('change', function () {
+                    const f = this.files && this.files[0];
+                    if (!f) return;
+                    const url = URL.createObjectURL(f);
+                    if (preview) {
+                        preview.src = url;
+                        preview.style.display = 'inline-block';
+                    }
+                    if (empty) empty.style.display = 'none';
+                });
+            })();
+
+            // 서브 이미지 로컬 미리보기
+            (function () {
+                const input = document.getElementById('subImages');
+                const box = document.getElementById('subPreview');
+                if (!input || !box) return;
+
+                input.addEventListener('change', function () {
+                    box.innerHTML = '';
+                    const files = Array.from(this.files || []);
+                    files.forEach(f => {
+                        const url = URL.createObjectURL(f);
+                        const wrap = document.createElement('div');
+                        wrap.style.width = '96px';
+                        wrap.style.height = '96px';
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'preview';
+                        img.style.cssText = 'width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;';
+                        wrap.appendChild(img);
+                        box.appendChild(wrap);
+                    });
+                });
+            })();
         });
     </script>
 </th:block>

@@ -22,4 +22,6 @@ public interface RoomService {
     void removeRoom(Long roomId);
 
     List<RoomDTO> findAllByCompanyId(Long companyId);
+
+    List<RoomDTO> getRoomsByAccommodationId(Long accommodationId);
 }

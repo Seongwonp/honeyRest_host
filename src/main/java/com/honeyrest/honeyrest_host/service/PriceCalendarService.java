@@ -1,6 +1,8 @@
 package com.honeyrest.honeyrest_host.service;
 
 
+import com.honeyrest.honeyrest_host.dto.DailyOverviewDTO;
+import com.honeyrest.honeyrest_host.dto.GridCellDTO;
 import com.honeyrest.honeyrest_host.dto.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.dto.SalesStatDTO;
 import lombok.AllArgsConstructor;
@@ -11,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 
 public interface PriceCalendarService {
 
@@ -29,6 +32,12 @@ public interface PriceCalendarService {
                              Long roomId,
                              LocalDate start, LocalDate end,
                              String granularity);
+
+    Map<LocalDate, PriceCalendarDTO> getCalendarData(Long roomId, LocalDate startDate, LocalDate endDate);
+
+    List<DailyOverviewDTO>  getDailyOverview(Long companyId, Long accommodationId, LocalDate start, LocalDate end);
+
+    List<GridCellDTO> getGridCells(Long companyId, Long accommodationId, LocalDate start, LocalDate end);
 
     @Data
     @NoArgsConstructor

@@ -206,4 +206,13 @@ public class RoomServiceImpl implements RoomService {
     public List<RoomDTO> findAllByCompanyId(Long companyId){
         return roomRepository.findAllByAccommodation_Company_CompanyId(companyId).stream().map(this::toDTO).collect(Collectors.toList());
     }
+
+    @Override
+    public List<RoomDTO> getRoomsByAccommodationId(Long accommodationId) {
+        return roomRepository.findByAccommodation_AccommodationId(accommodationId, Pageable.unpaged())
+                .getContent()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 }
