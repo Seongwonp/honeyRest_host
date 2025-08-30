@@ -111,10 +111,10 @@
                     <!-- 편의시설(JSON) -->
                     <div class="col-12">
                         <label class="form-label">확인사항 및 기타</label>
-                        <textarea class="form-control" th:field="*{amenities}" rows="2"
+                        <textarea class="form-control" th:field="*{amenities}" rows="4"
                                   placeholder="예) 와이파이,주차,수영장"></textarea>
                         <div class="help-text">쉼표(,)로 구분해서 입력하세요. 비워두면 저장 시 자동으로 빈 목록 처리됩니다.</div>
-                        <p th:text="*{amenities}" style="white-space: pre-line;"></p>
+<!--                        <p th:text="*{amenities}" style="white-space: pre-line;"></p>-->
                     </div>
 
 
@@ -162,9 +162,16 @@
                     <div class="row g-2 mt-1">
                         <div class="col-md-6">
                             <label class="form-label required">썸네일 이미지</label>
-                            <input type="file" class="form-control" th:field="*{file}" accept="image/*" required>
+                            <input type="file" class="form-control" th:field="*{file}" id="fileInput" accept="image/*" required>
                             <div class="help-text">JPG/PNG 등 이미지 1장 업로드</div>
                         </div>
+                        <!-- 미리보기 영역 추가 -->
+                        <div class="mt-2">
+                            <img id="thumbPreview"
+                                 alt="thumbnail preview"
+                                 style="display:none; max-width:200px; border-radius:8px; border:1px solid #eee; background:#f6f6f6;">
+                        </div>
+                    </div>
 
                         <div class="col-12">
                             <label class="form-label">추가 이미지(여러 장)</label>
@@ -182,10 +189,6 @@
                             </div>
                         </div>
 
-
-
-                    </div>
-
                     <div class="d-flex gap-2 mt-4">
                         <button type="submit" class="btn btn-primary">
                             저장(승인요청)
@@ -202,122 +205,106 @@
 <th:block layout:fragment="script">
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const fileInput = document.querySelector('input[name="file"]'); // th:field="*{file}"
-            const preview   = document.getElementById('thumbPreview');
-            fileInput?.addEventListener('change', e => {
-                const f = e.target.files?.[0];
-                if (!f) { preview.style.display='none'; return; }
-                const url = URL.createObjectURL(f);
-                preview.src = url;
-                preview.style.display = 'inline-block';
-            });
-        });
-        document.addEventListener('DOMContentLoaded', () => {
-            const main = document.getElementById('mainRegion');
-            const sub = document.getElementById('subRegion');
-            const url = main.dataset.url; // "/admin/accommodations/regions/children"
-
-            main.addEventListener('change', async () => {
-                sub.innerHTML = '<option value="" disabled selected>로딩 중...</option>';
-                try {
-                    const res = await fetch(`${url}?parentId=${encodeURIComponent(main.value)}`);
-                    if (!res.ok) throw new Error(res.status);
-                    const data = await res.json(); // [{id, name}]
-                    sub.innerHTML = '<option value="" disabled selected>선택하세요</option>';
-                    data.forEach(r => {
-                        const opt = document.createElement('option');
-                        opt.value = r.id;
-                        opt.textContent = r.name;
-                        sub.appendChild(opt);
-                    });
-                } catch (e) {
-                    sub.innerHTML = '<option value="" disabled selected>불러오기 실패</option>';
-                    console.error('지역(소) 로드 실패:', e);
-                }
-            });
-        });
-        //  태그 미리보기
-        document.addEventListener('DOMContentLoaded', function() {
-            const sel = document.getElementById('tagSelect');
-            const box = document.getElementById('tagSelected');
-            if (!sel || !box) return;
-
-            function renderSelected() {
-                box.innerHTML = '';
-                const selected = [...sel.selectedOptions].map(o => ({
-                    value: o.value,
-                    label: o.textContent.trim(),
-                    category: o.closest('optgroup') ? o.closest('optgroup').label : ''
-                }));
-
-                if (selected.length === 0) {
-                    box.innerHTML = '<span class="text-muted">선택된 태그가 없습니다.</span>';
-                    return;
-                }
-                selected.forEach(s => {
-                    const chip = document.createElement('span');
-                    chip.className = 'badge bg-primary-subtle text-primary border rounded-pill px-2 py-1 d-inline-flex align-items-center';
-                    chip.textContent = (s.category ? (s.category + ' - ') : '') + s.label;
-
-                    const close = document.createElement('button');
-                    close.type = 'button';
-                    close.className = 'btn-close btn-sm ms-2';
-                    close.setAttribute('aria-label', 'remove');
-                    close.addEventListener('click', () => {
-                        const opt = [...sel.options].find(o => o.value === s.value);
-                        if (opt) {
-                            opt.selected = false;
-                        }
-                        renderSelected(); // 재랜더
-                    });
-
-                    chip.appendChild(close);
-                    box.appendChild(chip);
+            /* -------- 메인 썸네일 미리보기 -------- */
+            const thumbInput = document.getElementById('fileInput');     // th:field="*{file}"
+            const thumbPreview = document.getElementById('thumbPreview');
+            if (thumbInput && thumbPreview) {
+                thumbInput.addEventListener('change', (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) { thumbPreview.style.display = 'none'; return; }
+                    const url = URL.createObjectURL(f);
+                    thumbPreview.src = url;
+                    thumbPreview.style.display = 'inline-block';
                 });
             }
 
-            // 썸네일 로컬 미리보기 (선택 시 즉시 화면에만 반영)
-            (function () {
-                const input = document.getElementById('thumbFile');
-                const preview = document.getElementById('thumbPreview');
-                const empty = document.getElementById('thumbEmpty');
-                if (!input) return;
-
-                input.addEventListener('change', function () {
-                    const f = this.files && this.files[0];
-                    if (!f) return;
-                    const url = URL.createObjectURL(f);
-                    if (preview) {
-                        preview.src = url;
-                        preview.style.display = 'inline-block';
-                    }
-                    if (empty) empty.style.display = 'none';
-                });
-            })();
-
-            // 서브 이미지 로컬 미리보기
-            (function () {
-                const input = document.getElementById('subImages');
-                const box = document.getElementById('subPreview');
-                if (!input || !box) return;
-
-                input.addEventListener('change', function () {
-                    box.innerHTML = '';
+            /* -------- 서브 이미지 미리보기 -------- */
+            const subInput = document.getElementById('subImages');
+            const subBox   = document.getElementById('subPreview');
+            if (subInput && subBox) {
+                subInput.addEventListener('change', function () {
+                    subBox.innerHTML = '';
                     const files = Array.from(this.files || []);
-                    files.forEach(f => {
+                    files.forEach((f) => {
                         const url = URL.createObjectURL(f);
                         const wrap = document.createElement('div');
                         wrap.style.width = '96px';
                         wrap.style.height = '96px';
+
                         const img = document.createElement('img');
                         img.src = url;
-                        img.alt = 'preview';
-                        img.style.cssText = 'width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;';
+                        img.alt = f.name || 'preview';
+                        img.style.cssText = 'width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;border:1px solid #eee;';
+
                         wrap.appendChild(img);
-                        box.appendChild(wrap);
+                        subBox.appendChild(wrap);
                     });
                 });
-            })();
+            }
+
+            /* -------- 지역(소) 동적 로드 -------- */
+            const main = document.getElementById('mainRegion');
+            const sub  = document.getElementById('subRegion');
+            if (main && sub) {
+                const url = main.dataset.url; // "/admin/accommodations/regions/children"
+                main.addEventListener('change', async () => {
+                    sub.innerHTML = '<option value="" disabled selected>로딩 중...</option>';
+                    try {
+                        const res = await fetch(`${url}?parentId=${encodeURIComponent(main.value)}`);
+                        if (!res.ok) throw new Error(res.status);
+                        const data = await res.json(); // [{id, name}]
+                        sub.innerHTML = '<option value="" disabled selected>선택하세요</option>';
+                        data.forEach(r => {
+                            const opt = document.createElement('option');
+                            opt.value = r.id;
+                            opt.textContent = r.name;
+                            sub.appendChild(opt);
+                        });
+                    } catch (e) {
+                        sub.innerHTML = '<option value="" disabled selected>불러오기 실패</option>';
+                        console.error('지역(소) 로드 실패:', e);
+                    }
+                });
+            }
+
+            /* -------- 태그 미리보기 -------- */
+            const sel = document.getElementById('tagSelect');
+            const box = document.getElementById('tagSelected');
+            if (sel && box) {
+                function renderSelected() {
+                    box.innerHTML = '';
+                    const selected = [...sel.selectedOptions].map(o => ({
+                        value: o.value,
+                        label: o.textContent.trim(),
+                        category: o.closest('optgroup') ? o.closest('optgroup').label : ''
+                    }));
+
+                    if (selected.length === 0) {
+                        box.innerHTML = '<span class="text-muted">선택된 태그가 없습니다.</span>';
+                        return;
+                    }
+                    selected.forEach(s => {
+                        const chip = document.createElement('span');
+                        chip.className = 'badge bg-primary-subtle text-primary border rounded-pill px-2 py-1 d-inline-flex align-items-center';
+                        chip.textContent = (s.category ? (s.category + ' - ') : '') + s.label;
+
+                        const close = document.createElement('button');
+                        close.type = 'button';
+                        close.className = 'btn-close btn-sm ms-2';
+                        close.setAttribute('aria-label', 'remove');
+                        close.addEventListener('click', () => {
+                            const opt = [...sel.options].find(o => o.value === s.value);
+                            if (opt) opt.selected = false;
+                            renderSelected();
+                        });
+
+                        chip.appendChild(close);
+                        box.appendChild(chip);
+                    });
+                }
+                sel.addEventListener('change', renderSelected);
+                renderSelected();
+            }
         });
     </script>
 </th:block>

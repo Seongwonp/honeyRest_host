@@ -64,7 +64,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
         AccommodationImage entity = AccommodationImage.builder()
                 .accommodation(accRef)
                 .imageUrl(imageUrl)
-                .imageType("SUB")
+                .imageType(type)
                 .sortOrder(sort)
                 .build();
 
@@ -154,7 +154,12 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
 
     @Override
     public List<AccommodationImageDTO> getByAccommodation_AccommodationId(Long accommodationId, String imageType) {
-        return accommodationImageRepository.findFirstByAccommodation_AccommodationIdAndImageTypeOrderBySortOrderAscImageIdAsc(accommodationId, "MAIN").stream().map(this::toDTO).collect(Collectors.toList());
+        String type = (imageType == null || imageType.isBlank()) ? "SUB" : imageType.trim().toUpperCase();
+        return accommodationImageRepository
+                .findByAccommodation_AccommodationIdAndImageTypeOrderBySortOrderAscImageIdAsc(accommodationId, type)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -170,14 +175,13 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
                 .subRegion(acc.getSubRegion())
                 .name(acc.getName())
                 .address(acc.getAddress())
-                .thumbnail(acc.getThumbnail())
+                .thumbnail(thumbnailUrl)
                 .description(acc.getDescription())
                 .status(acc.getStatus())
                 .checkInTime(acc.getCheckInTime())
                 .checkOutTime(acc.getCheckOutTime())
                 .rating(acc.getRating())
                 .minPrice(acc.getMinPrice())
-                .address(acc.getAddress())
                 .build();
 
         accommodationRepository.save(updated);

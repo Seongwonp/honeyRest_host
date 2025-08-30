@@ -19,6 +19,11 @@ public interface AccommodationImageRepository extends JpaRepository<Accommodatio
     findByAccommodation_AccommodationIdInAndImageTypeOrderBySortOrderAscImageIdAsc(
             List<Long> accommodationIds, String imageType
     );
+    // 단일 숙소 + 타입별 목록
+    List<AccommodationImage>
+    findByAccommodation_AccommodationIdAndImageTypeOrderBySortOrderAscImageIdAsc(
+            Long accommodationId, String imageType
+    );
 
     // 상세 이미지 목록
     List<AccommodationImage>

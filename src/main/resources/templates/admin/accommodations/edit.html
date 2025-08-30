@@ -23,7 +23,10 @@
                         <!-- ★ 반드시 multipart/form-data -->
                         <form th:action="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}"
                               th:object="${form}" method="post" enctype="multipart/form-data">
-                            <input type="hidden" th:field="*{thumbnailUrl}">
+                            <!--                            <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>-->
+                            <!-- id는 바인딩 없이 필요시 그냥 값만 -->
+                            <input type="hidden" name="id" th:value="${acc.accommodationId}"/>
+
 
                             <div class="row g-3">
                                 <!-- 숙소명 -->
@@ -83,7 +86,7 @@
                                 <!-- 편의시설(JSON/CSV 허용) -->
                                 <div class="col-12">
                                     <label class="form-label">확인사항 및 기타</label>
-                                    <textarea class="form-control" th:field="*{amenities}" rows="2"
+                                    <textarea class="form-control" th:field="*{amenities}" rows="3"
                                               placeholder="예) 와이파이,주차,수영장"></textarea>
                                     <div class="form-text">쉼표(,)로 구분해서 입력하거나, 이미 JSON 배열이면 그대로 저장됩니다.</div>
                                     <!--                                    <p th:text="${acc.amenities}" style="white-space: pre-line;"></p>-->
@@ -121,20 +124,22 @@
                                     <!-- 현재 썸네일 미리보기 -->
                                     <div class="d-flex align-items-center gap-3">
                                         <!-- 이미지가 있을 때 -->
-                                        <img id="thumbPreview" th:if="${acc != null and #strings.length(acc.thumbnailUrl) > 0}"
-                                             th:src="${acc.thumbnailUrl}"
+                                        <img id="thumbPreview"
+                                             th:if="${acc != null and #strings.length(acc.thumbnail) > 0}"
+                                             th:src="${acc.thumbnail}"
                                              alt="preview"
                                              style="width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;">
 
                                         <!-- 이미지가 없을 때 -->
-                                        <span th:if="${acc == null or #strings.length(acc.thumbnailUrl) == 0}"
+                                        <span th:if="${acc == null or #strings.length(acc.thumbnail) == 0}"
                                               class="text-muted" id="thumbEmpty">이미지 없음</span>
                                     </div>
 
                                     <!-- 파일 선택 (서버로 바로 제출) -->
                                     <div class="mt-2" style="max-width:360px">
+                                        <input type="hidden" th:field="*{thumbnail}">
                                         <!-- ★ name="thumbnail" : 컨트롤러 파라미터와 동일 -->
-                                        <input type="file" id="thumbFile" name="thumbnail" accept="image/*"
+                                        <input type="file" id="thumbFile" name="thumbnailFile" accept="image/*"
                                                class="form-control">
                                     </div>
                                     <div class="form-text">파일을 선택하고 저장하면 메인 썸네일이 교체됩니다. (MAIN / sortOrder=0)</div>

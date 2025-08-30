@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+  <title>환불/취소 관리</title>
+  <th:block layout:fragment="head">
+    <style>
+      .table thead th { white-space: nowrap; }
+      .status-badge { font-weight: 600; }
+    </style>
+  </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+
+  <div class="page-heading d-flex justify-content-between align-items-center">
+    <div>
+      <h3 class="mb-1">환불/취소 관리</h3>
+      <p class="text-muted mb-0">결제 기준으로 환불/취소 건을 확인하세요.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/list}">예약 목록</a>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+              <th style="width:90px" class="text-center">결제ID</th>
+              <th style="min-width:140px">예약번호</th>
+              <th style="min-width:220px">숙소 / 객실</th>
+              <th style="width:180px" class="text-center">결제일</th>
+              <th style="width:140px" class="text-end">금액</th>
+              <th style="min-width:160px">상태 / 방법</th>
+              <th style="width:120px" class="text-center">처리</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- 결제(PaymentDTO) 리스트 -->
+            <tr th:each="p : ${list}">
+              <td class="text-center" th:text="${p.paymentId}">1</td>
+
+              <td class="fw-semibold" th:text="${p.reservationNumber}">HR-2025...</td>
+
+              <td>
+                <div th:text="${p.accommodationName}">숙소명</div>
+                <div class="text-muted small" th:text="${p.roomName} ?: '-'">객실명</div>
+              </td>
+
+              <td class="text-center"
+                  th:text="${p.paymentDate != null ? #temporals.format(p.paymentDate,'yyyy-MM-dd HH:mm') : '-'}">-</td>
+
+              <!-- 금액: 환불이면 음수 금액을 권장 -->
+              <td class="text-end"
+                  th:text="${p.amount != null ? #numbers.formatDecimal(p.amount, 0, 'COMMA', 0, 'POINT') : '0'}">0</td>
+
+              <td>
+                <!-- 상태 뱃지 -->
+                <span class="badge status-badge me-1"
+                      th:text="${p.paymentStatus}">REFUNDED</span>
+
+                <!-- 방법/PG -->
+                <span class="badge bg-light text-dark"
+                      th:text="${p.paymentMethod ?: '-'}">KAKAOPAY</span>
+              </td>
+
+              <td class="text-center">
+                <!-- 필요시 상세/영수증/엑셀 등 액션 버튼 추가 -->
+                <!-- 예: 예약 상세 이동 (예약번호 기반 라우팅이면 아래처럼, 아니면 숨김) -->
+                <!-- <a class="btn btn-outline-primary btn-sm"
+                     th:href="@{|/admin/reservations/by-number/${p.reservationNumber}|}">상세</a> -->
+                <span class="text-muted small">—</span>
+              </td>
+            </tr>
+
+            <!-- 비어 있을 때 -->
+            <tr th:if="${#lists.isEmpty(list)}">
+              <td colspan="7" class="text-center py-5 text-muted">환불/취소 대상이 없습니다.</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 페이지네이션 (currentPage: 1-base 가정) -->
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="text-muted">
+          총 <span th:text="${total}">0</span>건
+        </div>
+
+        <nav th:if="${totalPages > 1}">
+          <ul class="pagination mb-0">
+            <li class="page-item" th:classappend="${currentPage == 1} ? ' disabled'">
+              <a class="page-link"
+                 th:href="@{|?page=${currentPage-1}&size=${pageSize}|}" aria-label="Previous">&laquo;</a>
+            </li>
+
+            <li class="page-item"
+                th:each="p : ${#numbers.sequence(1, totalPages)}"
+                th:classappend="${p == currentPage} ? ' active'">
+              <a class="page-link" th:text="${p}"
+                 th:href="@{|?page=${p}&size=${pageSize}|}">1</a>
+            </li>
+
+            <li class="page-item" th:classappend="${currentPage == totalPages} ? ' disabled'">
+              <a class="page-link"
+                 th:href="@{|?page=${currentPage+1}&size=${pageSize}|}" aria-label="Next">&raquo;</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- 플래시 메시지 -->
+  <div th:if="${msg}">
+    <script th:inline="javascript"> alert([[${msg}]]); </script>
+  </div>
+
+</th:block>
+
+<!-- 상태 뱃지 색상 매핑은 간단히 JS로 처리해도 됩니다 (선택) -->
+<th:block layout:fragment="script">
+  <script th:inline="javascript">
+    // 상태 뱃지 컬러링
+    document.querySelectorAll('.status-badge').forEach(function(el){
+      const v = (el.textContent || '').trim().toUpperCase();
+      el.classList.remove('bg-success','bg-info','bg-secondary','bg-warning','bg-light','text-dark');
+      if (v === 'PAID') el.classList.add('bg-success');
+      else if (v === 'REFUNDED') el.classList.add('bg-info');
+      else if (v === 'CANCELED' || v === 'CANCELLED') el.classList.add('bg-secondary');
+      else if (v === 'PENDING') el.classList.add('bg-warning','text-dark');
+      else el.classList.add('bg-light','text-dark');
+    });
+  </script>
+</th:block>
+</body>
+</html>

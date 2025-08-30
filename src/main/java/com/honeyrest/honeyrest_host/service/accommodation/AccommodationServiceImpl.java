@@ -15,6 +15,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +32,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationTagRepository accommodationTagRepository;
     private final AccommodationImageRepository accommodationImageRepository;
     private final AccommodationTagMapRepository accommodationTagMapRepository;
+    private final AccommodationImageService accommodationImageService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -93,7 +96,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .address(e.getAddress())
                 .latitude(e.getLatitude())
                 .longitude(e.getLongitude())
-                .thumbnailUrl(e.getThumbnail())
+                .thumbnail(e.getThumbnail())
                 .description(e.getDescription())
                 .amenities(e.getAmenities())
                 .checkInTime(e.getCheckInTime())
@@ -141,7 +144,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .subRegionId(e.getSubRegion() != null ? e.getSubRegion().getRegionId() : null)
                 .name(e.getName())
                 .address(e.getAddress())
-                .thumbnailUrl(thumb)
+                .thumbnail(thumb)
                 .minPrice(e.getMinPrice())
                 .status(e.getStatus())
                 .build();
@@ -160,7 +163,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .name(e.getName())
                 .categoryName(e.getCategory().getName())
                 .regionName(e.getMainRegion().getName())
-                .thumbnailUrl(thumb)     // ★ 리스트에서 썸네일로 사용
+                .thumbnail(thumb)     // ★ 리스트에서 썸네일로 사용
                 .minPrice(e.getMinPrice())
                 .status(e.getStatus())
                 .build();
@@ -221,7 +224,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .address(req.getAddress())
                 .latitude(req.getLatitude())
                 .longitude(req.getLongitude())
-                .thumbnail(req.getThumbnailUrl())
+                .thumbnail(req.getThumbnail())
                 .description(req.getDescription())
                 .amenities(req.getAmenities())
                 .checkInTime(req.getCheckInTime())
@@ -232,22 +235,37 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         Accommodation saved = accommodationRepository.save(entity);
 
-        // 이미지 저장(선택)
+        /* 메인 이미지 처리 (선택)
+           - req.getFile() 에 파일이 오면 메인으로 업로드
+           - 아니면 req.getthumbnail() 만 두고 넘어가도 됨
+        */
+        if (req.getFile() != null && !req.getFile().isEmpty()) {
+            accommodationImageService.upsertMainThumbnail(
+                    saved.getAccommodationId(),
+                    AccommodationImageDTO.builder()
+                            .imageType("MAIN")
+                            .file(req.getFile())
+                            .sortOrder(0)
+                            .build()
+            );
+        }
+
+        // 서브 이미지 처리 (파일 or URL 모두 허용)
         if (req.getImages() != null && !req.getImages().isEmpty()) {
-            int idx = 0;
+            int idx = 1;
             for (AccommodationImageDTO img : req.getImages()) {
-                accommodationImageRepository.save(
-                        AccommodationImage.builder()
-                                .accommodation(saved)
-                                .imageUrl(img.getImageUrl())
-                                .imageType(img.getImageType())
-                                .sortOrder(img.getSortOrder() != null ? img.getSortOrder() : idx++)
-                                .build()
-                );
+                if ((img.getFile() == null || img.getFile().isEmpty())
+                    && (img.getImageUrl() == null || img.getImageUrl().isBlank())) {
+                    continue; // 진짜로 아무것도 없으면 skip
+                }
+                if (img.getSortOrder() == null) img.setSortOrder(idx++);
+                if (img.getImageType() == null || img.getImageType().isBlank()) img.setImageType("SUB");
+
+                accommodationImageService.saveOrUpload(saved.getAccommodationId(), img);
             }
         }
 
-        // 태그 매핑 저장(선택)
+        // 태그 매핑 (그대로)
         if (req.getTagIds() != null && !req.getTagIds().isEmpty()) {
             for (Long tagId : req.getTagIds()) {
                 accommodationTagMapRepository.save(
@@ -259,10 +277,11 @@ public class AccommodationServiceImpl implements AccommodationService {
             }
         }
 
-        return getById(saved.getAccommodationId()); // 이미지/태그 포함 응답
+        return getById(saved.getAccommodationId());
     }
 
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+
+    @Transactional
     public Page<AccommodationListDTO> findByManagerEmail(String email, Pageable pageable) {
         Long companyId = companyRepository.findByEmail(email)
                 .map(Company::getCompanyId)
@@ -274,65 +293,58 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     }
 
+    @Transactional
     @Override
     public AccommodationCreateRequestDTO update(Long id, AccommodationUpdateRequestDTO req) {
-        Accommodation cur = getEntityOrThrow(id);
+        getEntityOrThrow(id); // 존재 여부 확인
 
-        Accommodation updated = Accommodation.builder()
-                .accommodationId(cur.getAccommodationId())
-                .company(req.getCompanyId() != null ? companyRepository.getReferenceById(req.getCompanyId()) : cur.getCompany())
-                .category(req.getCategoryId() != null ? accommodationCategoryRepository.getReferenceById(req.getCategoryId()) : cur.getCategory())
-                .mainRegion(req.getMainRegionId() != null ? regionRepository.getReferenceById(req.getMainRegionId()) : cur.getMainRegion())
-                .subRegion(req.getSubRegionId() != null ? regionRepository.getReferenceById(req.getSubRegionId()) : cur.getSubRegion())
-                .name(req.getName() != null ? req.getName() : cur.getName())
-                .address(req.getAddress() != null ? req.getAddress() : cur.getAddress())
-                .latitude(req.getLatitude() != null ? req.getLatitude() : cur.getLatitude())
-                .longitude(req.getLongitude() != null ? req.getLongitude() : cur.getLongitude())
-                .thumbnail(req.getThumbnailUrl() != null ? req.getThumbnailUrl() : cur.getThumbnail())
-                .description(req.getDescription() != null ? req.getDescription() : cur.getDescription())
-                .amenities(req.getAmenities() != null ? (req.getAmenities()) : cur.getAmenities())
-                .checkInTime(req.getCheckInTime() != null ? req.getCheckInTime() : cur.getCheckInTime())
-                .checkOutTime(req.getCheckOutTime() != null ? req.getCheckOutTime() : cur.getCheckOutTime())
-                .status(req.getStatus() != null ? req.getStatus() : cur.getStatus())
-                .rating(cur.getRating())
-                .minPrice(req.getMinPrice() != null ? req.getMinPrice() : cur.getMinPrice())
-                .build();
-
-        accommodationRepository.save(updated);
-
-        // 정책: 이미지/태그 “덮어쓰기” 요청 시에만 교체
-        if (req.getImages() != null) {
-            accommodationImageRepository.deleteByAccommodation_AccommodationId(id);
-            int idx = 0;
-            for (AccommodationImageDTO img : req.getImages()) {
-                accommodationImageRepository.save(
-                        AccommodationImage.builder()
-                                .accommodation(updated)
-                                .imageUrl(img.getImageUrl())
-                                .imageType(img.getImageType())
-                                .sortOrder(img.getSortOrder() != null ? img.getSortOrder() : idx++)
-                                .build()
-                );
-            }
+        // 연관관계: 변경 요청 있을 때만 각각 호출
+        if (req.getCompanyId() != null) {
+            accommodationRepository.updateCompany(id, companyRepository.getReferenceById(req.getCompanyId()));
+        }
+        if (req.getCategoryId() != null) {
+            accommodationRepository.updateCategory(id, accommodationCategoryRepository.getReferenceById(req.getCategoryId()));
+        }
+        if (req.getMainRegionId() != null) {
+            accommodationRepository.updateMainRegion(id, regionRepository.getReferenceById(req.getMainRegionId()));
+        }
+        if (req.getSubRegionId() != null) {
+            accommodationRepository.updateSubRegion(id, regionRepository.getReferenceById(req.getSubRegionId()));
         }
 
+        String name        = hasText(req.getName())        ? req.getName().trim()        : null;
+        String address     = hasText(req.getAddress())     ? req.getAddress().trim()     : null;
+        BigDecimal latitude  = req.getLatitude();
+        BigDecimal longitude = req.getLongitude();
 
-        if (req.getTagIds() != null) {
-            accommodationTagMapRepository.deleteByAccommodation_AccommodationId(id);
-            Accommodation accRef = accommodationRepository.getReferenceById(id);
-            for (Long tagId : req.getTagIds()) {
-                AccommodationTag tagRef = accommodationTagRepository.getReferenceById(tagId);
-                accommodationTagMapRepository.save(
-                        AccommodationTagMap.builder()
-                                .accommodation(accRef)
-                                .tag(tagRef)
-                                .build()
-                );
-            }
+        // DTO가 thumbnail(또는 thumbnailUrl)인지에 맞춰 변수 이름 맞추기
+        String thumbnail   = hasText(req.getThumbnail())   ? req.getThumbnail().trim()   : null;
+
+        String description = hasText(req.getDescription()) ? req.getDescription().trim() : null;
+
+        String amenitiesJson = null;
+        if (req.getAmenities() != null) {
+            String s = req.getAmenities().trim();
+            amenitiesJson = s.isEmpty() ? "[]" : s;
         }
 
+        LocalTime checkInTime  = req.getCheckInTime();
+        LocalTime checkOutTime = req.getCheckOutTime();
+        String status          = hasText(req.getStatus())  ? req.getStatus().trim()      : null;
+        BigDecimal minPrice    = req.getMinPrice();
+
+        int affected = accommodationRepository.patchUpdateScalars(
+                id, name, address, latitude, longitude,
+                thumbnail, description, amenitiesJson,
+                checkInTime, checkOutTime, status, minPrice
+        );
+        if (affected == 0) throw new IllegalArgumentException("대상 없음: " + id);
+
+        // 이미지/태그 덮어쓰기 ...
         return getById(id);
     }
+
+    private static boolean hasText(String s) { return s != null && !s.trim().isEmpty(); }
 
     @Override
     @Transactional // 삭제 메서드가 업데이트,삭제 쿼리를 실행하므로 트랜잭션이 필요함
@@ -410,7 +422,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         // 4) DTO에 썸네일 주입 (없으면 null 유지 → 템플릿에서 '없음' 처리)
         List<AccommodationListDTO> content = page.stream().map(dto -> {
-            dto.setThumbnailUrl(thumbMap.get(dto.getAccommodationId()));
+            dto.setThumbnail(thumbMap.get(dto.getAccommodationId()));
             return dto;
         }).toList();
 

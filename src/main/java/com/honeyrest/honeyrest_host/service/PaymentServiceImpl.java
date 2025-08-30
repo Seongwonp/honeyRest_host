@@ -26,19 +26,19 @@ import java.util.List;
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final UserRepository userRepository;
     private final CompanyService companyService;
 
     // 기본적으로 보여줄 결제 상태(결제완료 + 환불)
-    private static final List<String> DEFAULT_STATUSES = List.of("PENDING, PAID, CANCELED, REFUNDED"); // 결제대기, 결제완료, 결제취소, 환불완료
+    private static final List<String> DEFAULT_STATUSES =
+            List.of("PENDING", "PAID", "CANCELED", "REFUNDED"); // 결제대기, 결제완료, 결제취소, 환불완료
 
 
     @Override
+    @Transactional(readOnly = true)
     public Page<PaymentDTO> listForCompanyUser(String loginEmail, Long accommodationId, List<String> statuses, List<String> methods, String q, LocalDate from, LocalDate to, Pageable pageable) {
         // 1) 로그인 유지 + 회사 찾기
-        var user = userRepository.findByEmail(loginEmail);
-        CompanyDTO company = companyService.getByUserEmail(user.getEmail());
-        Long companyId = (company != null) ? company.getCompanyId() : null;
+       CompanyDTO companyDTO = companyService.getByUserEmail(loginEmail);
+        Long companyId = (companyDTO != null) ? companyDTO.getCompanyId() : null;
 
         // 2) 결제
         List<String> effStatuses = (statuses == null || statuses.isEmpty()) ? DEFAULT_STATUSES : statuses;
@@ -50,7 +50,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // 4) 날짜
         LocalDateTime fromDt = (from != null) ? from.atStartOfDay() : null;
-        LocalDateTime toDt = (to != null) ? to.atStartOfDay() : null;
+        LocalDateTime toExclusive = (to != null) ? to.plusDays(1).atStartOfDay() : null;
 
         // 5) 레포지토리 호출
         Page<Payment> page = paymentRepository.search(
@@ -58,7 +58,7 @@ public class PaymentServiceImpl implements PaymentService {
                 accommodationId,
                 effMethods, methodsEmpty,
                 effStatuses, statusesEmpty,
-                fromDt, toDt,  q, pageable
+                fromDt, toExclusive,  q, pageable
         );
         // 6) 엔티티 -> dto 반환
         return page.map(PaymentDTO::of);

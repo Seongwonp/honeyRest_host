@@ -9,8 +9,11 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    // 최신 결제 1건
+    Optional<Payment> findTopByReservationReservationIdOrderByCreatedAtDesc(Long reservationId);
     /*
      * 결제 내역 검색 jpql
      * - 회사 Id, 숙소 id 로 필터링

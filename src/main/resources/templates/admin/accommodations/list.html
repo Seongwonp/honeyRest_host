@@ -98,10 +98,10 @@
 
                     <!-- 썸네일 -->
                     <td class="text-center">
-                        <img th:if="${acc.thumbnailUrl != null and !#strings.isEmpty(acc.thumbnailUrl)}"
-                             th:src="@{${acc.thumbnailUrl}}"
+                        <img th:if="${acc.thumbnail != null and !#strings.isEmpty(acc.thumbnail)}"
+                             th:src="@{${acc.thumbnail}}"
                              alt="썸네일" class="thumb-sm">
-                        <span th:if="${acc.thumbnailUrl == null or #strings.isEmpty(acc.thumbnailUrl)}">없음</span>
+                        <span th:if="${acc.thumbnail == null or #strings.isEmpty(acc.thumbnail)}">없음</span>
                     </td>
 
                     <!-- 숙소명 -->

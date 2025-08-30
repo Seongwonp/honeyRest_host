@@ -215,8 +215,13 @@
     <div th:if="${overview != null}" class="mt-3">
         <div class="month-grid">
             <!-- 요일 헤더 -->
-            <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div>
-            <div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
+            <div class="dow">Sun</div>
+            <div class="dow">Mon</div>
+            <div class="dow">Tue</div>
+            <div class="dow">Wed</div>
+            <div class="dow">Thu</div>
+            <div class="dow">Fri</div>
+            <div class="dow">Sat</div>
 
             <!-- 앞쪽 빈 칸 -->
             <div class="day"
@@ -242,7 +247,8 @@
                   ? #numbers.formatDecimal(day.minPrice,0,'COMMA',0,'POINT') + '원 ~ ' +
                     #numbers.formatDecimal(day.maxPrice,0,'COMMA',0,'POINT') + '원'
                   : '-'
-             }">-</div>
+             }">-
+                    </div>
 
                     <div>
           <span class="pill"
@@ -262,7 +268,8 @@
     </div>
 
     <!-- 숙소 선택: priceCalendarDTO.rooms 존재 -->
-    <div th:if="${overview == null and priceCalendarDTO != null and not #lists.isEmpty(priceCalendarDTO.rooms)}" class="mt-3">
+    <div th:if="${overview == null and priceCalendarDTO != null and not #lists.isEmpty(priceCalendarDTO.rooms)}"
+         class="mt-3">
 
         <!-- 2-1) 특정 객실 선택됨: 단일 객실 달력 + 수정 버튼 -->
         <th:block th:if="${roomId != null}"
@@ -278,8 +285,13 @@
                 <h6 class="mb-2" th:text="${rc.room.roomName}">객실명</h6>
                 <div class="month-grid">
                     <!-- 요일 헤더 -->
-                    <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div>
-                    <div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
+                    <div class="dow">Sun</div>
+                    <div class="dow">Mon</div>
+                    <div class="dow">Tue</div>
+                    <div class="dow">Wed</div>
+                    <div class="dow">Thu</div>
+                    <div class="dow">Fri</div>
+                    <div class="dow">Sat</div>
 
                     <!-- 앞쪽 빈 칸 -->
                     <div class="day" th:each="i : ${#numbers.sequence(1, leadingBlanks)}"></div>
@@ -309,17 +321,39 @@
                                 <div th:with="av=${cell != null ? cell.available : null}">
                                     <span th:if="${av == null}" class="pill muted">재고 -</span>
                                     <span th:if="${av != null and av == 0}" class="pill zero">품절</span>
-                                    <span th:if="${av != null and av > 0 and av <= 2}" class="pill low"  th:text="'재고 ' + ${av}"></span>
-                                    <span th:if="${av != null and av > 2}" class="pill ok"   th:text="'재고 ' + ${av}"></span>
+                                    <span th:if="${av != null and av > 0 and av <= 2}" class="pill low"
+                                          th:text="'재고 ' + ${av}"></span>
+                                    <span th:if="${av != null and av > 2}" class="pill ok"
+                                          th:text="'재고 ' + ${av}"></span>
                                 </div>
 
                                 <div class="actions">
+                                    <!-- 수정 버튼: 객실 선택된 경우에만 노출 -->
                                     <button class="btn btn-sm btn-outline-primary"
+                                            th:if="${roomId != null}"
                                             th:attr="data-roomid=${rc.room.roomId},
-                                 data-date=${#temporals.format(curDate,'yyyy-MM-dd')},
-                                 data-price=${cell != null ? cell.price : null},
-                                 data-available=${cell != null ? cell.available : null}"
-                                            onclick="openEditModal(this)">수정</button>
+                                             data-date=${#temporals.format(curDate,'yyyy-MM-dd')},
+                                             data-price=${cell != null ? cell.price : null},
+                                             data-available=${cell != null ? cell.available : null}"
+                                             onclick="openEditModal(this)">수정
+                                    </button>
+
+                                    <!-- 상세 버튼: 회사 전체 보기(accommodationId == null) -->
+                                    <a class="btn btn-sm btn-outline-secondary"
+                                       th:if="${accommodationId == null}"
+                                       th:href="@{/admin/reservations/day( companyId=${companyId},
+                                       date=${#temporals.format(curDate,'yyyy-MM-dd')} )}">
+                                        상세
+                                    </a>
+
+                                    <!-- 상세 버튼: 특정 숙소 보기(accommodationId != null) -->
+                                    <a class="btn btn-sm btn-outline-secondary"
+                                       th:if="${accommodationId != null}"
+                                       th:href="@{/admin/reservations/day( companyId=${companyId},
+                                       accommodationId=${accommodationId},
+                                       date=${#temporals.format(curDate,'yyyy-MM-dd')} )}">
+                                        상세
+                                    </a>
                                 </div>
                             </div>
                         </th:block>
@@ -344,8 +378,13 @@
                 <h6 class="mb-2" th:text="${rc.room.roomName}">객실명</h6>
                 <div class="month-grid">
                     <!-- 요일 헤더 -->
-                    <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div>
-                    <div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
+                    <div class="dow">Sun</div>
+                    <div class="dow">Mon</div>
+                    <div class="dow">Tue</div>
+                    <div class="dow">Wed</div>
+                    <div class="dow">Thu</div>
+                    <div class="dow">Fri</div>
+                    <div class="dow">Sat</div>
 
                     <!-- 앞쪽 빈 칸 -->
                     <div class="day" th:each="i : ${#numbers.sequence(1, leadingBlanks)}"></div>
@@ -375,8 +414,10 @@
                                 <div th:with="av=${cell != null ? cell.available : null}">
                                     <span th:if="${av == null}" class="pill muted">재고 -</span>
                                     <span th:if="${av != null and av == 0}" class="pill zero">품절</span>
-                                    <span th:if="${av != null and av > 0 and av <= 2}" class="pill low"  th:text="'재고 ' + ${av}"></span>
-                                    <span th:if="${av != null and av > 2}" class="pill ok"   th:text="'재고 ' + ${av}"></span>
+                                    <span th:if="${av != null and av > 0 and av <= 2}" class="pill low"
+                                          th:text="'재고 ' + ${av}"></span>
+                                    <span th:if="${av != null and av > 2}" class="pill ok"
+                                          th:text="'재고 ' + ${av}"></span>
                                 </div>
 
                                 <!-- 전체 객실 보기에서는 수정 버튼 숨김 -->

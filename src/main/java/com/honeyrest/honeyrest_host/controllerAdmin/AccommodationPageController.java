@@ -82,62 +82,62 @@ public class AccommodationPageController {
      * 등록 제출 (승인상태는 서비스에서 PENDING 으로 고정됨)
      */
     @PostMapping("/add")
-    public String addSubmit(@ModelAttribute("form") @Valid AccommodationCreateRequestDTO form, BindingResult binding,
+    public String addSubmit(@ModelAttribute("form") @Valid AccommodationCreateRequestDTO form,
+                            BindingResult binding,
+                            @RequestParam(value = "subImages", required = false) List<MultipartFile> subImages,
                             Model model,
                             RedirectAttributes ra) {
         if (binding.hasErrors()) {
             binding.getAllErrors().forEach(err -> log.warn("bind err: {}", err));
-            accommodationTagService.findAll();
-
-            // 화면 다시 그릴 때 필요한 데이터 다시 주입
             model.addAttribute("mainRegions", regionRepository.findByLevel(1));
             model.addAttribute("tagsByCategory", accommodationTagService.findAllGroupedByCategory());
-            return "admin/accommodations/add"; // redirect 대신 포워드
+            return "admin/accommodations/add";
         }
 
         try {
-            // 1) 대표 썸네일 업로드 (파일이 올라온 경우)
+            // (1) 대표 썸네일
             if (form.getFile() != null && !form.getFile().isEmpty()) {
-                log.info("aaaaaaaaaaaaaaaaaaa");
                 String url = fileUploadUtil.upload(form.getFile(), "accommodation");
-                form.setThumbnailUrl(url); // DB에 저장될 썸네일 URL
-                log.info("bbbbbbbbbbbbbbbbbb");
+                form.setThumbnail(url);
             }
 
-            // 2) 숙소 등록 json 배열 문자열로 정규화
+            // (2) 편의시설 JSON 정규화
             form.setAmenities(parseAmenitiesToJson(form.getAmenities()));
+
+            // (3) 숙소 저장
             AccommodationCreateRequestDTO saved = accommodationService.create(form);
-            Long accId = saved.getAccommodationId(); // create가 id를 리턴하도록 하세요.
+            Long accId = saved.getAccommodationId();
 
-            log.info("ccccccccccccccccccc");
-
-            // (3) 메인 썸네일을 이미지 테이블에 upsert
-            if (form.getThumbnailUrl() != null && !form.getThumbnailUrl().isBlank()) {
+            // (4) 메인 썸네일 → image 테이블
+            if (form.getThumbnail() != null && !form.getThumbnail().isBlank()) {
                 accommodationImageService.upsertMainThumbnail(
                         accId,
                         AccommodationImageDTO.builder()
-                                .imageUrl(form.getThumbnailUrl())  // 파일 없이 URL만 들어와도 됨
+                                .imageUrl(form.getThumbnail())
                                 .imageType("MAIN")
                                 .sortOrder(0)
                                 .build()
-
                 );
-                accommodationImageService.updateThumbnailUrl(accId, form.getThumbnailUrl());
+                accommodationImageService.updateThumbnailUrl(accId, form.getThumbnail());
             }
 
-            // (4) 추가 이미지들 업로드 → 이미지 테이블 저장
-            if (form.getImages() != null && !form.getImages().isEmpty()) {
+            // (5) 서브 이미지들 업로드 후 저장
+            if (subImages != null && !subImages.isEmpty()) {
                 int order = 1;
-                for (AccommodationImageDTO imgDto : form.getImages()) {
-                    imgDto.setAccommodationId(accId);
-                    if (imgDto.getSortOrder() == null) imgDto.setSortOrder(order++);
-                    if (imgDto.getImageType() == null || imgDto.getImageType().isBlank()) {
-                        imgDto.setImageType("SUB");
-                    }
-                    accommodationImageService.upsertMainThumbnail(accId, imgDto);
+                for (MultipartFile f : subImages) {
+                    if (f.isEmpty()) continue;
+                    String url = fileUploadUtil.upload(f, "accommodations/" + accId + "/images");
+                    accommodationImageService.saveOrUpload(
+                            accId,
+                            AccommodationImageDTO.builder()
+                                    .file(f)
+                                    .imageUrl(url)
+                                    .imageType("SUB")
+                                    .sortOrder(order++)
+                                    .build()
+                    );
                 }
             }
-
 
             ra.addFlashAttribute("success", "숙소 등록이 요청되었습니다.");
             return "redirect:/admin/accommodations/list?status=PENDING";
@@ -310,7 +310,7 @@ public class AccommodationPageController {
                 .address(dto.getAddress())
                 .latitude(dto.getLatitude())
                 .longitude(dto.getLongitude())
-                .thumbnailUrl(dto.getThumbnailUrl())
+                .thumbnail(dto.getThumbnail())
                 .description(dto.getDescription())
                 .amenities(amenitiesMultiline)
                 .checkInTime(dto.getCheckInTime())
@@ -354,60 +354,65 @@ public class AccommodationPageController {
     @PostMapping("/edit/{id}")
     public String editSubmit(@PathVariable Long id,
                              @ModelAttribute("form") AccommodationUpdateRequestDTO form,
-                             @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail,
+                             @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnailFile,
                              @RequestParam(value = "subImages", required = false) List<MultipartFile> subImages,
                              RedirectAttributes ra) {
         try {
-            // 1) 텍스트 업데이트
+            // 1) amenities 정규화
             form.setAmenities(parseAmenitiesToJson(form.getAmenities()));
 
-            // 2) 썸네일 파일이 올라온 경우만 업로드+DB 반영
-            if (thumbnail != null && !thumbnail.isEmpty()) {
-                // 파일 업로드 한 경우
-                String newMainUrl = null;
-                if (thumbnail != null && !thumbnail.isEmpty()) {
-                    String uploadedUrl = fileUploadUtil.upload(thumbnail, "accommodation");
-                    newMainUrl = uploadedUrl;
-                    form.setThumbnailUrl(newMainUrl); // 서비스 update가 썸네일도 갱신 가능하도록 하기 위함.
-                } else if (form.getThumbnailUrl() != null && !form.getThumbnailUrl().isEmpty()) {
-                    newMainUrl = form.getThumbnailUrl(); // 파일 없이 기존/ 새 url 유지 하기 위함
-                }
-                accommodationService.update(id, form);
+            // 2) 썸네일 처리
+            String newMainUrl = null;
+            if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+                // 파일 업로드한 경우 → 새 URL을 DTO에 넣어 엔티티 필드에도 반영되게
+                newMainUrl = fileUploadUtil.upload(thumbnailFile, "accommodation");
+                form.setThumbnail(newMainUrl);
+            } else if (form.getThumbnail() != null && !form.getThumbnail().isBlank()) {
+                // 파일 업로드 없이 URL만 입력/유지하는 경우
+                newMainUrl = form.getThumbnail();
+            } // else: 아무 것도 없으면 null 유지 → 썸네일 미변경
 
-                // main 이미지 upsert + 숙소 썸네일 url 동기화
-                if (newMainUrl != null) {
-                    AccommodationImageDTO mainDto = AccommodationImageDTO.builder()
-                            .imageType("MAIN")
-                            .sortOrder(0)
-                            .imageUrl(newMainUrl)
-                            .build();
+            // 3) 스칼라/연관 필드 업데이트(썸네일 포함)
+            accommodationService.update(id, form);
 
-                    AccommodationImageDTO savedMain = accommodationImageService.upsertMainThumbnail(id, mainDto);
-                    // 숙소 테이블의 thumbnail.url 을 메인과 동일하게 맞추기 위함(썸네일=메인)
-                    accommodationImageService.updateThumbnailUrl(id, savedMain.getImageUrl());
-                }
-
-                // 4) SUB 이미지들 추가/수정
-                if (subImages != null && !subImages.isEmpty()) {
-                    int sortSeed = 1; // MAIN=0 이후부터
-                    for (MultipartFile file : subImages) {
-                        if (file == null || file.isEmpty()) continue;
-                        accommodationImageService.saveOrUpload(id, AccommodationImageDTO.builder()
-                                .imageUrl("SUB").sortOrder(sortSeed++).file(file).build());
-                    }
-                }
-                ra.addFlashAttribute("success", "수정이 완료되었습니다.");
-                return "redirect:/admin/accommodations/list";
+            // 4) 메인 이미지(이미지 테이블) upsert (썸네일 URL이 최종 있으면만)
+            if (newMainUrl != null && !newMainUrl.isBlank()) {
+                accommodationImageService.upsertMainThumbnail(
+                        id,
+                        AccommodationImageDTO.builder()
+                                .imageType("MAIN")
+                                .sortOrder(0)
+                                .imageUrl(newMainUrl)
+                                .build()
+                );
             }
 
-            } catch(Exception e){
-                log.error("==============editSubmit error", e);   // ★ stacktrace 확인용
-                ra.addFlashAttribute("error", "이미지 처리 중 오류: " + e.getMessage());
-                return "redirect:/admin/accommodations/edit/" + id;
+            // 5) SUB 이미지 추가
+            if (subImages != null && !subImages.isEmpty()) {
+                int sortSeed = 1; // MAIN=0 다음
+                for (MultipartFile file : subImages) {
+                    if (file == null || file.isEmpty()) continue;
+                    String url = fileUploadUtil.upload(file, "accommodations/" + id + "/images");
+                    accommodationImageService.saveOrUpload(
+                            id,
+                            AccommodationImageDTO.builder()
+                                    .imageUrl(url)
+                                    .imageType("SUB")
+                                    .sortOrder(sortSeed++)
+                                    .build()
+                    );
+                }
             }
-        return "";
+
+            ra.addFlashAttribute("success", "수정이 완료되었습니다.");
+            return "redirect:/admin/accommodations/list"; // 또는 detail/{id}로
+
+        } catch (Exception e) {
+            log.error("editSubmit error", e);
+            ra.addFlashAttribute("error", "수정 중 오류: " + e.getMessage());
+            return "redirect:/admin/accommodations/edit/" + id;
+        }
     }
-
 
     @GetMapping("/list/pending")
     public String listPending() {
@@ -427,7 +432,7 @@ public class AccommodationPageController {
     }
 
 
-    //json문자열을 List로 변환
+    //json 문자열을 List로 변환
     private List<String> parseAmenitiesToList(String jsonInput) {
         if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
 

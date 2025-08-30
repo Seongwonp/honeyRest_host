@@ -1,16 +1,16 @@
 package com.honeyrest.honeyrest_host.service;
 
-import com.honeyrest.honeyrest_host.dto.CompanyDTO;
 import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
+import com.honeyrest.honeyrest_host.dto.PaymentDTO;
 import com.honeyrest.honeyrest_host.dto.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.*;
+import com.honeyrest.honeyrest_host.repository.PaymentRepository;
 import com.honeyrest.honeyrest_host.repository.ReservationRepository;
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import com.honeyrest.honeyrest_host.repository.UserRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
 import jakarta.persistence.EntityNotFoundException;
-
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.log4j.Log4j2;
@@ -22,7 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -32,38 +35,12 @@ import java.util.List;
 public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
+    private final PaymentRepository paymentRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final AccommodationRepository accommodationRepository;
 
-    @Override
-    public PageResponseDTO<ReservationDTO> getReservationsByStatus(String status, PageRequestDTO pageRequestDTO) {
-        Pageable pageable = pageRequestDTO.getPageable(Sort.by("reservationId").descending());
-
-        Page<Reservation> page;
-        if (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)) {
-            page = reservationRepository.findAll(pageable);
-        } else {
-            List<String> allowedStatuses = List.of("CONFIRME", "PENDING", "COMLETED", "CANCELLED", "NO_SHOW");
-            String st = status.toUpperCase();
-            if (!allowedStatuses.contains(st)) {
-                throw new IllegalArgumentException("유효 하지 않은 예약 상태: " + status);
-            }
-
-            page = reservationRepository.findByStatus(st, pageable);
-        }
-
-        List<ReservationDTO> dtoList = page.getContent().stream()
-                .map(r -> modelMapper.map(r, ReservationDTO.class))
-                .toList();
-
-        return PageResponseDTO.<ReservationDTO>withALl()
-                .pageRequestDTO(pageRequestDTO)
-                .dtoList(dtoList)
-                .total((int) page.getTotalElements())
-                .build();
-    }
 
     @Override
     public ReservationDTO getReservationByNumber(String number) {
@@ -79,12 +56,15 @@ public class ReservationServiceImpl implements ReservationService {
         return toDto(r);
     }
 
-    // ✅ 수정: 세터 대신 도메인 메서드 사용
+    // 수정: 세터 대신 도메인 메서드 사용
     @Override
-    public Reservation updateReservation(ReservationDTO dto) {
+    public ReservationDTO updateReservation(ReservationDTO dto) {
+
+        // 기존 엔티티
         Reservation reservation = reservationRepository.findById(dto.getReservationId())
                 .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + dto.getReservationId()));
 
+        // 연관 엔티티
         User newUser = null;
         Room newRoom = null;
         Accommodation newAccommodation = null;
@@ -97,15 +77,27 @@ public class ReservationServiceImpl implements ReservationService {
             newRoom = roomRepository.findById(dto.getRoomId())
                     .orElseThrow(() -> new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + dto.getRoomId()));
         }
+        if(dto.getAccommodationId() != null) {
+            newAccommodation = accommodationRepository.findById(dto.getAccommodationId())
+                    .orElseThrow(()-> new EntityNotFoundException("숙소를 찾을 수 없습니다. id=" + dto.getAccommodationId()));
+        }
 
-        reservation.update(dto, newUser, newRoom, newAccommodation); // 변경감지
+        // (선택) 기본 검증 예시: 체크인/아웃 역전 방지
+        if (dto.getCheckInDate() != null && dto.getCheckOutDate() != null
+            && !dto.getCheckInDate().isBefore(dto.getCheckOutDate())) {
+            throw new IllegalArgumentException("체크인 날짜는 체크아웃보다 이전이어야 합니다.");
+        }
 
-        return reservation; // @Transactional 이므로 save() 필요 없음
+        // 3) 도메인 메서드로 필드 반영 (JPA 변경감지)
+        reservation.update(dto, newUser, newRoom, newAccommodation);
+
+        // 4) 트랜잭션 커밋 시 자동 flush. 여기서 DTO로 변환해 반환
+        return toDto(reservation);
     }
 
-    // ✅ 취소
+    // 취소
     @Override
-    public void canceledReservation(Long reservationId, String cancelReason) {
+    public void cancelReservation(Long reservationId, String cancelReason) {
         Reservation r = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + reservationId));
 
@@ -130,7 +122,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
     }
 
-    // ✅ 생성
+    // 생성
     @Override
     public ReservationDTO createReservation(ReservationDTO dto) {
         dto.setReservationId(null);
@@ -149,7 +141,7 @@ public class ReservationServiceImpl implements ReservationService {
         Accommodation accommodation = accommodationRepository.findById(dto.getAccommodationId())
                 .orElseThrow(() -> new EntityNotFoundException("숙소를 찾을 수 없습니다. accommodationId=" + dto.getAccommodationId()));
 
-        // ✅ 여기에서 인원 검증
+        //  여기에서 인원 검증
         if (dto.getGuestCount() != null) {
             if (room.getStandardOccupancy() != null && dto.getGuestCount() < room.getStandardOccupancy()) {
                 throw new IllegalArgumentException("기준 인원보다 적게 예약할 수 없습니다.");
@@ -158,7 +150,7 @@ public class ReservationServiceImpl implements ReservationService {
                 throw new IllegalArgumentException("최대 인원을 초과했습니다.");
             }
         }
-        // ✅ 1) 재고 차감 (원자적)
+        //  1) 재고 차감 (원자적)
         int updated = roomRepository.decreaseStock(room.getRoomId());
         if (updated == 0) {
             throw new IllegalStateException("해당 객실 타입의 재고가 부족합니다. (품절)");
@@ -199,6 +191,104 @@ public class ReservationServiceImpl implements ReservationService {
         return modelMapper.map(saved, ReservationDTO.class);
     }
 
+    @Override
+    public List<ReservationDTO> findRoomReservationsOverlapping(Long roomId, LocalDate start, LocalDate end) {
+        // checkIn < end  AND  checkOut > start  (겹치는 예약 전부)
+        List<Reservation> rows = reservationRepository
+                .findByRoomIdAndDateBetween(roomId, start, end);
+
+        return rows.stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Override
+    public List<ReservationDTO> findCompanyReservationsOverlapping(Long companyId, Long accommodationId, LocalDate start, LocalDate end) {
+
+        // 회사 기준(숙소 선택 가능)으로 월 범위에 “겹치는” 예약들
+        List<Reservation> rows = reservationRepository
+                .findOverlappedReservationsForMonth(companyId, accommodationId, start, end);
+
+        return rows.stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+
+
+        @Override
+    public List<ReservationDTO> findCompanyReservationsOnDate(Long companyId, Long accommodationId, LocalDate date) {
+            // “하루”를 보기 위해 start=date, end=date+1 로 겹침 검색
+            LocalDate start = date;
+            LocalDate end = date.plusDays(1);
+
+            List<Reservation> rows = reservationRepository
+                    .findOverlappedReservationsForMonth(companyId, accommodationId, start, end);
+
+            List<ReservationDTO> dtoList = new ArrayList<>();
+            for (Reservation row : rows) {
+                dtoList.add(toDto(row));
+            }
+            return dtoList;
+        }
+
+    @Override
+    public ReservationDTO getReservationDetail(Long id) {
+        Reservation r = reservationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("예약 없음"));
+
+        // 결제 최신건 조회
+        Optional<Payment> paymentOpt = paymentRepository
+                .findTopByReservationReservationIdOrderByCreatedAtDesc(id);
+
+        PaymentDTO paymentDTO = paymentOpt.map(p-> PaymentDTO.builder()
+                .paymentId(p.getPaymentId())
+                .reservationNumber(r.getReservationNumber())
+                .guestName(r.getGuestName())
+                .guestPhone(r.getGuestPhone())
+                .accommodationName(r.getAccommodation().getName())
+                .roomName(r.getRoom() != null ? r.getRoom().getName() : null)
+                .paymentMethod(p.getPaymentMethod())
+                .paymentStatus(p.getPaymentStatus())
+                .amount(p.getAmount())
+                .paymentDate(p.getCreatedAt())
+                .build()
+        ).orElse(null);
+
+        return ReservationDTO.builder()
+                .reservationId(r.getReservationId())
+                .reservationNumber(r.getReservationNumber())
+
+                .accommodationId(r.getAccommodation() != null ? r.getAccommodation().getAccommodationId() : null)
+                .accommodationName(r.getAccommodation().getName())
+
+                .roomId(r.getRoom() != null ? r.getRoom().getRoomId() : null)
+                .roomName(r.getRoom() != null ? r.getRoom().getName() : null)
+
+                .userId(r.getUser() != null ? r.getUser().getUserId() : null)
+
+                .checkInDate(r.getCheckInDate())
+                .checkOutDate(r.getCheckOutDate())
+
+                .guestCount(r.getGuestCount())
+                .guestName(r.getGuestName())
+                .guestPhone(r.getGuestPhone())
+
+                .price(r.getPrice())
+                .originalPrice(r.getOriginalPrice())
+                .discountAmount(r.getDiscountAmount())
+
+                .status(r.getStatus())
+                .cancelReason(r.getCancelReason())
+                .specialRequest(r.getSpecialRequest())
+
+                .createdAt(r.getCreatedAt())
+                .updatedAt(r.getUpdatedAt())
+
+                .payment(paymentDTO)
+                .build();
+    }
+
     // 간단한 예약번호 생성(원하면 바꿔도 됨)
     private String genReservationNumber() {
         // 예: HR-20240818-랜덤6자리
@@ -206,29 +296,6 @@ public class ReservationServiceImpl implements ReservationService {
         return "HR-" + java.time.LocalDate.now() + "-" + rand.substring(Math.max(0, rand.length() - 6));
     }
 
-    @Override
-    public PageResponseDTO<ReservationDTO> getAllReservations(PageRequestDTO pageRequestDTO) {
-        Pageable pageable = pageRequestDTO.getPageable(Sort.by("reservationId").descending());
-
-        Page<Reservation> page = reservationRepository.findAll(pageable);
-
-        List<ReservationDTO> dtoList = page.getContent().stream()
-                .map(r -> modelMapper.map(r, ReservationDTO.class))
-                .toList();
-
-        return PageResponseDTO.<ReservationDTO>withALl()
-                .pageRequestDTO(pageRequestDTO)
-                .dtoList(dtoList)
-                .total((int) page.getTotalElements())
-                .build();
-    }
-
-    @Override
-    public List<ReservationDTO> getAllReservationsNoPaging() {
-        return reservationRepository.findAll().stream()
-                .map(r -> modelMapper.map(r, ReservationDTO.class))
-                .toList();
-    }
 
 
      private ReservationDTO toDto(Reservation r) {
@@ -250,6 +317,8 @@ public class ReservationServiceImpl implements ReservationService {
                 .price(r.getPrice())
                 .specialRequest(r.getSpecialRequest())
                 .status(r.getStatus())
+                .createdAt(r.getCreatedAt())
+                .updatedAt(r.getUpdatedAt())
                 .build();
 
     }
@@ -274,12 +343,6 @@ public class ReservationServiceImpl implements ReservationService {
                 .specialRequest(d.getSpecialRequest())
                 .status(d.getStatus())
                 .build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long countAll() {
-        return reservationRepository.count(); // JPA 기본 count()
     }
 
     @Override
@@ -311,4 +374,5 @@ public class ReservationServiceImpl implements ReservationService {
                 .build();
 
     }
+
 }

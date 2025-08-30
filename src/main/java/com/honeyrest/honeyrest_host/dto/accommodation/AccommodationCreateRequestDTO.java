@@ -55,7 +55,7 @@ public class AccommodationCreateRequestDTO {
 
     // 썸네일/설명
     @Size(max = 500)
-    private String thumbnailUrl;
+    private String thumbnail;
 
     private String description;
 

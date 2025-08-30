@@ -18,5 +18,5 @@ public class AccommodationListDTO {
     private BigDecimal minPrice;
     private String status;
 
-    private String thumbnailUrl;
+    private String thumbnail;
 }

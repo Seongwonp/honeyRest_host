@@ -46,7 +46,7 @@ public class ModelMapperConfig {
         modelMapper.typeMap(Accommodation.class, AccommodationCreateRequestDTO.class).addMappings(m -> {
             // ID/이름 다른 필드
             m.map(Accommodation::getAccommodationId, AccommodationCreateRequestDTO::setAccommodationId);
-            m.map(Accommodation::getThumbnail, AccommodationCreateRequestDTO::setThumbnailUrl);
+            m.map(Accommodation::getThumbnail, AccommodationCreateRequestDTO::setThumbnail);
 
             // 연관 ID (null-safe)
             m.<Long>map(src -> src.getCompany() == null ? null : src.getCompany().getCompanyId(),

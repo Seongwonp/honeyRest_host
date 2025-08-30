@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <title>날짜별 예약 현황</title>
+    <th:block layout:fragment="head">
+        <style>
+            .badge-status {
+                font-size: .85rem;
+            }
+
+            .bg-success-subtle {
+                background: #e8f5e9 !important;
+                color: #2e7d32 !important;
+            }
+
+            .bg-warning-subtle {
+                background: #fff8e1 !important;
+                color: #8d6e63 !important;
+            }
+
+            .bg-secondary-subtle {
+                background: #f1f3f5 !important;
+                color: #495057 !important;
+            }
+
+            .toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: .75rem;
+                margin-bottom: 16px;
+            }
+
+            .filters {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: .5rem;
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+
+    <!-- 상단 -->
+    <div class="toolbar">
+        <div>
+            <h3 class="mb-1">
+                날짜별 예약 현황
+                <small class="text-muted" th:text="${#temporals.format(date,'yyyy-MM-dd (E)')}">2025-08-30 (토)</small>
+            </h3>
+            <p class="text-muted mb-0">내 회사 숙소의 해당 날짜 예약만 모아 봅니다.</p>
+        </div>
+
+        <!-- 캘린더 페이지로 돌아가기(선택) -->
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary"
+               th:href="@{/admin/price/page(
+                    companyId=${companyId},
+                    accommodationId=${accommodationId},
+                    ym=${#temporals.format(date,'yyyy-MM')}
+               )}">가격/재고 캘린더로</a>
+            <a class="btn btn-light" th:href="@{/admin/reservations/list}">전체 예약 목록</a>
+        </div>
+    </div>
+
+    <!-- 필터: 숙소/날짜 변경 -->
+    <form method="get" th:action="@{/admin/reservations/day}" class="filters card card-body mb-3">
+        <input type="hidden" name="companyId" th:value="${companyId}"/>
+
+        <label class="form-label mb-0">숙소</label>
+        <select name="accommodationId" class="form-select" style="min-width:260px" onchange="this.form.submit()">
+            <option value="" th:selected="${accommodationId == null}">회사 전체</option>
+            <option th:each="a : ${accommodations}"
+                    th:value="${a.accommodationId}"
+                    th:selected="${accommodationId != null ? accommodationId.equals(a.accommodationId) : false}"
+                    th:text="${a.name}">숙소명
+            </option>
+        </select>
+
+        <label class="form-label mb-0 ms-2">날짜</label>
+        <input type="date" name="date" class="form-control" style="max-width:180px"
+               th:value="${#temporals.format(date,'yyyy-MM-dd')}" onchange="this.form.submit()"/>
+
+        <div class="ms-auto small text-muted">
+            총 <span th:text="${#lists.size(list)}">0</span>건
+        </div>
+    </form>
+
+    <!-- 목록 -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width:80px" class="text-center">ID</th>
+                        <th>예약번호</th>
+                        <th>예약자</th>
+                        <th>숙소/객실</th>
+                        <th style="width:160px" class="text-center">체크인~아웃</th>
+                        <th style="width:110px" class="text-center">인원</th>
+                        <th style="width:140px" class="text-end">금액</th>
+                        <th style="width:120px" class="text-center">상태</th>
+                        <th style="width:140px" class="text-center">관리</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="r : ${list}">
+                        <td class="text-center" th:text="${r.reservationId}">1</td>
+                        <td>
+                            <div class="fw-semibold" th:text="${r.reservationNumber}">HR-…</div>
+                        </td>
+                        <td>
+                            <div class="text-muted small">
+                                <span th:text="${r.guestName} ?: '-'">-</span>
+                                (<span th:text="${r.guestPhone} ?: '-'">-</span>)
+                            </div>
+                        </td>
+                        <td>
+                            <div th:text="${r.accommodationName}">숙소명</div>
+                            <div class="text-muted small" th:text="${r.roomName} ?: '-'">객실명</div>
+                        </td>
+                        <td class="text-center">
+                            <div th:text="${#temporals.format(r.checkInDate, 'yyyy-MM-dd')}">-</div>
+                            <div class="text-muted small">~ <span
+                                    th:text="${#temporals.format(r.checkOutDate, 'yyyy-MM-dd')}">-</span></div>
+                        </td>
+                        <td class="text-center" th:text="${r.guestCount}">2</td>
+                        <td class="text-end"
+                            th:text="${r.price != null ? #numbers.formatInteger(r.price.intValue(), 3, 'COMMA') : '0'}">
+                            0
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-status rounded-pill"
+                                  th:with="st=${#strings.toUpperCase(r.status)}"
+                                  th:text="${st ?: 'UNKNOWN'}"
+                                  th:classappend="${st=='CONFIRMED'} ? ' bg-success-subtle text-success' :
+                                                  (${st=='PENDING'}   ? ' bg-warning-subtle text-warning' :
+                                                  (${st=='CANCELLED'} ? ' bg-secondary-subtle text-secondary' :
+                                                                        ' bg-light text-dark'))"></span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a class="btn btn-outline-primary"
+                                   th:href="@{|/admin/reservations/${r.reservationId}|}">상세</a>
+                                <form th:action="@{|/admin/reservations/${r.reservationId}/cancel|}" method="post"
+                                      onsubmit="return confirm('이 예약을 취소하시겠습니까?');">
+                                    <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}"
+                                           th:value="${_csrf.token}"/>
+                                    <input type="hidden" name="reason" value="관리자 취소"/>
+                                    <button type="submit" class="btn btn-outline-danger"
+                                            th:disabled="${#strings.toUpperCase(r.status) == 'CANCELLED'}">취소
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(list)}">
+                        <td colspan="9" class="text-center py-5 text-muted">표시할 예약이 없습니다.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div class="small text-muted">총 <span th:text="${#lists.size(list)}">0</span>건</div>
+        </div>
+    </div>
+
+</th:block>
+</body>
+</html>

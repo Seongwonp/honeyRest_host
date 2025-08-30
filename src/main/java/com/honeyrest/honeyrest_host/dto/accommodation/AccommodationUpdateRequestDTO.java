@@ -29,7 +29,7 @@ public class AccommodationUpdateRequestDTO {
     private BigDecimal latitude;
     private BigDecimal longitude;
 
-    private String thumbnailUrl;
+    private String thumbnail;
     private String description;
 
     private String amenities;         // ["wifi", ...]

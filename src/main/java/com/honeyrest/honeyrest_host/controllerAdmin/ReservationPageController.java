@@ -2,17 +2,18 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dto.*;
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
 import com.honeyrest.honeyrest_host.service.*;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -28,13 +29,19 @@ public class ReservationPageController {
     private final RoomService roomService;
 
 
-    /** 예약 목록 페이지 + 조회 */
+    /**
+     * 예약 목록 페이지 + 조회
+     */
     @GetMapping("/list")
     public String list(@RequestParam(required = false) String number,
                        @RequestParam(defaultValue = "ALL") String status,
+                       @RequestParam(defaultValue = "ALL") String q,
                        @RequestParam(defaultValue = "1") int page,
                        @RequestParam(defaultValue = "10") int size,
                        Model model) {
+        // 1) 로그인 사용자 기준 회사 ID 해석
+        Long companyId = companyService.getCompanyIdByOfCurrentUser(); // 프로젝트의 실제 메서드 사용
+
 
 
         model.addAttribute("reservationStatuses", List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED", "NO_SHOW"));
@@ -46,6 +53,7 @@ public class ReservationPageController {
 
         PageResponseDTO<ReservationDTO> resp;
 
+        // 1) 예약 번호로 바로 찾기
         if (number != null && !number.isBlank()) {
             try {
                 ReservationDTO dto = reservationService.getReservationByNumber(number.trim());
@@ -63,15 +71,17 @@ public class ReservationPageController {
                         .build();
                 model.addAttribute("msg", "해당 예약번호를 찾을 수 없습니다.");
             }
+            // 2) 회사 기준 목록 조회학( 상태/ 검색어)
         } else {
-            resp = reservationService.getReservationsByStatus(status, pr);
+
+            resp = reservationService.getCompanyReservations(companyId, status, q, pr);
         }
 
-        // ✅ 템플릿에서 쓰기 쉬운 평면 값들을 모델에 담아줌
+        //  템플릿에서 쓰기 쉬운 평면 값들을 모델에 담아줌
         int currentPage = pr.getPage();
         int pageSize = pr.getSize();
         int total = resp.getTotal();
-        int totalPages = (int) Math.ceil((double) total / pageSize);
+        int totalPages = (int) Math.ceil((double) total / pr.getSize());
 
         model.addAttribute("list", resp.getDtoList());
         model.addAttribute("total", total);
@@ -81,86 +91,90 @@ public class ReservationPageController {
 
         model.addAttribute("selectedStatus", status);
         model.addAttribute("number", number == null ? "" : number.trim());
+//        model.addAttribute("q", q == null ? "" : q.trim());
 
         return "admin/reservations/list";
     }
 
 
-    /** 내 예약 현황(회사 관리자용) */
+    /**
+     * 내 예약 현황(회사 관리자용)
+     */
     @GetMapping("/my")
     public String my(@RequestParam(defaultValue = "ALL") String status,
                      @RequestParam(required = false) String q,
                      @RequestParam(defaultValue = "1") int page,
                      @RequestParam(defaultValue = "10") int size,
-                     org.springframework.security.core.Authentication authentication,
+                     Authentication authentication,
                      Model model) {
 
-        Long companyId = resolveCompanyId(authentication); // 프로젝트 정책에 맞게 구현
+        Long companyId = companyService.getCompanyIdByOfCurrentUser();
         PageRequestDTO pr = PageRequestDTO.builder().page(page).size(size).build();
 
         // 서비스에 getCompanyReservations(companyId, status, q, pr) 구현 필요
-        PageResponseDTO<ReservationDTO> resp = reservationService.getCompanyReservations(companyId, status, q, pr);
+        PageResponseDTO<ReservationDTO> resp =
+                reservationService.getCompanyReservations(companyId, status, q, pr);
 
         int currentPage = pr.getPage();
         int pageSize = pr.getSize();
         int total = resp.getTotal();
         int totalPages = (int) Math.ceil((double) total / pageSize);
 
+        // 블록 페이지 계산 (예: 5개씩)
+        int blockSize  = 5;
+        int startPage  = ((currentPage - 1) / blockSize) * blockSize + 1;
+        int endPage    = Math.min(startPage + blockSize - 1, totalPages);
+        boolean hasPrevBlock = startPage > 1;
+        boolean hasNextBlock = endPage < totalPages;
+
+
         model.addAttribute("list", resp.getDtoList());
         model.addAttribute("total", total);
         model.addAttribute("currentPage", currentPage);
         model.addAttribute("pageSize", pageSize);
         model.addAttribute("totalPages", totalPages);
-        model.addAttribute("statuses",List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED"));
+        model.addAttribute("startPage", startPage);
+        model.addAttribute("endPage", endPage);
+        model.addAttribute("hasPrevBlock", hasPrevBlock);
+        model.addAttribute("hasNextBlock", hasNextBlock);
+
+        model.addAttribute("statuses", List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED"));
         model.addAttribute("selectedStatus", status);
         model.addAttribute("q", q == null ? "" : q);
 
         return "admin/reservations/my";
     }
 
-    /** 환불/취소 관리 */
+    /**
+     * 환불/취소 관리
+     */
     @GetMapping("/refunds")
-    public String refunds(@RequestParam(defaultValue = "1") int page,
-                          @RequestParam(defaultValue = "10") int size,
-                          Model model) {
-        // 필요 시 환불 대상만 필터링해서 조회
-        PageRequestDTO pr = PageRequestDTO.builder().page(page).size(size).build();
-        PageResponseDTO<ReservationDTO> resp =
-                reservationService.getReservationsByStatus("CANCELLED", pr);
-
-        model.addAttribute("list", resp.getDtoList());
-        model.addAttribute("total", resp.getTotal());
-        model.addAttribute("currentPage", pr.getPage());
-        model.addAttribute("pageSize", pr.getSize());
-        model.addAttribute("totalPages", (int)Math.ceil((double)resp.getTotal()/pr.getSize()));
-
-        return "admin/reservations/refunds";
+    public String refunds() {
+        return "redirect:/admin/point/refunds";
     }
 
-    /** 신규 예약 폼 */
+    /**
+     * 신규 예약 폼
+     */
     @GetMapping("/new")
     public String newReservation(Authentication authentication, Model model) {
 
-        String email = (authentication.getPrincipal() instanceof String s) ? s : authentication.getName();
+        Long companyId = companyService.getCompanyIdByOfCurrentUser();
 
-        AdminLoginRequestDTO admin = userService.getUserByEmail(email);
-        CompanyDTO companyDTO = companyService.getByUserEmail(admin.getEmail());
-        Long companyId = companyDTO.getCompanyId();
-        AccommodationCreateRequestDTO accDto = accommodationService.getById(companyId);
-        Long accommodationId = accDto.getAccommodationId();
-        RoomDTO roomDTO = roomService.getByRoomId(accommodationId);
-        Long roomId = roomDTO.getRoomId();
         ReservationDTO form = new ReservationDTO();
         model.addAttribute("form", form);
-        model.addAttribute("roomId", roomId); // 위에 꺼를 html 로 넘기기 위해 model 로 넘겨주어야 함.
-        model.addAttribute("accommodations", accommodationService.getAllById(companyId));
+
+        // 드롭다운 데이터(회사 기준)
+        model.addAttribute("accomodations", accommodationService.getAllById(companyId));
         model.addAttribute("rooms", roomService.findAllByCompanyId(companyId));
 
 
         return "admin/reservations/new";
     }
 
-    /** 예약 생성 (POST) */
+    /**
+     * 예약 생성 (POST)
+     */
     @PostMapping
     public String create(@Valid @ModelAttribute("form") ReservationDTO form,
                          RedirectAttributes ra) {
@@ -169,28 +183,53 @@ public class ReservationPageController {
         return "redirect:/admin/reservations/list?number=" + saved.getReservationNumber();
     }
 
-    /** 예약 상세 페이지 */
+    /**
+     * 예약 상세 페이지
+     */
     @GetMapping("/{reservationId}")
     public String detail(@PathVariable Long reservationId, Model model) {
-        var entity = reservationService.getReservationById(reservationId);
-        model.addAttribute("reservation", entity); // DTO로 바꾸고 싶으면 매핑해서
+        ReservationDTO reservation = reservationService.getReservationDetail(reservationId);
+        model.addAttribute("reservation", reservation); // DTO로 바꾸고 싶으면 매핑해서
         return "admin/reservations/detail";
     }
 
-    /** 예약 취소 – 재고 복구는 서비스에서 처리 */
+    /**
+     * 예약 취소 – 재고 복구는 서비스에서 처리
+     */
     @PostMapping("/{reservationId}/cancel")
     public String cancel(@PathVariable Long reservationId,
                          @RequestParam(required = false) String reason,
                          RedirectAttributes ra) {
-        reservationService.canceledReservation(reservationId, reason);
+        reservationService.cancelReservation(reservationId, reason);
         ra.addFlashAttribute("msg", "예약이 취소되었습니다.");
         return "redirect:/admin/reservations/list";
     }
-    /* ========== 헬퍼 ========== */
-    private Long resolveCompanyId(org.springframework.security.core.Authentication authentication) {
-        // 예시) principal에 userId(Long) 저장되어 있고, UserRepository 통해 companyId 조회
-        // return companyService.findCompanyIdByUserId((Long) authentication.getPrincipal());
-        return 1L; // 임시
+
+    @GetMapping("/day")
+    public String day(@RequestParam Long companyId,
+                      @RequestParam(required = false) Long accommodationId,
+                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+                     Model model) {
+
+        // 날짜 파라미터가 없으면 오늘로 기본값
+        if (date == null) {
+            date = LocalDate.now();
+        }
+
+        // 상단 숙소 필터 셀렉트용: 해당 회사의 숙소 목록
+        model.addAttribute("accommodations", accommodationService.getAllById(companyId));
+
+        // 목록 데이터: 회사(+선택 숙소)의 '해당 날짜에 걸치는' 예약만
+       List<ReservationDTO> list =
+                reservationService.findCompanyReservationsOnDate(companyId, accommodationId, date);
+
+        // 템플릿에서 쓰는 모델값들
+        model.addAttribute("companyId", companyId);
+        model.addAttribute("accommodationId", accommodationId);
+        model.addAttribute("date", date);
+        model.addAttribute("list", list);
+
+        return "admin/reservations/day";
     }
 
 }

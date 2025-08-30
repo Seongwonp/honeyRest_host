@@ -33,7 +33,7 @@
     <div class="card-body">
       <!-- 상단 요약 -->
       <div class="d-flex align-items-center gap-3 mb-3">
-        <img th:if="${acc.thumbnailUrl}" th:src="${acc.thumbnailUrl}" alt="thumbnail" class="thumb">
+        <img th:if="${acc.thumbnail}" th:src="${acc.thumbnail}" alt="thumbnail" class="thumb">
         <div>
           <h4 class="mb-1" th:text="${acc.name}">숙소명</h4>
           <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -83,13 +83,11 @@
           <p class="text-muted" th:text="${acc.description}">설명</p>
 
           <h6 class="mt-4 mb-2">확인사항 및 기타</h6>
-          <ul th:if="${amenitiesList != null}">
+          <ul th:if="${amenitiesList != null and !amenitiesList.isEmpty()}">
             <li th:each="a : ${amenitiesList}" th:text="${a}"></li>
           </ul>
-<!--          <div>-->
-<!--            <span class="tag" th:each="amen : ${acc.amenities}" th:text="${amen}">wifi</span>-->
-<!--            <span th:if="${acc.amenities == null or #lists.isEmpty(acc.amenities)}" class="text-muted">등록된 편의시설 없음</span>-->
-<!--          </div>-->
+
+<!--          <p th:if="${amenitiesList == null or amenitiesList.isEmpty()}" class="text-muted">등록된 확인사항이 없습니다.</p>-->
 
 
         </div>

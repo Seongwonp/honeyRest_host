@@ -5,155 +5,264 @@
       layout:decorate="~{admin/layout/base}">
 
 <head>
-  <title>예약 상세</title>
-  <th:block layout:fragment="head">
-    <style>
-      .badge-status { font-size: .85rem; }
-      .kv { display:flex; gap:.5rem; }
-      .kv dt { min-width: 120px; color:#6c757d; }
-      .kv dd { margin:0; font-weight:600; }
-      .section-title { font-weight:700; }
-    </style>
-  </th:block>
+    <title>예약 상세</title>
+    <th:block layout:fragment="head">
+        <style>
+            .badge-status {
+                font-size: .85rem;
+            }
+
+            .kv {
+                display: flex;
+                gap: .5rem;
+            }
+
+            .kv dt {
+                min-width: 120px;
+                color: #6c757d;
+            }
+
+            .kv dd {
+                margin: 0;
+                font-weight: 600;
+            }
+
+            .section-title {
+                font-weight: 700;
+            }
+        </style>
+    </th:block>
 </head>
 
 <body>
 <th:block layout:fragment="content">
-  <div class="page-heading">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h3 class="mb-1">예약 상세</h3>
-        <p class="text-muted mb-0">예약 번호와 상태, 투숙 정보, 결제 금액을 확인하세요.</p>
-      </div>
-      <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/my}">← 내 예약 현황</a>
-        <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/list}">전체 목록</a>
-      </div>
-    </div>
-  </div>
 
-  <div class="page-content">
-    <section class="row">
-      <div class="col-12 col-xl-8">
-        <!-- 기본 정보 카드 -->
-        <div class="card shadow-sm mb-3">
-          <div class="card-header bg-light">
-            <span class="section-title">기본 정보</span>
-          </div>
-          <div class="card-body" th:object="${reservation}">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <div class="kv"><dt>예약 ID</dt><dd th:text="*{reservationId}">-</dd></div>
-                <div class="kv"><dt>예약 번호</dt><dd th:text="*{reservationNumber}">-</dd></div>
-                <div class="kv"><dt>상태</dt>
-                  <dd>
-                    <span class="badge badge-status rounded-pill"
-                          th:text="*{status}"
-                          th:classappend="${reservation.status}=='CONFIRMED' ? ' bg-success-subtle text-success' :
-                                          (${reservation.status}=='PENDING' ? ' bg-warning-subtle text-warning' :
-                                          (${reservation.status}=='CANCELLED' ? ' bg-secondary-subtle text-secondary' :
-                                          ' bg-light text-dark'))">
-                      CONFIRMED
-                    </span>
-                  </dd>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="kv"><dt>생성일</dt><dd th:text="${#temporals.format(reservation.createdAt, 'yyyy-MM-dd HH:mm')}">-</dd></div>
-                <div class="kv"><dt>수정일</dt><dd th:text="${#temporals.format(reservation.updatedAt, 'yyyy-MM-dd HH:mm')}">-</dd></div>
-              </div>
+
+    <div class="page-heading">
+        <div class="d-flex justify-content-between align-items-center">
+            <!-- 예약 없음 -->
+            <div class="alert alert-danger" th:if="${reservation == null}">
+                예약을 찾을 수 없습니다.
             </div>
-          </div>
-        </div>
 
-        <!-- 투숙/객실 정보 -->
-        <div class="card shadow-sm mb-3">
-          <div class="card-header bg-light">
-            <span class="section-title">투숙/객실 정보</span>
-          </div>
-          <div class="card-body" th:object="${reservation}">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <div class="kv"><dt>숙소명</dt><dd th:text="*{accommodationName}">-</dd></div>
-                <div class="kv"><dt>객실명</dt><dd th:text="*{roomName} ?: '-'">-</dd></div>
-                <div class="kv"><dt>체크인</dt><dd th:text="${#temporals.format(reservation.checkInDate, 'yyyy-MM-dd')}">-</dd></div>
-                <div class="kv"><dt>체크아웃</dt><dd th:text="${#temporals.format(reservation.checkOutDate, 'yyyy-MM-dd')}">-</dd></div>
-              </div>
-              <div class="col-md-6">
-                <div class="kv"><dt>인원</dt><dd th:text="*{guestCount}">-</dd></div>
-                <div class="kv"><dt>요청사항</dt><dd th:text="*{specialRequest} ?: '-'">-</dd></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 예약자 / 결제 정보 -->
-        <div class="card shadow-sm mb-3">
-          <div class="card-header bg-light">
-            <span class="section-title">예약자 / 결제</span>
-          </div>
-          <div class="card-body" th:object="${reservation}">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <div class="kv"><dt>예약자</dt><dd th:text="*{guestName}">-</dd></div>
-                <div class="kv"><dt>연락처</dt><dd th:text="*{guestPhone}">-</dd></div>
-              </div>
-              <div class="col-md-6">
-                <div class="kv"><dt>결제 금액</dt>
-                  <dd>
-                    <span th:text="${reservation.price != null ? #numbers.formatInteger(reservation.price.intValue(), 3, 'COMMA') : '0'}">0</span> 원
-                  </dd>
+            <!-- 예약 있음 -->
+            <div th:if="${reservation != null}">
+                <!-- 기존 본문 전부 여기 안으로 -->
+                <div>
+                    <h3 class="mb-1">예약 상세</h3>
+                    <p class="text-muted mb-0">예약 번호와 상태, 투숙 정보, 결제 금액을 확인하세요.</p>
                 </div>
-                <div class="kv" th:if="${reservation.cancelReason}">
-                  <dt>취소 사유</dt><dd th:text="${reservation.cancelReason}">-</dd>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/my}">← 내 예약 현황</a>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/list}">전체 목록</a>
                 </div>
-              </div>
             </div>
-          </div>
         </div>
 
-        <!-- 액션 -->
-        <div class="card shadow-sm">
-          <div class="card-body d-flex gap-2">
-            <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/my}">목록</a>
+        <div class="page-content">
+            <section class="row">
+                <div class="col-12 col-xl-8">
+                    <!-- 기본 정보 카드 -->
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-header bg-light">
+                            <span class="section-title">기본 정보</span>
+                        </div>
+                        <div class="card-body" th:object="${reservation}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="kv">
+                                        <dt>예약 ID</dt>
+                                        <dd th:text="*{reservationId}">-</dd>
+                                    </div>
+                                    <div class="kv">
+                                        <dt>예약 번호</dt>
+                                        <dd th:text="*{reservationNumber}">-</dd>
+                                    </div>
+                                    <div class="kv">
+                                        <dt>상태</dt>
+                                        <dd>
+                   <span class="badge rounded-pill"
+                         th:with="st=${reservation != null && reservation.status != null
+                   ? #strings.toUpperCase(reservation.status)
+                   : 'UNKNOWN'}"
+                         th:text="${st}"
+                         th:classappend="${st=='CONFIRMED'} ? ' bg-success-subtle text-success' :
+                      (${st=='PENDING'}   ? ' bg-warning-subtle text-warning' :
+                      (${st=='CANCELLED'} ? ' bg-secondary-subtle text-secondary' :
+                                            ' bg-light text-dark'))">
+                   </span>
+                                        </dd>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="kv">
+                                        <dt>생성일</dt>
+                                        <dd th:text="${#temporals.format(reservation.createdAt, 'yyyy-MM-dd HH:mm')}">
+                                            -
+                                        </dd>
+                                    </div>
+                                    <div class="kv">
+                                        <dt>수정일</dt>
+                                        <dd th:text="${#temporals.format(reservation.updatedAt, 'yyyy-MM-dd HH:mm')}">
+                                            -
+                                        </dd>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-            <!-- 취소 버튼: 서버에 취소 엔드포인트 존재 -->
-            <form th:action="@{|/admin/reservations/${reservation.reservationId}/cancel|}" method="post"
-                  onsubmit="return confirm('이 예약을 취소하시겠습니까?');">
-              <!-- CSRF (null 가드) -->
-              <input type="hidden" th:if="${_csrf}"
-                     th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-              <input type="hidden" name="reason" value="관리자 취소"/>
-              <button type="submit" class="btn btn-outline-danger"
-                      th:disabled="${r.status == 'CANCELLED'}">
-                예약 취소
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
+                    <!-- 투숙/객실 정보 -->
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-header bg-light">
+                            <span class="section-title">투숙/객실 정보</span>
+                        </div>
+                        <div class="card-body" th:object="${reservation}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="kv">
+                                        <dt>숙소명</dt>
+                                        <dd th:text="*{accommodationName}">-</dd>
+                                    </div>
+                                    <div class="kv">
+                                        <dt>객실명</dt>
+                                        <dd th:text="*{roomName} ?: '-'">-</dd>
+                                    </div>
+                                    <div class="kv">
+                                        <dt>체크인</dt>
+                                        <dd th:text="${#temporals.format(reservation.checkInDate, 'yyyy-MM-dd')}">-</dd>
+                                    </div>
+                                    <div class="kv">
+                                        <dt>체크아웃</dt>
+                                        <dd th:text="${#temporals.format(reservation.checkOutDate, 'yyyy-MM-dd')}">-
+                                        </dd>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="kv">
+                                        <dt>인원</dt>
+                                        <dd th:text="*{guestCount}">-</dd>
+                                    </div>
+                                    <div class="kv">
+                                        <dt>요청사항</dt>
+                                        <dd th:text="*{specialRequest} ?: '-'">-</dd>
+                                    </div>
+                                    <div class="kv">
+                                        <dt>취소사유</dt>
+                                        <dd th:text="*{cancelReason} ?: '-'">-</dd>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- 사이드 요약 -->
-      <div class="col-12 col-xl-4">
-        <div class="card shadow-sm">
-          <div class="card-header bg-light">
-            <span class="section-title">요약</span>
-          </div>
-          <div class="card-body">
-            <ul class="list-unstyled mb-0" th:object="${reservation}">
-              <li class="mb-2"><i class="bi bi-hash me-2"></i><strong th:text="*{reservationNumber}">-</strong></li>
-              <li class="mb-2"><i class="bi bi-house me-2"></i><span th:text="*{accommodationName}">-</span></li>
-              <li class="mb-2"><i class="bi bi-door-open me-2"></i><span th:text="*{roomName} ?: '-'">-</span></li>
-              <li class="mb-2"><i class="bi bi-people me-2"></i><span th:text="*{guestCount}">-</span> 명</li>
-              <li class="mb-2"><i class="bi bi-calendar-event me-2"></i>
-                <span th:text="${#temporals.format(reservation.checkInDate, 'MM/dd')}">-</span>
-                ~
-                <span th:text="${#temporals.format(reservation.checkOutDate, 'MM/dd')}">-</span>
-              </li>
-              <li class="mb-2"><i class="bi bi-currency-exchange me-2"></i>
-                <strong th:text="${reservation.price != null ? #numbers.formatInteger(reservation.price.intValue(), 3, 'COMMA') : '0'}">0</strong> 원
-              </li>
-              <li>
+                    <!-- 예약자 / 결제 정보 -->
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-header bg-light">
+                            <span class="section-title">예약자 / 결제</span>
+                        </div>
+                        <div class="card-body" th:object="${reservation}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="kv">
+                                        <dt>예약자</dt>
+                                        <dd th:text="*{guestName}">-</dd>
+                                    </div>
+                                    <div class="kv">
+                                        <dt>연락처</dt>
+                                        <dd th:text="*{guestPhone}">-</dd>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="kv">
+                                        <dt>결제 금액</dt>
+                                        <dd>
+                                            <span th:text="${reservation.price != null ? #numbers.formatInteger(reservation.price.intValue(), 3, 'COMMA') : '0'}">0</span>
+                                            원
+                                        </dd>
+                                    </div>
+                                    <!-- 결제 방법 -->
+                                    <div class="kv">
+                                        <dt>결제 방법</dt>
+                                        <dd th:text="${reservation.payment != null && reservation.payment.paymentMethod != null
+                ? reservation.payment.paymentMethod : '-'}">-</dd>
+                                    </div>
+
+                                    <!-- 결제 상태 -->
+                                    <div class="kv">
+                                        <dt>결제 상태</dt>
+                                        <dd th:text="${reservation.payment != null && reservation.payment.paymentStatus != null
+                ? reservation.payment.paymentStatus : '-'}">-</dd>
+                                    </div>
+
+                                    <!-- 결제일 -->
+                                    <div class="kv">
+                                        <dt>결제일</dt>
+                                        <dd th:text="${reservation.payment != null && reservation.payment.paymentDate != null
+                ? #temporals.format(reservation.payment.paymentDate,'yyyy-MM-dd HH:mm') : '-'}">-</dd>
+                                    </div>
+                                    <div class="kv" th:if="${reservation.cancelReason}">
+                                        <dt>취소 사유</dt>
+                                        <dd th:text="${reservation.cancelReason}">-</dd>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 액션 -->
+                    <div class="card shadow-sm">
+                        <div class="card-body d-flex gap-2">
+                            <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/my}">목록</a>
+
+                            <!-- 취소 버튼: 서버에 취소 엔드포인트 존재 -->
+                            <form th:action="@{|/admin/reservations/${reservation.reservationId}/cancel|}" method="post"
+                                  onsubmit="return confirm('이 예약을 취소하시겠습니까?');">
+                                <!-- CSRF (null 가드) -->
+                                <input type="hidden" th:if="${_csrf}">
+<!--                                       th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>-->
+                                <input type="hidden" name="reason" value="관리자 취소"/>
+                                <button type="submit" class="btn btn-outline-danger"
+                                        th:disabled="${reservation.status == 'CANCELLED'}">
+                                    예약 취소
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사이드 요약 -->
+                <div class="col-12 col-xl-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <span class="section-title">요약</span>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0" th:object="${reservation}">
+                                <li class="mb-2"><i class="bi bi-hash me-2"></i><strong
+                                        th:text="*{reservationNumber}">-</strong></li>
+                                <li class="mb-2"><i class="bi bi-house me-2"></i><span
+                                        th:text="*{accommodationName}">-</span></li>
+                                <li class="mb-2"><i class="bi bi-door-open me-2"></i><span th:text="*{roomName} ?: '-'">-</span>
+                                </li>
+                                <li class="mb-2"><i class="bi bi-people me-2"></i><span th:text="*{guestCount}">-</span>
+                                    명
+                                </li>
+                                <li class="mb-2"><i class="bi bi-calendar-event me-2"></i>
+                                    <span th:text="${#temporals.format(reservation.checkInDate, 'MM/dd')}">-</span>
+                                    ~
+                                    <span th:text="${#temporals.format(reservation.checkOutDate, 'MM/dd')}">-</span>
+                                </li>
+                                <li class="mb-2"><i class="bi bi-currency-exchange me-2"></i>
+                                    <strong th:text="${reservation.price != null ? #numbers.formatInteger(reservation.price.intValue(), 3, 'COMMA') : '0'}">0</strong>
+                                    원
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-credit-card me-2"></i>
+                                    <span th:text="${reservation.payment != null && reservation.payment.paymentMethod != null
+                  ? reservation.payment.paymentMethod : '-'}">-</span>
+                                </li>
+                                <li>
                 <span class="badge badge-status rounded-pill"
                       th:text="${reservation.status}"
                       th:classappend="${reservation.status}=='CONFIRMED' ? ' bg-success-subtle text-success' :
@@ -162,24 +271,25 @@
                                       ' bg-light text-dark'))">
                   CONFIRMED
                 </span>
-              </li>
-            </ul>
-          </div>
-        </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
 
-        <!-- 플래시 메시지 알림 -->
-        <div th:if="${msg}">
-          <script th:inline="javascript">
-            alert([[${msg}]]);
-          </script>
+                    <!-- 플래시 메시지 알림 -->
+                    <div th:if="${msg}">
+                        <script th:inline="javascript">
+                            alert([[${msg}]]);
+                        </script>
+                    </div>
+                </div>
+            </section>
         </div>
-      </div>
-    </section>
-  </div>
+    </div>
 </th:block>
 
 <th:block layout:fragment="script">
-  <!-- 필요 스크립트가 있으면 여기에 -->
+    <!-- 필요 스크립트가 있으면 여기에 -->
 </th:block>
 
 </body>
