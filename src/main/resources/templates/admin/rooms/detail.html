@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <title th:text="${room.roomName} ?: '객실 상세'">객실 상세</title>
+</head>
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="mb-1" th:text="${room.roomName}">객실명</h3>
+            <div class="text-muted">
+                숙소:
+                <a th:href="@{/admin/accommodations/detail/{id}(id=${room.accommodationId})}"
+                   th:text="${room.accommodationName}">숙소명</a>
+                · 상태: <span class="badge text-bg-secondary" th:text="${room.status}">ACTIVE</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-secondary"
+               th:href="@{/admin/rooms/edit/{id}(id=${room.roomId})}">수정</a>
+            <form th:action="@{/admin/rooms/{id}/delete(id=${room.roomId})}" method="post"
+                  onsubmit="return confirm('삭제하시겠습니까?');">
+                <input type="hidden" name="accommodationId" th:value="${room.accommodationId}">
+                <button class="btn btn-outline-danger">삭제</button>
+            </form>
+            <a class="btn btn-light" th:href="@{/admin/rooms/list_all}">목록</a>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="row g-4">
+            <!-- 이미지 갤러리 -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="mb-3">이미지</h6>
+
+                        <!-- 메인 이미지 결정: MAIN이 있으면 그거, 없으면 첫 번째, 없으면 null -->
+                        <div th:with="
+      mains=${room.images != null ? room.images.?[imageType == 'MAIN'] : {}},
+      picked=${#lists.isEmpty(mains) ? ( #lists.isEmpty(room.images) ? null : room.images[0] ) : mains[0] }">
+
+                            <img th:if="${picked != null}"
+                                 th:src="${picked.imageUrl}"
+                                 alt="room main"
+                                 style="width:100%;height:100%;object-fit:cover;border-radius:12px;"/>
+
+                            <div th:if="${picked == null}"
+                                 class="d-flex align-items-center justify-content-center bg-light w-100 h-100 rounded-3">
+                                <span class="text-muted">이미지 없음</span>
+                            </div>
+                        </div>
+
+                        <!-- 썸네일 영역 -->
+                        <div class="d-flex gap-2 mt-3">
+                            <div th:each="img, iStat : ${room.images}" class="thumb-wrapper">
+                                <img th:src="${img.imageUrl}"
+                                     th:alt="'room image ' + ${iStat.index}"
+                                     class="img-thumbnail"
+                                     style="width:120px; height:80px; object-fit:cover; cursor:pointer;"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#imageModal"
+                                     th:attr="data-bs-slide-to=${iStat.index}"/>
+                            </div>
+                        </div>
+
+                        <!-- 모달 -->
+                        <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-xl modal-dialog-centered">
+                                <div class="modal-content bg-dark">
+                                    <div class="modal-body p-0">
+                                        <!-- Carousel -->
+                                        <div id="imageCarousel" class="carousel slide" data-bs-ride="carousel">
+                                            <div class="carousel-inner">
+                                                <div th:each="img, iStat : ${room.images}"
+                                                     th:classappend="${iStat.index == 0} ? ' active'"
+                                                     class="carousel-item">
+                                                    <img th:src="${img.imageUrl}" class="d-block w-100" style="max-height:80vh; object-fit:contain;" alt="room image">
+                                                </div>
+                                            </div>
+
+                                            <!-- Controls -->
+                                            <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev">
+                                                <span class="carousel-control-prev-icon"></span>
+                                            </button>
+                                            <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next">
+                                                <span class="carousel-control-next-icon"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 기본 정보 -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="mb-3">객실 정보</h6>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">타입</dt>
+                            <dd class="col-sm-8" th:text="${room.type ?: '-'}">Standard</dd>
+
+                            <dt class="col-sm-4">체크인</dt>
+                            <dd class="col-sm-8"
+                                th:text="${room.displayCheckInTime != null ? #temporals.format(room.displayCheckInTime,'HH:mm') : '-'}">-</dd>
+
+                            <dt class="col-sm-4">체크아웃</dt>
+                            <dd class="col-sm-8"
+                                th:text="${room.displayCheckOutTime != null ? #temporals.format(room.displayCheckOutTime,'HH:mm') : '-'}">-</dd>
+
+                            <dt class="col-sm-4">기본가</dt>
+                            <dd class="col-sm-8"
+                                th:text="${room.price != null ? #numbers.formatInteger(room.price,3,'COMMA') + '원' : '-'}">-</dd>
+
+                            <dt class="col-sm-4">정원(기준/최대)</dt>
+                            <dd class="col-sm-8">
+                                <span th:text="${room.standardOccupancy ?: 0}">2</span> /
+                                <span th:text="${room.maxOccupancy ?: 0}">4</span>
+                            </dd>
+
+                            <dt class="col-sm-4">추가 인원 요금</dt>
+                            <dd class="col-sm-8"
+                                th:text="${room.extraPersonFee != null ? #numbers.formatInteger(room.extraPersonFee,3,'COMMA') + '원' : '-'}">-</dd>
+
+                            <dt class="col-sm-4">총 객실 수</dt>
+                            <dd class="col-sm-8" th:text="${room.totalRooms ?: '-'}">-</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 상세/편의/침대 -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="mb-2">설명</h6>
+                        <p class="text-muted" th:text="${room.description ?: '설명 없음'}">-</p>
+
+                        <h6 class="mt-3 mb-2">편의시설</h6>
+                        <ul th:if="${amenitiesList != null and !amenitiesList.isEmpty()}">
+                            <li th:each="a : ${amenitiesList}" th:text="${a}"></li>
+                        </ul>
+                        <p th:if="${amenitiesList == null or amenitiesList.isEmpty()}" class="text-muted">등록된 편의시설이 없습니다.</p>
+
+                        <h6 class="mt-3 mb-2">침대 구성</h6>
+                        <ul th:if="${bedList != null and !bedList.isEmpty()}">
+                            <li th:each="b : ${bedList}" th:text="${b}"></li>
+                        </ul>
+                        <p th:if="${bedList == null or bedList.isEmpty()}" class="text-muted">등록된 침대 정보가 없습니다.</p>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+<script>
+    const imageModal = document.getElementById('imageModal');
+    const carousel = document.getElementById('imageCarousel');
+    const bsCarousel = new bootstrap.Carousel(carousel);
+
+    // 썸네일 클릭 시 해당 인덱스로 이동
+    document.querySelectorAll('[data-bs-slide-to]').forEach(thumb => {
+        thumb.addEventListener('click', function () {
+            const index = this.getAttribute('data-bs-slide-to');
+            bsCarousel.to(index);
+        });
+    });
+</script>
+</body>
+</html>

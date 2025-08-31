@@ -62,12 +62,11 @@ public class AccommodationCreateRequestDTO {
     // 편의시설(JSON) — 예: ["wifi","parking"]
     private String amenities;
 
-    @Schema(type = "string", example = "15:00", description = "open (HH:mm)")
     @DateTimeFormat(pattern = "HH:mm")   // ★ 폼 바인딩용
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkInTime;
 
-    @Schema(type = "string", example = "11:00", description = "close (HH:mm)")
+
     @DateTimeFormat(pattern = "HH:mm")   // ★ 폼 바인딩용
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkOutTime;
@@ -89,10 +88,6 @@ public class AccommodationCreateRequestDTO {
 
     // 부가
     private List<AccommodationTagDTO> tags;
-
-//    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    /* 상세 페이지에서 사용할 리스트용 getter */
 
 
 

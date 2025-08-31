@@ -87,6 +87,16 @@
             <li th:each="a : ${amenitiesList}" th:text="${a}"></li>
           </ul>
 
+          <h6 class="mt-3 mb-2">취소 및 환불 규정</h6>
+          <div th:if="${policyItems != null and !policyItems.isEmpty()}" class="bg-light p-3 rounded">
+            <ul class="mb-0">
+              <li th:each="p : ${policyItems}" th:text="${p}"></li>
+            </ul>
+          </div>
+          <p th:if="${policyItems == null or policyItems.isEmpty()}" class="text-muted">
+            등록된 환불 규정이 없습니다.
+          </p>
+
 <!--          <p th:if="${amenitiesList == null or amenitiesList.isEmpty()}" class="text-muted">등록된 확인사항이 없습니다.</p>-->
 
 

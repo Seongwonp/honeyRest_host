@@ -18,6 +18,8 @@ public interface RoomImageRepository extends JpaRepository<RoomImage, Long> {
     // 목록 최적화용: 여러 roomId에 대해 한 번에 0번 이미지만 가져오기(type이 엔티티에 없기 떄문에)
     @Query("select ri from RoomImage ri where ri.room.roomId in :roomIds and ri.sortOrder = 0")
     List<RoomImage> findMainImagesByRoomIds(@Param("roomIds") List<Long> roomIds);
+
+    List<RoomImage> findByRoom_RoomIdOrderBySortOrderAsc(Long roomId);
 }
 
 

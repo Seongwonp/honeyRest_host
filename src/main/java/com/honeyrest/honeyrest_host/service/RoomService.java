@@ -24,4 +24,10 @@ public interface RoomService {
     List<RoomDTO> findAllByCompanyId(Long companyId);
 
     List<RoomDTO> getRoomsByAccommodationId(Long accommodationId);
+
+    RoomDTO findDetailById(Long roomId);
+
+    void deactivateRoom(Long roomId);
+
+    void toggleStatus(Long roomId);
 }

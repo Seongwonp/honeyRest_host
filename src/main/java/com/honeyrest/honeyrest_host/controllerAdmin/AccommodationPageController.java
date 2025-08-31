@@ -13,9 +13,11 @@ import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationImage;
 import com.honeyrest.honeyrest_host.entity.AccommodationTag;
 import com.honeyrest.honeyrest_host.entity.Region;
+import com.honeyrest.honeyrest_host.repository.CancellationPolicyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationCategoryRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationTagRepository;
+import com.honeyrest.honeyrest_host.service.CancellationPolicyService;
 import com.honeyrest.honeyrest_host.service.RegionService;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationCategoryService;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationImageService;
@@ -61,11 +63,13 @@ public class AccommodationPageController {
     private final UserService userService;
     private final AccommodationTagService accommodationTagService;
     private final ObjectMapper objectMapper;
+    private final CancellationPolicyService cancellationPolicyService;
 
 
     private final RegionRepository regionRepository;
     private final AccommodationCategoryService accommodationCategoryService;
     private final RegionService regionService;
+    private final CancellationPolicyRepository cancellationPolicyRepository;
 
     /*
      * 등록 화면
@@ -296,6 +300,8 @@ public class AccommodationPageController {
     public String editForm(@PathVariable Long id, Model model) {
         // 기본 dto 조회
         AccommodationCreateRequestDTO dto = accommodationService.getById(id);
+        model.addAttribute("dto", dto);
+
         // dto amenities(json) -> list -> \n 문자열
         List<String> amenListForForm = parseAmenitiesToList(dto.getAmenities());
         String amenitiesMultiline = amenitiesListToMultiline(amenListForForm);
@@ -321,6 +327,10 @@ public class AccommodationPageController {
                 .tagIds(dto.getTags() == null ? java.util.Collections.emptyList()
                         : dto.getTags().stream().map(t -> t.getTagId()).toList())
                 .build();
+
+        String policyMultiline = cancellationPolicyService.getMultilineByAccommodationId(id);
+        form.setPolicyMultiline(policyMultiline);
+
 
         // 3) 셀렉트박스 데이터
         List<AccommodationCategoryDTO> categories = accommodationCategoryService.list();
@@ -354,9 +364,23 @@ public class AccommodationPageController {
     @PostMapping("/edit/{id}")
     public String editSubmit(@PathVariable Long id,
                              @ModelAttribute("form") AccommodationUpdateRequestDTO form,
+                             BindingResult binding,
                              @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnailFile,
                              @RequestParam(value = "subImages", required = false) List<MultipartFile> subImages,
-                             RedirectAttributes ra) {
+                             RedirectAttributes ra,
+                             Model model) {
+
+        if (binding.hasErrors()) {
+            binding.getAllErrors().forEach(err -> log.error("bind err: {}", err));
+            // 재표시용 셀렉트 데이터 다시 채우기
+            model.addAttribute("acc", accommodationService.getById(id));
+            model.addAttribute("images", accommodationImageService.getImages(id));
+            model.addAttribute("categories", accommodationCategoryService.list());
+            model.addAttribute("mainRegions", regionService.listMainRegions());
+            model.addAttribute("subRegions", form.getMainRegionId()==null? java.util.Collections.emptyList() : regionService.listSubRegions(form.getMainRegionId()));
+            model.addAttribute("tagsByCategory", accommodationTagService.findAllGroupedByCategory());
+            return "admin/accommodations/edit";
+        }
         try {
             // 1) amenities 정규화
             form.setAmenities(parseAmenitiesToJson(form.getAmenities()));
@@ -403,6 +427,7 @@ public class AccommodationPageController {
                     );
                 }
             }
+            cancellationPolicyService.saveOrUpdate(id, form.getPolicyMultiline());
 
             ra.addFlashAttribute("success", "수정이 완료되었습니다.");
             return "redirect:/admin/accommodations/list"; // 또는 detail/{id}로

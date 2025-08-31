@@ -1,14 +1,17 @@
 package com.honeyrest.honeyrest_host.dto;
 
-import com.honeyrest.honeyrest_host.entity.RoomImage;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.util.List;
 
 
@@ -41,6 +44,13 @@ public class RoomDTO {
     private List<MultipartFile> files; // 이미지 여러개
 
     private List<RoomImageDTO> images; // 이미지 타입들
+
+
+    @DateTimeFormat(pattern = "HH:mm")   // ★ 화면 바인딩용
+    private LocalTime displayCheckInTime;
+    @DateTimeFormat(pattern = "HH:mm")   // ★ 화면 바인딩용
+    private LocalTime displayCheckOutTime;
+
 
 
 

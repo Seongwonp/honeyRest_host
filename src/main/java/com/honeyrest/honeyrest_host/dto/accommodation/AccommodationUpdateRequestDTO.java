@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
@@ -33,11 +34,12 @@ public class AccommodationUpdateRequestDTO {
     private String description;
 
     private String amenities;         // ["wifi", ...]
-    @Schema(type = "string", example = "15:00", description = "체크인 시간 (HH:mm)")
+
+    @DateTimeFormat(pattern = "HH:mm")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkInTime;
 
-    @Schema(type = "string", example = "11:00", description = "체크아웃 시간 (HH:mm)")
+    @DateTimeFormat(pattern = "HH:mm")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime checkOutTime;
 
@@ -47,5 +49,11 @@ public class AccommodationUpdateRequestDTO {
     // 선택: 이미지/태그 전체 교체(덮어쓰기)를 할지, 부분 수정할지는 정책에 따라
     private List<AccommodationImageDTO> images; // 덮어쓰기 정책(예시)
     private List<Long> tagIds;                          // 덮어쓰기 정책(예시)
+
+    // 정책 textarea 바인딩용
+    private String policyMultiline;
+
 }
+
+
 

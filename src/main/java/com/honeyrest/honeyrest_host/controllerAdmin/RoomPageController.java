@@ -1,10 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
-import com.honeyrest.honeyrest_host.dto.CompanyDTO;
-import com.honeyrest.honeyrest_host.dto.RoomDTO;
-import com.honeyrest.honeyrest_host.dto.RoomImageDTO;
+import com.honeyrest.honeyrest_host.dto.*;
 import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
@@ -14,6 +11,7 @@ import com.honeyrest.honeyrest_host.util.FileUploadUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -29,9 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Log4j2
 @Controller
@@ -41,12 +37,12 @@ public class RoomPageController {
 
     private final RoomService roomService;
     private final RoomImageService roomImageService;
-    private final AccommodationRepository accommodationRepository;
     private final CompanyRepository companyRepository;
     private final AccommodationService accommodationService;
     private final CompanyService companyService;
     private final UserService userService;
 
+    private final AccommodationRepository accommodationRepository;
     private final FileUploadUtil fileUploadUtil;
 
     /**
@@ -220,77 +216,161 @@ public class RoomPageController {
     @GetMapping("/edit/{roomId}")
     public String editForm(@PathVariable Long roomId, Model model) {
         RoomDTO form = roomService.getByRoomId(roomId); // 반드시 null 아니게
+
+        // 숙소의 체크인/체크아웃을 표시용으로 세팅
+        if (form.getAccommodationId() != null) {
+            var acc = accommodationService.getById(form.getAccommodationId()); // 숙소 조회(아무 DTO든 checkInTime/OutTime 포함)
+            if (acc != null) {
+                form.setDisplayCheckInTime(acc.getCheckInTime());   // LocalTime
+                form.setDisplayCheckOutTime(acc.getCheckOutTime()); // LocalTime
+            }
+        }
         model.addAttribute("form", form);
         model.addAttribute("accommodations", accommodationRepository.findAll());
         return "admin/rooms/edit"; // templates/admin/rooms/edit.html
     }
 
+    /* =============== 저장 =================== */
     @PostMapping("/{roomId}")
     public String update(@PathVariable Long roomId,
                          @Valid @ModelAttribute("form") RoomDTO form,
                          BindingResult binding,
                          Model model,
                          RedirectAttributes ra) throws Exception {
+//        log.info("[ROOM UPDATE] id={}, checkIn={}, checkOut={}",
+//                roomId, form.getdCheckInTime(), form.getCheckOutTime());
         if (binding.hasErrors()) {
+            binding.getAllErrors().forEach(err -> log.error("bind err: {}", err));
             model.addAttribute("accommodations", accommodationRepository.findAll());
+            // 에러 시에도 사용자가 입력한 정책을 유지
             return "admin/rooms/edit";
         }
-            try {
-                // 1) 우선 방 정보 업데이트
-                form.setRoomId(roomId);          // 서비스 시그니처에 맞춰 DTO에 id 세팅
-                roomService.modifyRoom(form);    // 서비스 구현 이름과 일치
+        try {
+            // 1) 우선 방 정보 업데이트
+            form.setRoomId(roomId);          // 서비스 시그니처에 맞춰 DTO에 id 세팅
+            roomService.modifyRoom(form);    // 서비스 구현 이름과 일치
 
-                // 2) 이미지 파일이 들어온 경우에만 이미지 교체 수행
-                boolean hasMain = (form.getFile() != null && !form.getFile().isEmpty());
-                boolean hasSubs = (form.getFiles() != null && form.getFiles().stream().anyMatch(f -> f != null && !f.isEmpty()));
+            // 2) 이미지 파일이 들어온 경우에만 이미지 교체 수행
+            boolean hasMain = (form.getFile() != null && !form.getFile().isEmpty());
+            boolean hasSubs = (form.getFiles() != null && form.getFiles().stream().anyMatch(f -> f != null && !f.isEmpty()));
 
-                if (hasMain || hasSubs) {
-                    List<RoomImageDTO> images = new ArrayList<>();
+            if (hasMain || hasSubs) {
+                List<RoomImageDTO> images = new ArrayList<>();
 
-                    if (hasMain) {
-                        String url = fileUploadUtil.upload(form.getFile(), "room");
-                        images.add(RoomImageDTO.builder()
-                                .roomId(roomId)
-                                .imageUrl(url)
-                                .sortOrder(0)
-                                .build());
-                    }
-
-                    if (hasSubs) {
-                        int idx = images.isEmpty() ? 0 : 1;
-                        for (MultipartFile f : form.getFiles()) {
-                            if (f != null && !f.isEmpty()) {
-                                String url = fileUploadUtil.upload(f, "room");
-                                images.add(RoomImageDTO.builder()
-                                        .roomId(roomId)
-                                        .imageUrl(url)
-                                        .sortOrder(idx++)
-                                        .build());
-                            }
-                        }
-                    }
-
-                    roomImageService.replaceAll(roomId, images); // 새로 들어온 파일들로 전체 교체
+                if (hasMain) {
+                    String url = fileUploadUtil.upload(form.getFile(), "room");
+                    images.add(RoomImageDTO.builder()
+                            .roomId(roomId)
+                            .imageUrl(url)
+                            .sortOrder(0)
+                            .build());
                 }
 
-                ra.addFlashAttribute("success", "객실이 수정되었습니다.");
-                return "redirect:/admin/rooms/list";
+                if (hasSubs) {
+                    int idx = images.isEmpty() ? 0 : 1;
+                    for (MultipartFile f : form.getFiles()) {
+                        if (f != null && !f.isEmpty()) {
+                            String url = fileUploadUtil.upload(f, "room");
+                            images.add(RoomImageDTO.builder()
+                                    .roomId(roomId)
+                                    .imageUrl(url)
+                                    .sortOrder(idx++)
+                                    .build());
+                        }
+                    }
+                }
 
-            } catch (Exception e) {
-                log.error("room update error", e);
-                ra.addFlashAttribute("error", "수정 중 오류: " + e.getMessage());
-                return "redirect:/admin/rooms/edit/" + roomId;
+                roomImageService.replaceAll(roomId, images); // 새로 들어온 파일들로 전체 교체
             }
-        }
 
+            ra.addFlashAttribute("success", "객실이 수정되었습니다.");
+            return "redirect:/admin/rooms/list";
 
-        /* ========== 삭제 ========== */
-        @PostMapping("/{roomId}/delete")
-        public String delete (@PathVariable Long roomId,
-                @RequestParam("accommodationId") Long accommodationId,
-                RedirectAttributes ra){
-            roomService.removeRoom(roomId);
-            ra.addFlashAttribute("msg", "객실이 삭제되었습니다.");
-            return "redirect:/admin/rooms/list?accommodationId=" + accommodationId;
+        } catch (Exception e) {
+            log.error("room update error", e);
+            ra.addFlashAttribute("error", "수정 중 오류: " + e.getMessage());
+            return "redirect:/admin/rooms/edit/" + roomId;
         }
     }
+
+
+    /* ========== 삭제 ========== */
+    @PostMapping("/{roomId}/delete")
+    public String delete(@PathVariable Long roomId,
+                         @RequestParam("accommodationId") Long accommodationId,
+                         RedirectAttributes ra) {
+        try {
+            roomService.removeRoom(roomId);
+            ra.addFlashAttribute("success", "객실이 삭제되었습니다.");
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "해당 객실에 예약 이력이 있어 삭제할 수 없습니다. "
+                                          + "대신 객실 상태를 'INACTIVE'로 변경하세요.");
+        }
+        return "redirect:/admin/rooms/list_all"; // 전체 객실 목록으로 이동
+    }
+
+    @GetMapping("/detail/{roomId}")
+    public String roomDetail(@PathVariable Long roomId, Model model) {
+        RoomDTO room = roomService.findDetailById(roomId);
+        if (room == null) {
+            return "redirect:/admin/rooms/list_all";
+        }
+        model.addAttribute("room", room);
+
+        // 2) 편의시설/침대 (JSON 배열 또는 CSV 모두 지원)
+        model.addAttribute("amenitiesList", toList(room.getAmenities()));
+        model.addAttribute("bedList", toList(room.getBedInfo()));
+
+
+        return "admin/rooms/detail";
+    }
+
+    /* ====== 아래 유틸은 컨트롤러 private 메서드로 두면 편해요 ====== */
+
+    // JSON 배열 문자열(["TV","Wi-Fi"]) 또는 CSV("TV, Wi-Fi")를 List<String>으로 변환
+    private List<String> toList(String jsonOrCsv) {
+        if (jsonOrCsv == null || jsonOrCsv.isBlank()) return List.of();
+        String s = jsonOrCsv.trim();
+
+        // JSON 배열이면 파싱
+        if (s.startsWith("[") && s.endsWith("]")) {
+            s = s.substring(1, s.length() - 1);            // 양끝 대괄호 제거
+            s = s.replaceAll("^\\s*\"|\"\\s*$", "");        // 양끝 큰따옴표 정리(안전빵)
+            String[] parts = s.split("\\s*,\\s*\"");       // "...,"
+            return Arrays.stream(parts)
+                    .map(v -> v.replaceAll("^\"|\"$", ""))
+                    .map(String::trim)
+                    .filter(t -> !t.isEmpty())
+                    .toList();
+
+        }
+        return Arrays.stream(jsonOrCsv.split("\\s*,\\s*"))
+                .map(String::trim)
+                .filter(t -> !t.isEmpty())
+                .toList();
+
+    }
+
+    // 정책 상세 문자열을 줄바꿈 기준으로 분리 (CR/LF 모두 지원) 후 공백/빈줄 제거
+    private List<String> splitLines(String text) {
+        if (text == null) return List.of();
+        String[] lines = text.split("\\r?\\n");
+        List<String> out = new ArrayList<>();
+        for (String line : lines) {
+            String v = line == null ? "" : line.trim();
+            if (!v.isEmpty()) out.add(v);
+        }
+        return out;
+    }
+
+
+    // 상태변화
+    @PostMapping("/{roomId}/toggle")
+    public String toggle(@PathVariable Long roomId,
+                         RedirectAttributes ra) {
+        roomService.toggleStatus(roomId);   // ACTIVE ↔ INACTIVE
+        ra.addFlashAttribute("msg", "상태가 변경되었습니다.");
+        return "redirect:/admin/rooms/list_all";
+    }
+
+}

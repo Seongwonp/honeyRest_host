@@ -92,25 +92,24 @@
                                     <!--                                    <p th:text="${acc.amenities}" style="white-space: pre-line;"></p>-->
                                 </div>
 
+                                <div class="col-12">
+                                    <label class="form-label">취소 및 환불 규정</label>
+                                    <textarea class="form-control" rows="3" name="policyMultiline"
+                                              th:text="${policy != null ? policy.detailMultiline : ''}"
+                                              placeholder="예) 숙박일 기준 5일전 : 90% 환불&#10;4일전 : 80% 환불 ..."></textarea>
+                                    <small class="text-muted">줄바꿈(↵)으로 항목을 나누면 상세 화면에서 리스트로 표시됩니다.</small>
+                                </div>
+
                                 <!-- 영업시간/최저가 -->
-                                <div class="col-md-3">
-                                    <label class="form-label">체크인</label>
-                                    <input type="time"
-                                           class="form-control"
-                                           name="checkInTime"
-                                           th:value="${form.checkInTime != null ? #temporals.format(form.checkInTime,'HH:mm') : ''}"
-                                           step="300">
-
+                                <div class="col-lg-3 col-md-6">
+                                    <label class="form-label">체크인 / 체크아웃</label>
+                                    <div class="input-group">
+                                        <input type="time" class="form-control" th:field="*{checkInTime}">
+                                        <span class="input-group-text">~</span>
+                                        <input type="time" class="form-control" th:field="*{checkOutTime}">
+                                    </div>
                                 </div>
-                                <div class="col-md-3">
 
-                                    <label class="form-label">체크아웃</label>
-                                    <input type="time"
-                                           class="form-control"
-                                           name="checkOutTime"
-                                           th:value="${form.checkOutTime != null ? #temporals.format(form.checkOutTime,'HH:mm') : ''}"
-                                           step="300">
-                                </div>
                                 <div class="col-md-3">
                                     <label class="form-label">최저가(원)</label>
                                     <input type="number" step="5" min="0" class="form-control" th:field="*{minPrice}"

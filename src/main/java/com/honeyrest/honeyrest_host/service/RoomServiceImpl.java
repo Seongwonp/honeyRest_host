@@ -89,7 +89,7 @@ public class RoomServiceImpl implements RoomService {
 
         // 이미지 조회해서 dto 세팅하기
         List<RoomImageDTO> images = roomImageRepository.findByRoomRoomIdOrderBySortOrderAsc(e.getRoomId())
-                .stream().map(this::toImageDTO).toList();
+                .stream().map(this::toImageDTO).collect(Collectors.toList());
 
         dto.setImages(images);
         return dto;
@@ -179,6 +179,7 @@ public class RoomServiceImpl implements RoomService {
                 .amenities(dto.getAmenities() != null ? jsonNodeToString(stringToJsonNode(dto.getAmenities())) : current.getAmenities())
                 .description(dto.getDescription() != null ? dto.getDescription() : current.getDescription())
                 .totalRooms(dto.getTotalRooms() != null ? dto.getTotalRooms() : current.getTotalRooms())
+
                 .status(dto.getStatus() != null ? dto.getStatus() : current.getStatus())
                 .build();
 
@@ -189,7 +190,8 @@ public class RoomServiceImpl implements RoomService {
     public void removeRoom(Long id) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
-        roomRepository.delete(room);
+        // 실제 삭제 대신 상태만 변경
+       roomRepository.delete(room);
     }
 
     // 회사 전체/ 특정 숙소 커버 동시에 페이징
@@ -214,5 +216,74 @@ public class RoomServiceImpl implements RoomService {
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public RoomDTO findDetailById(Long roomId) {
+        Room r = roomRepository.findByIdWithAccommodation(roomId)
+                .orElse(null);
+        if (r == null) return null; // 또는 예외 던지기
+
+        Accommodation a = r.getAccommodation();
+
+        List<RoomImageDTO> imgs = roomImageRepository
+                .findByRoomRoomIdOrderBySortOrderAsc(roomId)
+                .stream()
+                .map(img -> RoomImageDTO.builder()
+                        .roomId(roomId)
+                        .imageUrl(img.getImageUrl())
+                        .sortOrder(img.getSortOrder())
+                        .build())
+                .collect(Collectors.toList());
+
+        return RoomDTO.builder()
+                .roomId(r.getRoomId())
+                .accommodationId(r.getAccommodation().getAccommodationId())
+                .accommodationName(r.getAccommodation().getName())
+                .roomName(r.getName())
+                .type(r.getType())
+                .price(r.getPrice())
+                .maxOccupancy(r.getMaxOccupancy())
+                .standardOccupancy(r.getStandardOccupancy())
+                .bedInfo(r.getBedInfo())
+                .amenities(r.getAmenities())
+                .description(r.getDescription())
+                .totalRooms(r.getTotalRooms())
+                .status(r.getStatus())
+                .images(imgs)
+
+                // 숙소 기준 체크인/체크아웃 -> 객실 상세 페이지 표시용
+                .displayCheckInTime(a != null ? a.getCheckInTime() : null)
+                .displayCheckOutTime(a != null ? a.getCheckOutTime() : null)
+                .build();
+    }
+
+    @Override
+    public void deactivateRoom(Long roomId) { // 객실 삭제 말고 비활성화 하기
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
+        // 상태만 INACTIVE 로 변경
+        Room updated = Room.builder()
+                .roomId(room.getRoomId())
+                .accommodation(room.getAccommodation())
+                .name(room.getName())
+                .type(room.getType())
+                .price(room.getPrice())
+                .maxOccupancy(room.getMaxOccupancy())
+                .standardOccupancy(room.getStandardOccupancy())
+                .extraPersonFee(room.getExtraPersonFee())
+                .bedInfo(room.getBedInfo())
+                .amenities(room.getAmenities())
+                .description(room.getDescription())
+                .totalRooms(room.getTotalRooms())
+                .status("INACTIVE")   // ★ 비활성화
+                .build();
+
+        roomRepository.save(updated);
+    }
+
+    @Override
+    public void toggleStatus(Long roomId) {
+        roomRepository.toggleStatus(roomId);
     }
 }

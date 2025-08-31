@@ -7,14 +7,24 @@
     <title>객실 전체 목록</title>
     <th:block layout:fragment="head">
         <style>
-            /* 이미지는 컨테이너를 꽉 채우되 비율 유지 */
+            /* 카드 내부 레이아웃: 내용은 늘어나고, 버튼 영역은 항상 하단 */
+            /* 카드 내부 레이아웃: 내용은 늘어나고 버튼영역은 하단 고정 */
+            .room-card.h-100 {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .room-card .card-body {
+                flex: 1 1 auto;
+            }
+
+            /* 객실 이미지 */
             .object-cover {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
             }
 
-            /* 이미지 래퍼: 우하단 배지를 고정할 기준이 되도록 */
             .room-card-img {
                 position: relative;
                 border-radius: .75rem;
@@ -38,16 +48,139 @@
                 font-size: .85rem;
                 font-weight: 600;
                 color: #fff;
-                background: rgba(0,0,0,.65);
+                background: rgba(0, 0, 0, .65);
                 border-radius: 9999px;
-                box-shadow: 0 3px 8px rgba(0,0,0,.15);
+                box-shadow: 0 3px 8px rgba(0, 0, 0, .15);
                 pointer-events: none;
             }
 
-            /* 아이콘 크기 살짝 통일 */
             .room-img-count svg {
                 width: 16px;
                 height: 16px;
+            }
+
+            /* 구분선 */
+            .card-divider {
+                margin: .25rem 0 1rem;
+                border-color: #eef2f7;
+            }
+
+            /* ── 상태 배지 ─────────────────────────────────────────── */
+            .badge-status {
+                display: inline-flex;
+                align-items: center;
+                gap: .45rem;
+                padding: .35rem .7rem;
+                font-weight: 700;
+                font-size: .8rem;
+                border-radius: 9999px;
+                border: 1px solid transparent;
+            }
+
+            .badge-status .dot {
+                width: .5rem;
+                height: .5rem;
+                border-radius: 9999px;
+                display: inline-block;
+            }
+
+            .badge-active {
+                color: #065f46;
+                background: #ecfdf5;
+                border-color: #a7f3d0;
+            }
+
+            /* emerald */
+            .badge-active .dot {
+                background: #10b981;
+            }
+
+            .badge-inactive {
+                color: #92400e;
+                background: #fffbeb;
+                border-color: #fde68a;
+            }
+
+            /* amber */
+            .badge-inactive .dot {
+                background: #f59e0b;
+            }
+
+            /* 타이틀 + 배지 정렬 */
+            .room-title {
+                display: flex;
+                align-items: center;
+                gap: .6rem;
+            }
+
+            /* ── 액션 버튼들 ───────────────────────────────────────── */
+            .card-actions {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: .5rem;
+            }
+
+            .card-actions .right {
+                display: flex;
+                align-items: center;
+                gap: .5rem;
+            }
+
+            .btn-chip {
+                border-radius: 9999px;
+                padding: .45rem 1rem;
+                font-weight: 600;
+                line-height: 1;
+            }
+
+            /* 상세: 유리(ghost) 버튼 */
+            .btn-detail {
+                composes: btn-chip;
+                background: rgba(248, 250, 252, .8);
+                border: 1px solid #e5e7eb;
+                color: #334155;
+                box-shadow: 0 2px 10px rgba(15, 23, 42, .06);
+                backdrop-filter: blur(6px);
+                transition: transform .08s ease, box-shadow .2s ease, background-color .2s;
+            }
+
+            .btn-detail:hover {
+                transform: translateY(-1px);
+                background: #f1f5f9;
+                box-shadow: 0 6px 18px rgba(15, 23, 42, .1);
+            }
+
+            /* 수정: 파랑 아웃라인 */
+            .btn-edit {
+                composes: btn-chip;
+                background: #fff;
+                border: 1.5px solid #2563eb;
+                color: #1d4ed8;
+            }
+
+            .btn-edit:hover {
+                background: #eff6ff;
+            }
+
+            /* 케밥(…): 투명 */
+            .btn-kebab {
+                background: transparent;
+                border: 1px solid rgba(0, 0, 0, .08);
+                color: #111;
+                border-radius: 9999px;
+                width: 2.25rem;
+                height: 2.25rem;
+                padding: 0;
+            }
+
+            .btn-kebab:hover {
+                background: rgba(0, 0, 0, .05);
+            }
+
+            /* 삭제 드롭다운 항목 강조 */
+            .dropdown-item.text-danger:hover {
+                background: #fef2f2;
             }
         </style>
     </th:block>
@@ -86,7 +219,6 @@
                             <!-- 🔹 충돌 없는 새 클래스 사용 -->
                             <div th:if="${room.images != null and room.images.size() > 0}" class="room-img-count">
                                 <!-- 아이콘 -->
-                                <div class="room-img-count">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M21 19V7a2 2 0 0 0-2-2H5C3.9 5 3 5.9 3 7v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2ZM8 9a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm11 9H5l4.5-6 3.5 4.5 2.5-3 3.5 4.5Z"/>
                                     </svg>
@@ -95,68 +227,136 @@
                                     +<span th:text="${room.images.size() - 1}">0</span>
                                 </div>
                             </div>
-                        </div>
+
+
                         <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <h5 class="card-title mb-0" th:text="${room.roomName}">객실명</h5>
-                                <span class="badge text-bg-secondary" th:text="${room.status}">ACTIVE</span>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="room-title">
+                                    <h5 class="card-title mb-0" th:text="${room.roomName}">객실명</h5>
+
+                                    <!-- 상태 배지 -->
+                                    <span th:classappend="${room.status == 'ACTIVE' ? 'badge-status badge-active' : 'badge-status badge-inactive'}"
+                                          th:text="${room.status}">상태</span>
+                                </div>
                             </div>
+
                             <div class="text-muted small mb-2">
-                                정원:
-                                <span th:text="${room.standardOccupancy}">2</span> /
-                                최대:
-                                <span th:text="${room.maxOccupancy}">4</span>
+                                정원: <span th:text="${room.standardOccupancy}">2</span> /
+                                최대: <span th:text="${room.maxOccupancy}">4</span>
                             </div>
                             <div class="fw-semibold"
                                  th:text="${room.price != null ? #numbers.formatInteger(room.price, 3, 'COMMA') + '원' : '-'}">
                                 0원
                             </div>
-                        </div>
-                        <div class="card-footer bg-white d-flex gap-2">
-                            <a class="btn btn-outline-primary btn-sm"
-                               th:href="@{/admin/rooms/edit/{id}(id=${room.roomId})}">수정</a>
-                            <form th:action="@{/admin/rooms/{id}/delete(id=${room.roomId})}"
-                                  method="post" class="ms-auto"
-                                  onsubmit="return confirm('삭제하시겠습니까?');">
-                                <input type="hidden" name="accommodationId" th:value="${room.accommodationId}">
-                                <button class="btn btn-outline-danger btn-sm" type="submit">삭제</button>
-                            </form>
+
+
+                            <hr class="card-divider">
+
+                            <!-- 카드 하단 액션 (상세 / 수정 / 더보기: 토글·삭제) -->
+                            <div class="card-actions d-flex align-items-center justify-content-between">
+                                <!-- 상세 -->
+                                <a class="btn btn-detail" th:href="@{/admin/rooms/detail/{id}(id=${room.roomId})}">
+                                    상세
+                                </a>
+
+                                <!-- 우측: 수정 + 더보기 -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <!-- 수정 -->
+                                    <a class="btn btn-outline-primary btn-sm rounded-pill px-4"
+                                       th:href="@{/admin/rooms/edit/{id}(id=${room.roomId})}">
+                                        수정
+                                    </a>
+
+                                    <!-- 더보기 (토글/삭제) -->
+                                    <div class="dropstart">
+                                        <button type="button"
+                                                class="btn btn-more btn-sm"
+                                                data-bs-toggle="dropdown" aria-expanded="false">⋯
+                                        </button>
+
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <!-- 상태 토글 -->
+                                            <li>
+                                                <form th:action="@{/admin/rooms/{id}/toggle(id=${room.roomId})}"
+                                                      method="post">
+                                                    <input type="hidden" name="accommodationId"
+                                                           th:value="${room.accommodationId}">
+                                                    <button class="dropdown-item d-flex align-items-center"
+                                                            type="submit">
+                                                        <span class="me-2" aria-hidden="true"></span>
+                                                        <span th:text="${room.status == 'ACTIVE' ? '비활성화' : '활성화'}">비활성화</span>
+                                                    </button>
+                                                </form>
+                                            </li>
+
+                                            <li>
+                                                <hr class="dropdown-divider"/>
+                                            </li>
+
+                                            <!-- 삭제 -->
+                                            <li>
+                                                <form th:action="@{/admin/rooms/{id}/delete(id=${room.roomId})}"
+                                                      method="post"
+                                                      onsubmit="return confirm('삭제하시겠습니까? 예약이 있으면 실패할 수 있어요.');">
+                                                    <input type="hidden" name="accommodationId"
+                                                           th:value="${room.accommodationId}">
+                                                    <button class="dropdown-item text-danger d-flex align-items-center"
+                                                            type="submit">
+                                                        <span class="me-2" aria-hidden="true"></span>삭제
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <hr class="my-4"/>
-        </div>
-    </div>
 
-    <!-- 데이터 없을 때 -->
-    <div th:if="${groups == null or #maps.isEmpty(groups)}" class="text-center text-muted py-4">
-        표시할 객실이 없습니다.
-    </div>
+            <!-- 데이터 없을 때 -->
+            <div th:if="${groups == null or #maps.isEmpty(groups)}" class="text-center text-muted py-4">
+                표시할 객실이 없습니다.
+            </div>
 
-    <!-- 페이지네이션 (그대로 사용) -->
-    <div class="d-flex justify-content-between align-items-center mt-3">
-        <div class="text-muted">
-            총 <span th:text="${page.totalElements}">0</span>개 /
-            <span th:text="${page.number + 1}">1</span> /
-            <span th:text="${page.totalPages}">1</span> 페이지
+            <!-- 페이지네이션 (그대로 사용) -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted">
+                    총 <span th:text="${page.totalElements}">0</span>개 /
+                    <span th:text="${page.number + 1}">1</span> /
+                    <span th:text="${page.totalPages}">1</span> 페이지
+                </div>
+                <nav th:if="${page.totalPages > 0}">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" th:classappend="${page.first} ? ' disabled'">
+                            <a class="page-link"
+                               th:href="@{/admin/rooms/list_all(page=${page.number - 1}, size=${page.size})}">&laquo;</a>
+                        </li>
+                        <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                            th:classappend="${i == page.number} ? ' active'">
+                            <a class="page-link" th:text="${i + 1}"
+                               th:href="@{/admin/rooms/list_all(page=${i}, size=${page.size})}">1</a>
+                        </li>
+                        <li class="page-item" th:classappend="${page.last} ? ' disabled'">
+                            <a class="page-link"
+                               th:href="@{/admin/rooms/list_all(page=${page.number + 1}, size=${page.size})}">&raquo;</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </div>
-        <nav th:if="${page.totalPages > 0}">
-            <ul class="pagination pagination-sm mb-0">
-                <li class="page-item" th:classappend="${page.first} ? ' disabled'">
-                    <a class="page-link" th:href="@{/admin/rooms/list_all(page=${page.number - 1}, size=${page.size})}">&laquo;</a>
-                </li>
-                <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
-                    th:classappend="${i == page.number} ? ' active'">
-                    <a class="page-link" th:text="${i + 1}"
-                       th:href="@{/admin/rooms/list_all(page=${i}, size=${page.size})}">1</a>
-                </li>
-                <li class="page-item" th:classappend="${page.last} ? ' disabled'">
-                    <a class="page-link" th:href="@{/admin/rooms/list_all(page=${page.number + 1}, size=${page.size})}">&raquo;</a>
-                </li>
-            </ul>
-        </nav>
     </div>
 </th:block>
+<!-- 페이지 맨 아래 쪽, base 레이아웃이 수용하는 script 프래그먼트 안에 배치 -->
+<script th:inline="javascript">
+    (function () {
+        var el = document.getElementById('flashMsg');
+        if (el) {
+            var msg = (el.textContent || '').trim();
+            if (msg) alert(msg);
+        }
+    })();
+</script>
 </body>
 </html>
