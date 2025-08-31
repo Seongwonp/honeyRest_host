@@ -1,9 +1,7 @@
 package com.honeyrest.honeyrest_host.service;
 
-import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.ReviewDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.*;
+import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Review;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repository.ReservationRepository;
@@ -95,5 +93,35 @@ public class ReviewService {
                 .totalCount(total)
                 .build();
 
+    }
+
+    public List<ReviewDTO> getReviewsByRoomId(Long roomId) {
+        return reviewRepository.findByRoomId(roomId)
+                .stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    public PageResponseDTO<ReviewDTO> getReviewsWithPageable(Long roomId, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("reviewId").descending());
+
+        Page<Review> page;
+
+        if (roomId != null && roomId > 0) {
+            page = reviewRepository.findByRoomId(roomId, pageable); // 쿼리 메서드 필요
+        } else {
+            page = reviewRepository.findAll(pageable);
+        }
+
+        List<ReviewDTO> list = page.getContent().stream().map(this::toDTO).toList();
+
+        long total = page.getTotalElements();
+
+        PageResponseDTO<ReviewDTO> responseDTO = PageResponseDTO.<ReviewDTO>withAll()
+                .dtoList(list)
+                .pageRequestDTO(pageRequestDTO)
+                .totalCount(total)
+                .build();
+
+        return responseDTO;
     }
 }

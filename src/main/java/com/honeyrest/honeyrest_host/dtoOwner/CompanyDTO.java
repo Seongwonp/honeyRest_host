@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import software.amazon.ion.Decimal;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -20,6 +22,7 @@ public class CompanyDTO {
     private String phone;            // 대표 연락처
     private String email;            // 대표 이메일
     private String address;          // 사업장 주소
+    private LocalDateTime createdAt;
 
     // bank_info JSON → Map 형태로 매핑
     private String bankInfo; // 은행명, 계좌번호, 예금주 등

@@ -5,60 +5,84 @@
       layout:decorate="~{owner/layout/base}">
 
 <head>
-  <title>숙소 관리자 대시보드</title>
-  <th:block layout:fragment="head"></th:block>
+    <title>숙소 관리자 대시보드</title>
+    <th:block layout:fragment="head"></th:block>
 </head>
-
 <body>
 <th:block layout:fragment="content">
-  <div class="page-heading">
-    <h3>업체 리스트</h3>
-    <p class="text-subtitle text-muted">관리자용 숙소 및 예약 현황</p>
-  </div>
-    <div>
-        <a th:href="@{/owner/company/create}" class="btn btn-primary">업체 등록</a>
+    <div class="page-heading">
+        <h3>업체 리스트</h3>
+        <p class="text-subtitle text-muted">관리자용 숙소 및 예약 현황</p>
     </div>
-  <div class="page-content">
-    <section class="section">
-      <div class="row">
-        <div class="col-12">
-          <table class="table table-striped">
-            <thead>
-            <tr>
-              <th>업체 ID</th>
-              <th>업체명</th>
-              <th>대표자</th>
-              <th>연락처</th>
-              <th>상태</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="company : ${companies}">
-              <td th:text="${company.companyId}"></td>
-              <td><a th:href="@{'/owner/company/' + ${company.companyId} + '/accommodations'}"
-                     th:text="${company.name}"></a></td>
-              <td th:text="${company.ownerName}"></td>
-              <td th:text="${company.phone}"></td>
-              <td th:text="${company.status}"></td>
-                <td>
-                    <a th:href="@{'/owner/company/' + ${company.companyId} + '/modify'}"
-                       class="btn btn-primary btn-sm">수정</a>
-                </td>
-                <td>
+    <div class="card p-4 mb-4 shadow-sm">
+        <form id="searchForm" class="row g-3 align-items-end">
+            <div class="col-md-4 col-sm-8 position-relative">
+                <label class="form-label"><i class="bi bi-building me-1"></i>회사 검색</label>
+                <input type="text" id="companySearchInput" class="form-control" placeholder="회사명을 입력하세요">
+                <div id="companySearchResult" class="list-group position-absolute w-100"
+                     style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
+                <input type="hidden" name="companyId" id="companyIdInput">
+            </div>
+            <!--            <div class="col-md-4 col-sm-8">-->
+            <!--                <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>-->
+            <!--                <select name="accommodationId" class="form-select" id="accommodationSelect">-->
+            <!--                    <option value="">전체</option>-->
+            <!--                </select>-->
+            <!--            </div>-->
+            <div class="col-auto">
+                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+            </div>
+            <div class="col text-end">
+                <a th:href="@{/owner/company/create}" class="btn btn-primary">업체 등록</a>
+            </div>
+        </form>
+    </div>
 
-                    <form th:action="@{'/owner/company/' + ${company.companyId} + '/delete'}"
-                          method="post"
-                          onsubmit="return confirm('정말 삭제하시겠습니까?');">
-                        <button type="submit" class="btn btn-danger btn-sm">삭제</button>
-                    </form>
-                </td>
-            </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  </div>
+    <div class="page-content">
+        <section class="section">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">업체 목록</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle text-center">
+                                    <thead class="table-primary">
+                                    <tr>
+                                        <th scope="col">업체 ID</th>
+                                        <th scope="col">업체명</th>
+                                        <th scope="col">대표자</th>
+                                        <th scope="col">연락처</th>
+                                        <th scope="col">상태</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="company : ${companies}">
+                                        <td th:text="${company.companyId}">1</td>
+                                        <td>
+                                            <a th:href="@{'/owner/company/' + ${company.companyId} + '/accommodations'}"
+                                               th:text="${company.name}"
+                                               class="text-decoration-none fw-semibold text-primary">
+                                            </a>
+                                        </td>
+                                        <td th:text="${company.ownerName}">홍길동</td>
+                                        <td th:text="${company.phone}">010-1234-5678</td>
+                                        <td>
+                      <span th:classappend="${company.status == 'ACTIVE'} ? 'badge bg-success' : 'badge bg-secondary'"
+                            th:text="${company.status == 'ACTIVE'} ? '활성' : '비활성'">
+                      </span>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div> <!-- /.table-responsive -->
+                        </div> <!-- /.card-body -->
+                    </div> <!-- /.card -->
+                </div>
+            </div>
+        </section>
+    </div>
+
     <div class="pagination mt-3">
         <ul class="pagination">
             <li class="page-item" th:if="${responseDTO.prev}">
@@ -85,3 +109,75 @@
 
 </body>
 </html>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener("DOMContentLoaded", function () {
+        const companySearchInput = document.getElementById("companySearchInput");
+        const companySearchResult = document.getElementById("companySearchResult");
+        const companyIdInput = document.getElementById("companyIdInput");
+        const accommodationSelect = document.getElementById("accommodationSelect");
+
+        // 회사명 검색 (비동기)
+        companySearchInput.addEventListener("input", function () {
+            const keyword = this.value.trim();
+            if (keyword.length < 1) { // 최소 1글자부터 검색
+                companySearchResult.style.display = "none";
+                return;
+            }
+
+            fetch(`/owner/company/search?keyword=${keyword}`)
+                .then(res => res.json())
+                .then(data => {
+                    companySearchResult.innerHTML = "";
+                    if (!data || data.length === 0) {
+                        companySearchResult.style.display = "none";
+                        return;
+                    }
+
+                    data.forEach(c => {
+                        const item = document.createElement("button");
+                        item.type = "button";
+                        item.className = "list-group-item list-group-item-action";
+                        item.textContent = `${c.name} (${c.ownerName})`;
+                        item.onclick = () => {
+                            companySearchInput.value = c.name;
+                            companyIdInput.value = c.companyId;
+                            companySearchResult.style.display = "none";
+                            // loadAccommodations(c.companyId); // 선택한 회사 기준 숙소 불러오기
+                        };
+                        companySearchResult.appendChild(item);
+                    });
+
+                    companySearchResult.style.display = "block";
+                });
+        });
+
+        // // 숙소 목록 불러오기 (선택한 회사 기준)
+        // function loadAccommodations(companyId) {
+        //     fetch(`/owner/company/${companyId}/accommodations/json`)
+        //         .then(res => res.json())
+        //         .then(data => {
+        //             accommodationSelect.innerHTML = '<option value="">전체</option>';
+        //             data.forEach(a => {
+        //                 const opt = document.createElement("option");
+        //                 opt.value = a.accommodationId;
+        //                 opt.textContent = a.name;
+        //                 accommodationSelect.appendChild(opt);
+        //             });
+        //         });
+        // }
+
+        // 검색폼 전송 시 URL 설정
+        document.getElementById('searchForm').addEventListener('submit', function (event) {
+            const companyId = companyIdInput.value;
+            // const accommodationId = accommodationSelect.value;
+            let actionUrl = "/owner/company/list";
+
+            if (companyId) {
+                actionUrl = `/owner/company/${companyId}/accommodations`;
+            }
+            this.action = actionUrl;
+        });
+    });
+    /*]]>*/
+</script>

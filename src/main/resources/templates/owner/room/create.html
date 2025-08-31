@@ -5,121 +5,138 @@
       layout:decorate="~{owner/layout/base}">
 <body>
 <th:block layout:fragment="content">
-    <div class="page-heading">
+
+    <div class="page-heading mb-4">
         <h3>방 등록</h3>
         <p class="text-subtitle text-muted">새 방을 등록합니다.</p>
     </div>
+
     <div class="page-content">
 
-    <form th:action="@{/owner/room/create}" method="post" enctype="multipart/form-data">
+        <form th:action="@{/owner/room/create}" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
 
-        <!-- 숙소 ID -->
-        <div class="mb-3">
-            <label for="accommodationId" class="form-label">숙소</label>
-            <select name="accommodationId" id="accommodationId" class="form-select" required>
-                <option value="">숙소 선택</option>
-                <option th:each="a : ${accommodations}"
-                        th:value="${a.accommodationId}"
-                        th:text="${a.name}"
-                        th:selected="${a.accommodationId == accommodationId}"
-                        th:attr="data-price=${a.minPrice}"></option>
-            </select>
-        </div>
+            <!-- 숙소 정보 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">숙소 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">숙소</label>
+                        <select name="accommodationId" id="accommodationId" class="form-select" required>
+                            <option value="">숙소 선택</option>
+                            <option th:each="a : ${accommodations}"
+                                    th:value="${a.accommodationId}"
+                                    th:text="${a.name}"
+                                    th:selected="${a.accommodationId == accommodationId}"
+                                    th:attr="data-price=${a.minPrice}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">방 이름</label>
+                        <input type="text" name="name" id="name" class="form-control" placeholder="예: 스탠다드 트윈룸" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">방 타입</label>
+                        <input type="text" name="type" id="type" class="form-control" placeholder="예: 트윈, 더블">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">가격</label>
+                        <input type="number" step="100" name="price" id="price" class="form-control" required>
+                    </div>
+                </div>
+            </div>
 
-        <!-- 방 이름 -->
-        <div class="mb-3">
-            <label for="name" class="form-label">방 이름</label>
-            <input type="text" name="name" id="name" class="form-control" required>
-        </div>
+            <!-- 인원 정보 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">인원 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">기준 인원</label>
+                        <input type="number" name="standardOccupancy" id="standardOccupancy" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">최대 인원</label>
+                        <input type="number" name="maxOccupancy" id="maxOccupancy" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">추가 인원 요금</label>
+                        <input type="number" step="0.01" name="extraPersonFee" id="extraPersonFee" class="form-control" placeholder="선택 사항">
+                    </div>
+                </div>
+            </div>
 
-        <!-- 타입 -->
-        <div class="mb-3">
-            <label for="type" class="form-label">방 타입</label>
-            <input type="text" name="type" id="type" class="form-control">
-        </div>
+            <!-- 편의시설 및 설명 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">편의시설 & 설명</h5>
+                <div class="mb-3">
+                    <label class="form-label">편의시설 (JSON)</label>
+                    <textarea name="amenities" id="amenities" class="form-control" rows="3" placeholder='예: 와이파이,TV,에어컨'></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">침대 정보 (JSON)</label>
+                    <textarea name="bedInfo" id="bedInfo" class="form-control" rows="2" placeholder='예: 싱글 침대, 더블 침대'></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">설명</label>
+                    <textarea name="description" id="description" class="form-control" rows="3" placeholder="방에 대한 설명"></textarea>
+                </div>
+            </div>
 
-        <!-- 가격 -->
-        <div class="mb-3">
-            <label for="price" class="form-label">가격</label>
-            <input type="number" step="100" name="price" id="price" class="form-control" required>
-        </div>
+            <!-- 이미지 업로드 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">이미지 업로드</h5>
+                <div class="mb-3">
+                    <label class="form-label">대표 이미지</label>
+                    <input type="file" class="form-control" name="file">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">추가 이미지</label>
+                    <input type="file" class="form-control" name="images" multiple>
+                </div>
+            </div>
 
-        <!-- 기준 인원 -->
-        <div class="mb-3">
-            <label for="standardOccupancy" class="form-label">기준 인원</label>
-            <input type="number" name="standardOccupancy" id="standardOccupancy" class="form-control" required>
-        </div>
+            <!-- 상태 및 총 객실 수 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">기타 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">총 객실 수</label>
+                        <input type="number" name="totalRooms" id="totalRooms" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">상태</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="AVAILABLE">사용 가능</option>
+                            <option value="UNAVAILABLE">사용 불가</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-        <!-- 최대 인원 -->
-        <div class="mb-3">
-            <label for="maxOccupancy" class="form-label">최대 인원</label>
-            <input type="number" name="maxOccupancy" id="maxOccupancy" class="form-control" required>
-        </div>
+            <div class="text-end mb-5">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-1"></i> 등록
+                </button>
+            </div>
 
-        <!-- 추가 인원 요금 -->
-        <div class="mb-3">
-            <label for="extraPersonFee" class="form-label">추가 인원 요금</label>
-            <input type="number" step="0.01" name="extraPersonFee" id="extraPersonFee" class="form-control">
-        </div>
-
-        <!-- 침대 정보 (JSON 문자열로 입력받음) -->
-        <div class="mb-3">
-            <label for="bedInfo" class="form-label">침대 정보(JSON)</label>
-            <textarea name="bedInfo" id="bedInfo" class="form-control" placeholder='예: 싱글 침대'></textarea>
-        </div>
-
-        <!-- 편의시설 (JSON 문자열로 입력받음) -->
-        <div class="mb-3">
-            <label for="amenities" class="form-label">편의시설(JSON)</label>
-            <textarea name="amenities" id="amenities" class="form-control" placeholder='예: 와이파이,TV,에어컨'></textarea>
-        </div>
-
-        <!-- 객실 이미지 -->
-        <div class="mb-3">
-            <label for="file">사진 업로드</label>
-            <input type="file" class="form-control" id="file" name="file" multiple><br/><br/>
-        </div>
-
-        <!-- 설명 -->
-        <div class="mb-3">
-            <label for="description" class="form-label">설명</label>
-            <textarea name="description" id="description" class="form-control"></textarea>
-        </div>
-
-        <!-- 총 객실 수 -->
-        <div class="mb-3">
-            <label for="totalRooms" class="form-label">총 객실 수</label>
-            <input type="number" name="totalRooms" id="totalRooms" class="form-control" required>
-        </div>
-
-        <!-- 상태 -->
-        <div class="mb-3">
-            <label for="status" class="form-label">상태</label>
-            <select name="status" id="status" class="form-select">
-                <option value="AVAILABLE">사용 가능</option>
-                <option value="UNAVAILABLE">사용 불가</option>
-            </select>
-        </div>
-
-
-        <button type="submit" class="btn btn-primary">등록</button>
-    </form>
-</div>
+        </form>
+    </div>
 </th:block>
+
 </body>
 </html>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.querySelector("form");
         const accommodationSelect = document.getElementById("accommodationId");
         const priceInput = document.getElementById("price");
+        const standardOccupancy = document.getElementById("standardOccupancy");
+        const maxOccupancy = document.getElementById("maxOccupancy");
 
         form.addEventListener("submit", function (e) {
             const selectedOption = accommodationSelect.options[accommodationSelect.selectedIndex];
             const accommodationPrice = parseFloat(selectedOption.getAttribute("data-price"));
             const roomPrice = parseFloat(priceInput.value);
-            const standardOccupancy = document.getElementById("standardOccupancy");
-            const maxOccupancy = document.getElementById("maxOccupancy");
 
             if (!isNaN(accommodationPrice) && roomPrice < accommodationPrice) {
                 e.preventDefault();
@@ -127,14 +144,11 @@
                 priceInput.focus();
             }
 
-            if (standardOccupancy>maxOccupancy) {
+            if (parseInt(standardOccupancy.value) > parseInt(maxOccupancy.value)) {
                 e.preventDefault();
-                alert("기준 인원이 최대 인원보다 많습니다")
-                priceInput.focus();
+                alert("기준 인원이 최대 인원보다 많습니다.");
+                standardOccupancy.focus();
             }
         });
-
     });
-
 </script>
-

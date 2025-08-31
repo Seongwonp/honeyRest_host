@@ -72,6 +72,7 @@ public class CompanyService {
                 .bankInfo(parseBankInfoToString(company.getBankInfo()))
                 .businessNumber(company.getBusinessNumber())
                 .commissionRate(company.getCommissionRate())
+                .createdAt(company.getCreatedAt())
                 .build();
     }
 
@@ -163,4 +164,14 @@ public class CompanyService {
         return accommodation.getCompany().getCompanyId();
     }
 
+    public List<CompanyDTO> searchByName(String keyword) {
+        return companyRepository.findByName(keyword).stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    public List<CompanyDTO> searchByNameContaining(String keyword) {
+        return companyRepository.findAll().stream()
+                .filter(c -> c.getName().contains(keyword))
+                .map(this::toDTO)// 부분 일치
+                .toList();
+    }
 }

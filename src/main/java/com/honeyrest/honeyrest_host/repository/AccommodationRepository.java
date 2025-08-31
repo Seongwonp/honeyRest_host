@@ -16,4 +16,9 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
     Page<Accommodation> findByCompany_CompanyId(Long companyId, Pageable pageable);
 
     Accommodation findByAccommodationId(Long accommodationId);
+
+    List<Accommodation> findByCompany_CompanyIdAndNameContainingIgnoreCase(Long companyId, String name);
+
+    List<Accommodation> findByNameContainingIgnoreCase(String keyword);
+
 }

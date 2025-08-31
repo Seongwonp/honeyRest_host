@@ -11,6 +11,7 @@ import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationImage;
+import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -35,9 +36,10 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationImageRepository accommodationImageRepository;
     private final ObjectMapper objectMapper;
     private final FileUploadUtil fileUploadUtil;
+    private final RoomRepository roomRepository;
 
 
-//    private String parseAmenitiesToJson(String json) {
+    //    private String parseAmenitiesToJson(String json) {
 //        if (json == null || json.isBlank()) return "";
 //        try {
 //            // JSON을 Map으로 변환
@@ -275,4 +277,17 @@ public class AccommodationServiceImpl implements AccommodationService {
         }
     }
 
+    @Override
+    public List<AccommodationDTO> searchByNameContaining(Long companyId, String keyword) {
+        if (companyId == null || companyId == 0){
+            return accommodationRepository.findByNameContainingIgnoreCase(keyword).stream().map(this::toDTO).toList();
+        } else return accommodationRepository.findByCompany_CompanyIdAndNameContainingIgnoreCase(companyId, keyword)
+                .stream().map(this::toDTO).toList();
+    }
+
+    @Override
+    public Long getAccommodationIdByRoomId(Long roomId) {
+        Room room = roomRepository.findByRoomId(roomId);
+        return room.getAccommodation().getAccommodationId();
+    }
 }

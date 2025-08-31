@@ -6,15 +6,22 @@
     <div class="page-heading"><h3>쿠폰 리스트</h3>
         <p class="text-subtitle text-muted">쿠폰 현황</p>
     </div>
-    <!-- 쿠폰 등록 버튼 -->
-    <div>
-        <a th:href="@{/owner/coupon/create}" class="btn btn-primary">쿠폰 등록</a>
-    </div>
+
     <div class="page-content">
         <section class="section">
             <div class="row">
                 <div class="col-12">
-                    <table class="table table-striped">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">쿠폰 목록</h5>
+                            <div class="d-flex justify-content-end mb-3">
+                                <a th:href="@{/owner/coupon/create}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i> 쿠폰 등록
+                                </a>
+                            </div>
+                            <div class="table-responsive">
+
+                                <table class="table table-striped align-middle text-center">
                         <thead>
                         <tr>
                             <th>쿠폰 ID</th>
@@ -33,7 +40,10 @@
                             <td th:text="${c.isActive()}"></td>
                         </tr>
                         </tbody>
-                    </table>
+                                </table>
+                            </div> <!-- /.table-responsive -->
+                        </div> <!-- /.card-body -->
+                    </div> <!-- /.card -->
                 </div>
             </div>
         </section>

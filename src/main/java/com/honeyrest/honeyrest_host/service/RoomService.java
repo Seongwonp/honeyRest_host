@@ -23,4 +23,6 @@ public interface RoomService {
     PageResponseDTO<RoomDTO> getRoomsByAccommodationIdWithPageable(Long accommodationId, PageRequestDTO pageRequestDTO);
 
     void updateRoomImage(RoomImageDTO dto);
+
+    List<RoomDTO> searchByNameContaining(Long accommodationId, String keyword);
 }

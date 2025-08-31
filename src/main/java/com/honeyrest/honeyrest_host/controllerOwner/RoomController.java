@@ -27,6 +27,7 @@ public class RoomController {
     private final PriceCalendarService priceCalendarService;
     private final ReservationService reservationService;
     private final FileUploadUtil fileUploadUtil;
+    private final ReviewService reviewService;
 
     @GetMapping({"/room/list", "/accommodation/{accommodationId}/rooms"})
     public String rooms(
@@ -58,7 +59,8 @@ public class RoomController {
     @GetMapping("/room/create")
     public String createRoom(@RequestParam Long accommodationId, Model model) {
         model.addAttribute("accommodationId", accommodationId);
-        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+        model.addAttribute("accommodations", accommodationService.getAccommodationsByCompanyId(companyId));
         return "owner/room/create";
     }
 
@@ -99,4 +101,26 @@ public class RoomController {
         return "redirect:/owner/room/list";
     }
 
+    @GetMapping("/room/search")
+    @ResponseBody
+    public List<RoomDTO> searchCompanies(@RequestParam Long accommodationId, @RequestParam String keyword) {
+        return roomService.searchByNameContaining(accommodationId, keyword);
+    }
+
+    @GetMapping("/room/{roomId}/reviews/json")
+    @ResponseBody
+    public List<ReviewDTO> getReviewsByRoom(@PathVariable Long roomId) {
+        return reviewService.getReviewsByRoomId(roomId);
+    }
+
+    @GetMapping("/room/{roomId}/reviews")
+    public String reviews(@PathVariable Long roomId, Model model, PageRequestDTO pageRequestDTO) {
+        model.addAttribute("room", roomService.getByRoomId(roomId));
+        model.addAttribute("rooms", roomService.getRoomsByAccommodationId(accommodationService.getAccommodationIdByRoomId(roomId)));
+        model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationService.getAccommodationIdByRoomId(roomId)));
+        PageResponseDTO<ReviewDTO> reviews = reviewService.getReviewsWithPageable(roomId,  pageRequestDTO);
+        model.addAttribute("pageResponse", reviews);
+        model.addAttribute("reviews", reviews.getDtoList());
+        return "owner/review/list";
+    }
 }

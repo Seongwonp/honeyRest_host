@@ -14,5 +14,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     Page<Room> findByAccommodation_AccommodationId(Long accommodationId, Pageable pageable);
 
+    List<Room> findByAccommodation_AccommodationIdAndNameContainingIgnoreCase(Long accommodationId, String name);
 
+    Room findByRoomId(Long roomId);
 }

@@ -190,4 +190,10 @@ public class RoomServiceImpl implements RoomService{
     public void updateRoomImage(RoomImageDTO dto){
         roomImageRepository.save(toRoomImageEntity(dto));
     }
+
+    @Override
+    public List<RoomDTO> searchByNameContaining(Long accommodationId, String keyword) {
+        return roomRepository.findByAccommodation_AccommodationIdAndNameContainingIgnoreCase(accommodationId, keyword)
+                .stream().map(this::toDTO).toList();
+    }
 }

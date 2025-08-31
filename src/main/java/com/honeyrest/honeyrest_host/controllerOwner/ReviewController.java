@@ -47,15 +47,16 @@ public class ReviewController {
 
         // 모델에 데이터 추가
         model.addAttribute("companies", companyService.getAllCompanies());
-        model.addAttribute("selectedAccommodationId", accommodationId);
         model.addAttribute("accommodations", accommodations);
+
+        model.addAttribute("selectedAccommodationId", accommodationId);
         model.addAttribute("reviews", reviewPage.getDtoList());
         model.addAttribute("pageResponse", reviewPage);
 
         return "owner/review/list";
     }
 
-    @GetMapping({"/review/list", "/review/company/{companyId}"})
+    @GetMapping( "/review/company/{companyId}")
     public String reviews(@PathVariable(required = false) Long companyId,
                           @RequestParam(required = false) Long accommodationId,
                           @ModelAttribute PageRequestDTO pageRequestDTO,

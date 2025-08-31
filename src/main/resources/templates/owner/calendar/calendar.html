@@ -6,112 +6,141 @@
 <head>
     <title>숙소 캘린더</title>
     <style>
+        /* 캘린더 스타일 */
         .calendar {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
+            gap: 8px;
         }
         .day {
-            border: 1px solid #ccc;
-            min-height: 100px;
-            padding: 5px;
+            border-radius: 8px;
+            background: #fff;
+            min-height: 110px;
+            padding: 8px;
+            font-size: 0.9rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        .day:hover {
+            transform: scale(1.02);
+            background: #fafafa;
         }
         .header {
             font-weight: bold;
-            background: #f8f9fa;
             text-align: center;
-        }
-        .soldout {
-            color: red;
-        }
-        .available {
-            color: green;
+            padding: 10px 0;
+            background: #f1f3f5;
+            border-radius: 6px;
         }
         .day-number {
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
+            font-size: 1rem;
         }
         .empty-day {
-            background: #f5f5f5;
+            background: #f8f9fa;
+        }
+        .available {
+            color: #198754;
+            font-weight: 600;
+        }
+        .soldout {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        /* 네비게이션 */
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        /* 모달 */
+        #editModal {
+            width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        #editModal h3 {
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
 <th:block layout:fragment="content">
-    <div class="page-heading">
-        <h3>캘린더</h3>
+    <div class="page-heading mb-4">
+        <h3><i class="bi bi-calendar-check me-2"></i> 숙소 캘린더</h3>
     </div>
 
     <!-- 검색 폼 -->
-    <div class="card p-4 mb-4 shadow-sm">
+    <div class="card p-4 mb-4 shadow-sm border-0">
         <form method="get"
-              th:action="@{/owner/calendar/{companyId}/{accommodationId}/calendar(companyId=${companyId}, accommodationId=${accommodationId})}"
+              th:action="@{/owner/calendar/accommodation/{accommodationId}/calendar(accommodationId=${accommodationId})}"
               class="row g-3 align-items-end"
               id="searchForm">
 
-            <!-- 회사 선택 -->
             <div class="col-md-4 col-sm-8">
-                <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
-                <select name="companyId" class="form-select" id="companySelect">
-                    <option value="">회사 선택</option>
-                </select>
+                <label class="form-label fw-semibold"><i class="bi bi-building me-1"></i>회사</label>
+                <select name="companyId" class="form-select" id="companySelect"></select>
             </div>
 
-            <!-- 숙소 선택 -->
             <div class="col-md-4 col-sm-8">
-                <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
-                <select name="accommodationId" class="form-select" id="accommodationSelect">
-                    <option value="">숙소 선택</option>
-                </select>
+                <label class="form-label fw-semibold"><i class="bi bi-house-door me-1"></i>숙소</label>
+                <select name="accommodationId" class="form-select" id="accommodationSelect" required></select>
             </div>
 
             <div class="col-auto">
-                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+                <button type="submit" class="btn btn-warning px-4 fw-semibold">검색</button>
             </div>
         </form>
     </div>
-    <!-- 월 이동 -->
-    <div class="calendar-nav mb-2">
-        <button id="prevMonth" class="btn btn-secondary">&lt; 이전달</button>
-        <button id="nextMonth" class="btn btn-secondary">다음달 &gt;</button>
+
+    <!-- 월 이동 네비게이션 -->
+    <div class="calendar-nav d-flex align-items-center justify-content-between mb-3">
+        <button id="prevMonth" class="btn btn-outline-secondary btn-sm">&lt; 이전달</button>
+
+        <h5 id="currentMonthText" class="mb-0 fw-bold"
+            th:text="${currentYear} + '년 ' + ${currentMonth} + '월'"></h5>
+
+        <button id="nextMonth" class="btn btn-outline-secondary btn-sm">다음달 &gt;</button>
     </div>
+
     <!-- 방별 캘린더 -->
     <th:block th:each="room : ${roomList}">
-        <h4 th:text="${room.name}"></h4>
+        <h4 class="mt-4 mb-3 text-primary fw-bold" th:text="${room.name}"></h4>
 
-        <div class="calendar">
+        <div class="calendar mb-4">
             <!-- 요일 헤더 -->
-            <div class="header">일</div>
+            <div class="header text-danger">일</div>
             <div class="header">월</div>
             <div class="header">화</div>
             <div class="header">수</div>
             <div class="header">목</div>
             <div class="header">금</div>
-            <div class="header">토</div>
+            <div class="header text-primary">토</div>
 
-            <!-- 빈 칸 채우기 -->
+            <!-- 빈 칸 + 날짜 -->
             <th:block th:each="i : ${#numbers.sequence(0, totalCells - 1)}">
-                <div class="day" th:class="${i < startOffset} ? 'empty-day' : ''">
+                <div class="day" th:classappend="${i < startOffset} ? ' empty-day'">
                     <th:block th:if="${i >= startOffset}"
                               th:with="day=${i - startOffset + 1},
                                        date=${startDate.withDayOfMonth(day)},
                                        data=${calendarDataMap.get(room.roomId) != null ? calendarDataMap.get(room.roomId).get(date) : null}">
                         <div class="day-number" th:text="${day}"></div>
                         <div th:if="${data != null}">
-                            <div>가격: <span th:text="${#numbers.formatInteger(data.price, 0, 'COMMA')} + '원'"></span></div>
+                            <div>💰 <span th:text="${#numbers.formatInteger(data.price, 0, 'COMMA')} + '원'"></span></div>
                             <div th:classappend="${data.availableRoom > 0} ? 'available' : 'soldout'">
                                 <span th:text="${data.availableRoom > 0 ? '잔여 ' + data.availableRoom + '실' : '매진'}"></span>
                             </div>
                             <button type="button"
                                     th:attr="data-date=${date}, data-roomid=${room.roomId}"
-                                    class="editBtn"
+                                    class="btn btn-sm btn-outline-primary mt-2"
                                     onclick="openEditModal(this)">수정</button>
                         </div>
                         <div th:if="${data == null}">
-                            <span class="text-muted">데이터 없음</span>
+                            <span class="text-muted">데이터 없음</span><br>
                             <button type="button"
                                     th:attr="data-date=${date}, data-roomid=${room.roomId}"
-                                    class="editBtn"
+                                    class="btn btn-sm btn-outline-success mt-2"
                                     onclick="openEditModal(this)">등록</button>
                         </div>
                     </th:block>
@@ -121,27 +150,26 @@
     </th:block>
 
     <!-- 수정 모달 -->
-    <div id="editModal" style="display:none; position:fixed; top:20%; left:30%; background:white; padding:20px; border:1px solid #ccc;">
-        <h3>가격/재고 수정</h3>
+    <div id="editModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid #ccc; z-index:1050;">
+        <h3 class="fw-bold mb-3">가격/재고 수정</h3>
         <form id="editForm" method="post" action="/owner/rooms/calendar/update">
             <input type="hidden" name="roomId" id="roomId">
             <input type="hidden" name="date" id="date">
-            <div>
-                <label>가격</label>
-                <input type="number" name="price" required>
+            <div class="mb-3">
+                <label class="form-label">가격</label>
+                <input type="number" class="form-control" name="price" required>
             </div>
-            <div>
-                <label>잔여 객실 수</label>
-                <input type="number" name="availableRoom" required>
+            <div class="mb-3">
+                <label class="form-label">잔여 객실 수</label>
+                <input type="number" class="form-control" name="availableRoom" required>
             </div>
-            <button type="submit">저장</button>
-            <button type="button" onclick="closeEditModal()">닫기</button>
+            <div class="d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-primary">저장</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">닫기</button>
+            </div>
         </form>
     </div>
-
 </th:block>
-
-
 </body>
 </html>
 
@@ -155,26 +183,28 @@
     const selectedCompanyId = /*[[${companyId}]]*/ '';
     const selectedAccommodationId = /*[[${accommodationId}]]*/ '';
 
+    // 회사 선택 옵션 로드
     function loadCompanyOptions() {
         companySelect.innerHTML = '<option value="">회사 선택</option>';
         companies.forEach(c => {
             const opt = document.createElement("option");
             opt.value = c.companyId;
             opt.textContent = c.name;
-            if(c.companyId == selectedCompanyId) opt.selected = true;
+            if (c.companyId == selectedCompanyId) opt.selected = true;
             companySelect.appendChild(opt);
         });
     }
 
+    // 숙소 선택 옵션 로드
     function loadAccommodationOptions(companyId) {
         accommodationSelect.innerHTML = '<option value="">숙소 선택</option>';
         let filtered = accommodations;
-        if(companyId) filtered = accommodations.filter(a => a.companyId == companyId);
+        if (companyId) filtered = accommodations.filter(a => a.companyId == companyId);
         filtered.forEach(a => {
             const opt = document.createElement("option");
             opt.value = a.accommodationId;
             opt.textContent = a.name;
-            if(a.accommodationId == selectedAccommodationId) opt.selected = true;
+            if (a.accommodationId == selectedAccommodationId) opt.selected = true;
             accommodationSelect.appendChild(opt);
         });
     }
@@ -187,8 +217,9 @@
     loadCompanyOptions();
     loadAccommodationOptions(selectedCompanyId);
 
+    // 모달
     function openEditModal(btn) {
-        document.getElementById("roomId").value = btn.getAttribute("data-roomId");
+        document.getElementById("roomId").value = btn.getAttribute("data-roomid");
         document.getElementById("date").value = btn.getAttribute("data-date");
         document.getElementById("editModal").style.display = "block";
     }
@@ -200,39 +231,62 @@
     const prevBtn = document.getElementById("prevMonth");
     const nextBtn = document.getElementById("nextMonth");
 
+    let currentYear = /*[[${currentYear}]]*/ 0;
+    let currentMonth = /*[[${currentMonth}]]*/ 0;
+
+    function submitMonth(year, month) {
+        const companyId = companySelect.value;
+        const accommodationId = accommodationSelect.value;
+
+        // startDate, endDate 계산
+        const startDate = new Date(year, month, 1);
+        const endDate = new Date(year, month, 0);
+
+        const startStr = startDate.toISOString().split("T")[0];
+        const endStr = endDate.toISOString().split("T")[0];
+
+        let actionUrl = "/owner/calendar/list";
+
+        if (accommodationId) {
+            actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar?companyId=${companyId}&accommodationId=${accommodationId}&startDate=${startStr}&endDate=${endStr}`;
+        } else if (companyId) {
+            actionUrl = `/owner/calendar/company/${companyId}/calendar?companyId=${companyId}&accommodationId=&startDate=${startStr}&endDate=${endStr}`;
+        }
+
+        window.location.href = actionUrl;
+    }
+
     prevBtn.addEventListener("click", function() {
-        const current = new Date(/*[[${startDate}]]*/);
-        current.setMonth(current.getMonth() - 1);
-        submitMonth(current);
+        let year = currentYear;
+        let month = currentMonth - 1;
+        if (month < 1) {
+            month = 12;
+            year -= 1;
+        }
+        submitMonth(year, month);
     });
 
     nextBtn.addEventListener("click", function() {
-        const current = new Date(/*[[${startDate}]]*/);
-        current.setMonth(current.getMonth() + 1);
-        submitMonth(current);
+        let year = currentYear;
+        let month = currentMonth + 1;
+        if (month > 12) {
+            month = 1;
+            year += 1;
+        }
+        submitMonth(year, month);
     });
 
-    function submitMonth(date) {
-        const companyId = companySelect.value;
-        const accommodationId = accommodationSelect.value;
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-
-        const form = document.getElementById("searchForm");
-        form.action = `/owner/calendar/${companyId}/${accommodationId}/calendar?year=${year}&month=${month}`;
-        form.submit();
-    }
+    // 검색 버튼 동작
     document.getElementById('searchForm').addEventListener('submit', function(event) {
         const companyId = companySelect.value;
         const accommodationId = accommodationSelect.value;
-        let actionUrl = "/owner/calendar/list";
 
+        let actionUrl = "/owner/calendar/list";
         if (accommodationId) {
             actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar`;
         } else if (companyId) {
             actionUrl = `/owner/calendar/company/${companyId}/calendar`;
         }
-
         this.action = actionUrl;
     });
 </script>

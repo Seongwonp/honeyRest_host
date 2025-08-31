@@ -29,4 +29,8 @@ public interface AccommodationService {
     List<AccommodationImageDTO> getImagesByAccommodationId(Long id);
 
     void updateSubImages(Long accommodationId, List<MultipartFile> images) throws Exception;
+
+    List<AccommodationDTO> searchByNameContaining(Long companyId, String keyword);
+
+    Long getAccommodationIdByRoomId(Long roomId);
 }

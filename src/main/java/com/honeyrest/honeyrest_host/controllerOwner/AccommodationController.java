@@ -3,10 +3,8 @@ package com.honeyrest.honeyrest_host.controllerOwner;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.service.AccommodationCategory;
-import com.honeyrest.honeyrest_host.service.AccommodationService;
-import com.honeyrest.honeyrest_host.service.CompanyService;
-import com.honeyrest.honeyrest_host.service.RegionService;
+import com.honeyrest.honeyrest_host.entity.Room;
+import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
@@ -27,6 +25,7 @@ public class AccommodationController {
     private final AccommodationCategory accommodationCategory;
     private final RegionService regionService;
     private final FileUploadUtil fileUploadUtil;
+    private final RoomService roomService;
 
     @GetMapping({"/accommodation/list", "/company/{companyId}/accommodations"})
     public String accommodations(@PathVariable(required = false) Long companyId,
@@ -112,4 +111,17 @@ public class AccommodationController {
         return "redirect:/owner/accommodation/list";
     }
 
+    // 회사 검색 API (자동완성용)
+    @GetMapping("/accommodation/search")
+    @ResponseBody
+    public List<AccommodationDTO> searchCompanies(@RequestParam Long companyId, @RequestParam String keyword) {
+        return accommodationService.searchByNameContaining(companyId, keyword);
+    }
+
+    // 선택한 회사의 숙소 목록 JSON
+    @GetMapping("/accommodation/{accommodationId}/rooms/json")
+    @ResponseBody
+    public List<RoomDTO> getRoomsByAccommodation(@PathVariable Long accommodationId) {
+        return roomService.getRoomsByAccommodationId(accommodationId);
+    }
 }

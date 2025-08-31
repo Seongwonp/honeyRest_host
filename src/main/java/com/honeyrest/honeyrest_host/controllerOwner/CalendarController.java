@@ -84,7 +84,8 @@ public class CalendarController {
         model.addAttribute("calendarDataMap", calendarDataMap);
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
-
+        model.addAttribute("currentYear", startDate.getYear());
+        model.addAttribute("currentMonth", startDate.getMonthValue());
         LocalDate firstDayOfMonth = startDate.withDayOfMonth(1);
         DayOfWeek firstWeekday = firstDayOfMonth.getDayOfWeek();
         int startOffset = firstWeekday.getValue() % 7; // 일요일=0

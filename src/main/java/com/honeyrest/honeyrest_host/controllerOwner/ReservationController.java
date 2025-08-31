@@ -16,7 +16,6 @@ public class ReservationController {
     private final CompanyService companyService;
     private final AccommodationService accommodationService;
     private final RoomService roomService;
-    private final CouponService couponService;
     private final ReservationService reservationService;
 
     @GetMapping("/reservation/accommodations")
