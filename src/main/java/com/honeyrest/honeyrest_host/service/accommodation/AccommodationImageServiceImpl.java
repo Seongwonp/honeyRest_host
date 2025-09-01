@@ -96,6 +96,14 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
     }
 
     @Override
+    public void deleteSubImages(List<Long> imageIds) {
+        if(imageIds == null || imageIds.isEmpty()) {
+            return;
+        }
+        accommodationImageRepository.deleteAllById(imageIds);
+    }
+
+    @Override
     public void updateSort(Long ImageId, Integer sortOrder) {
         AccommodationImage img = accommodationImageRepository.findById(ImageId).orElseThrow(() -> new IllegalArgumentException("이미지를 찾을 수 없습니다: " + ImageId));
 

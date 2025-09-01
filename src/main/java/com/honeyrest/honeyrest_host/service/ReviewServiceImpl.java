@@ -4,8 +4,15 @@ import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dto.ReviewDTO;
 
+import com.honeyrest.honeyrest_host.entity.Reservation;
 import com.honeyrest.honeyrest_host.entity.Review;
+import com.honeyrest.honeyrest_host.entity.User;
+import com.honeyrest.honeyrest_host.repository.ReviewImageRepository;
 import com.honeyrest.honeyrest_host.repository.ReviewRepository;
+import com.honeyrest.honeyrest_host.repository.RoomRepository;
+import com.honeyrest.honeyrest_host.repository.UserRepository;
+import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -19,7 +26,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Log4j2
 @Service
@@ -29,181 +39,365 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final ModelMapper modelMapper;
+    private final AccommodationRepository accommodationRepository;
+    private final RoomRepository roomRepository;
+    private final EntityManager em;
+    private final UserRepository userRepository;
+    private final ReviewImageRepository reviewImageRepository;
 
     // ====== 헬퍼: 들어온 평점들만 검증(1~5) ======
     private void validateRatings(ReviewDTO dto) {
-        java.util.function.Consumer<BigDecimal> check = v -> {
-            if (v.compareTo(BigDecimal.ONE) < 0 || v.compareTo(BigDecimal.valueOf(5)) > 0) {
-                throw new IllegalArgumentException("평점은 1~5 사이여야 합니다.");
+        var check = (java.util.function.Consumer<BigDecimal>) v -> {
+            if (v.compareTo(BigDecimal.ZERO) < 0 || v.compareTo(BigDecimal.valueOf(5)) > 0) {
+                throw new IllegalArgumentException("평점은 0~5 사이여야 합니다.");
             }
         };
-
-        if (dto.getRating() != null)            check.accept(dto.getRating());
+        if (dto.getRating() != null) check.accept(dto.getRating());
         if (dto.getCleanlinessRating() != null) check.accept(dto.getCleanlinessRating());
-        if (dto.getServiceRating() != null)     check.accept(dto.getServiceRating());
-        if (dto.getLocationRating() != null)    check.accept(dto.getLocationRating());
+        if (dto.getServiceRating() != null) check.accept(dto.getServiceRating());
+        if (dto.getFacilitiesRating() != null) check.accept(dto.getFacilitiesRating()); // 빠져있었음
+        if (dto.getLocationRating() != null) check.accept(dto.getLocationRating());
     }
 
+    /**
+     * 반올림(소수 1자리) – 값이 존재하는 것만
+     */
+    private void normalizeScales(ReviewDTO dto) {
+        java.util.function.Function<BigDecimal, BigDecimal> round1 =
+                v -> v == null ? null : v.setScale(1, RoundingMode.HALF_UP);
+        dto.setRating(round1.apply(dto.getRating()));
+        dto.setCleanlinessRating(round1.apply(dto.getCleanlinessRating()));
+        dto.setServiceRating(round1.apply(dto.getServiceRating()));
+        dto.setFacilitiesRating(round1.apply(dto.getFacilitiesRating()));
+        dto.setLocationRating(round1.apply(dto.getLocationRating()));
+    }
 
-    @Override
-    public PageResponseDTO<ReviewDTO> getList(String status, Long roomId, Long accommodationId, String sort, PageRequestDTO pageRequestDTO) {
-        // 1) 정렬 구성
-        Sort sortSpec = switch (sort == null ? "" : sort) {
+    /* 반올림(소수 1자리) - 값 존재하는 것 */
+    private Sort toSort(String sort) {
+        if (sort == null) sort = "";
+        return switch (sort) {
             case "ratingDesc" -> Sort.by(Sort.Direction.DESC, "rating");
             case "ratingAsc" -> Sort.by(Sort.Direction.ASC, "rating");
             default -> Sort.by(Sort.Direction.DESC, "reviewId"); // 최신순
         };
-        Pageable pageable = pageRequestDTO.getPageable(sortSpec);
+    }
 
-        // 2) 상태 파싱(옵션)
-        String st = null;
-        if (status != null && !status.isBlank()) {
-            st = status.toUpperCase(); // 대문자로 통일하기
-           List<String> allowed = List.of("VISIBLE", "HIDDEN", "DELETED");
-           if (!allowed.contains(st)) {
-               throw new IllegalArgumentException("유효하지 않은 리뷰 상태: " + status);
-           }
+    /* 상태 normalize 및 허용값 체크 */
+    private String normalizeStatusOrNull(String status) {
+        if (status == null || status.isBlank()) {
+            return "VISIBLE"; // 기본 조회는 노출된 것만
+        }
+        String st = status.toUpperCase();
+        List<String> allowed = List.of("VISIBLE", "HIDDEN", "DELETED");
+        if (!allowed.contains(st)) throw new IllegalArgumentException("유효하지 않은 리뷰 상태: " + status);
+        return st;
+    }
+
+    private ReviewDTO mapBase(Review r) {
+        return ReviewDTO.builder()
+                .reviewId(r.getReviewId())
+                .reservationId(r.getReservation() != null ? r.getReservation().getReservationId() : null)
+                .userId(r.getUser() != null ? r.getUser().getUserId() : null)
+                .accommodationId(r.getAccommodationId())
+                .roomId(r.getRoomId())
+                .rating(r.getRating())
+                .cleanlinessRating(r.getCleanlinessRating())
+                .serviceRating(r.getServiceRating())
+                .facilitiesRating(r.getFacilitiesRating())
+                .locationRating(r.getLocationRating())
+                .content(r.getContent())
+                .reply(r.getReply())
+                .likeCount(r.getLikeCount() == null ? 0 : r.getLikeCount())
+                .status(r.getStatus())
+                .createdAt(r.getCreatedAt())
+                .updatedAt(r.getUpdatedAt())
+                .build();
+    }
+
+    private void fillNames(ReviewDTO dto) {
+        if (dto.getAccommodationId() != null) {
+            dto.setAccommodationName(accommodationRepository.findNameById(dto.getAccommodationId()).orElse(null));
+        }
+        if (dto.getRoomId() != null) {
+            dto.setRoomName(roomRepository.findNameById(dto.getRoomId()).orElse(null));
+        }
+        if (dto.getUserId() != null) {
+            dto.setUserName(userRepository.findNameById(dto.getUserId()).orElse(null));
         }
 
-        // 3) 조건 조합에 따라 Repository 호출 분기
+    }
+
+    private void fillImages(ReviewDTO dto) {
+        dto.setImageList(reviewImageRepository.findDtosByReviewId(dto.getReviewId()));
+    }
+
+    /* ====================조회 ================= */
+
+    // 인터페이스에 둘 중 하나만 노출 (getOne 추천)
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<ReviewDTO> getOne(Long reviewId) {
+        return reviewRepository.findById(reviewId).map(r -> {
+            ReviewDTO dto = mapBase(r);
+
+            // 빠른 이름 세팅(예약/유저에서 바로)
+            if (r.getReservation() != null) {
+                dto.setAccommodationName(r.getReservation().getAccommodationName());
+                dto.setRoomName(r.getReservation().getRoomName());
+            }
+            if (r.getUser() != null) dto.setUserName(r.getUser().getName());
+
+            // FK만 있을 때 보강 조회
+            fillNames(dto);
+            // 이미지 묶음
+            fillImages(dto);
+            return dto;
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponseDTO<ReviewDTO> getList(String status,
+                                              Long roomId,
+                                              Long accommodationId,
+                                              String sort,
+                                              PageRequestDTO pageRequestDTO) {
+        Pageable pageable = pageRequestDTO.getPageable(toSort(sort));
+        boolean all = (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status));
         Page<Review> page;
+
         if (roomId != null) {
-            page = (st != null)
-                    ? reviewRepository.findByRoomIdAndStatus(roomId, st, pageable)
-                    : reviewRepository.findByRoomId(roomId, pageable);
+            if (all) {
+                page = reviewRepository.findByRoomId(roomId, pageable);                 // 모든 상태
+            } else {
+                page = reviewRepository.findByRoomIdAndStatus(roomId, status, pageable); // 특정 상태만
+            }
         } else if (accommodationId != null) {
-            page = (st != null)
-                    ? reviewRepository.findByAccommodationIdAndStatus(accommodationId, st, pageable)
-                    : reviewRepository.findByAccommodationId(accommodationId, pageable);
+            if (all) {
+                page = reviewRepository.findByAccommodationId(accommodationId, pageable);
+            } else {
+                page = reviewRepository.findByAccommodationIdAndStatus(accommodationId, status, pageable);
+            }
         } else {
-            // 조건 없음: 전체 (상태 필터 있으면 여기서 처리하는 전용 메서드를 추가해도 됨)
-            page = reviewRepository.findAll(pageable);
+            if (all) {
+                page = reviewRepository.findAll(pageable);                               // ★ 전체 상태
+                // (기존처럼 HIDDEN 빼고 보이고 싶다면: findByStatusNot("HIDDEN", pageable))
+            } else {
+                page = reviewRepository.findByStatus(status, pageable);                  // 특정 상태만
+            }
         }
 
-        // 4) 엔티티 → DTO 변환
         List<ReviewDTO> list = page.getContent().stream()
-                .map(r -> modelMapper.map(r, ReviewDTO.class))
+                .map(r -> {
+                    ReviewDTO dto = modelMapper.map(r, ReviewDTO.class);
+                    if (r.getReservation() != null) {
+                        dto.setAccommodationName(r.getReservation().getAccommodationName());
+                        dto.setRoomName(r.getReservation().getRoomName());
+                    }
+                    if (r.getUser() != null) {
+                        dto.setUserName(r.getUser().getName());
+                    }
+                    return dto;
+                })
                 .toList();
 
-        // 5) 표준 PageResponseDTO 조립
-        return PageResponseDTO.<ReviewDTO>withALl()
+        return PageResponseDTO.<ReviewDTO>withAll()
                 .pageRequestDTO(pageRequestDTO)
                 .dtoList(list)
                 .total((int) page.getTotalElements())
                 .build();
     }
 
-    // 예약 리뷰 단건 조회
-    @Override
-    public ReviewDTO getOne(Long reviewId) {
-        Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new EntityNotFoundException(" id=" + reviewId));
-        return modelMapper.map(review, ReviewDTO.class);
-    }
 
     // 리뷰 등록
     @Override
-    public ReviewDTO insert(ReviewDTO reviewDTO) {
-        // 필요한 유효성 체크(별점 1~5 등)
-        BigDecimal rating = reviewDTO.getRating();
-        if (rating == null
-                || rating.compareTo(BigDecimal.ONE) < 0  // 1보다 작은 경우
-                || rating.compareTo(BigDecimal.valueOf(5)) > 0) { // 5보다 큰 경우
-            throw new IllegalArgumentException("평점은 1~5 사이여야 합니다.");
-        }
-        // 선택: 소수 1자리로 정규화(원하면)
-        reviewDTO.setRating(rating.setScale(1, java.math.RoundingMode.HALF_UP));
+    @Transactional
+    public ReviewDTO insert(ReviewDTO dto) {
+        // 기본 검증 및 정규화
+        validateRatings(dto);
+        normalizeScales(dto);
 
-        // 선택: 서브 평점들도 있다면 동일하게 검증
-        if (reviewDTO.getCleanlinessRating() != null &&
-                (reviewDTO.getCleanlinessRating().compareTo(BigDecimal.ONE) < 0 ||
-                        reviewDTO.getCleanlinessRating().compareTo(BigDecimal.valueOf(5)) > 0)) {
-            throw new IllegalArgumentException("청결 평점은 1~5 사이여야 합니다.");
-        }
-        if (reviewDTO.getServiceRating() != null &&
-                (reviewDTO.getServiceRating().compareTo(BigDecimal.ONE) < 0 ||
-                        reviewDTO.getServiceRating().compareTo(BigDecimal.valueOf(5)) > 0)) {
-            throw new IllegalArgumentException("서비스 평점은 1~5 사이여야 합니다.");
-        }
-        if (reviewDTO.getLocationRating() != null &&
-                (reviewDTO.getLocationRating().compareTo(BigDecimal.ONE) < 0 ||
-                        reviewDTO.getLocationRating().compareTo(BigDecimal.valueOf(5)) > 0)) {
-            throw new IllegalArgumentException("위치 평점은 1~5 사이여야 합니다.");
+        // 상태 기본값
+        if (dto.getStatus() == null || dto.getStatus().isBlank()) {
+            dto.setStatus("VISIBLE");
         }
 
-        // 2) (선택) 기본 상태값 주기 — DTO가 null 이면 PUBLISHED/PENDING 등 프로젝트 규칙대로
-        if (reviewDTO.getStatus() == null) {
-            reviewDTO.setStatus("VISIBLE"); // 문자열로 직접 지정
+        // 연관관계 영속 참조 (필드가 not null 제약이라면 반드시 세팅)
+        if (dto.getReservationId() == null || dto.getUserId() == null) {
+            throw new IllegalArgumentException("reservationId, userId 는 필수입니다.");
         }
+        // 예약을 참조
+        Reservation reservationRef = em.getReference(Reservation.class, dto.getReservationId());
 
-        // 3) (중요) 연관관계가 엔티티(User/Room/Reservation)라면, id만 있는 DTO를 그대로 map하면
-        //    영속 참조가 안 걸릴 수 있어요. 필요시 getReference/레포로 조회해서 세팅하세요.
-        //    예시:
-        //    var user = entityManager.getReference(User.class, reviewDTO.getUserId());
-        //    var room = entityManager.getReference(Room.class, reviewDTO.getRoomId());
-        //    Review entity = Review.of(reviewDTO, user, room); // 팩토리/생성자 사용 권장
+        // 예약에서 유저/숙소/객실 자동으로 세팅
+        User userRef = reservationRef.getUser();
 
-        // 지금은 단순 매핑만:
-        Review entity = modelMapper.map(reviewDTO, Review.class);
+        // 엔티티 조립
+        Review entity = Review.builder()
+                .reservation(reservationRef)
+                .user(userRef)
+                .accommodationId(reservationRef.getAccommodation().getAccommodationId())
+                .roomId(reservationRef.getRoom().getRoomId())
+                .rating(dto.getRating())
+                .cleanlinessRating(dto.getCleanlinessRating())
+                .serviceRating(dto.getServiceRating())
+                .facilitiesRating(dto.getFacilitiesRating())
+                .locationRating(dto.getLocationRating())
+                .content(dto.getContent())
+                .reply(dto.getReply())
+                .likeCount(dto.getLikeCount() == null ? 0 : dto.getLikeCount())
+                .status(dto.getStatus())
+                .build();
 
-        // 4) 저장
         Review saved = reviewRepository.save(entity);
         return modelMapper.map(saved, ReviewDTO.class);
     }
 
-    // 리뷰 수정
-    @Override
-    public ReviewDTO update(Long reviewId, ReviewDTO reviewDTO) {
-        Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new EntityNotFoundException("리뷰를 찾을 수 없습니다. id=" + reviewId));
-
-        ReviewDTO patch = ReviewDTO.builder()
-                .rating(reviewDTO.getRating())
-                .cleanlinessRating(reviewDTO.getCleanlinessRating())
-                .serviceRating(reviewDTO.getServiceRating())
-                .locationRating(reviewDTO.getLocationRating())
-                .content(reviewDTO.getContent())
-                .reply(reviewDTO.getReply())
-                .status(reviewDTO.getStatus())
-                .build();
-
-        // dto -> 엔티티
-        modelMapper.map(review, patch);
-
-        return modelMapper.map(patch, ReviewDTO.class);
-    }
-
-
-    // 리뷰 삭제
-    @Override
-    public void delete(Long reviewId) {
-        int updated = reviewRepository.softHide(reviewId);
-        if (updated == 0) {
-            // softHide 메서드를 쓰지 않고 진짜 삭제하려면 아래 한 줄 사용
-            // reviewRepository.deleteById(reviewId);
-            throw new EntityNotFoundException("리뷰를 찾을 수 없습니다. id=" + reviewId);
-        }
-    }
+    /* -------------------- 전체 수정(put 느낌) -------------------- */
 
     @Override
-    public ReviewDTO patch(Long reviewId, ReviewDTO reviewDTO) {
+    @Transactional
+    public ReviewDTO update(Long reviewId, ReviewDTO dto) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("리뷰를 찾을 수 없습니다. id=" + reviewId));
 
-        validateRatings(reviewDTO);
+        // 검증 & 정규화
+        validateRatings(dto);
+        normalizeScales(dto);
 
-        // 선택: 들어온 별점만 반올림
-        if (reviewDTO.getRating() != null)
-            reviewDTO.setRating(reviewDTO.getRating().setScale(1, java.math.RoundingMode.HALF_UP));
-        if (reviewDTO.getCleanlinessRating() != null)
-            reviewDTO.setCleanlinessRating(reviewDTO.getCleanlinessRating().setScale(1, java.math.RoundingMode.HALF_UP));
-        if (reviewDTO.getServiceRating() != null)
-            reviewDTO.setServiceRating(reviewDTO.getServiceRating().setScale(1, java.math.RoundingMode.HALF_UP));
-        if (reviewDTO.getLocationRating() != null)
-            reviewDTO.setLocationRating(reviewDTO.getLocationRating().setScale(1, java.math.RoundingMode.HALF_UP));
+        // 필수값이 비어있다면 예외(프로젝트 정책에 맞추세요)
+        if (dto.getRating() == null) throw new IllegalArgumentException("rating 은 필수입니다.");
 
-        // 핵심: 세터 없이 필드 매핑 + null 무시는 Config로 처리됨
-        modelMapper.map(reviewDTO, review);
+        // 연관관계 바꾸는 업데이트가 필요하다면 여기도 처리(옵션)
+        if (dto.getReservationId() != null && !dto.getReservationId().equals(review.getReservation().getReservationId())) {
+            review = Review.builder()
+                    .reviewId(review.getReviewId())
+                    .reservation(em.getReference(Reservation.class, dto.getReservationId()))
+                    .user(review.getUser())
+                    .accommodationId(review.getAccommodationId())
+                    .roomId(review.getRoomId())
+                    .rating(review.getRating())
+                    .cleanlinessRating(review.getCleanlinessRating())
+                    .serviceRating(review.getServiceRating())
+                    .facilitiesRating(review.getFacilitiesRating())
+                    .locationRating(review.getLocationRating())
+                    .content(review.getContent())
+                    .reply(review.getReply())
+                    .likeCount(review.getLikeCount())
+                    .status(review.getStatus())
+                    .build();
+        }
+        if (dto.getUserId() != null && !dto.getUserId().equals(review.getUser().getUserId())) {
+            // 위에서 새로 빌더로 만들지 않고, 단순히 교체만 하고 싶다면
+            User userRef = em.getReference(User.class, dto.getUserId());
+            // JPA Immutable 패턴이 아니라면 세터가 필요하지만, 현재 엔티티가 세터가 없으므로
+            // 연관관계 변경을 자주 하지 않는다는 가정하에 위처럼 새 빌더로 만드는 방식을 권장.
+            // 필요 시 엔티티에 변경 메서드를 추가하세요.
+        }
 
-        Review saved = reviewRepository.save(review);
+        // 스칼라 필드 업데이트 (null 은 무시)
+        Review updated = Review.builder()
+                .reviewId(review.getReviewId())
+                .reservation(review.getReservation())
+                .user(review.getUser())
+                .accommodationId(dto.getAccommodationId() != null ? dto.getAccommodationId() : review.getAccommodationId())
+                .roomId(dto.getRoomId() != null ? dto.getRoomId() : review.getRoomId())
+                .rating(dto.getRating() != null ? dto.getRating() : review.getRating())
+                .cleanlinessRating(dto.getCleanlinessRating() != null ? dto.getCleanlinessRating() : review.getCleanlinessRating())
+                .serviceRating(dto.getServiceRating() != null ? dto.getServiceRating() : review.getServiceRating())
+                .facilitiesRating(dto.getFacilitiesRating() != null ? dto.getFacilitiesRating() : review.getFacilitiesRating())
+                .locationRating(dto.getLocationRating() != null ? dto.getLocationRating() : review.getLocationRating())
+                .content(dto.getContent() != null ? dto.getContent() : review.getContent())
+                .reply(dto.getReply() != null ? dto.getReply() : review.getReply())
+                .likeCount(dto.getLikeCount() != null ? dto.getLikeCount() : review.getLikeCount())
+                .status(dto.getStatus() != null ? dto.getStatus() : review.getStatus())
+                .build();
+
+        Review saved = reviewRepository.save(updated);
+        return modelMapper.map(saved, ReviewDTO.class);
+    }
+
+    /* -------------------- 부분 수정(patch 느낌) -------------------- */
+
+    @Override
+    @Transactional
+    public ReviewDTO patch(Long reviewId, ReviewDTO dto) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException("리뷰를 찾을 수 없습니다. id=" + reviewId));
+
+        validateRatings(dto);
+        normalizeScales(dto);
+
+        Review patched = Review.builder()
+                .reviewId(review.getReviewId())
+                .reservation(review.getReservation())
+                .user(review.getUser())
+                .accommodationId(dto.getAccommodationId() != null ? dto.getAccommodationId() : review.getAccommodationId())
+                .roomId(dto.getRoomId() != null ? dto.getRoomId() : review.getRoomId())
+                .rating(dto.getRating() != null ? dto.getRating() : review.getRating())
+                .cleanlinessRating(dto.getCleanlinessRating() != null ? dto.getCleanlinessRating() : review.getCleanlinessRating())
+                .serviceRating(dto.getServiceRating() != null ? dto.getServiceRating() : review.getServiceRating())
+                .facilitiesRating(dto.getFacilitiesRating() != null ? dto.getFacilitiesRating() : review.getFacilitiesRating())
+                .locationRating(dto.getLocationRating() != null ? dto.getLocationRating() : review.getLocationRating())
+                .content(dto.getContent() != null ? dto.getContent() : review.getContent())
+                .reply(dto.getReply() != null ? dto.getReply() : review.getReply())
+                .likeCount(dto.getLikeCount() != null ? dto.getLikeCount() : review.getLikeCount())
+                .status(dto.getStatus() != null ? dto.getStatus() : review.getStatus())
+                .build();
+
+        Review saved = reviewRepository.save(patched);
+        return modelMapper.map(saved, ReviewDTO.class);
+    }
+
+    // 리뷰 삭제
+    @Override
+    @Transactional
+    public void delete(Long reviewId) {
+        log.info("[delete] soft hide try, id={}", reviewId);
+        int updated = reviewRepository.softHide(reviewId);
+        if (updated == 0) {
+            throw new EntityNotFoundException("리뷰를 찾을 수 없습니다. id=" + reviewId);
+        }
+    }
+    @Transactional
+    @Override
+    public void changeStatus(Long reviewId, String status) {
+        // 허용값만 통과
+        Set<String> allowed = Set.of("VISIBLE", "HIDDEN", "PENDING", "REPORTED");
+        if (!allowed.contains(status)) {
+            throw new IllegalArgumentException("허용되지 않는 상태: " + status);
+        }
+        int updated = reviewRepository.updateStatus(reviewId, status);
+        if (updated == 0) throw new EntityNotFoundException("리뷰 없음: " + reviewId);
+    }
+    @Transactional
+    @Override
+    public ReviewDTO toggleVisibleHidden(Long reviewId) {
+        Review r = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException("리뷰를 찾을 수 없습니다. id=" + reviewId));
+
+        String before = (r.getStatus() == null) ? "HIDDEN" : r.getStatus().toUpperCase();
+        // 규칙: VISIBLE이면 HIDDEN으로, 그 외(HIDDEN/REPORTED/PENDING/기타)는 VISIBLE로
+        String after  = "VISIBLE".equals(before) ? "HIDDEN" : "VISIBLE";
+
+        Review patched = Review.builder()
+                .reviewId(r.getReviewId())
+                .reservation(r.getReservation())
+                .user(r.getUser())
+                .accommodationId(r.getAccommodationId())
+                .roomId(r.getRoomId())
+                .rating(r.getRating())
+                .cleanlinessRating(r.getCleanlinessRating())
+                .serviceRating(r.getServiceRating())
+                .facilitiesRating(r.getFacilitiesRating())
+                .locationRating(r.getLocationRating())
+                .content(r.getContent())
+                .reply(r.getReply())
+                .likeCount(r.getLikeCount())
+                .status(after)
+                .build();
+
+        Review saved = reviewRepository.save(patched);
         return modelMapper.map(saved, ReviewDTO.class);
     }
 }

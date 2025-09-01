@@ -19,20 +19,24 @@ public class ReservationDTO {
 
     private Long reservationId; // 예약 고유 아이디(식별자)
     private String reservationNumber; // 예약 번호
-    private Long accommodationId;
-    private String accommodationName; // 숙소명
-    private String roomName;
-    private Long userId;
-    private Long roomId;
 
     private LocalDate checkInDate; // 날짜 체크인
     private LocalDate checkOutDate; // 날짜 체크아웃
 
 
     private Integer guestCount; // 인원
-    private String guestName; // 예약자 이름
     private String guestPhone; // 예약자 연락처
 
+    /* 리뷰 등록 시 예약번호로 정보 자동 불러오기위함 */
+    private Long accommodationId;
+    private String accommodationName; // 숙소명
+
+    private Long roomId;
+    private String roomName;
+
+    private Long userId;
+    private String guestName; // 예약자 이름
+    private String userName;
 
 
     private BigDecimal price; // 최종 결제 금액

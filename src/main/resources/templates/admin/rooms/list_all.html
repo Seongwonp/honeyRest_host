@@ -349,14 +349,10 @@
     </div>
 </th:block>
 <!-- 페이지 맨 아래 쪽, base 레이아웃이 수용하는 script 프래그먼트 안에 배치 -->
-<script th:inline="javascript">
-    (function () {
-        var el = document.getElementById('flashMsg');
-        if (el) {
-            var msg = (el.textContent || '').trim();
-            if (msg) alert(msg);
-        }
-    })();
-</script>
+<th:block layout:fragment="script">
+    <script th:inline="javascript" th:if="${success}">
+        alert([[${success}]]);
+    </script>
+</th:block>
 </body>
 </html>

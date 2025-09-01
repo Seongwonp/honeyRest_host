@@ -19,6 +19,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface AccommodationRepository extends JpaRepository<Accommodation, Long>, AccommodationQuery {
 
@@ -101,6 +102,9 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
                                             where a.company.companyId = :companyId
                     """)
     Page<AccommodationListDTO> findListByCompanyId(@Param("companyId") Long companyId, Pageable pageable);
+
+    @Query("select a.name from Accommodation a where a.accommodationId = :id")
+    Optional<String> findNameById(@Param("id") Long accommodationId);
 }
 
 
@@ -166,6 +170,5 @@ class AccommodationQueryImpl implements AccommodationQuery {
 
         return new PageImpl<>(content, pageable, total);
     }
-
-
+    
 }

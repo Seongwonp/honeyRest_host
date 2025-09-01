@@ -68,5 +68,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             where r.roomId = :roomId
             """)
     Optional<Room> findWithAccommodationByRoomId(Long roomId);
+
+    @Query("select r.name from Room r where r.roomId = :id")
+    Optional<String> findNameById(@Param("id") Long id);
 }
 

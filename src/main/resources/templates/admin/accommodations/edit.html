@@ -6,6 +6,42 @@
 
 <head>
     <title>숙소 수정</title>
+    <style>
+        .img-wrap {
+            position: relative;
+            width: 96px;
+            height: 96px;
+        }
+        .img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #f6f6f6;
+            border: 1px solid #eee;
+        }
+        .img-wrap button.remove-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 22px;
+            height: 22px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+            display: none; /* 기본은 숨김 */
+        }
+        .img-wrap:hover button.remove-btn {
+            display: block; /* hover 시에만 표시 */
+        }
+        .img-wrap button.remove-btn:hover {
+            background: rgba(220,53,69,0.9);
+        }
+    </style>
 </head>
 
 <body>
@@ -20,13 +56,10 @@
                 <div class="card">
                     <div class="card-body">
 
-                        <!-- ★ 반드시 multipart/form-data -->
                         <form th:action="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}"
                               th:object="${form}" method="post" enctype="multipart/form-data">
-                            <!--                            <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>-->
-                            <!-- id는 바인딩 없이 필요시 그냥 값만 -->
-                            <input type="hidden" name="id" th:value="${acc.accommodationId}"/>
 
+                            <input type="hidden" name="id" th:value="${acc.accommodationId}"/>
 
                             <div class="row g-3">
                                 <!-- 숙소명 -->
@@ -83,116 +116,44 @@
                                               placeholder="숙소 소개, 편의시설 등"></textarea>
                                 </div>
 
-                                <!-- 편의시설(JSON/CSV 허용) -->
+                                <!-- 편의시설 -->
                                 <div class="col-12">
                                     <label class="form-label">확인사항 및 기타</label>
                                     <textarea class="form-control" th:field="*{amenities}" rows="3"
                                               placeholder="예) 와이파이,주차,수영장"></textarea>
-                                    <div class="form-text">쉼표(,)로 구분해서 입력하거나, 이미 JSON 배열이면 그대로 저장됩니다.</div>
-                                    <!--                                    <p th:text="${acc.amenities}" style="white-space: pre-line;"></p>-->
                                 </div>
 
-                                <div class="col-12">
-                                    <label class="form-label">취소 및 환불 규정</label>
-                                    <textarea class="form-control" rows="3" name="policyMultiline"
-                                              th:text="${policy != null ? policy.detailMultiline : ''}"
-                                              placeholder="예) 숙박일 기준 5일전 : 90% 환불&#10;4일전 : 80% 환불 ..."></textarea>
-                                    <small class="text-muted">줄바꿈(↵)으로 항목을 나누면 상세 화면에서 리스트로 표시됩니다.</small>
-                                </div>
-
-                                <!-- 영업시간/최저가 -->
-                                <div class="col-lg-3 col-md-6">
-                                    <label class="form-label">체크인 / 체크아웃</label>
-                                    <div class="input-group">
-                                        <input type="time" class="form-control" th:field="*{checkInTime}">
-                                        <span class="input-group-text">~</span>
-                                        <input type="time" class="form-control" th:field="*{checkOutTime}">
-                                    </div>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="form-label">최저가(원)</label>
-                                    <input type="number" step="5" min="0" class="form-control" th:field="*{minPrice}"
-                                           placeholder="예) 80000">
-                                </div>
-
-                                <!-- 썸네일(메인 이미지) -->
+                                <!-- 썸네일 -->
                                 <div class="col-12">
                                     <label class="form-label">썸네일(메인)</label>
-
-                                    <!-- 현재 썸네일 미리보기 -->
                                     <div class="d-flex align-items-center gap-3">
-                                        <!-- 이미지가 있을 때 -->
-                                        <img id="thumbPreview"
-                                             th:if="${acc != null and #strings.length(acc.thumbnail) > 0}"
-                                             th:src="${acc.thumbnail}"
-                                             alt="preview"
-                                             style="width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;">
-
-                                        <!-- 이미지가 없을 때 -->
+                                        <div class="img-wrap" th:if="${acc != null and #strings.length(acc.thumbnail) > 0}">
+                                            <img id="thumbPreview" th:src="${acc.thumbnail}" alt="thumbnail">
+                                            <button type="button" class="remove-btn" id="removeThumb">×</button>
+                                        </div>
                                         <span th:if="${acc == null or #strings.length(acc.thumbnail) == 0}"
                                               class="text-muted" id="thumbEmpty">이미지 없음</span>
                                     </div>
-
-                                    <!-- 파일 선택 (서버로 바로 제출) -->
+                                    <input type="hidden" th:field="*{thumbnail}">
+                                    <input type="hidden" name="deleteThumbnail" id="deleteThumbnail" value="false">
                                     <div class="mt-2" style="max-width:360px">
-                                        <input type="hidden" th:field="*{thumbnail}">
-                                        <!-- ★ name="thumbnail" : 컨트롤러 파라미터와 동일 -->
-                                        <input type="file" id="thumbFile" name="thumbnailFile" accept="image/*"
-                                               class="form-control">
+                                        <input type="file" id="thumbFile" name="thumbnailFile" accept="image/*" class="form-control">
                                     </div>
-                                    <div class="form-text">파일을 선택하고 저장하면 메인 썸네일이 교체됩니다. (MAIN / sortOrder=0)</div>
                                 </div>
+
                                 <!-- 서브 이미지 -->
                                 <div class="col-12 mt-4">
                                     <label class="form-label">서브 이미지들</label>
-
-                                    <!-- 기존 SUB 이미지 목록 (미리보기) -->
                                     <div class="d-flex flex-wrap gap-2 mb-2">
                                         <div th:each="img : ${images}" th:if="${img.imageType == 'SUB'}"
-                                             class="position-relative" style="width:96px;height:96px">
-                                            <img th:src="${img.imageUrl}" alt="sub"
-                                                 style="width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;">
+                                             class="img-wrap">
+                                            <img th:src="${img.imageUrl}" alt="sub">
+                                            <button type="button" class="remove-btn remove-sub"
+                                                    th:attr="data-id=${img.imageId}">×</button>
                                         </div>
-                                        <span th:if="${images != null and #lists.size(images) > 0}"
-                                              class="text-muted">등록된 서브 이미지가 없습니다.</span>
                                     </div>
-
-                                    <!-- 새 서브 이미지 업로드 (여러 장) -->
-                                    <!-- ★ name="subImages" / multiple : 컨트롤러와 일치 -->
-                                    <input type="file" name="subImages" id="subImages" accept="image/*" multiple
-                                           class="form-control" style="max-width:480px">
-
-                                    <!-- 선택한 파일들 로컬 미리보기 -->
+                                    <input type="file" name="subImages" id="subImages" accept="image/*" multiple class="form-control" style="max-width:480px">
                                     <div id="subPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
-                                    <div class="form-text">여러 장 선택 가능. 저장하면 서브 이미지로 추가됩니다 (imageType=SUB, sortOrder는 1부터
-                                        자동부여).
-                                    </div>
-                                </div>
-
-                                <!-- 태그 -->
-                                <div class="col-12">
-                                    <label class="form-label">태그</label>
-                                    <select id="tagSelect" class="form-select" multiple size="10" th:field="*{tagIds}">
-                                        <optgroup th:each="e : ${tagsByCategory}" th:label="${e.key}">
-                                            <option th:each="t : ${e.value}"
-                                                    th:value="${t.tagId}"
-                                                    th:text="${t.name}">
-                                            </option>
-                                        </optgroup>
-                                    </select>
-                                    <div class="form-text">여러 개 선택 가능 (Ctrl/⌘)</div>
-                                    <div id="tagSelected" class="d-flex flex-wrap gap-2 mt-2"></div>
-                                </div>
-
-                                <!-- 상태 -->
-                                <div class="col-md-3">
-                                    <label class="form-label">상태</label>
-                                    <select class="form-select" th:field="*{status}">
-                                        <option value="">선택</option>
-                                        <option value="PENDING">PENDING</option>
-                                        <option value="ACTIVE">ACTIVE</option>
-                                    </select>
                                 </div>
                             </div>
 
@@ -202,7 +163,7 @@
                             </div>
                         </form>
                     </div><!-- card-body -->
-                </div><!-- card -->
+                </div>
             </div>
         </section>
     </div>
@@ -210,129 +171,53 @@
 
 <th:block layout:fragment="script">
     <script>
-        // 지역(소) 동적 로드
-        (function () {
-            const main = document.getElementById('mainRegion');
-            const sub = document.getElementById('subRegion');
-            if (!main || !sub) return;
-
-            const dataUrl = main.getAttribute('data-url');
-
-            main.addEventListener('change', async function () {
-                const parentId = this.value;
-                sub.innerHTML = '<option value="">불러오는 중...</option>';
-                if (!parentId) {
-                    sub.innerHTML = '<option value="">상위를 먼저 선택하세요</option>';
-                    return;
-                }
-
-                try {
-                    const res = await fetch(`${dataUrl}?parentId=${parentId}`, {headers: {'Accept': 'application/json'}});
-                    if (!res.ok) throw new Error(res.status);
-                    const list = await res.json();
-
-                    const selected = sub.getAttribute('data-selected');
-                    sub.innerHTML = '<option value="">선택하세요</option>';
-                    list.forEach(item => {
-                        const opt = document.createElement('option');
-                        opt.value = item.id;
-                        opt.textContent = item.name;
-                        if (selected && String(item.id) === String(selected)) opt.selected = true;
-                        sub.appendChild(opt);
-                    });
-                } catch (e) {
-                    console.error('지역(소) 로드 실패:', e);
-                    sub.innerHTML = '<option value="">불러오기 실패</option>';
-                }
-            });
-        })();
-
-        // 태그 선택 미리보기
-        document.addEventListener('DOMContentLoaded', function () {
-            const sel = document.getElementById('tagSelect');
-            const box = document.getElementById('tagSelected');
-            if (!sel || !box) return;
-
-            function renderSelected() {
-                box.innerHTML = '';
-                const selected = [...sel.selectedOptions].map(o => ({
-                    value: o.value,
-                    label: o.textContent.trim(),
-                    category: o.closest('optgroup') ? o.closest('optgroup').label : ''
-                }));
-                if (selected.length === 0) {
-                    box.innerHTML = '<span class="text-muted">선택된 태그가 없습니다.</span>';
-                    return;
-                }
-                selected.forEach(s => {
-                    const chip = document.createElement('span');
-                    chip.className = 'badge bg-primary-subtle text-primary border rounded-pill px-2 py-1 d-inline-flex align-items-center';
-                    chip.textContent = (s.category ? (s.category + ' - ') : '') + s.label;
-
-                    const close = document.createElement('button');
-                    close.type = 'button';
-                    close.className = 'btn-close btn-sm ms-2';
-                    close.setAttribute('aria-label', 'remove');
-                    close.addEventListener('click', () => {
-                        const opt = [...sel.options].find(o => o.value === s.value);
-                        if (opt) {
-                            opt.selected = false;
-                        }
-                        renderSelected();
-                    });
-
-                    chip.appendChild(close);
-                    box.appendChild(chip);
+        document.addEventListener('DOMContentLoaded', () => {
+            // 썸네일 삭제
+            const btn = document.getElementById('removeThumb');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    document.getElementById('deleteThumbnail').value = 'true';
+                    const preview = document.getElementById('thumbPreview');
+                    if (preview) preview.style.display = 'none';
+                    btn.style.display = 'none';
+                    const empty = document.getElementById('thumbEmpty');
+                    if (empty) empty.style.display = 'inline';
                 });
             }
 
-            renderSelected();
-            sel.addEventListener('change', renderSelected);
-        });
-
-        // 썸네일 로컬 미리보기 (선택 시 즉시 화면에만 반영)
-        (function () {
-            const input = document.getElementById('thumbFile');
-            const preview = document.getElementById('thumbPreview');
-            const empty = document.getElementById('thumbEmpty');
-            if (!input) return;
-
-            input.addEventListener('change', function () {
-                const f = this.files && this.files[0];
-                if (!f) return;
-                const url = URL.createObjectURL(f);
-                if (preview) {
-                    preview.src = url;
-                    preview.style.display = 'inline-block';
-                }
-                if (empty) empty.style.display = 'none';
-            });
-        })();
-    </script>
-    <script>
-        // 서브 이미지 로컬 미리보기
-        (function () {
-            const input = document.getElementById('subImages');
-            const box = document.getElementById('subPreview');
-            if (!input || !box) return;
-
-            input.addEventListener('change', function () {
-                box.innerHTML = '';
-                const files = Array.from(this.files || []);
-                files.forEach(f => {
-                    const url = URL.createObjectURL(f);
-                    const wrap = document.createElement('div');
-                    wrap.style.width = '96px';
-                    wrap.style.height = '96px';
-                    const img = document.createElement('img');
-                    img.src = url;
-                    img.alt = 'preview';
-                    img.style.cssText = 'width:96px;height:96px;object-fit:cover;border-radius:8px;background:#f6f6f6;';
-                    wrap.appendChild(img);
-                    box.appendChild(wrap);
+            // 서브 이미지 삭제
+            document.querySelectorAll('.remove-sub').forEach(b => {
+                b.addEventListener('click', () => {
+                    const id = b.getAttribute('data-id');
+                    if (id) {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'deleteSubImageIds';
+                        hidden.value = id;
+                        b.closest('form').appendChild(hidden);
+                    }
+                    b.parentElement.remove();
                 });
             });
-        })();
+
+            // 새 서브 이미지 미리보기
+            const input = document.getElementById('subImages');
+            const box = document.getElementById('subPreview');
+            if (input && box) {
+                input.addEventListener('change', function () {
+                    box.innerHTML = '';
+                    Array.from(this.files).forEach(f => {
+                        const url = URL.createObjectURL(f);
+                        const wrap = document.createElement('div');
+                        wrap.className = 'img-wrap';
+                        const img = document.createElement('img');
+                        img.src = url;
+                        wrap.appendChild(img);
+                        box.appendChild(wrap);
+                    });
+                });
+            }
+        });
     </script>
 </th:block>
 </body>

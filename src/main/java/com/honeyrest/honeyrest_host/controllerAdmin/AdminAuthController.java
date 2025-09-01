@@ -4,7 +4,6 @@ import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dto.AdminSignupRequestDTO;
 import com.honeyrest.honeyrest_host.dto.TokenResponseDTO;
 import com.honeyrest.honeyrest_host.service.AdminAuthService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

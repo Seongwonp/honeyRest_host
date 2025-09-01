@@ -33,7 +33,7 @@ import java.util.*;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/admin/rooms")
-public class RoomPageController {
+public class RoomController {
 
     private final RoomService roomService;
     private final RoomImageService roomImageService;
@@ -284,7 +284,7 @@ public class RoomPageController {
             }
 
             ra.addFlashAttribute("success", "객실이 수정되었습니다.");
-            return "redirect:/admin/rooms/list";
+            return "redirect:/admin/rooms/list_all";
 
         } catch (Exception e) {
             log.error("room update error", e);

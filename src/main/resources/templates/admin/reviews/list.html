@@ -4,209 +4,360 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
 <head>
-  <title>리뷰/평점 관리</title>
-  <th:block layout:fragment="head">
-    <style>
-      .badge-status{font-weight:600}
-    </style>
-  </th:block>
+    <title>리뷰 목록</title>
+    <th:block layout:fragment="head">
+        <style>
+            /* 톤 & 카드 */
+            body { background:#f7f9fc; }
+            .card { border:1px solid #e9edf5; border-radius:14px; box-shadow:0 8px 24px rgba(15,23,42,.05); }
+
+            /* 테이블 */
+            .table { margin:0; }
+            .table thead th {
+                background:#f1f5ff; color:#334155; font-weight:700;
+                border-bottom:1px solid #e2e8f0!important; vertical-align:middle;
+            }
+            .table tbody td { vertical-align:middle; border-color:#eef2f7; }
+            .table-hover tbody tr:hover { background:#fafbff; }
+
+            /* 썸네일 */
+            .thumb { width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; }
+            .thumb-empty {
+                width:60px; height:60px; border-radius:8px;
+                display:flex; align-items:center; justify-content:center;
+                border:1px dashed #cbd5e1; color:#94a3b8; font-size:.75rem;
+                background:linear-gradient(180deg,#fff,#fbfdff);
+            }
+            .img-count-badge{
+                font-size:.72rem; color:#475569; background:#eef2ff;
+                border:1px solid #e0e7ff; border-radius:999px; padding:.15rem .45rem; display:inline-block; margin-top:.35rem;
+            }
+
+            /* 상태 뱃지 */
+            .badge-status {
+                font-weight:700; padding:.35rem .65rem; border-radius:999px; font-size:.78rem;
+                border:1px solid transparent; letter-spacing:.2px;
+            }
+            .badge-visible  { background:#dcfce7; color:#166534; border-color:#bbf7d0; }
+            .badge-hidden   { background:#f1f5f9; color:#334155; border-color:#e2e8f0; }
+            .badge-reported { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+            .badge-pending  { background:#fef3c7; color:#7c2d12; border-color:#fde68a; }
+
+            /* 액션 버튼 */
+            .btn-action { border-radius:9px; font-size:.86rem; font-weight:700; padding:.35rem .7rem; }
+            .btn-detail { border:1.5px solid #3b82f6; color:#1d4ed8; background:#fff; }
+            .btn-detail:hover { background:#eff6ff; color:#1e40af; }
+            .btn-toggle { border:1.5px solid #64748b; color:#334155; background:#fff; }
+            .btn-toggle:hover { background:#f1f5f9; }
+
+            /* 텍스트 잘림 */
+            .text-clip { max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#475569; }
+            .sub-muted { font-size:.82rem; color:#94a3b8; margin-top:.2rem; }
+            /* ── pill(알약) 버튼 공통 ─────────────────────────── */
+            .btn-pill {
+                --h: 34px;
+                height: var(--h);
+                line-height: calc(var(--h) - 2px);
+                padding: 0 .9rem;
+                border-radius: 9999px;          /* 완전 둥글게 */
+                font-size: .875rem;             /* 살짝 작게 */
+                font-weight: 700;
+                display: inline-flex;
+                align-items: center;
+                gap: .35rem;
+                transition: transform .06s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease, color .2s ease;
+            }
+            .btn-pill:active { transform: translateY(1px) }
+
+            /* 상세 버튼 – 파란 외곽선, 가벼운 유리감 */
+            .btn-pill-detail {
+                background: rgba(255,255,255,.9);
+                border: 1.5px solid #3b82f6;
+                color: #1d4ed8;
+                box-shadow: 0 2px 10px rgba(15,23,42,.06);
+            }
+            .btn-pill-detail:hover { background:#eff6ff; }
+
+            /* 토글 버튼 – 중립 톤 */
+            .btn-pill-toggle {
+                background:#fff;
+                border: 1.5px solid #cbd5e1;
+                color:#334155;
+            }
+            .btn-pill-toggle:hover { background:#f8fafc; border-color:#94a3b8; }
+
+            /* 아이콘 살짝 작게 */
+            .btn-pill .bi { font-size:.9em; }
+
+            /* 버튼이 너무 커 보이면 높이를 더 줄이고 싶을 때: 아래 한 줄만 교체*/
+            /*.btn-pill{ h:30px; font-size:.82rem; }*/
+
+            .btn-pill-detail { border-color:#8b5cf6; color:#6d28d9; }          /* 보라 */
+            .btn-pill-detail:hover { background:#f5f3ff; }
+
+            .btn-pill-toggle { border-color:#ffd6e7; color:#be185d; }           /* 로즈 */
+            .btn-pill-toggle:hover { background:#fff1f5; border-color:#f9a8d4; }
+        </style>
+    </th:block>
 </head>
+
 <body>
 <th:block layout:fragment="content">
-  <div class="page-heading">
-    <h3 class="mb-1">리뷰/평점 관리</h3>
-    <p class="text-muted">승인/숨김/삭제 등 리뷰 상태를 관리합니다.</p>
-  </div>
 
-  <div class="card">
-    <div class="card-body">
-      <form id="filterForm" class="row g-2 align-items-end mb-3">
-        <div class="col-md-3">
-          <label class="form-label">상태</label>
-          <select id="status" class="form-select">
-            <option value="">전체</option>
-            <option value="PUBLISHED">PUBLISHED</option>
-            <option value="PENDING">PENDING</option>
-            <option value="HIDDEN">HIDDEN</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">객실 ID(선택)</label>
-          <input id="roomId" class="form-control" type="number" placeholder="예) 101">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">페이지 크기</label>
-          <select id="size" class="form-select">
-            <option value="10" selected>10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-        </div>
-        <div class="col-md-2">
-          <button class="btn btn-outline-primary w-100" type="submit">적용</button>
-        </div>
-      </form>
+    <!-- 헤더/필터/뷰 토글 -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold mb-0">리뷰 관리</h3>
 
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
-          <tr>
-            <th style="width:90px">ID</th>
-            <th>숙소 / 객실</th>
-            <th>작성자</th>
-            <th style="width:110px">평점</th>
-            <th>내용</th>
-            <th style="width:120px">상태</th>
-            <th style="width:160px">작성일</th>
-            <th style="width:140px">관리</th>
-          </tr>
-          </thead>
-          <tbody id="reviewBody">
-          <tr><td colspan="8" class="text-center text-muted py-5">로딩중...</td></tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="d-flex gap-2">
+            <!-- 필터 -->
+            <form class="d-flex gap-2" method="get" th:action="@{/admin/reviews/list}">
+                <input type="hidden" name="view" th:value="${view != null ? view : 'list'}"/>
+                <select name="status" class="form-select form-select-sm" style="width:auto">
+                    <option value="">전체 상태</option>
+                    <option value="VISIBLE"  th:selected="${status=='VISIBLE'}">노출</option>
+                    <option value="HIDDEN"   th:selected="${status=='HIDDEN'}">숨김</option>
+                    <option value="REPORTED" th:selected="${status=='REPORTED'}">신고</option>
+                    <option value="PENDING"  th:selected="${status=='PENDING'}">검토중</option>
+                </select>
+                <select name="sort" class="form-select form-select-sm" style="width:auto">
+                    <option value="latest"     th:selected="${sort=='latest'}">최신순</option>
+                    <option value="ratingDesc" th:selected="${sort=='ratingDesc'}">평점 높은순</option>
+                    <option value="ratingAsc"  th:selected="${sort=='ratingAsc'}">평점 낮은순</option>
+                </select>
+                <input type="hidden" name="page" th:value="${pageRequestDTO.page}">
+                <input type="hidden" name="size" th:value="${pageRequestDTO.size}">
+                <button class="btn btn-sm btn-outline-secondary">적용</button>
+            </form>
 
-      <nav>
-        <ul id="pager" class="pagination justify-content-center mt-3"></ul>
-      </nav>
+            <!-- 뷰 토글 -->
+            <div class="btn-group">
+                <a class="btn btn-sm" th:classappend="${view}=='list' ? 'btn-primary' : 'btn-outline-primary'"
+                   th:href="@{/admin/reviews/list(view='list', status=${status}, sort=${sort}, page=${pageRequestDTO.page}, size=${pageRequestDTO.size})}">
+                    <i class="bi bi-table"></i> 리스트
+                </a>
+                <a class="btn btn-sm" th:classappend="${view}=='grid' ? 'btn-primary' : 'btn-outline-primary'"
+                   th:href="@{/admin/reviews/list(view='grid', status=${status}, sort=${sort}, page=${pageRequestDTO.page}, size=${pageRequestDTO.size})}">
+                    <i class="bi bi-grid-3x3-gap"></i> 카드
+                </a>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <!-- ================= 리스트 뷰 ================= -->
+    <div class="card" th:if="${view}=='list'">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                <tr>
+                    <th style="width:60px">ID</th>
+                    <th style="width:84px">이미지</th>
+                    <th>숙소/객실</th>
+                    <th style="width:140px">작성자</th>
+                    <th style="width:80px">평점</th>
+                    <th>내용</th>
+                    <th style="width:120px">상태</th>
+                    <th style="width:150px">작성일</th>
+                    <th style="width:200px">액션</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${page == null or #lists.isEmpty(page.dtoList)}">
+                    <td colspan="9" class="text-center text-muted py-4">리뷰가 없습니다.</td>
+                </tr>
+
+                <tr th:each="review : ${page.dtoList}">
+                    <td th:text="${review.reviewId}">1</td>
+
+                    <!-- 썸네일 -->
+                    <td>
+                        <div th:if="${thumbUrlMap[review.reviewId] != null}">
+                            <img th:src="${thumbUrlMap[review.reviewId]}" class="thumb" alt="thumb">
+                            <div class="img-count-badge"
+                                 th:text="${imageCountMap[review.reviewId] != null ? imageCountMap[review.reviewId] : 1} + '장'">1장</div>
+                        </div>
+                        <div th:if="${thumbUrlMap[review.reviewId] == null}" class="thumb-empty">이미지 없음</div>
+                    </td>
+
+                    <!-- 숙소/객실 -->
+                    <td>
+                        <div class="fw-semibold"
+                             th:text="${review.accommodationName != null ? review.accommodationName : '숙소ID: ' + review.accommodationId}">숙소명</div>
+                        <div class="sub-muted"
+                             th:text="${review.roomName != null ? review.roomName : '객실ID: ' + review.roomId}">객실명</div>
+                    </td>
+
+                    <!-- 작성자 -->
+                    <td th:text="${review.userName != null ? review.userName : review.userId}">작성자</td>
+
+                    <!-- 평점 -->
+                    <td th:text="${review.rating != null ? #numbers.formatDecimal(review.rating,1,1) : '-'}">-</td>
+
+                    <!-- 내용 -->
+                    <td>
+                        <div class="text-clip" th:text="${review.content != null ? review.content : ''}">내용 미리보기</div>
+                    </td>
+
+                    <!-- 상태 -->
+                    <td>
+                        <span class="badge-status"
+                              th:classappend="${
+                                  review.status=='VISIBLE'  ? ' badge-visible'  :
+                                  review.status=='HIDDEN'   ? ' badge-hidden'   :
+                                  review.status=='REPORTED' ? ' badge-reported' :
+                                                              ' badge-pending'
+                              }"
+                              th:text="${review.status}">VISIBLE</span>
+                    </td>
+
+                    <!-- 작성일 -->
+                    <td th:text="${review.createdAt != null ? #temporals.format(review.createdAt,'yyyy-MM-dd HH:mm') : '-'}">-</td>
+
+                    <!-- 액션 -->
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <a class="btn btn-pill btn-pill-detail" th:href="@{/admin/reviews/detail/{id}(id=${review.reviewId})}">
+                                <i class="bi bi-search"></i> 상세
+                            </a>
+
+                            <!-- 상태 토글: VISIBLE ↔ HIDDEN -->
+                            <form th:action="@{/admin/reviews/{id}/toggle(id=${review.reviewId})}" method="post"
+                                  onsubmit="this.querySelector('button[type=submit]').disabled=true;">
+                                <input type="hidden" th:if="${_csrf != null}"
+                                       th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <!-- 컨텍스트 유지 -->
+                                <input type="hidden" name="view"   th:value="${view}">
+                                <input type="hidden" name="status" th:value="${status}">
+                                <input type="hidden" name="sort"   th:value="${sort}">
+                                <input type="hidden" name="page"   th:value="${pageRequestDTO.page}">
+                                <input type="hidden" name="size"   th:value="${pageRequestDTO.size}">
+                                <button type="submit" class="btn btn-pill btn-pill-toggle"
+                                        th:text="${review.status=='VISIBLE' ? '숨김' : '노출'}"></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ================= 카드 뷰 ================= -->
+    <div th:if="${view}=='grid'">
+        <div class="row g-3">
+            <div class="col-12" th:if="${page == null or #lists.isEmpty(page.dtoList)}">
+                <div class="text-center text-muted py-4">리뷰가 없습니다.</div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-4" th:each="review : ${page.dtoList}">
+                <div class="card shadow-sm h-100 border-0" style="border-radius:14px; overflow:hidden;">
+                    <!-- 이미지 -->
+                    <div class="position-relative" style="background:#f7f8fb;">
+                        <img th:if="${thumbUrlMap[review.reviewId] != null}"
+                             th:src="${thumbUrlMap[review.reviewId]}"
+                             alt="리뷰 이미지"
+                             style="width:100%; height:180px; object-fit:cover;">
+                        <div th:if="${thumbUrlMap[review.reviewId] == null}"
+                             class="d-flex align-items-center justify-content-center"
+                             style="height:180px; color:#94a3b8; font-weight:600;">
+                            이미지 없음
+                        </div>
+                        <span th:if="${imageCountMap[review.reviewId] != null}"
+                              class="badge bg-dark position-absolute end-0 m-2"
+                              th:text="${imageCountMap[review.reviewId]} + '장'">0장</span>
+                    </div>
+
+                    <!-- 본문 -->
+                    <div class="card-body">
+                        <div class="d-flex align-items-start justify-content-between mb-2">
+                            <div class="fw-semibold"
+                                 th:text="${review.accommodationName != null ? review.accommodationName : '숙소ID: ' + review.accommodationId}">숙소명</div>
+                            <span class="badge-status"
+                                  th:classappend="${
+                                    review.status=='VISIBLE'  ? ' badge-visible' :
+                                    review.status=='HIDDEN'   ? ' badge-hidden'  :
+                                    review.status=='REPORTED' ? ' badge-reported':
+                                                                ' badge-pending'}"
+                                  th:text="${review.status}">VISIBLE</span>
+                        </div>
+
+                        <div class="text-muted small mb-1"
+                             th:text="${review.roomName != null ? review.roomName : '객실ID: ' + review.roomId}">객실명</div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="small text-secondary" th:text="${review.userName != null ? review.userName : review.userId}">작성자</div>
+                            <div class="fw-bold">
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <span th:text="${review.rating != null ? #numbers.formatDecimal(review.rating,1,1) : '-'}">-</span>
+                            </div>
+                        </div>
+
+                        <div class="text-truncate-2 small" style="-webkit-line-clamp:2; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden;"
+                             th:text="${review.content != null ? review.content : ''}">
+                            내용 미리보기
+                        </div>
+
+                        <div class="text-muted small mt-2"
+                             th:text="${review.createdAt != null ? #temporals.format(review.createdAt,'yyyy-MM-dd HH:mm') : '-'}">-</div>
+                    </div>
+
+                    <!-- 액션 -->
+                    <div class="card-footer bg-white border-0 pt-0 pb-3 px-3">
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-pill btn-pill-detail" th:href="@{/admin/reviews/detail/{id}(id=${review.reviewId})}">
+                                <i class="bi bi-search"></i> 상세
+                            </a>
+                            <form th:action="@{/admin/reviews/{id}/toggle(id=${review.reviewId})}" method="post"
+                                  onsubmit="this.querySelector('button[type=submit]').disabled=true;">
+                                <input type="hidden" th:if="${_csrf != null}"
+                                       th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <input type="hidden" name="view"   th:value="${view}">
+                                <input type="hidden" name="status" th:value="${status}">
+                                <input type="hidden" name="sort"   th:value="${sort}">
+                                <input type="hidden" name="page"   th:value="${pageRequestDTO.page}">
+                                <input type="hidden" name="size"   th:value="${pageRequestDTO.size}">
+                                <button type="submit" class="btn btn-pill btn-pill-toggle"
+                                        th:text="${review.status=='VISIBLE' ? '숨김' : '노출'}"></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /col -->
+        </div>
+    </div>
+
+    <!-- 페이지네이션 (뷰/필터 유지) -->
+    <nav class="mt-3" th:if="${page.total > 0}">
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item" th:classappend="${pageRequestDTO.page == 1}? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/admin/reviews/list(view=${view}, page=${pageRequestDTO.page-1}, size=${pageRequestDTO.size}, status=${status}, sort=${sort})}">&laquo;</a>
+            </li>
+            <li class="page-item" th:each="i : ${#numbers.sequence(1, page.totalPages)}"
+                th:classappend="${i == pageRequestDTO.page}? 'active'">
+                <a class="page-link"
+                   th:href="@{/admin/reviews/list(view=${view}, page=${i}, size=${pageRequestDTO.size}, status=${status}, sort=${sort})}"
+                   th:text="${i}">1</a>
+            </li>
+            <li class="page-item" th:classappend="${pageRequestDTO.page == page.totalPages}? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/admin/reviews/list(view=${view}, page=${pageRequestDTO.page+1}, size=${pageRequestDTO.size}, status=${status}, sort=${sort})}">&raquo;</a>
+            </li>
+        </ul>
+    </nav>
+
 </th:block>
 
+<!-- 플래시 메시지 -->
 <th:block layout:fragment="body-end">
-  <script>
-    (() => {
-      const bodyEl  = document.getElementById('reviewBody');
-      const pagerEl = document.getElementById('pager');
-      const statusEl= document.getElementById('status');
-      const sizeEl  = document.getElementById('size');
-      const roomEl  = document.getElementById('roomId');
-
-      let state = { page: 0, size: Number(sizeEl.value)||10, totalPages: 1 };
-
-      const esc = s => String(s ?? '').replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
-      const badge = st => {
-        const map = { PUBLISHED:'bg-success', PENDING:'bg-warning text-dark', HIDDEN:'bg-secondary' };
-        return `<span class="badge badge-status ${map[st]||'bg-light text-dark'}">${st ?? '-'}</span>`;
-      };
-      const fmtDate = d => {
-        if(!d) return '-';
-        if (typeof d==='string' && d.length<=16) return d;
-        const t=new Date(d); if(isNaN(t)) return d;
-        return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')+' '
-                + String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
-      };
-
-      function rows(items){
-        if(!items || items.length===0){
-          bodyEl.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-5">데이터가 없습니다.</td></tr>`;
-          return;
-        }
-        bodyEl.innerHTML = items.map(x => `
-            <tr>
-              <td>${x.reviewId}</td>
-              <td>
-                <div class="fw-semibold">${esc(x.accommodationName ?? '-')}</div>
-                <div class="small text-muted">${esc(x.roomName ?? '')}</div>
-              </td>
-              <td>${esc(x.userName ?? '-')}</td>
-              <td>${x.rating != null ? Number(x.rating).toFixed(1) : '-'}</td>
-              <td>${esc(x.content ?? '')}</td>
-              <td>${badge(x.status)}</td>
-              <td>${fmtDate(x.createdAt)}</td>
-              <td class="d-flex gap-1">
-                <button class="btn btn-sm btn-outline-success" data-act="publish" data-id="${x.reviewId}">승인</button>
-                <button class="btn btn-sm btn-outline-secondary" data-act="hide" data-id="${x.reviewId}">숨김</button>
-                <button class="btn btn-sm btn-outline-danger" data-act="delete" data-id="${x.reviewId}">삭제</button>
-              </td>
-            </tr>
-        `).join('');
-      }
-
-      function pager(total, size){
-        const pages = Math.max(1, Math.ceil((total ?? 0) / (size||10)));
-        state.totalPages = pages;
-        const cur = state.page;
-        let html = '';
-        const li = (disabled, active, page, label) =>
-                `<li class="page-item ${disabled?'disabled':''} ${active?'active':''}">
-               <a class="page-link" href="#" data-page="${page}">${label}</a>
-             </li>`;
-        html += li(cur===0,false,cur-1,'«');
-        for(let i=0;i<pages;i++) html += li(false, i===cur, i, i+1);
-        html += li(cur===pages-1,false,cur+1,'»');
-        pagerEl.innerHTML = html;
-      }
-
-      const qs = () => {
-        const p = new URLSearchParams();
-        const st = statusEl.value.trim();
-        const roomId = roomEl.value.trim();
-        if(st) p.set('status', st);
-        if(roomId) p.set('roomId', roomId);
-        p.set('page', state.page);
-        p.set('size', state.size);
-        return p.toString();
-      };
-
-      async function load(){
-        bodyEl.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-5">로딩중...</td></tr>`;
-        try{
-          // ✅ 실제 API에 맞게 경로 조정
-          const res = await fetch('/api/reviews?' + qs());
-          if(!res.ok) throw new Error('목록 호출 실패');
-          const data = await res.json(); // { dtoList, total, size... } 가정
-          rows(data.dtoList || data.items || []);
-          pager(Number(data.total ?? 0), Number(data.size ?? state.size));
-        }catch(e){
-          console.error(e);
-          bodyEl.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-5">목록을 불러오지 못했습니다.</td></tr>`;
-        }
-      }
-
-      document.getElementById('filterForm').addEventListener('submit', e=>{
-        e.preventDefault();
-        state.page = 0;
-        state.size = Number(sizeEl.value)||10;
-        load();
-      });
-
-      pagerEl.addEventListener('click', e=>{
-        const a = e.target.closest('a[data-page]'); if(!a) return;
-        e.preventDefault();
-        const p = Number(a.dataset.page);
-        if(isNaN(p)||p<0||p>=state.totalPages) return;
-        state.page = p; load();
-      });
-
-      // 액션(승인/숨김/삭제)
-      bodyEl.addEventListener('click', async e=>{
-        const btn = e.target.closest('button[data-act]'); if(!btn) return;
-        const id  = btn.dataset.id;
-        const act = btn.dataset.act;
-
-        try{
-          let res;
-          if(act==='publish'){
-            res = await fetch(`/api/reviews/${id}/publish`, { method:'PATCH' });
-          }else if(act==='hide'){
-            res = await fetch(`/api/reviews/${id}/hide`, { method:'PATCH' });
-          }else if(act==='delete'){
-            if(!confirm('삭제하시겠습니까?')) return;
-            res = await fetch(`/api/reviews/${id}`, { method:'DELETE' });
-          }
-          if(!res.ok) throw new Error('요청 실패');
-          load();
-        }catch(err){
-          console.error(err);
-          alert('처리 중 오류가 발생했습니다.');
-        }
-      });
-
-      load();
-    })();
-  </script>
+    <script th:inline="javascript">
+        (function () {
+            var s = /*[[${success}]]*/ null;
+            var e = /*[[${error}]]*/   null;
+            if (s) alert(s);
+            if (e) alert(e);
+        })();
+    </script>
 </th:block>
 </body>
 </html>

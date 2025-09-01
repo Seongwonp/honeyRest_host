@@ -11,6 +11,7 @@ public class PageResponseDTO<E> {
     private int page;
     // 한페이지에 몇개 보여껀지
     private int size;
+
     // 전체 페이지 숫자
     private int total;
 
@@ -18,7 +19,6 @@ public class PageResponseDTO<E> {
     private int start;
     //끝 페이지 번호
     private int end;
-
     // 이전 페이지 존재 여부
     private boolean prev;
     // 다음 페이지의 존재 여부
@@ -26,7 +26,7 @@ public class PageResponseDTO<E> {
 
     private List<E> dtoList;
 
-    @Builder(builderMethodName = "withALl")
+    @Builder(builderMethodName = "withAll")
     public PageResponseDTO(PageRequestDTO pageRequestDTO, List<E> dtoList, int total) {// 매개변수 3개
         // PageRequestDTO 여기서 이거 두개만 받아오면 되니까.
         this.page = pageRequestDTO.getPage();
@@ -70,5 +70,11 @@ public class PageResponseDTO<E> {
         this.next = total > this.end * this.page; // 마지막까지 나왔던 게시물 숫자. ex) 20 * 10
 
     }
+    public int getTotalPages() {
+        if (size <= 0) return 0;
+        return (int)Math.ceil((double) total / size);
+    }
+    public boolean isFirst() { return page <= 0; }
+    public boolean isLast()  { return page >= Math.max(0, getTotalPages() - 1); }
 
 }

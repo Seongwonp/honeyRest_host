@@ -1,10 +1,319 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>리뷰 상세</title>
+    <th:block layout:fragment="head">
+        <style>
+            :root {
+                --bg: #f6f7fb;
+                --card: #fff;
+                --ink: #24324a;
+                --muted: #6b7280;
+                --pri: #7aa7ff;
+                --pri-ink: #0f3b8c;
+                --accent: #ffd7e1;
+                --mint: #c9f2e6;
+                --lav: #e6e9ff;
+                --lemon: #fff3c7;
+                --line: #e8eaf2;
+                --shadow: 0 6px 22px rgba(26, 40, 66, .06);
+                --radius: 14px;
+            }
+
+            body {
+                background: var(--bg);
+                color: var(--ink);
+            }
+
+            h3 {
+                font-weight: 800;
+                letter-spacing: -.2px
+            }
+
+            .card {
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow)
+            }
+
+            .card-body {
+                padding: 1.25rem
+            }
+
+            .section-title {
+                font-weight: 700;
+                color: var(--muted);
+                font-size: .95rem;
+                letter-spacing: .2px;
+                margin: .75rem 0 .25rem
+            }
+
+            .divider {
+                height: 1px;
+                background: var(--line);
+                margin: 1rem 0
+            }
+
+            .form-label {
+                font-weight: 700;
+                color: var(--muted);
+                font-size: .85rem
+            }
+
+            .readonly-box {
+                background: #fbfcff;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                padding: .8rem .9rem
+            }
+
+            .chip {
+                display: inline-flex;
+                align-items: center;
+                gap: .45rem;
+                padding: .4rem .7rem;
+                border-radius: 999px;
+                font-weight: 700;
+                font-size: .78rem;
+                border: 1px solid transparent
+            }
+
+            .chip-visible {
+                background: #e8f5ff;
+                color: #0b4c86;
+                border-color: #cfe7ff
+            }
+
+            .chip-pending {
+                background: var(--lemon);
+                color: #7a5a00;
+                border-color: #f6e7a2
+            }
+
+            .chip-hidden {
+                background: #f1f2f6;
+                color: #4b5563;
+                border-color: #e5e7eb
+            }
+
+            .chip-pink {
+                background: var(--accent);
+                color: #8a1130;
+                border-color: #ffc1d1
+            }
+
+            .chip-mint {
+                background: var(--mint);
+                color: #106b5e;
+                border-color: #b9e9dc
+            }
+
+            .chip-lav {
+                background: var(--lav);
+                color: #28347a;
+                border-color: #d7dbff
+            }
+
+            .btn-primary {
+                background: var(--pri);
+                border-color: var(--pri);
+                font-weight: 700;
+                border-radius: 10px
+            }
+
+            .btn-primary:hover {
+                filter: brightness(.95)
+            }
+
+            .btn-outline-secondary, .btn-outline-danger {
+                border-radius: 10px
+            }
+
+            .meta-row {
+                display: flex;
+                gap: .5rem;
+                flex-wrap: wrap
+            }
+        </style>
+    </th:block>
 </head>
 <body>
+<th:block layout:fragment="content">
 
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">리뷰 상세</h3>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" th:href="@{/admin/reviews/list}">
+                <i class="bi bi-list me-1"></i>목록
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <!-- 바인딩 대상은 review DTO -->
+        <div class="card-body">
+            <form th:object="${review}" th:action="@{/admin/reviews/detail/{id}(id=*{reviewId})}" method="post"
+                  enctype="multipart/form-data">
+
+                <input type="hidden" th:field="*{reviewId}"/>
+
+                <!-- 상단 메타 정보 (아이콘 칩) -->
+                <div class="meta-row">
+  <span class="chip chip-lav">
+    <i class="bi bi-person"></i>
+    <span th:text="*{userName != null ? userName : '회원ID: ' + userId}">작성자</span>
+  </span>
+
+                    <span class="chip chip-lav">
+    <i class="bi bi-calendar2-check"></i>
+    <span th:text="*{createdAt != null ? #temporals.format(createdAt,'yyyy-MM-dd HH:mm') : '-'}">작성일</span>
+  </span>
+
+                    <span class="chip chip-mint">
+    <i class="bi bi-house-door"></i>
+    <span th:text="*{accommodationName != null ? accommodationName : '숙소ID: ' + accommodationId}">숙소</span>
+  </span>
+
+                    <span class="chip chip-pink">
+    <i class="bi bi-door-open"></i>
+    <span th:text="*{roomName != null ? roomName : '객실ID: ' + roomId}">객실</span>
+  </span>
+                </div>
+
+                <!-- 상태 배지: 맵 리터럴로 안전하게 클래스 선택 -->
+                <span class="chip"
+                      th:classappend="*{status}=='VISIBLE' ? ' chip-visible' :
+                      (*{status}=='PENDING' ? ' chip-pending' :
+                      (*{status}=='HIDDEN'  ? ' chip-hidden'  : ' chip-lav'))">
+  상태: <strong th:text="*{status}">VISIBLE</strong>
+</span>
+
+                <span class="chip chip-mint">
+            <i class="bi bi-heart-fill"></i>
+            <strong th:text="*{likeCount != null ? likeCount : 0}">0</strong>
+          </span>
+
+                <div class="divider"></div>
+
+                <!-- 디테일 필드 -->
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="section-title"><i class="bi bi-hash me-1"></i>리뷰 ID</div>
+                        <div class="readonly-box" th:text="*{reviewId}">-</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="section-title"><i class="bi bi-ticket-detailed me-1"></i>예약 ID</div>
+                        <div class="readonly-box" th:text="*{reservationId}">-</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="section-title"><i class="bi bi-star-half me-1"></i>종합 평점</div>
+                        <div class="readonly-box"
+                             th:text="*{rating != null ? #numbers.formatDecimal(rating,1,'POINT',1,'POINT') : '-'}">-
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="section-title"><i class="bi bi-stars me-1"></i>청결 / 서비스 / 위치</div>
+                        <div class="readonly-box">
+                            <span th:text="*{cleanlinessRating != null ? #numbers.formatDecimal(cleanlinessRating,1,'POINT',1,'POINT') : '-'}"></span>
+                            /
+                            <span th:text="*{serviceRating != null ? #numbers.formatDecimal(serviceRating,1,'POINT',1,'POINT') : '-'}"></span>
+                            /
+                            <span th:text="*{locationRating != null ? #numbers.formatDecimal(locationRating,1,'POINT',1,'POINT') : '-'}"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-12">
+                        <div class="section-title"><i class="bi bi-chat-square-text me-1"></i>리뷰 내용</div>
+                        <div class="readonly-box" style="white-space:pre-wrap" th:text="*{content}">-</div>
+                    </div>
+                </div>
+
+                <!-- 갤러리 -->
+                <div class="row g-3 mt-3"
+                     th:if="${review.imageList != null and !#lists.isEmpty(review.imageList)}">
+                    <div class="col-12">
+                        <div class="section-title d-flex align-items-center gap-2">
+                            <i class="bi bi-images"></i>
+                            <span>첨부 이미지</span>
+                            <span class="badge bg-light text-dark"
+                                  th:text="${#lists.size(review.imageList)} + '장'">0장</span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <img th:each="img : ${review.imageList}"
+                                 th:src="${img.imageUrl}"
+                                 alt="리뷰 이미지"
+                                 style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid #eee;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- (선택) 이미지 없을 때 플레이스홀더 -->
+                <div class="text-muted mt-3"
+                     th:if="${review.imageList == null or #lists.isEmpty(review.imageList)}">
+                    첨부 이미지가 없습니다.
+                </div>
+
+
+                <div class="divider"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-shield-check me-1"></i>상태</label>
+                        <select class="form-select" th:field="*{status}">
+                            <option value="VISIBLE">VISIBLE</option>
+                            <option value="PENDING">PENDING</option>
+                            <option value="HIDDEN">HIDDEN</option>
+                        </select>
+                        <div class="text-danger small" th:errors="*{status}"></div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label"><i class="bi bi-reply me-1"></i>업체/관리자 답변</label>
+                        <textarea class="form-control" rows="5" th:field="*{reply}" placeholder="답변을 입력하세요."></textarea>
+                        <div class="text-danger small" th:errors="*{reply}"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-save2 me-1"></i>저장
+                    </button>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/reviews/list}">
+                        <i class="bi bi-arrow-left me-1"></i>목록
+                    </a>
+                </div>
+            </form>
+
+            <!-- 삭제 (중첩 form 금지, 별도) -->
+            <form class="mt-2" th:object="${review}"
+                  th:action="@{/admin/reviews/{id}/delete(id=*{reviewId})}" method="post"
+                  onsubmit="return confirm('삭제하시겠습니까? (HIDDEN/소프트 삭제일 수 있음)');">
+<!--                <input type="hidden" th:if="${_csrf != null}"-->
+<!--                       th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>-->
+                <button class="btn btn-outline-danger" type="submit">
+                    <i class="bi bi-trash3 me-1"></i>삭제
+                </button>
+            </form>
+        </div>
+</th:block>
+
+<th:block layout:fragment="body-end">
+    <script th:inline="javascript">
+        (function () {
+            var s = /*[[${success}]]*/ null;
+            var e = /*[[${error}]]*/   null;
+            if (s) alert(s);
+            if (e) alert(e);
+        })();
+    </script>
+</th:block>
 </body>
 </html>

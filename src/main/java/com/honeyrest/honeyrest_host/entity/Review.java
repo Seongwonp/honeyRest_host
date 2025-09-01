@@ -39,7 +39,7 @@ public class Review extends  BaseEntity {
     private Long roomId;
 
     // 평점 (0.00 ~ 5.00 등)
-    @Column(name = "rating", precision = 3, scale = 2, nullable = false)
+    @Column(name = "rating", precision = 3, scale = 1, nullable = false)
     private BigDecimal rating; // 종합 평점
 
     @Column(name = "cleanliness_rating", precision = 3, scale = 2)

@@ -3,33 +3,32 @@ package com.honeyrest.honeyrest_host.dto;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class ReviewDTO {
 
     private Long reviewId;
-
     @NotNull
     private Long reservationId;
-
     @NotNull
     private Long userId;
 
-    @NotNull
     private Long accommodationId; // 중복 저장 컬럼 (FK 아님)
-
-    @NotNull
     private Long roomId;
 
     @NotNull
+    @DecimalMin(value = "0.00")
+    @DecimalMax(value = "5.00")
     private BigDecimal rating; // 종합 평점 (0.00 ~ 5.00 등)
 
 
@@ -54,8 +53,23 @@ public class ReviewDTO {
 
     private Integer likeCount; // 좋아요 수
 
-    @NotBlank
     private String status; //VISIBLE 노출, HIDDEN 숨김(소프트 삭제),REPORTED 신고,PENDING 임시저장/검토 전
+
+    // BaseEntity 타임스탬프 매핑용
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    // 화면 표시용
+    private String accommodationName;
+    private String roomName;
+    private String userName;
+
+    // 리뷰 이미지 업로드
+    private List<MultipartFile> images;
+    // 조회 (DB 에서 가져온 이미지 목록)
+    private List<ReviewImageDTO> imageList;
+
+
 }
 
 

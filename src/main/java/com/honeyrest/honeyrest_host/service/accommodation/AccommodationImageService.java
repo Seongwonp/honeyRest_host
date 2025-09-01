@@ -10,7 +10,6 @@ public interface AccommodationImageService {
     // 단건 업로드(파일 → URL 저장 → 엔티티 저장)
     AccommodationImageDTO saveOrUpload(Long accommodationId, AccommodationImageDTO dto);
 
-
     @Transactional(readOnly = true)
     List<AccommodationImageDTO> getImages(Long accommodationId);
 
@@ -19,6 +18,9 @@ public interface AccommodationImageService {
 
     //삭제
     void delete(Long imageId);
+
+    // 여러장 삭제
+    void deleteSubImages(List<Long> imageIds);
     // 정렬 변경 옵션
     void updateSort(Long ImageId, Integer sortOrder);
 
@@ -27,6 +29,7 @@ public interface AccommodationImageService {
 
     List<AccommodationImageDTO> getByAccommodation_AccommodationId(Long accommodationId,String imageType);
 
+    //숙소 엔티티의 썸네일 url 동기화
     @Transactional
     void updateThumbnailUrl(Long accommodationId, String thumbnailUrl);
 }

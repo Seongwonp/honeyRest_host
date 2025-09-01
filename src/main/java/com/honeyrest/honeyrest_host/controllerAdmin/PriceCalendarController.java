@@ -5,24 +5,16 @@ import com.honeyrest.honeyrest_host.dto.DailyOverviewDTO;
 import com.honeyrest.honeyrest_host.dto.GridCellDTO;
 import com.honeyrest.honeyrest_host.dto.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.dto.RoomDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.repository.CompanyRepository;
-
-import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
 import com.honeyrest.honeyrest_host.service.CompanyService;
 import com.honeyrest.honeyrest_host.service.PriceCalendarService;
 import com.honeyrest.honeyrest_host.service.RoomService;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
@@ -38,7 +30,7 @@ import java.util.Map;
 @Controller
 @RequestMapping("/admin/price")
 @RequiredArgsConstructor
-public class PriceCalendarPageController {
+public class PriceCalendarController {
 
     private final PriceCalendarService priceCalendarService;
     private final RoomService roomService;

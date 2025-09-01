@@ -3,20 +3,14 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dto.CompanyDTO;
 import com.honeyrest.honeyrest_host.dto.RegionDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.*;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.entity.AccommodationImage;
-import com.honeyrest.honeyrest_host.entity.AccommodationTag;
-import com.honeyrest.honeyrest_host.entity.Region;
 import com.honeyrest.honeyrest_host.repository.CancellationPolicyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
-import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationCategoryRepository;
-import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationTagRepository;
 import com.honeyrest.honeyrest_host.service.CancellationPolicyService;
 import com.honeyrest.honeyrest_host.service.RegionService;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationCategoryService;
@@ -47,7 +41,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 
 
 @Log4j2
@@ -69,7 +63,7 @@ public class AccommodationPageController {
     private final RegionRepository regionRepository;
     private final AccommodationCategoryService accommodationCategoryService;
     private final RegionService regionService;
-    private final CancellationPolicyRepository cancellationPolicyRepository;
+
 
     /*
      * 등록 화면
@@ -367,6 +361,9 @@ public class AccommodationPageController {
                              BindingResult binding,
                              @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnailFile,
                              @RequestParam(value = "subImages", required = false) List<MultipartFile> subImages,
+                             // 삭제 토글/리스트 (UI에서 hidden으로 전달)
+                             @RequestParam(value = "deleteThumbnail", defaultValue = "false") boolean deleteThumbnail,
+                             @RequestParam(value = "deleteSubImageIds", required = false) List<Long> deleteSubImageIds,
                              RedirectAttributes ra,
                              Model model) {
 
@@ -387,6 +384,12 @@ public class AccommodationPageController {
 
             // 2) 썸네일 처리
             String newMainUrl = null;
+
+            if(deleteThumbnail) {
+                // ui 에서 삭제 토글한 경우
+                accommodationImageService.delete(id);
+                form.setThumbnail(null);
+            }
             if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
                 // 파일 업로드한 경우 → 새 URL을 DTO에 넣어 엔티티 필드에도 반영되게
                 newMainUrl = fileUploadUtil.upload(thumbnailFile, "accommodation");
@@ -409,6 +412,11 @@ public class AccommodationPageController {
                                 .imageUrl(newMainUrl)
                                 .build()
                 );
+            }
+
+            // 기존 sub 이미지 삭제(있다면)
+            if( deleteSubImageIds != null && !deleteSubImageIds.isEmpty()) {
+                accommodationImageService.deleteSubImages(deleteSubImageIds);
             }
 
             // 5) SUB 이미지 추가

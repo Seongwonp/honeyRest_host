@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/admin/reservations")
 
-public class ReservationPageController {
+public class ReservationController {
 
     private final ReservationService reservationService;
     private final UserService userService;
@@ -57,14 +57,14 @@ public class ReservationPageController {
         if (number != null && !number.isBlank()) {
             try {
                 ReservationDTO dto = reservationService.getReservationByNumber(number.trim());
-                resp = PageResponseDTO.<ReservationDTO>withALl()
+                resp = PageResponseDTO.<ReservationDTO>withAll()
                         .pageRequestDTO(pr)
                         .dtoList(List.of(dto))
                         .total(1)
                         .build();
                 model.addAttribute("msg", null);
             } catch (Exception e) {
-                resp = PageResponseDTO.<ReservationDTO>withALl()
+                resp = PageResponseDTO.<ReservationDTO>withAll()
                         .pageRequestDTO(pr)
                         .dtoList(List.of())
                         .total(0)
