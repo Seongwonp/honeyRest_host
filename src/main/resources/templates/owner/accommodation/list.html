@@ -59,10 +59,6 @@
         cursor: pointer;
     }
 
-    .page-heading h3 {
-        margin-bottom: 1.5rem;
-    }
-
     .section {
         margin-top: 2rem;
     }
@@ -80,7 +76,7 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <h3 th:text="${company != null} ? ${company.name} + ' 숙소 리스트' : '전체 숙소 리스트'">숙소 리스트</h3>
+        <h3 th:text="${company != null} ? ${company.name} : '전체 숙소 리스트'">숙소 리스트</h3>
         <!-- 회사 정보 카드 -->
         <div class="card shadow-lg border-0 mb-4" th:if="${company != null}">
             <!-- 헤더 -->
@@ -94,7 +90,8 @@
             <!-- 본문 -->
             <div class="card-body p-4">
                 <!-- 업체 기본 정보 -->
-                <div class="row g-4">
+                <div class="row g-4 mb-3">
+                <div class="row g-4 ">
                     <div class="col-md-6">
                         <label class="text-muted small fw-semibold">업체명</label>
                         <div class="fs-5 fw-bold" th:text="${company.name}">한강리조트</div>
@@ -160,7 +157,7 @@
                 </div>
             </div>
         </div>
-
+    </div>
         <p class="text-subtitle text-muted" th:if="${company == null}">
             업체 선택 시 해당 업체의 숙소만 조회됩니다.
         </p>
@@ -182,46 +179,42 @@
                 </div>
             </form>
         </div>
-    </div>
-    <div class="page-content">
-        <section class="section">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title mb-4">숙소 목록</h5>
-                            <div class="table-responsive">
-                                <table class="table table-striped align-middle text-center">
-                        <thead>
-                        <tr>
-                            <th>숙소 ID</th>
-                            <th>메인 사진</th>
-                            <th>숙소명</th>
-                            <th>주소</th>
-                            <th>가격</th>
-                            <th>상태</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="acc : ${accommodations}">
-                            <td th:text="${acc.accommodationId}"></td>
-                            <td><img th:src="${acc.thumbnailUrl}" alt="썸네일" height="100px"/></td>
-                            <td>
-                                <a th:href="@{'/owner/accommodation/' + ${acc.accommodationId} + '/rooms'}"
-                                   th:text="${acc.name}"></a>
-                            </td>
-                            <td th:text="${acc.address}"></td>
-                            <td th:text="${acc.minPrice}"></td>
-                            <td th:text="${acc.status}"></td>
-                        </tr>
-                        </tbody>
-                                </table>
-                            </div> <!-- /.table-responsive -->
-                        </div> <!-- /.card-body -->
-                    </div> <!-- /.card -->
+
+    <!-- 객실 리스트 카드 -->
+    <div class="mt-4">
+        <h6 class="fw-bold mb-3">숙소 목록</h6>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4" th:each="a : ${accommodations}">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">
+                            <a th:href="@{'/owner/accommodation/' + ${a.accommodationId} + '/rooms'}"
+                               th:text="${a.name}" class="text-decoration-none text-dark">숙소명</a>
+                        </h5>
+                        <p class="mb-1"><strong>룸 ID:</strong> <span th:text="${a.accommodationId}">1</span></p>
+                        <p class="mb-1"><strong>메인 이미지:</strong></p>
+                        <div class="mb-2">
+                            <img th:src="${a.thumbnailUrl}" alt="객실 이미지"
+                                 class="img-fluid rounded" style="max-width: 100%; height: 150px;">
+                        </div>
+                        <p class="mb-1"><strong>주소:</strong> <span th:text="${a.address}">스탠다드</span></p>
+                        <p class="mb-1"><strong>체크인 시간:</strong> <span th:text="${a.checkInTime}">4</span></p>
+                        <p class="mb-1"><strong>체크아웃 시간:</strong> <span th:text="${a.checkOutTime}">2</span></p>
+                        <p class="mb-1"><strong>기준 가격:</strong> <span th:text="${a.minPrice + ' 원'}">120,000 원</span></p>
+                        <p class="mb-1"><strong>설명:</strong> <span th:text="${a.description}">10</span></p>
+                        <p class="mb-1"><strong>상태:</strong> <span th:text="${a.status}">예약 가능</span></p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-end gap-2">
+                        <a th:href="@{'/owner/accommodation/' + ${a.accommodationId} + '/modify'}" class="btn btn-primary btn-sm">수정</a>
+                        <form th:action="@{'/owner/accommodation/' + ${a.accommodationId} + '/delete'}"
+                              method="post" onsubmit="return confirm('정말 삭제하시겠습니까?');"
+                              style="display:inline-block;">
+                            <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
     <div class="pagination mt-3">
         <ul class="pagination">

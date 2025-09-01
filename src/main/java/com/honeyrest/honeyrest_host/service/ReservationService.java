@@ -19,10 +19,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -140,19 +142,28 @@ public class ReservationService {
 
         // 3. 날짜별 처리
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
-
-            // 해당 날짜에 걸려 있는 예약 수 (체크인 <= date < 체크아웃)
             LocalDate finalDate = date;
-            long reservedCount = reservations.stream()
-                    .filter(r -> !r.getCheckInDate().isAfter(finalDate) && r.getCheckOutDate().isAfter(finalDate))
-                    .count();
 
-            int availableRooms = room.getTotalRooms() - (int) reservedCount;
+            // 해당 날짜에 걸려 있는 예약 리스트 필터링
+            List<Reservation> reservationsOnDate = reservations.stream()
+                    .filter(r -> !r.getCheckInDate().isAfter(finalDate) && r.getCheckOutDate().isAfter(finalDate))
+                    .filter(r -> !r.getStatus().equalsIgnoreCase("cancel"))
+                    .toList();
+
+            // 예약 수 계산
+            int reservedCount = reservationsOnDate.size();
+
+            // 예약된 가격 합산
+            BigDecimal totalPrice = reservationsOnDate.stream()
+                    .map(Reservation::getPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            int availableRooms = room.getTotalRooms() - reservedCount;
 
             PriceCalendarDTO dto = PriceCalendarDTO.builder()
                     .roomId(room.getRoomId())
                     .date(date)
-                    .price(room.getPrice())
+                    .price(totalPrice)  // 여기 수정됨
                     .availableRoom(Math.max(availableRooms, 0))
                     .build();
 
@@ -183,5 +194,21 @@ public class ReservationService {
                 .totalCount(total)
                 .pageRequestDTO(pageRequestDTO)
                 .build();
+    }
+
+    public List<ReservationDTO> getReservations(Long roomId, LocalDate startDate, LocalDate endDate) {
+        List<Reservation> reservations = reservationRepository.findByRoomIdAndDateRange(roomId, startDate, endDate);
+        return reservations.stream()
+                .map(r -> ReservationDTO.builder()
+                        .reservationId(r.getReservationId())
+                        .roomId(r.getRoom().getRoomId())
+                        .roomName(r.getRoomName())
+                        .guestName(r.getGuestName())
+                        .checkInDate(r.getCheckInDate())
+                        .checkOutDate(r.getCheckOutDate())
+                        .price(r.getPrice())
+                        .status(r.getStatus())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

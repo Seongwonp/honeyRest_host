@@ -2,6 +2,7 @@ package com.honeyrest.honeyrest_host.service;
 
 import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.entity.PriceCalendar;
+import com.honeyrest.honeyrest_host.entity.Reservation;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repository.PriceCalendarRepository;
 import com.honeyrest.honeyrest_host.repository.ReservationRepository;
@@ -12,7 +13,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -46,4 +50,5 @@ public class PriceCalendarService {
         return priceCalendarRepository.findByRoom_RoomIdAndDateBetween(roomId, startDate, endDate)
                 .stream().map(this::toDTO).toList();
     }
+
 }

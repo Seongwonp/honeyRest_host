@@ -38,50 +38,80 @@
         </form>
     </div>
 
-    <div class="page-content">
-        <section class="section">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title mb-4">업체 목록</h5>
-                            <div class="table-responsive">
-                                <table class="table table-striped align-middle text-center">
-                                    <thead class="table-primary">
-                                    <tr>
-                                        <th scope="col">업체 ID</th>
-                                        <th scope="col">업체명</th>
-                                        <th scope="col">대표자</th>
-                                        <th scope="col">연락처</th>
-                                        <th scope="col">상태</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr th:each="company : ${companies}">
-                                        <td th:text="${company.companyId}">1</td>
-                                        <td>
-                                            <a th:href="@{'/owner/company/' + ${company.companyId} + '/accommodations'}"
-                                               th:text="${company.name}"
-                                               class="text-decoration-none fw-semibold text-primary">
-                                            </a>
-                                        </td>
-                                        <td th:text="${company.ownerName}">홍길동</td>
-                                        <td th:text="${company.phone}">010-1234-5678</td>
-                                        <td>
-                      <span th:classappend="${company.status == 'ACTIVE'} ? 'badge bg-success' : 'badge bg-secondary'"
-                            th:text="${company.status == 'ACTIVE'} ? '활성' : '비활성'">
-                      </span>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </div> <!-- /.table-responsive -->
-                        </div> <!-- /.card-body -->
-                    </div> <!-- /.card -->
+    <div class="mt-4">
+        <h6 class="fw-bold mb-3">업체 목록</h6>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4" th:each="c : ${companies}">
+                <div class="card h-100 shadow-sm border-0 rounded-3">
+                    <div class="card-body">
+                        <!-- 업체명 -->
+                        <h5 class="card-title fw-bold mb-3">
+                            <a th:href="@{'/owner/company/' + ${c.companyId} + '/accommodations'}"
+                               th:text="${c.name}" class="text-decoration-none text-dark">업체명</a>
+                        </h5>
+
+                        <!-- 대표자 -->
+                        <p class="mb-2"><strong>대표자:</strong>
+                            <span th:text="${c.ownerName}">홍길동</span>
+                        </p>
+
+                        <!-- 사업자 번호 -->
+                        <p class="mb-2"><strong>사업자 번호:</strong>
+                            <span th:text="${c.businessNumber}">123-45-67890</span>
+                        </p>
+
+                        <!-- 연락처 -->
+                        <p class="mb-2"><strong>전화:</strong>
+                            <span th:text="${c.phone}">010-1234-5678</span>
+                        </p>
+
+                        <!-- 이메일 -->
+                        <p class="mb-2"><strong>이메일:</strong>
+                            <span th:text="${c.email}">info@company.com</span>
+                        </p>
+
+                        <!-- 주소 -->
+                        <p class="mb-2"><strong>주소:</strong>
+                            <span th:text="${c.address}">서울특별시 강남구 ...</span>
+                        </p>
+
+                        <!-- 수수료율 -->
+                        <p class="mb-2"><strong>수수료율:</strong>
+                            <span th:text="${c.commissionRate + '%'}">10%</span>
+                        </p>
+
+                        <!-- 상태 -->
+                        <p class="mb-2"><strong>상태:</strong>
+                            <span th:text="${c.status}">ACTIVE</span>
+                        </p>
+
+                        <!-- 은행 정보(JSON) -->
+                        <p class="mb-2"><strong>은행 정보:</strong>
+                            <span th:text="${c.bankInfo}">{"bank":"국민은행","account":"123-456-7890"}</span>
+                        </p>
+
+                        <!-- 등록일 -->
+                        <p class="mb-0"><strong>등록일:</strong>
+                            <span th:text="${#temporals.format(c.createdAt, 'yyyy-MM-dd HH:mm')}">2025-09-01</span>
+                        </p>
+                    </div>
+
+                    <!-- 수정 / 삭제 버튼 -->
+                    <div class="card-footer d-flex justify-content-end gap-2 bg-light">
+                        <a th:href="@{'/owner/company/' + ${c.companyId} + '/modify'}"
+                           class="btn btn-primary btn-sm">수정</a>
+                        <form th:action="@{'/owner/company/' + ${c.companyId} + '/delete'}"
+                              method="post"
+                              onsubmit="return confirm('정말 삭제하시겠습니까?');"
+                              style="display:inline-block;">
+                            <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
+
 
     <div class="pagination mt-3">
         <ul class="pagination">

@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.repository;
 
 import com.honeyrest.honeyrest_host.entity.Reservation;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +22,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     Page<Reservation> findByAccommodation_AccommodationId(Long accommodationId, Pageable pageable);
 
     Page<Reservation> findByAccommodation_Company_CompanyId(Long CompanyId, Pageable pageable);
+
+    // 방별, 기간별 예약 조회
+    @Query("SELECT r FROM Reservation r WHERE r.room.roomId = :roomId " +
+            "AND r.checkInDate <= :endDate AND r.checkOutDate >= :startDate " +
+            "AND r.status != 'CANCELLED'")
+    List<Reservation> findByRoomIdAndDateRange(
+            @Param("roomId") Long roomId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

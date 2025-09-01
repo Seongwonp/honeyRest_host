@@ -88,6 +88,11 @@
                 <select name="accommodationId" class="form-select" id="accommodationSelect" required></select>
             </div>
 
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label fw-semibold"><i class="bi bi-1-square me-1"></i>객실</label>
+                <select name="roomId" class="form-select" id="roomSelect"></select>
+            </div>
+
             <div class="col-auto">
                 <button type="submit" class="btn btn-warning px-4 fw-semibold">검색</button>
             </div>
@@ -118,34 +123,38 @@
             <div class="header">금</div>
             <div class="header text-primary">토</div>
 
-            <!-- 빈 칸 + 날짜 -->
+            <!-- 날짜 셀 출력 -->
             <th:block th:each="i : ${#numbers.sequence(0, totalCells - 1)}">
                 <div class="day" th:classappend="${i < startOffset} ? ' empty-day'">
                     <th:block th:if="${i >= startOffset}"
                               th:with="day=${i - startOffset + 1},
-                                       date=${startDate.withDayOfMonth(day)},
-                                       data=${calendarDataMap.get(room.roomId) != null ? calendarDataMap.get(room.roomId).get(date) : null}">
+                           date=${startDate.withDayOfMonth(day)},
+                           data=${calendarDataMap.get(room.roomId) != null ? calendarDataMap.get(room.roomId).get(date) : null}">
+                        <!-- 날짜 숫자 -->
                         <div class="day-number" th:text="${day}"></div>
-                        <div th:if="${data != null}">
-                            <div>💰 <span th:text="${#numbers.formatInteger(data.price, 0, 'COMMA')} + '원'"></span></div>
+
+                        <!-- 예약 정보가 있는 경우 -->
+                        <th:block th:if="${data != null}">
+                            <div>
+                                💰 <span th:text="${#numbers.formatInteger(data.price, 0, 'COMMA')} + '원'"></span>
+                            </div>
                             <div th:classappend="${data.availableRoom > 0} ? 'available' : 'soldout'">
                                 <span th:text="${data.availableRoom > 0 ? '잔여 ' + data.availableRoom + '실' : '매진'}"></span>
                             </div>
                             <button type="button"
-                                    th:attr="data-date=${date}, data-roomid=${room.roomId}"
+                                    th:attr="data-date=${date}, data-roomId=${room.roomId}"
                                     class="btn btn-sm btn-outline-primary mt-2"
                                     onclick="openEditModal(this)">수정</button>
-                        </div>
-                        <div th:if="${data == null}">
-                            <span class="text-muted">데이터 없음</span><br>
-                            <button type="button"
-                                    th:attr="data-date=${date}, data-roomid=${room.roomId}"
-                                    class="btn btn-sm btn-outline-success mt-2"
-                                    onclick="openEditModal(this)">등록</button>
-                        </div>
+                        </th:block>
+
+                        <!-- 예약 정보가 없는 경우: 그냥 빈 칸 -->
+                        <th:block th:if="${data == null}">
+                            <!-- 아무 내용 없음 -->
+                        </th:block>
                     </th:block>
                 </div>
             </th:block>
+
         </div>
     </th:block>
 
@@ -176,13 +185,15 @@
 <script th:inline="javascript">
     const companySelect = document.getElementById("companySelect");
     const accommodationSelect = document.getElementById("accommodationSelect");
+    const roomSelect = document.getElementById("roomSelect");
 
     const companies = /*[[${companies}]]*/ [];
     const accommodations = /*[[${accommodations}]]*/ [];
+    const rooms = /*[[${rooms}]]*/ [];
 
     const selectedCompanyId = /*[[${companyId}]]*/ '';
     const selectedAccommodationId = /*[[${accommodationId}]]*/ '';
-
+    const selectedRoomId = /*[[${roomId}]]*/ '';
     // 회사 선택 옵션 로드
     function loadCompanyOptions() {
         companySelect.innerHTML = '<option value="">회사 선택</option>';
@@ -209,17 +220,35 @@
         });
     }
 
+    // 숙소 선택 옵션 로드
+    function loadRoomOptions(accommodationId) {
+        roomSelect.innerHTML = '<option value="">객실 선택</option>';
+        let filtered = rooms;
+        if (accommodationId) filtered = rooms.filter(a => a.accommodationId == accommodationId);
+        filtered.forEach(a => {
+            const opt = document.createElement("option");
+            opt.value = a.roomId;
+            opt.textContent = a.name;
+            if (a.roomId == selectedRoomId) opt.selected = true;
+            roomSelect.appendChild(opt);
+        });
+    }
+
     companySelect.addEventListener("change", function() {
         loadAccommodationOptions(this.value);
     });
+    accommodationSelect.addEventListener("change", function() {
+        loadRoomOptions(this.value);
+    })
 
     // 초기 로딩
     loadCompanyOptions();
     loadAccommodationOptions(selectedCompanyId);
+    loadRoomOptions(selectedAccommodationId);
 
     // 모달
     function openEditModal(btn) {
-        document.getElementById("roomId").value = btn.getAttribute("data-roomid");
+        document.getElementById("roomId").value = btn.getAttribute("data-roomId");
         document.getElementById("date").value = btn.getAttribute("data-date");
         document.getElementById("editModal").style.display = "block";
     }
@@ -237,20 +266,21 @@
     function submitMonth(year, month) {
         const companyId = companySelect.value;
         const accommodationId = accommodationSelect.value;
+        const roomId = roomSelect.value;
 
         // startDate, endDate 계산
-        const startDate = new Date(year, month, 1);
-        const endDate = new Date(year, month, 0);
 
-        const startStr = startDate.toISOString().split("T")[0];
-        const endStr = endDate.toISOString().split("T")[0];
-
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        const end = new Date(year, month, 0);
+        const endDate = `${year}-${String(month).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
         let actionUrl = "/owner/calendar/list";
 
-        if (accommodationId) {
-            actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar?companyId=${companyId}&accommodationId=${accommodationId}&startDate=${startStr}&endDate=${endStr}`;
+        if (roomId) {
+          actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar?companyId=${companyId}&accommodationId=${accommodationId}&startDate=${startDate}&endDate=${endDate}&roomId=${roomId}`;
+        } else if (accommodationId) {
+            actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar?companyId=${companyId}&accommodationId=${accommodationId}&startDate=${startDate}&endDate=${endDate}`;
         } else if (companyId) {
-            actionUrl = `/owner/calendar/company/${companyId}/calendar?companyId=${companyId}&accommodationId=&startDate=${startStr}&endDate=${endStr}`;
+            actionUrl = `/owner/calendar/company/${companyId}/calendar?companyId=${companyId}&accommodationId=&startDate=${startDate}&endDate=${endDate}`;
         }
 
         window.location.href = actionUrl;
@@ -280,9 +310,12 @@
     document.getElementById('searchForm').addEventListener('submit', function(event) {
         const companyId = companySelect.value;
         const accommodationId = accommodationSelect.value;
+        const roomId = roomSelect.value;
 
         let actionUrl = "/owner/calendar/list";
-        if (accommodationId) {
+        if (roomId) {
+           actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar`;
+        } else if (accommodationId) {
             actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar`;
         } else if (companyId) {
             actionUrl = `/owner/calendar/company/${companyId}/calendar`;
