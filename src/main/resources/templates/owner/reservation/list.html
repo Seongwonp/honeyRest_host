@@ -22,7 +22,7 @@
         <!-- 숙소 선택 폼 -->
     </div>
     <div class="card p-4 mb-4 shadow-sm">
-        <form method="get" action="/owner/reservation/list" class="row g-3 align-items-end" id="searchForm">
+        <form method="get" th:action="@{/owner/reservation/accommodation/{accommodationId} }" class="row g-3 align-items-end" id="searchForm">
             <!--            <div class="col-auto">-->
             <!--                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>-->
             <!--                <input type="date" name="startDate" class="form-control">-->
@@ -34,7 +34,6 @@
             <div class="col-md-4 col-sm-8">
                 <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
                 <select name="companyId" class="form-select" id="companySelect">
-                    <option value="">전체</option>
                     <!-- 회사 목록은 JS로 채움 -->
                 </select>
             </div>
@@ -42,10 +41,15 @@
             <div class="col-md-4 col-sm-8">
                 <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
                 <select name="accommodationId" class="form-select" id="accommodationSelect">
-                    <option value="">전체</option>
                     <!-- 선택한 회사의 숙소 목록만 JS로 채움 -->
                 </select>
             </div>
+
+            <div class="col-md-3 col-sm-8">
+                <label class="form-label fw-semibold"><i class="bi bi-1-square me-1"></i>객실</label>
+                <select name="roomId" class="form-select" id="roomSelect"></select>
+            </div>
+
             <div class="col-auto">
                 <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
             </div>
@@ -119,15 +123,19 @@
 </body>
 </html>
 <script th:inline="javascript">
-    /*<![CDATA[*/
-    document.addEventListener('DOMContentLoaded', function () {
-        const companies = /*[[${companies}]]*/ [];
-        const accommodations = /*[[${accommodations}]]*/ [];
-        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
-        const selectedAccommodationId = /*[[${selectedAccommodationId}]]*/ '';
 
         const companySelect = document.getElementById("companySelect");
         const accommodationSelect = document.getElementById("accommodationSelect");
+        const roomSelect = document.getElementById("roomSelect");
+
+        const companies = /*[[${companies}]]*/ [];
+        const accommodations = /*[[${accommodations}]]*/ [];
+        const rooms = /*[[${rooms}]]*/ [];
+
+        const selectedCompanyId = /*[[${companyId}]]*/ '';
+        const selectedAccommodationId = /*[[${accommodationId}]]*/ '';
+        const selectedRoomId = /*[[${roomId}]]*/ '';
+
 
         function loadCompanyOptions() {
             companySelect.innerHTML = '<option value="">전체</option>';
@@ -155,28 +163,47 @@
             });
         }
 
+        function loadRoomOptions(accommodationId) {
+            roomSelect.innerHTML = '<option value="">객실 선택</option>';
+            let filtered = rooms;
+            if (accommodationId) filtered = rooms.filter(a => a.accommodationId == accommodationId);
+            filtered.forEach(a => {
+                const opt = document.createElement("option");
+                opt.value = a.roomId;
+                opt.textContent = a.name;
+                if (a.roomId == selectedRoomId) opt.selected = true;
+                roomSelect.appendChild(opt);
+            });
+        }
+
         // 회사 선택 시 숙소 드랍다운 갱신
         companySelect.addEventListener("change", function () {
             loadAccommodationOptions(this.value);
         });
+        accommodationSelect.addEventListener("change", function() {
+            loadRoomOptions(this.value);
+        })
+
 
         // 초기 로딩
         loadCompanyOptions();
-        loadAccommodationOptions(companySelect.value);
+        loadAccommodationOptions(selectedCompanyId);
+        loadRoomOptions(selectedAccommodationId);
+
 
         document.getElementById('searchForm').addEventListener('submit', function (event) {
             const companyId = companySelect.value;
             const accommodationId = accommodationSelect.value;
+            const roomId  = roomSelect.value;
             let actionUrl = "/owner/reservation/list";
-
-            if (accommodationId) {
+            if(roomId) {
+                actionUrl = `/owner/reservation/room/${roomId}`;
+            } else if (accommodationId) {
                 actionUrl = `/owner/reservation/accommodation/${accommodationId}`;
             } else if (companyId) {
                 actionUrl = `/owner/reservation/company/${companyId}`;
             }
             this.action = actionUrl;
         });
-    });
 
-    /*]]>*/
 </script>

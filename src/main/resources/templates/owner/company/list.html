@@ -49,55 +49,27 @@
                             <a th:href="@{'/owner/company/' + ${c.companyId} + '/accommodations'}"
                                th:text="${c.name}" class="text-decoration-none text-dark">업체명</a>
                         </h5>
-
                         <!-- 대표자 -->
-                        <p class="mb-2"><strong>대표자:</strong>
-                            <span th:text="${c.ownerName}">홍길동</span>
-                        </p>
-
+                        <p class="mb-2"><strong>대표자:</strong><span th:text="${c.ownerName}">홍길동</span></p>
                         <!-- 사업자 번호 -->
-                        <p class="mb-2"><strong>사업자 번호:</strong>
-                            <span th:text="${c.businessNumber}">123-45-67890</span>
-                        </p>
-
+                        <p class="mb-2"><strong>사업자 번호:</strong><span th:text="${c.businessNumber}">123-45-67890</span></p>
                         <!-- 연락처 -->
-                        <p class="mb-2"><strong>전화:</strong>
-                            <span th:text="${c.phone}">010-1234-5678</span>
-                        </p>
-
+                        <p class="mb-2"><strong>전화:</strong><span th:text="${c.phone}">010-1234-5678</span></p>
                         <!-- 이메일 -->
-                        <p class="mb-2"><strong>이메일:</strong>
-                            <span th:text="${c.email}">info@company.com</span>
-                        </p>
-
+                        <p class="mb-2"><strong>이메일:</strong><span th:text="${c.email}">info@company.com</span></p>
                         <!-- 주소 -->
-                        <p class="mb-2"><strong>주소:</strong>
-                            <span th:text="${c.address}">서울특별시 강남구 ...</span>
-                        </p>
-
+                        <p class="mb-2"><strong>주소:</strong><span th:text="${c.address}">서울특별시 강남구 ...</span></p>
                         <!-- 수수료율 -->
-                        <p class="mb-2"><strong>수수료율:</strong>
-                            <span th:text="${c.commissionRate + '%'}">10%</span>
-                        </p>
-
+                        <p class="mb-2"><strong>수수료율:</strong><span th:text="${c.commissionRate + '%'}">10%</span></p>
                         <!-- 상태 -->
-                        <p class="mb-2"><strong>상태:</strong>
-                            <span th:text="${c.status}">ACTIVE</span>
-                        </p>
-
+                        <p class="mb-2"><strong>상태:</strong><span th:text="${c.status}">ACTIVE</span></p>
                         <!-- 은행 정보(JSON) -->
-                        <p class="mb-2"><strong>은행 정보:</strong>
-                            <span th:text="${c.bankInfo}">{"bank":"국민은행","account":"123-456-7890"}</span>
-                        </p>
-
+                        <p class="mb-2"><strong>은행 정보:</strong><span th:text="${c.bankInfo}">{"bank":"국민은행","account":"123-456-7890"}</span></p>
                         <!-- 등록일 -->
-                        <p class="mb-0"><strong>등록일:</strong>
-                            <span th:text="${#temporals.format(c.createdAt, 'yyyy-MM-dd HH:mm')}">2025-09-01</span>
-                        </p>
+                        <p class="mb-0"><strong>등록일:</strong><span th:text="${#temporals.format(c.createdAt, 'yyyy-MM-dd HH:mm')}">2025-09-01</span></p>
                     </div>
-
                     <!-- 수정 / 삭제 버튼 -->
-                    <div class="card-footer d-flex justify-content-end gap-2 bg-light">
+                    <div class="card-footer d-flex justify-content-end gap-2">
                         <a th:href="@{'/owner/company/' + ${c.companyId} + '/modify'}"
                            class="btn btn-primary btn-sm">수정</a>
                         <form th:action="@{'/owner/company/' + ${c.companyId} + '/delete'}"

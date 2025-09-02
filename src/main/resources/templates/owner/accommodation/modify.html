@@ -85,7 +85,7 @@
                     <input type="file" class="form-control" name="images" multiple>
                     <div class="mt-2 d-flex flex-wrap gap-2" th:if="${accommodationImages != null}">
                         <div th:each="img : ${accommodationImages}">
-                            <img th:src="${img.imageUrl}" style="height: 120px; border: 1px solid #ddd; padding: 3px;" alt="이미지"/>
+                            <img th:src="${img.imageUrl}" style="height: 150px; border: 1px solid #ddd; padding: 3px;" alt="이미지"/>
                         </div>
                     </div>
                 </div>

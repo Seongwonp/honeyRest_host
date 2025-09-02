@@ -78,24 +78,29 @@
               class="row g-3 align-items-end"
               id="searchForm">
 
-            <div class="col-md-4 col-sm-8">
+            <div class="col-md-3 col-sm-8">
                 <label class="form-label fw-semibold"><i class="bi bi-building me-1"></i>회사</label>
                 <select name="companyId" class="form-select" id="companySelect"></select>
             </div>
 
-            <div class="col-md-4 col-sm-8">
+            <div class="col-md-3 col-sm-8">
                 <label class="form-label fw-semibold"><i class="bi bi-house-door me-1"></i>숙소</label>
-                <select name="accommodationId" class="form-select" id="accommodationSelect" required></select>
+                <select name="accommodationId" class="form-select" id="accommodationSelect"></select>
             </div>
 
-            <div class="col-md-4 col-sm-8">
+            <div class="col-md-3 col-sm-8">
                 <label class="form-label fw-semibold"><i class="bi bi-1-square me-1"></i>객실</label>
                 <select name="roomId" class="form-select" id="roomSelect"></select>
             </div>
 
             <div class="col-auto">
                 <button type="submit" class="btn btn-warning px-4 fw-semibold">검색</button>
+                <button type="button" id="reservationListBtn" class="btn btn-secondary btn-sm px-3">
+                    <i class="bi bi-calendar-event me-1"></i> 예약 리스트
+                </button>
+
             </div>
+
         </form>
     </div>
 
@@ -234,6 +239,7 @@
         });
     }
 
+    // 회사 선택 시 숙소 드랍다운 갱신
     companySelect.addEventListener("change", function() {
         loadAccommodationOptions(this.value);
     });
@@ -322,4 +328,23 @@
         }
         this.action = actionUrl;
     });
+
+    // 예약 리스트 버튼 클릭 시 이동
+    document.getElementById("reservationListBtn").addEventListener("click", function () {
+        const companyId = companySelect.value;
+        const accommodationId = accommodationSelect.value;
+        const roomId = roomSelect.value;
+
+        let actionUrl = "/owner/reservation/list";
+        if(roomId) {
+            actionUrl = `/owner/reservation/room/${roomId}?roomId=${roomId}&accommodationId=${accommodationId}&companyId=${companyId}&accommodationId=${accommodationId}`;
+        } else if (accommodationId) {
+            actionUrl = `/owner/reservation/accommodation/${accommodationId}?roomId=${roomId}&accommodationId=${accommodationId}&companyId=${companyId}&accommodationId=${accommodationId}`;
+        } else if (companyId) {
+            actionUrl = `/owner/reservation/company/${companyId}?roomId=${roomId}&accommodationId=${accommodationId}&companyId=${companyId}&accommodationId=${accommodationId}`;
+        }
+        // 이동
+        window.location.href = actionUrl;
+    });
+
 </script>

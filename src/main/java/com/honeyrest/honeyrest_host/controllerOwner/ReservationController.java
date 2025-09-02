@@ -36,13 +36,13 @@ public class ReservationController {
         PageResponseDTO<ReservationDTO> reservationPage;
 
         if (accommodationId != null) {
-            reservationPage = reservationService.getReservationsByCompanyIdWithPageable(accommodationId, pageRequestDTO);
+            reservationPage = reservationService.getReservationsByAccommodationIdWithPageable(accommodationId, pageRequestDTO);
             AccommodationDTO accommodation = accommodationService.getByAccommodationId(accommodationId);
 
             model.addAttribute("reservation", reservationPage.getDtoList());
             model.addAttribute("accommodation", accommodation);
         } else {
-            reservationPage = reservationService.getReservationsByCompanyIdWithPageable(accommodationId, pageRequestDTO);
+            reservationPage = reservationService.getReservationsByAccommodationIdWithPageable(accommodationId, pageRequestDTO);
 
         }
         model.addAttribute("reservationPage", reservationPage);
@@ -51,8 +51,8 @@ public class ReservationController {
         model.addAttribute("companies",  companyService.getAllCompanies());
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
 
-        model.addAttribute("selectedCompanyId",  companyId);
-        model.addAttribute("selectedAccommodationId", accommodationId);
+        model.addAttribute("companyId",  companyId);
+        model.addAttribute("accommodationId", accommodationId);
 
         return "/owner/reservation/list";
     }
@@ -81,13 +81,39 @@ public class ReservationController {
 
         // 선택값 유지용
         model.addAttribute("accommodations", accommodations);
-        model.addAttribute("selectedCompanyId", companyId);
-        model.addAttribute("selectedAccommodationId", accommodationId);
+        model.addAttribute("companyId", companyId);
+        model.addAttribute("accommodationId", accommodationId);
+        model.addAttribute("rooms", roomService.getAllRooms());
 
         model.addAttribute("reservations", reservationPage.getDtoList());
         model.addAttribute("companies", companies);
         model.addAttribute("reservationPage", reservationPage);
         return "/owner/reservation/list";
+    }
+
+    @GetMapping("/reservation/room/{roomId}")
+    public String roomReservations(@PathVariable Long roomId,
+                                   @RequestParam(required = false) Long companyId,
+                                   @RequestParam(required = false) Long accommodationId,
+                                   @ModelAttribute PageRequestDTO pageRequestDTO,
+                                   Model model){
+        List<RoomDTO> rooms = roomService.getAllRooms();
+        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
+        List<CompanyDTO> companies = companyService.getAllCompanies();
+
+        model.addAttribute("rooms", rooms);
+        model.addAttribute("accommodations", accommodations);
+        model.addAttribute("companies", companies);
+        model.addAttribute("companyId", companyId);
+        model.addAttribute("accommodationId", accommodationId);
+        model.addAttribute("roomId", roomId);
+
+        PageResponseDTO<ReservationDTO> reservationPage = reservationService.getReservationsByRoomIdWithPage(roomId, pageRequestDTO);
+
+        model.addAttribute("reservations", reservationPage.getDtoList());
+        model.addAttribute("reservationPage", reservationPage);
+
+        return "owner/reservation/list";
     }
 
     @GetMapping("/reservation/{reservationId}/modify")

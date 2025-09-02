@@ -255,6 +255,14 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
+    public List<AccommodationImageDTO> getImagesByAccommodationIdOnlySub(Long id) {
+        return accommodationImageRepository.findByAccommodation_AccommodationId(id)
+                .stream().map(this::toImageDTO)
+                .filter(si -> si.getImageType().equals("SUB"))
+                .toList();
+    }
+
+    @Override
     public void updateSubImages(Long accommodationId, List<MultipartFile> images) throws Exception {
         if (images == null || images.isEmpty()) return;
         int sortOrder = 1; // MAIN 이미지 다음부터 시작

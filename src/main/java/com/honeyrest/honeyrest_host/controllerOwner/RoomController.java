@@ -47,7 +47,8 @@ public class RoomController {
             roomPage = roomService.getRoomsByAccommodationIdWithPageable(accommodationId ,pageRequestDTO);
             model.addAttribute("accommodationId", 0);
         }
-
+        List<AccommodationImageDTO> subImages = accommodationService.getImagesByAccommodationIdOnlySub(accommodationId);
+        model.addAttribute("subImages", subImages);
         model.addAttribute("accommodations", accommodations);
         model.addAttribute("rooms", roomPage.getDtoList());
         model.addAttribute("pageResponse", roomPage);

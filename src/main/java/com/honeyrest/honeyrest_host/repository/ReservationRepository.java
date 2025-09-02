@@ -23,6 +23,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     Page<Reservation> findByAccommodation_Company_CompanyId(Long CompanyId, Pageable pageable);
 
+    Page<Reservation> findByRoom_RoomId(Long roomId, Pageable pageable);
+
     // 방별, 기간별 예약 조회
     @Query("SELECT r FROM Reservation r WHERE r.room.roomId = :roomId " +
             "AND r.checkInDate <= :endDate AND r.checkOutDate >= :startDate " +
@@ -31,4 +33,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("roomId") Long roomId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+
 }

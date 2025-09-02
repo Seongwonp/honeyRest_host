@@ -178,10 +178,52 @@ public class ReservationService {
                 pageRequestDTO.getSize(), Sort.by("reservationId").descending());
         Page<Reservation> page;
         if (companyId != null && companyId > 0) {
-            page = reservationRepository.findByAccommodation_AccommodationId(companyId, pageable);
+            page = reservationRepository.findByAccommodation_Company_CompanyId(companyId, pageable);
         } else {
             page = reservationRepository.findAll(pageable);
         }
+
+        List<ReservationDTO> list = page.getContent().stream()
+                .map(this::toDTO)
+                .toList();
+
+        long total = page.getTotalElements();
+
+        return PageResponseDTO.<ReservationDTO>withAll()
+                .dtoList(list)
+                .totalCount(total)
+                .pageRequestDTO(pageRequestDTO)
+                .build();
+    }
+
+    public PageResponseDTO<ReservationDTO> getReservationsByAccommodationIdWithPageable(Long accommodationId, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("reservationId").descending());
+        Page<Reservation> page;
+        if (accommodationId != null && accommodationId > 0) {
+            page = reservationRepository.findByAccommodation_AccommodationId(accommodationId, pageable);
+        } else {
+            page = reservationRepository.findAll(pageable);
+        }
+
+        List<ReservationDTO> list = page.getContent().stream()
+                .map(this::toDTO)
+                .toList();
+
+        long total = page.getTotalElements();
+
+        return PageResponseDTO.<ReservationDTO>withAll()
+                .dtoList(list)
+                .totalCount(total)
+                .pageRequestDTO(pageRequestDTO)
+                .build();
+    }
+
+    public PageResponseDTO<ReservationDTO> getReservationsByRoomIdWithPage(Long roomId, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("reservationId").descending());
+
+        Page<Reservation> page = reservationRepository.findByRoom_RoomId(roomId, pageable);
 
         List<ReservationDTO> list = page.getContent().stream()
                 .map(this::toDTO)
@@ -211,4 +253,5 @@ public class ReservationService {
                         .build())
                 .collect(Collectors.toList());
     }
+
 }

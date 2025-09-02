@@ -1,9 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -89,7 +87,7 @@ public class AccommodationController {
     public String modifyAccommodation(@PathVariable Long accommodationId, Model model) {
         model.addAttribute("accommodationId", accommodationId);
         model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
-        model.addAttribute("accommodationImages", accommodationService.getImagesByAccommodationId(accommodationId));
+        model.addAttribute("accommodationImages", accommodationService.getImagesByAccommodationIdOnlySub(accommodationId));
         model.addAttribute("companies", companyService.getAllCompanies());
         model.addAttribute("categories", accommodationCategory.getAllAccommodationCategory());
         model.addAttribute("regions", regionService.getAllRegions());
