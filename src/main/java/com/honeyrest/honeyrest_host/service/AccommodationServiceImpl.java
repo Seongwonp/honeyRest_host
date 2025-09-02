@@ -234,7 +234,38 @@ public class AccommodationServiceImpl implements AccommodationService {
             page = accommodationRepository.findAll(pageable);
         }
 
-        List<AccommodationDTO> list = page.getContent().stream().map(accommodation -> toDTO(accommodation)).toList();
+        List<AccommodationDTO> list = page.getContent().stream().map(accommodation -> toDTO(accommodation))
+                .filter(a-> a.getStatus().equalsIgnoreCase("ACTIVE"))
+                .toList();
+
+        long total = page.getTotalElements();
+
+        PageResponseDTO<AccommodationDTO> responseDTO = PageResponseDTO.<AccommodationDTO>withAll()
+                .dtoList(list)
+                .pageRequestDTO(pageRequestDTO)
+                .totalCount(total)
+                .build();
+
+        return responseDTO;
+    }
+
+    @Override
+    public PageResponseDTO<AccommodationDTO> getInActiveAccommodationsWithPageable(Long companyId, PageRequestDTO pageRequestDTO){
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("accommodationId").descending());
+
+        Page<Accommodation> page;
+
+        if (companyId != null && companyId > 0) {
+            page = accommodationRepository.findByCompany_CompanyId(companyId, pageable); // 쿼리 메서드 필요
+        } else {
+            page = accommodationRepository.findAll(pageable);
+        }
+
+        List<AccommodationDTO> list = page.getContent().stream()
+                .map(this::toDTO)
+                .filter(a-> !a.getStatus().equalsIgnoreCase("active"))
+                .toList();
 
         long total = page.getTotalElements();
 

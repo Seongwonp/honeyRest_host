@@ -13,7 +13,9 @@
 <th:block layout:fragment="content">
 
     <div class="page-heading">
-        <h3>사용자 목록</h3>
+        <h3 th:text="${inActive != null} ? '숙소 대기 리스트' : (${company != null} ? company.name : '전체 숙소 리스트')">
+            숙소 리스트
+        </h3>
         <p class="text-subtitle text-muted">시스템에 등록된 사용자 정보 리스트</p>
     </div>
 
@@ -35,9 +37,15 @@
         <section class="section">
             <div class="row">
                 <div class="col-12">
-                    <table class="table table-striped">
-                        <thead>
-                        <tr>
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header">
+                            <h5 class="mb-0">사용자 목록</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                    <tr>
                             <th>ID</th>
                             <th>이름</th>
                             <th>이메일</th>
@@ -73,7 +81,10 @@
                             <td colspan="13" class="text-center">등록된 사용자가 없습니다.</td>
                         </tr>
                         </tbody>
-                    </table>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>

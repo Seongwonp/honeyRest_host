@@ -40,6 +40,15 @@ public class CompanyController {
         return "owner/company/list";
     }
 
+    @GetMapping("/company/inActive/list")
+    public String companyInActiveList(@ModelAttribute PageRequestDTO pageRequestDTO, Model model) {
+        PageResponseDTO<CompanyDTO> responseDTO = companyService.getInActiveCompaniesWithPage(pageRequestDTO);
+        model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("companies", responseDTO.getDtoList());
+        model.addAttribute("inActive", 1);
+        return "owner/company/list";
+    }
+
 
     @GetMapping("/company/create")
     public String createCompany(Model model) {

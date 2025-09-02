@@ -185,6 +185,35 @@ public class ReservationService {
 
         List<ReservationDTO> list = page.getContent().stream()
                 .map(this::toDTO)
+                .filter(reservation ->
+                        !reservation.getStatus().equalsIgnoreCase("cancel") &&
+                                !reservation.getStatus().equalsIgnoreCase("cancel_request")
+                )
+                .toList();
+
+        long total = page.getTotalElements();
+
+        return PageResponseDTO.<ReservationDTO>withAll()
+                .dtoList(list)
+                .totalCount(total)
+                .pageRequestDTO(pageRequestDTO)
+                .build();
+    }
+
+    public PageResponseDTO<ReservationDTO> getCancelRequestReservationsByCompanyIdWithPageable(Long companyId, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("reservationId").descending());
+        Page<Reservation> page;
+        if (companyId != null && companyId > 0) {
+            page = reservationRepository.findByAccommodation_Company_CompanyId(companyId, pageable);
+        } else {
+            page = reservationRepository.findAll(pageable);
+        }
+
+        List<ReservationDTO> list = page.getContent().stream()
+                .map(this::toDTO)
+                .filter(reservation -> reservation.getStatus().equalsIgnoreCase("cancel_request")
+                )
                 .toList();
 
         long total = page.getTotalElements();
@@ -208,6 +237,34 @@ public class ReservationService {
 
         List<ReservationDTO> list = page.getContent().stream()
                 .map(this::toDTO)
+                .filter(reservation ->
+                        !reservation.getStatus().equalsIgnoreCase("cancel") &&
+                                !reservation.getStatus().equalsIgnoreCase("cancel_request")
+                )
+                .toList();
+
+        long total = page.getTotalElements();
+
+        return PageResponseDTO.<ReservationDTO>withAll()
+                .dtoList(list)
+                .totalCount(total)
+                .pageRequestDTO(pageRequestDTO)
+                .build();
+    }
+    public PageResponseDTO<ReservationDTO> getCancelRequestReservationsByAccommodationIdWithPageable(Long accommodationId, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("reservationId").descending());
+        Page<Reservation> page;
+        if (accommodationId != null && accommodationId > 0) {
+            page = reservationRepository.findByAccommodation_AccommodationId(accommodationId, pageable);
+        } else {
+            page = reservationRepository.findAll(pageable);
+        }
+
+        List<ReservationDTO> list = page.getContent().stream()
+                .map(this::toDTO)
+                .filter(reservation -> reservation.getStatus().equalsIgnoreCase("cancel_request")
+                )
                 .toList();
 
         long total = page.getTotalElements();

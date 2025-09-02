@@ -12,7 +12,7 @@
     </div>
 
     <div class="page-content">
-        <form th:action="@{/owner/company/modify}" method="post" class="needs-validation" novalidate>
+        <form th:action="@{/owner/company/modify}" method="post" class="needs-validation" >
             <!-- 숨겨진 PK 전달 -->
             <input type="hidden" name="companyId" th:value="${companyId}"/>
 
@@ -58,7 +58,7 @@
                     </div>
                     <div class="col-md-6">
                         <label for="commissionRate" class="form-label">수수료 (%)</label>
-                        <input type="number" name="commissionRate" class="form-control" id="commissionRate" step="0.1"
+                        <input type="number" name="commissionRate" class="form-control" id="commissionRate" step="0.1" min="0"
                                th:value="${company.commissionRate}" required>
                     </div>
                 </div>

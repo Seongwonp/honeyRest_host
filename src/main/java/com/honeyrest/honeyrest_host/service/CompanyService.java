@@ -133,6 +133,7 @@ public class CompanyService {
         return companyRepository.findAll()
                 .stream()
                 .map(this::toDTO)
+                .filter(c -> "active".equalsIgnoreCase(c.getStatus()))
                 .toList();
     }
 
@@ -150,6 +151,26 @@ public class CompanyService {
 
         List<CompanyDTO> dtoList = page.getContent().stream()
                 .map(this::toDTO) // Company -> CompanyDTO 변환 메서드 필요
+                .filter(c -> "active".equalsIgnoreCase(c.getStatus()))
+                .toList();
+
+        return PageResponseDTO.<CompanyDTO>withAll()
+                .dtoList(dtoList)
+                .pageRequestDTO(requestDTO)
+                .totalCount(page.getTotalElements())
+                .build();
+    }
+
+
+    public PageResponseDTO<CompanyDTO> getInActiveCompaniesWithPage(PageRequestDTO requestDTO){
+
+        Pageable pageable = PageRequest.of(requestDTO.getPage() - 1, requestDTO.getSize(), Sort.by("companyId").descending());
+
+        Page<Company> page = companyRepository.findAll(pageable);
+
+        List<CompanyDTO> dtoList = page.getContent().stream()
+                .map(this::toDTO) // Company -> CompanyDTO 변환 메서드 필요
+                .filter(c -> !"active".equalsIgnoreCase(c.getStatus()))
                 .toList();
 
         return PageResponseDTO.<CompanyDTO>withAll()

@@ -76,7 +76,9 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <h3 th:text="${company != null} ? ${company.name} : '전체 숙소 리스트'">숙소 리스트</h3>
+        <h3 th:text="${inActive != null} ? '숙소 대기 리스트' : (${company != null} ? ${company.name} : '전체 숙소 리스트')">
+            숙소 리스트
+        </h3>
         <!-- 회사 정보 카드 -->
         <div class="card shadow-lg border-0 mb-4" th:if="${company != null}">
             <!-- 헤더 -->
@@ -162,7 +164,7 @@
             업체 선택 시 해당 업체의 숙소만 조회됩니다.
         </p>
         <!-- 업체 선택 폼 -->
-        <div class="card p-4 mb-4 shadow-sm">
+        <div class="card p-4 mb-4 shadow-sm" th:if="${inActive != 1}">
             <form id="searchForm" class="row g-3 align-items-end">
                 <div class="col-md-4 col-sm-8 position-relative">
                     <label class="form-label"><i class="bi bi-building me-1"></i>숙소 검색</label>
@@ -196,11 +198,16 @@
                                            class="text-decoration-none text-dark">숙소명</a>
                                     </h5>
                                     <p class="mb-1"><strong>ID:</strong> <span th:text="${a.accommodationId}">1</span></p>
+                                    <p class="mb-1"><strong>업체ID:</strong> <span th:text="${a.companyId}"></span></p>
                                     <p class="mb-1"><strong>주소:</strong> <span th:text="${a.address}">주소</span></p>
                                     <p class="mb-1"><strong>체크인:</strong> <span th:text="${a.checkInTime}">14:00</span></p>
                                     <p class="mb-1"><strong>체크아웃:</strong> <span th:text="${a.checkOutTime}">11:00</span></p>
                                     <p class="mb-1"><strong>가격:</strong> <span th:text="${a.minPrice + ' 원'}">120,000 원</span></p>
-                                    <p class="mb-1"><strong>상태:</strong> <span th:text="${a.status}">예약 가능</span></p>
+                                    <p class="mb-1" th:if="${a.status != 'ACTIVE'}">
+                                        <strong>상태:</strong>
+                                        <span th:text="${a.status}"
+                                              th:classappend="${a.status == 'PENDING'} ? 'text-danger' : 'text-primary'">상태값</span>
+                                    </p>
                                 </div>
 
                                 <!-- 이미지 (오른쪽) -->

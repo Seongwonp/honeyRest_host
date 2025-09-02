@@ -11,10 +11,13 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <h3>업체 리스트</h3>
-        <p class="text-subtitle text-muted">관리자용 숙소 및 예약 현황</p>
+        <h3 th:text="${inActive != null} ? '업체 대기 리스트' : '업체 리스트'">업체 리스트</h3>
+        <p class="text-subtitle text-muted"
+           th:text="${inActive != null} ? '관리자가 승인 대기 중인 숙소 목록입니다.' : '관리자용 숙소 및 예약 현황'">
+            관리자용 숙소 및 예약 현황
+        </p>
     </div>
-    <div class="card p-4 mb-4 shadow-sm">
+    <div class="card p-4 mb-4 shadow-sm" th:if="${inActive != 1}">
         <form id="searchForm" class="row g-3 align-items-end">
             <div class="col-md-4 col-sm-8 position-relative">
                 <label class="form-label"><i class="bi bi-building me-1"></i>회사 검색</label>
@@ -61,12 +64,18 @@
                         <p class="mb-2"><strong>주소:</strong><span th:text="${c.address}">서울특별시 강남구 ...</span></p>
                         <!-- 수수료율 -->
                         <p class="mb-2"><strong>수수료율:</strong><span th:text="${c.commissionRate + '%'}">10%</span></p>
-                        <!-- 상태 -->
-                        <p class="mb-2"><strong>상태:</strong><span th:text="${c.status}">ACTIVE</span></p>
                         <!-- 은행 정보(JSON) -->
                         <p class="mb-2"><strong>은행 정보:</strong><span th:text="${c.bankInfo}">{"bank":"국민은행","account":"123-456-7890"}</span></p>
                         <!-- 등록일 -->
-                        <p class="mb-0"><strong>등록일:</strong><span th:text="${#temporals.format(c.createdAt, 'yyyy-MM-dd HH:mm')}">2025-09-01</span></p>
+                        <p class="mb-2"><strong>등록일:</strong><span th:text="${#temporals.format(c.createdAt, 'yyyy-MM-dd HH:mm')}">2025-09-01</span></p>
+                        <!-- 상태 -->
+                        <p class="mb-2" th:if="${c.status != 'ACTIVE'}">
+                            <strong>상태:</strong>
+                            <span th:text="${c.status}"
+                                  th:classappend="${c.status == 'PENDING'} ? 'text-danger' : 'text-primary'">상태값</span>
+                        </p>
+
+
                     </div>
                     <!-- 수정 / 삭제 버튼 -->
                     <div class="card-footer d-flex justify-content-end gap-2">
@@ -175,7 +184,7 @@
             // const accommodationId = accommodationSelect.value;
             let actionUrl = "/owner/company/list";
 
-            if (companyId) {
+             if (companyId) {
                 actionUrl = `/owner/company/${companyId}/accommodations`;
             }
             this.action = actionUrl;

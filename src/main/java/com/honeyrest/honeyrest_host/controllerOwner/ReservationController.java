@@ -91,6 +91,39 @@ public class ReservationController {
         return "/owner/reservation/list";
     }
 
+    @GetMapping("/reservation/cancelRequest/list")
+    public String cancelReservations(@PathVariable(required = false) Long companyId,
+                                     @RequestParam(required = false) Long accommodationId,
+                                     @ModelAttribute PageRequestDTO pageRequestDTO,
+                                     Model model) {
+        List<CompanyDTO> companies = companyService.getAllCompanies();
+        PageResponseDTO<ReservationDTO> reservationPage;
+        if (companyId != null) {
+            reservationPage = reservationService.getCancelRequestReservationsByCompanyIdWithPageable(companyId, pageRequestDTO);
+            CompanyDTO company = companyService.getCompany(companyId);
+            model.addAttribute("reservation", reservationPage.getDtoList());
+            model.addAttribute("company", company);
+            model.addAttribute("companyId", companyId);
+        } else {
+            reservationPage = reservationService.getCancelRequestReservationsByCompanyIdWithPageable(companyId, pageRequestDTO);
+            model.addAttribute("companyId", 0);
+        }
+
+        // 회사/숙소 리스트
+        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
+
+        // 선택값 유지용
+        model.addAttribute("accommodations", accommodations);
+        model.addAttribute("companyId", companyId);
+        model.addAttribute("accommodationId", accommodationId);
+        model.addAttribute("rooms", roomService.getAllRooms());
+
+        model.addAttribute("reservations", reservationPage.getDtoList());
+        model.addAttribute("companies", companies);
+        model.addAttribute("reservationPage", reservationPage);
+        return "/owner/reservation/list";
+    }
+
     @GetMapping("/reservation/room/{roomId}")
     public String roomReservations(@PathVariable Long roomId,
                                    @RequestParam(required = false) Long companyId,

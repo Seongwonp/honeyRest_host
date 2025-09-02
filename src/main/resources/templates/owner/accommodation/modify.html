@@ -12,7 +12,7 @@
     </div>
 
     <div class="page-content">
-        <form th:action="@{/owner/accommodation/modify}" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        <form th:action="@{/owner/accommodation/modify}" method="post" enctype="multipart/form-data" class="needs-validation" >
             <input type="hidden" name="accommodationId" th:value="${accommodation.accommodationId}" />
 
             <div class="card shadow-sm mb-4 p-4">

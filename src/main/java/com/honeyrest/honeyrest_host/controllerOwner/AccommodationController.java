@@ -46,6 +46,23 @@ public class AccommodationController {
         return "owner/accommodation/list";
     }
 
+    @GetMapping("/accommodation/inActive/list")
+    public String accommodationsInActiveList(@ModelAttribute PageRequestDTO pageRequestDTO,
+                                             @RequestParam(required = false) Long companyId,
+                                             Model model) {
+
+        PageResponseDTO<AccommodationDTO> responseDTO =
+                accommodationService.getInActiveAccommodationsWithPageable(companyId, pageRequestDTO);
+
+        model.addAttribute("companyId", companyId != null ? companyId : 0);
+        model.addAttribute("companies", companyService.getAllCompanies());
+        model.addAttribute("company", companyId != null ? companyService.getCompany(companyId) : null);
+        model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("accommodations", responseDTO.getDtoList());
+        model.addAttribute("inActive", 1);
+        return "owner/accommodation/list";
+    }
+
 
     @GetMapping("/accommodation/create")
     public String createAccommodation(@RequestParam Long companyId, Model model) {

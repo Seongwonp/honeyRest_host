@@ -26,6 +26,8 @@ public interface AccommodationService {
 
     PageResponseDTO<AccommodationDTO> getAccommodationsWithPageable(Long companyId, PageRequestDTO pageRequestDTO);
 
+    PageResponseDTO<AccommodationDTO> getInActiveAccommodationsWithPageable(Long companyId, PageRequestDTO pageRequestDTO);
+
     List<AccommodationImageDTO> getImagesByAccommodationId(Long id);
 
     List<AccommodationImageDTO> getImagesByAccommodationIdOnlySub(Long id);
