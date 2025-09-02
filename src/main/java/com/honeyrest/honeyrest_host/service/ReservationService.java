@@ -5,6 +5,9 @@ import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dto.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.Reservation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -40,5 +43,8 @@ public interface ReservationService {
     List<ReservationDTO> findCompanyReservationsOnDate(Long companyId, Long accommodationId, LocalDate date);
 
     ReservationDTO getReservationDetail(Long id);
+
+    Page<ReservationDTO> getCompanyReservations(
+            Long companyId, String status, String q, Long accId, Pageable pageable);
 }
 

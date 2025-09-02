@@ -8,9 +8,57 @@
     <title>숙소 등록</title>
     <th:block layout:fragment="head">
         <style>
-            .help-text{font-size:.875rem;color:#6c757d}
-            .required::after{content:" *";color:#dc3545}
-            .field-error{border-color:#dc3545}
+            /* 톤 & 카드 */
+            body {
+                background: #f7f9fc;
+            }
+
+            .card {
+                border: 1px solid #e9edf5;
+                border-radius: 14px;
+                box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+            }
+
+            /* 미리보기 타일 */
+            .pv {
+                width: 120px;
+                height: 120px;
+                object-fit: cover;
+                border-radius: 10px;
+                border: 1px solid #e5e7eb;
+                background: #f6f6f6;
+            }
+
+            .pv-wrap {
+                position: relative;
+                width: 120px;
+                height: 120px;
+            }
+
+            .pv-x {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                width: 26px;
+                height: 26px;
+                line-height: 1;
+                font-weight: 800;
+                padding: 0;
+            }
+
+            .help-text {
+                font-size: .875rem;
+                color: #6b7280;
+            }
+
+            .required::after {
+                content: " *";
+                color: #dc3545;
+            }
+
+            .is-invalid {
+                border-color: #dc3545;
+            }
         </style>
     </th:block>
 </head>
@@ -39,7 +87,8 @@
                         <input type="number" class="form-control" th:field="*{companyId}"
                                th:classappend="${#fields.hasErrors('companyId')}? 'is-invalid'">
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('companyId')}"
-                             th:errors="*{companyId}">에러</div>
+                             th:errors="*{companyId}">에러
+                        </div>
                     </div>
 
                     <div class="col-md-4">
@@ -70,7 +119,8 @@
                             <option value="" disabled selected>상위를 먼저 선택하세요</option>
                         </select>
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('subRegionId')}"
-                             th:errors="*{subRegionId}">에러</div>
+                             th:errors="*{subRegionId}">에러
+                        </div>
                     </div>
 
                     <!-- 기본 정보 -->
@@ -79,7 +129,8 @@
                         <input type="text" class="form-control" th:field="*{name}" required
                                th:classappend="${#fields.hasErrors('name')}? 'is-invalid'">
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}"
-                             th:errors="*{name}">에러</div>
+                             th:errors="*{name}">에러
+                        </div>
                     </div>
 
                     <div class="col-md-12">
@@ -87,21 +138,32 @@
                         <input type="text" class="form-control" th:field="*{address}" required
                                th:classappend="${#fields.hasErrors('address')}? 'is-invalid'">
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}"
-                             th:errors="*{address}">에러</div>
+                             th:errors="*{address}">에러
+                        </div>
                     </div>
 
+                    <!-- 소개 -->
                     <div class="col-12">
                         <label class="form-label">숙소 소개</label>
-                        <textarea class="form-control" th:field="*{description}" rows="3"
+                        <textarea class="form-control" rows="6" name="description" th:text="${form.description}"
                                   placeholder="숙소 소개, 편의시설 등"></textarea>
                     </div>
 
+                    <!-- 편의시설 -->
                     <div class="col-12">
-                        <label class="form-label">확인사항 및 기타</label>
-                        <textarea class="form-control" th:field="*{amenities}" rows="4"
-                                  placeholder="예) 와이파이,주차,수영장"></textarea>
+                        <label class="form-label mt-3">확인사항 및 기타</label>
+                        <textarea class="form-control" rows="6"
+                                  name="amenities"
+                                  th:text="${form.amenities}" placeholder="예) 와이파이,주차,수영장"></textarea>
                         <div class="help-text">쉼표(,)로 구분해서 입력하세요. 비워두면 저장 시 자동으로 빈 목록 처리됩니다.</div>
                     </div>
+                    <!-- 취소 규정 상세 -->
+                    <div>
+                        <label class="form-label mt-3">취소규정 상세</label>
+                        <textarea th:text="${form.cancellationPolicyDetail}" rows="6" class="form-control"></textarea>
+                        <div class="help-text">쉼표(,)로 구분해서 입력하세요. 비워두면 저장 시 자동으로 빈 목록 처리됩니다.</div>
+                    </div>
+
 
                     <!-- 운영 시간 / 가격 -->
                     <div class="col-md-3">
@@ -109,14 +171,16 @@
                         <input type="time" class="form-control" th:field="*{checkInTime}"
                                th:classappend="${#fields.hasErrors('checkInTime')}? 'is-invalid'">
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('checkInTime')}"
-                             th:errors="*{checkInTime}">에러</div>
+                             th:errors="*{checkInTime}">에러
+                        </div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label required">체크아웃</label>
                         <input type="time" class="form-control" th:field="*{checkOutTime}"
                                th:classappend="${#fields.hasErrors('checkOutTime')}? 'is-invalid'">
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('checkOutTime')}"
-                             th:errors="*{checkOutTime}">에러</div>
+                             th:errors="*{checkOutTime}">에러
+                        </div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">최저가(원)</label>
@@ -144,12 +208,13 @@
                         <!-- 썸네일 -->
                         <div class="col-md-6">
                             <label class="form-label required">썸네일 이미지</label>
-                            <!-- DTO가 MultipartFile file; 인 경우 -->
-                            <input type="file" class="form-control" th:field="*{file}" id="fileInput" accept="image/*" required>
+                            <!-- DTO에 MultipartFile file; 이라고 가정 -->
+                            <input type="file" class="form-control" th:field="*{file}" id="fileInput" accept="image/*"
+                                   required>
                             <div class="help-text">JPG/PNG 등 이미지 1장 업로드</div>
                             <div class="mt-2">
-                                <img id="thumbPreview" alt="thumbnail preview"
-                                     style="display:none; max-width:200px; border-radius:8px; border:1px solid #eee; background:#f6f6f6;">
+                                <img id="thumbPreview" alt="thumbnail preview" class="pv"
+                                     style="display:none; max-width:200px;">
                             </div>
                         </div>
 
@@ -157,9 +222,12 @@
                         <div class="col-md-6">
                             <label class="form-label">추가 이미지(여러 장)</label>
                             <!-- 컨트롤러 @RequestParam("subImages")와 동일한 name 사용 -->
-                            <input type="file" name="subImages" id="subImages" accept="image/*" multiple class="form-control">
+                            <input type="file" name="subImages" id="subImages" accept="image/*" multiple
+                                   class="form-control">
                             <div id="subPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
-                            <div class="form-text">여러 장 선택 가능. 저장하면 서브 이미지로 추가됩니다 (imageType=SUB, sortOrder는 1부터 자동부여).</div>
+                            <div class="form-text">여러 장 선택 가능. 저장하면 서브 이미지로 추가됩니다 (imageType=SUB, sortOrder는 1부터
+                                자동부여).
+                            </div>
                         </div>
                     </div>
 
@@ -188,12 +256,16 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             /* -------- 썸네일 미리보기 -------- */
-            const thumbInput = document.getElementById('fileInput');   // 썸네일 파일 input
+            const thumbInput = document.getElementById('fileInput');
             const thumbPreview = document.getElementById('thumbPreview');
             if (thumbInput && thumbPreview) {
                 thumbInput.addEventListener('change', (e) => {
                     const f = e.target.files && e.target.files[0];
-                    if (!f) { thumbPreview.style.display = 'none'; thumbPreview.src = ''; return; }
+                    if (!f) {
+                        thumbPreview.style.display = 'none';
+                        thumbPreview.src = '';
+                        return;
+                    }
                     const url = URL.createObjectURL(f);
                     thumbPreview.src = url;
                     thumbPreview.style.display = 'inline-block';
@@ -202,7 +274,7 @@
 
             /* -------- 서브 이미지 미리보기 + X 제거 -------- */
             const subInput = document.getElementById('subImages');
-            const subBox   = document.getElementById('subPreview');
+            const subBox = document.getElementById('subPreview');
             if (subInput && subBox) {
                 subInput.addEventListener('change', () => {
                     subBox.innerHTML = '';
@@ -212,25 +284,24 @@
                         const url = URL.createObjectURL(f);
 
                         const wrap = document.createElement('div');
-                        wrap.style.width = '120px';
-                        wrap.style.height = '120px';
-                        wrap.style.position = 'relative';
+                        wrap.className = 'pv-wrap';
 
                         const img = document.createElement('img');
                         img.src = url;
                         img.alt = f.name || 'preview';
-                        img.style.cssText = 'width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb;';
+                        img.className = 'pv';
 
                         const btn = document.createElement('button');
                         btn.type = 'button';
-                        btn.className = 'btn btn-light border rounded-circle position-absolute';
-                        btn.style.cssText = 'top:4px;right:4px;width:26px;height:26px;line-height:1;font-weight:800;padding:0;';
+                        btn.className = 'btn btn-light border rounded-circle pv-x';
                         btn.textContent = '×';
                         btn.title = '이 파일 제거';
                         btn.addEventListener('click', () => {
-                            // DataTransfer를 이용해 idx번째 파일 제외하고 재구성
+                            // DataTransfer로 idx번째 파일 제거
                             const dt = new DataTransfer();
-                            Array.from(subInput.files).forEach((file, i) => { if (i !== idx) dt.items.add(file); });
+                            Array.from(subInput.files).forEach((file, i) => {
+                                if (i !== idx) dt.items.add(file);
+                            });
                             subInput.files = dt.files;
                             subInput.dispatchEvent(new Event('change'));
                         });
@@ -244,7 +315,7 @@
 
             /* -------- 지역(소) 동적 로드 -------- */
             const main = document.getElementById('mainRegion');
-            const sub  = document.getElementById('subRegion');
+            const sub = document.getElementById('subRegion');
             if (main && sub) {
                 const url = main.dataset.url; // "/admin/accommodations/regions/children"
                 main.addEventListener('change', async () => {
@@ -255,7 +326,9 @@
                         return;
                     }
                     try {
-                        const res = await fetch(`${url}?parentId=${encodeURIComponent(parentId)}`, { headers: { 'Accept': 'application/json' }});
+                        const res = await fetch(`${url}?parentId=${encodeURIComponent(parentId)}`, {
+                            headers: {'Accept': 'application/json'}
+                        });
                         if (!res.ok) throw new Error(res.status);
                         const data = await res.json(); // [{id, name}]
                         sub.innerHTML = '<option value="" disabled selected>선택하세요</option>';
@@ -266,8 +339,8 @@
                             sub.appendChild(opt);
                         });
                     } catch (e) {
-                        sub.innerHTML = '<option value="" disabled selected>불러오기 실패</option>';
                         console.error('지역(소) 로드 실패:', e);
+                        sub.innerHTML = '<option value="" disabled selected>불러오기 실패</option>';
                     }
                 });
             }
@@ -306,6 +379,7 @@
                         box.appendChild(chip);
                     });
                 }
+
                 sel.addEventListener('change', renderSelected);
                 renderSelected();
             }

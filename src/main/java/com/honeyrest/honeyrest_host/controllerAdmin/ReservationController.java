@@ -6,6 +6,10 @@ import com.honeyrest.honeyrest_host.service.*;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -103,32 +107,38 @@ public class ReservationController {
     @GetMapping("/my")
     public String my(@RequestParam(defaultValue = "ALL") String status,
                      @RequestParam(required = false) String q,
+                     @RequestParam(required = false) Long accId,
                      @RequestParam(defaultValue = "1") int page,
                      @RequestParam(defaultValue = "10") int size,
                      Authentication authentication,
                      Model model) {
 
         Long companyId = companyService.getCompanyIdByOfCurrentUser();
-        PageRequestDTO pr = PageRequestDTO.builder().page(page).size(size).build();
+
+        // 정렬 숙소명 -> 체크인
+        Sort sort = Sort.by("accommodationName").descending()
+                .and(Sort.by("checkInDate").ascending());
+
+        Pageable pageable = PageRequest.of(Math.max(page - 1, 0), size, sort);
 
         // 서비스에 getCompanyReservations(companyId, status, q, pr) 구현 필요
-        PageResponseDTO<ReservationDTO> resp =
-                reservationService.getCompanyReservations(companyId, status, q, pr);
+        Page<ReservationDTO> resp =
+                reservationService.getCompanyReservations(companyId, status, q, accId, pageable);
 
-        int currentPage = pr.getPage();
-        int pageSize = pr.getSize();
-        int total = resp.getTotal();
-        int totalPages = (int) Math.ceil((double) total / pageSize);
+        int currentPage = page;
+        int pageSize = size;
+        int total = (int) resp.getTotalElements();
+        int totalPages = resp.getTotalPages();
 
-        // 블록 페이지 계산 (예: 5개씩)
-        int blockSize  = 5;
-        int startPage  = ((currentPage - 1) / blockSize) * blockSize + 1;
-        int endPage    = Math.min(startPage + blockSize - 1, totalPages);
+        int blockSize = 5;
+        int startPage = ((currentPage - 1) / blockSize)  * blockSize + 1;
+        int endPage = Math.min(startPage + blockSize -1, totalPages);
         boolean hasPrevBlock = startPage > 1;
         boolean hasNextBlock = endPage < totalPages;
 
 
-        model.addAttribute("list", resp.getDtoList());
+        // 뷰 모델
+        model.addAttribute("list", resp.getContent());
         model.addAttribute("total", total);
         model.addAttribute("currentPage", currentPage);
         model.addAttribute("pageSize", pageSize);
@@ -138,9 +148,12 @@ public class ReservationController {
         model.addAttribute("hasPrevBlock", hasPrevBlock);
         model.addAttribute("hasNextBlock", hasNextBlock);
 
-        model.addAttribute("statuses", List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED"));
+        model.addAttribute("statuses", List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCEL_REQUEST", "NO_SHOW"));
         model.addAttribute("selectedStatus", status);
         model.addAttribute("q", q == null ? "" : q);
+
+        model.addAttribute("accOptions" ,accommodationService.getAllById(companyId));
+        model.addAttribute("selectedAccId", accId);
 
         return "admin/reservations/my";
     }

@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -141,4 +143,5 @@ public class Reservation extends BaseEntity{
         this.status ="CANCELLED";
         this.cancelReason = reason;
     }
+
 }

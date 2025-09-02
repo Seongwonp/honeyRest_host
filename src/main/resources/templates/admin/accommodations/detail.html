@@ -8,20 +8,64 @@
   <title>숙소 상세</title>
   <th:block layout:fragment="head">
     <style>
-      .status-badge { padding:.35em .65em;border-radius:.25rem;font-size:.75rem;font-weight:500; }
-      .status-pending{background:#fff3cd;color:#856404}
-      .status-approved{background:#d4edda;color:#155724}
-      .status-rejected{background:#f8d7da;color:#721c24}
-      .status-active{background:#e7f1ff;color:#0a58ca}
-      .thumb{width:96px;height:96px;object-fit:cover;border-radius:.5rem;border:1px solid #eee}
+      /* 헤더 요약 */
+      .thumb{width:104px;height:104px;object-fit:cover;border-radius:.75rem;border:1px solid #eee}
+      .chip{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .6rem;border:1px solid #e5e7eb;border-radius:999px;font-size:.8rem;background:#fff}
+      .chip .dot{width:.5rem;height:.5rem;border-radius:999px;display:inline-block}
+      .status-badge { padding:.35em .65em;border-radius:999px;font-size:.75rem;font-weight:600; border:1px solid transparent}
+      .status-pending{background:#fff9e6;color:#a87c00;border-color:#ffe8a3}
+      .status-approved{background:#eaf8ee;color:#147a3c;border-color:#bfe6cb}
+      .status-rejected{background:#fdecec;color:#b64141;border-color:#f6c1c1}
+      .status-active{background:#e7f1ff;color:#0a58ca;border-color:#cfe0ff}
+
+      /* 섹션 공통 */
+      .section-title{font-weight:700; font-size:1rem; margin-bottom:.75rem}
       .kv dt{color:#6c757d}
-      .tag{display:inline-block;padding:.25rem .5rem;border:1px solid #e5e7eb;border-radius:.5rem;margin:.125rem;font-size:.8rem}
+      .card-lite{border:1px solid #edf1f5; border-radius:.75rem; padding:1rem}
+      .list-plain{margin:0; padding-left:1.2rem}
+      .list-plain li{margin:.25rem 0}
+
+      /* 소개글(설명) 클램프 */
+      .desc{white-space:pre-line; line-height:1.6}
+      .desc.clamp{
+        display:-webkit-box;
+        -webkit-box-orient:vertical;
+        -webkit-line-clamp:6; /* 기본 6줄만 */
+        overflow:hidden;
+        white-space:normal;   /* line-clamp와 호환 위해 */
+        position:relative;
+      }
+      .desc.clamp:after{
+        content:"";
+        position:absolute; bottom:0; left:0; right:0; height:2.5rem;
+        background:linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
+      }
+      .desc.expanded{
+        -webkit-line-clamp:unset;
+        max-height:none;
+      }
+      .btn-link-like{
+        border:none; background:none; padding:0; font-size:.9rem; color:#0a58ca; cursor:pointer;
+      }
+
+      /* 이미지 그리드 */
+      .imgbox{position:relative}
+      .imgbox img{width:100%; height:180px; object-fit:cover; border-radius:.5rem; border:1px solid #eee}
+      .img-type{position:absolute; left:.5rem; top:.5rem; font-size:.7rem; background:#0009; color:#fff; padding:.15rem .4rem; border-radius:.35rem}
+
+      /* 태그 */
+      .tag{display:inline-block;padding:.25rem .55rem;border:1px solid #e5e7eb;border-radius:.75rem;margin:.2rem;font-size:.8rem;background:#fff}
+
+      /* 반응형 여백 */
+      .gap-6{gap:1.5rem}
     </style>
   </th:block>
 </head>
 <body>
 <th:block layout:fragment="content">
-  <div class="page-heading d-flex justify-content-between align-items-center">
+
+  <!-- 상단 헤더 -->
+  <div class="d-flex align-items-center justify-content-between">
     <h3 class="mb-0">숙소 상세</h3>
     <div class="d-flex gap-2">
       <a th:href="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}" class="btn btn-outline-secondary">수정</a>
@@ -31,86 +75,117 @@
 
   <div class="card mt-3">
     <div class="card-body">
-      <!-- 상단 요약 -->
-      <div class="d-flex align-items-center gap-3 mb-3">
+
+      <!-- 요약 영역 -->
+      <div class="d-flex align-items-start gap-3 flex-wrap">
         <img th:if="${acc.thumbnail}" th:src="${acc.thumbnail}" alt="thumbnail" class="thumb">
-        <div>
-          <h4 class="mb-1" th:text="${acc.name}">숙소명</h4>
+        <div class="flex-grow-1">
           <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span>·</span>
-            카테고리:
-            <span th:text="${categoryName != null ? categoryName : '-'}"></span>
-            <span>·</span>
-            &nbsp;·&nbsp;지역:
-            <span th:text="${mainRegionName != null ? mainRegionName : '-'}"></span>
-            <span th:if="${subRegionName != null}" th:text="' / ' + ${subRegionName}"></span>
-            <span>·</span>
-            <strong th:text="|최저가 ${#numbers.formatDecimal(acc.minPrice,0,'COMMA',0,'POINT')}원|">최저가</strong>
+            <h4 class="mb-1" th:text="${acc.name}">숙소명</h4>
             <span class="status-badge"
                   th:classappend="${#strings.equalsIgnoreCase(acc.status,'PENDING') ? ' status-pending'
                                    : (#strings.equalsIgnoreCase(acc.status,'APPROVED') ? ' status-approved'
                                    : (#strings.equalsIgnoreCase(acc.status,'ACTIVE') ? ' status-active' : ' status-rejected'))}"
                   th:text="${acc.status}">ACTIVE</span>
           </div>
+
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <span class="chip">
+              <span class="dot" style="background:#8b5cf6"></span>
+              <span>카테고리</span>
+              <strong th:text="${categoryName != null ? categoryName : '-'}">-</strong>
+            </span>
+            <span class="chip">
+              <span class="dot" style="background:#10b981"></span>
+              <span>지역</span>
+              <strong>
+                <span th:text="${mainRegionName != null ? mainRegionName : '-'}">-</span>
+                <span th:if="${subRegionName != null}" th:text="' / ' + ${subRegionName}"></span>
+              </strong>
+            </span>
+            <span class="chip">
+              <span class="dot" style="background:#f59e0b"></span>
+              <span>최저가</span>
+              <strong th:text="|${#numbers.formatDecimal(acc.minPrice,0,'COMMA',0,'POINT')}원|">0원</strong>
+            </span>
+            <span class="chip">
+              <span class="dot" style="background:#ef4444"></span>
+              <span>평점</span>
+              <strong th:text="${acc.rating != null ? acc.rating : '-'}">-</strong>
+            </span>
+          </div>
         </div>
       </div>
 
       <hr>
 
-      <!-- 기본 정보 -->
+      <!-- 2열 레이아웃: 기본정보 | 소개/확인/취소규정 -->
       <div class="row">
-        <div class="col-lg-6">
-          <h6 class="mb-3">기본 정보</h6>
-          <dl class="row kv">
-            <dt class="col-sm-3">업체명</dt>
-            <dd class="col-sm-9" th:text="${companyName}">1</dd>
 
-            <dt class="col-sm-3">주소</dt>
-            <dd class="col-sm-9" th:text="${acc.address}">주소</dd>
+        <!-- 왼쪽: 기본 정보 -->
+        <div class="col-lg-5">
+          <div class="card-lite">
+            <div class="section-title">기본 정보</div>
+            <dl class="row kv mb-0">
+              <dt class="col-sm-4">업체명</dt>
+              <dd class="col-sm-8" th:text="${companyName}">-</dd>
 
-            <dt class="col-sm-3">체크인</dt>
-            <dd class="col-sm-9" th:text="${acc.checkInTime != null ? #temporals.format(acc.checkInTime,'HH:mm') : '-'}">15:00</dd>
+              <dt class="col-sm-4">주소</dt>
+              <dd class="col-sm-8" th:text="${acc.address}">-</dd>
 
-            <dt class="col-sm-3">체크아웃</dt>
-            <dd class="col-sm-9" th:text="${acc.checkOutTime != null ? #temporals.format(acc.checkOutTime,'HH:mm') : '-'}">11:00</dd>
+              <dt class="col-sm-4">체크인</dt>
+              <dd class="col-sm-8" th:text="${acc.checkInTime != null ? #temporals.format(acc.checkInTime,'HH:mm') : '-'}">-</dd>
 
-            <dt class="col-sm-3">평점</dt>
-            <dd class="col-sm-9" th:text="${acc.rating}">4.8</dd>
-          </dl>
-        </div>
-        <div class="col-lg-6">
-          <h6 class="mb-3">숙소 소개</h6>
-          <p class="text-muted" th:text="${acc.description}">설명</p>
-
-          <h6 class="mt-4 mb-2">확인사항 및 기타</h6>
-          <ul th:if="${amenitiesList != null and !amenitiesList.isEmpty()}">
-            <li th:each="a : ${amenitiesList}" th:text="${a}"></li>
-          </ul>
-
-          <h6 class="mt-3 mb-2">취소 및 환불 규정</h6>
-          <div th:if="${policyItems != null and !policyItems.isEmpty()}" class="bg-light p-3 rounded">
-            <ul class="mb-0">
-              <li th:each="p : ${policyItems}" th:text="${p}"></li>
-            </ul>
+              <dt class="col-sm-4">체크아웃</dt>
+              <dd class="col-sm-8" th:text="${acc.checkOutTime != null ? #temporals.format(acc.checkOutTime,'HH:mm') : '-'}">-</dd>
+            </dl>
           </div>
-          <p th:if="${policyItems == null or policyItems.isEmpty()}" class="text-muted">
-            등록된 환불 규정이 없습니다.
-          </p>
+        </div>
 
-<!--          <p th:if="${amenitiesList == null or amenitiesList.isEmpty()}" class="text-muted">등록된 확인사항이 없습니다.</p>-->
+        <!-- 오른쪽: 소개 + 확인사항 + 취소규정 -->
+        <div class="col-lg-7">
+          <div class="card-lite mb-3">
+            <div class="section-title d-flex justify-content-between align-items-center">
+              <span>숙소 소개</span>
+              <button type="button" class="btn-link-like" id="descToggle">더보기</button>
+            </div>
+            <div id="desc" class="desc clamp" th:text="${acc.description}"></div>
+          </div>
 
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="card-lite h-100">
+                <div class="section-title">확인사항 및 기타</div>
+                <ul th:if="${amenitiesList != null and !#lists.isEmpty(amenitiesList)}">
+                  <li th:each="a : ${amenitiesList}" th:text="${a}"></li>
+                </ul>
+                <div th:if="${acc.amenities == null or #strings.isEmpty(acc.amenities)}" class="text-muted">등록된 확인사항이 없습니다.</div>
+              </div>
+            </div>
 
+            <div class="col-md-6">
+              <div class="card-lite h-100">
+                <div class="section-title">취소규정 상세</div>
+                <ul th:if="${policyList != null and !#lists.isEmpty(policyList)}">
+                  <li th:each="p : ${policyList}" th:text="${p}"></li>
+                </ul>
+                <div th:if="${acc.cancellationPolicyDetail == null or #strings.isEmpty(acc.cancellationPolicyDetail)}" class="text-muted">등록된 환불 규정이 없습니다.</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <hr>
 
       <!-- 이미지 -->
-      <h6 class="mb-3">이미지</h6>
+      <div class="section-title">이미지</div>
       <div class="row g-3">
         <div class="col-6 col-md-3" th:each="img : ${acc.images}">
-          <img th:src="${img.imageUrl}" class="w-100 rounded border" style="height:160px;object-fit:cover" alt="image">
-          <div class="small text-muted mt-1" th:text="${img.imageType}">MAIN</div>
+          <div class="imgbox">
+            <img th:src="${img.imageUrl}" alt="image">
+            <div class="img-type" th:text="${img.imageType}">MAIN</div>
+          </div>
         </div>
         <div th:if="${acc.images == null or #lists.isEmpty(acc.images)}" class="text-muted">등록된 이미지가 없습니다.</div>
       </div>
@@ -118,7 +193,7 @@
       <hr>
 
       <!-- 태그 -->
-      <h6 class="mb-2">태그</h6>
+      <div class="section-title">태그</div>
       <div>
         <span class="tag" th:each="t : ${acc.tags}" th:text="${t.name}">오션뷰</span>
         <span th:if="${acc.tags == null || #lists.isEmpty(acc.tags)}" class="text-muted">등록된 태그가 없습니다.</span>
@@ -130,6 +205,34 @@
     <a th:href="@{/admin/accommodations/list}" class="btn btn-light">목록</a>
     <a th:href="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}" class="btn btn-secondary">수정</a>
   </div>
+
+  <script>
+    (function(){
+      const btn = document.getElementById('descToggle');
+      const desc = document.getElementById('desc');
+      if (!btn || !desc) return;
+
+      let expanded = false;
+      const update = () => {
+        if (expanded) {
+          desc.classList.remove('clamp');
+          desc.classList.add('expanded');
+          btn.textContent = '접기';
+        } else {
+          desc.classList.add('clamp');
+          desc.classList.remove('expanded');
+          btn.textContent = '더보기';
+        }
+      }
+      btn.addEventListener('click', function(){
+        expanded = !expanded;
+        update();
+      });
+      // 초기 상태
+      update();
+    })();
+  </script>
+
 </th:block>
 </body>
 </html>

@@ -9,7 +9,6 @@ import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dto.CompanyDTO;
 import com.honeyrest.honeyrest_host.dto.RegionDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.*;
-import com.honeyrest.honeyrest_host.repository.CancellationPolicyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
 import com.honeyrest.honeyrest_host.service.CancellationPolicyService;
 import com.honeyrest.honeyrest_host.service.RegionService;
@@ -19,6 +18,7 @@ import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import com.honeyrest.honeyrest_host.service.CompanyService;
 import com.honeyrest.honeyrest_host.service.UserService;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationTagService;
+import com.honeyrest.honeyrest_host.util.AmenitiesParser;
 import com.honeyrest.honeyrest_host.util.FileUploadUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -93,6 +93,7 @@ public class AccommodationPageController {
         }
 
         try {
+
             // (1) 대표 썸네일
             if (form.getFile() != null && !form.getFile().isEmpty()) {
                 String url = fileUploadUtil.upload(form.getFile(), "accommodation");
@@ -100,7 +101,7 @@ public class AccommodationPageController {
             }
 
             // (2) 편의시설 JSON 정규화
-            form.setAmenities(parseAmenitiesToJson(form.getAmenities()));
+            form.setAmenities(AmenitiesParser.normalizeToJson(form.getAmenities()));
 
             // (3) 숙소 저장
             AccommodationCreateRequestDTO saved = accommodationService.create(form);
@@ -240,9 +241,16 @@ public class AccommodationPageController {
             CompanyDTO com = companyService.getById(acc.getCompanyId());
             companyName = (com != null ? com.getName() : null);
         }
+        // 최소규정
+        if(acc.getCancellationPolicyDetail() == null) {
+            String policyJson = cancellationPolicyService.getMultilineByAccommodationId(id);
+            acc.setCancellationPolicyDetail(policyJson);
+        }
 
         // ← JSON 문자열을 List<String>으로 변환해서 모델에 담기
-        List<String> amenitiesList = parseAmenitiesToList(acc.getAmenities());
+        List<String> amenitiesList = AmenitiesParser.toList(acc.getAmenities());
+        List<String> policyList = AmenitiesParser.toList(acc.getCancellationPolicyDetail());
+        String description = acc.getDescription();
 
 
         model.addAttribute("acc", acc);
@@ -251,6 +259,8 @@ public class AccommodationPageController {
         model.addAttribute("subRegionName", subRegionName);
         model.addAttribute("companyName", companyName);
         model.addAttribute("amenitiesList", amenitiesList);
+        model.addAttribute("policyList", policyList);
+        model.addAttribute("description", description);
 
         return "admin/accommodations/detail";
     }
@@ -296,9 +306,12 @@ public class AccommodationPageController {
         AccommodationCreateRequestDTO dto = accommodationService.getById(id);
         model.addAttribute("dto", dto);
 
+        // dto cancellationPolicyDetail
+        String policyMultilineFromDto = AmenitiesParser.toMultiline(dto.getCancellationPolicyDetail());
+
+
         // dto amenities(json) -> list -> \n 문자열
-        List<String> amenListForForm = parseAmenitiesToList(dto.getAmenities());
-        String amenitiesMultiline = amenitiesListToMultiline(amenListForForm);
+        String amenitiesMultiline = AmenitiesParser.toMultiline(dto.getAmenities());
 
         // 2) 화면 폼용으로 기존 DTO 재활용
         AccommodationUpdateRequestDTO form = AccommodationUpdateRequestDTO.builder()
@@ -313,6 +326,7 @@ public class AccommodationPageController {
                 .thumbnail(dto.getThumbnail())
                 .description(dto.getDescription())
                 .amenities(amenitiesMultiline)
+                .cancellationPolicyDetail(null)
                 .checkInTime(dto.getCheckInTime())
                 .checkOutTime(dto.getCheckOutTime())
                 .status(dto.getStatus())
@@ -380,7 +394,10 @@ public class AccommodationPageController {
         }
         try {
             // 1) amenities 정규화
-            form.setAmenities(parseAmenitiesToJson(form.getAmenities()));
+            form.setAmenities(AmenitiesParser.normalizeToJson(form.getAmenities()));
+
+            String policyJson = AmenitiesParser.normalizeToJson(form.getPolicyMultiline());
+            form.setPolicyMultiline(policyJson);
 
             // 2) 썸네일 처리
             String newMainUrl = null;
@@ -438,7 +455,7 @@ public class AccommodationPageController {
             cancellationPolicyService.saveOrUpdate(id, form.getPolicyMultiline());
 
             ra.addFlashAttribute("success", "수정이 완료되었습니다.");
-            return "redirect:/admin/accommodations/list"; // 또는 detail/{id}로
+            return "redirect:/admin/accommodations/detail/{id}"; // 또는 detail/{id}로
 
         } catch (Exception e) {
             log.error("editSubmit error", e);

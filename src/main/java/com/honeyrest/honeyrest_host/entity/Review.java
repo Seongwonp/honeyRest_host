@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -65,4 +67,5 @@ public class Review extends  BaseEntity {
 
     @Column(name = "status", length = 20, nullable = false)
     private String status; // 상태(PUBLISHED, HIDDEN)
+
 }

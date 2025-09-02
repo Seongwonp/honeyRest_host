@@ -7,6 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.checkerframework.checker.units.qual.C;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Builder
@@ -20,12 +23,13 @@ public class AccommodationCategory {
     @Column(name = "category_id")
     private Long categoryId; // 카테고리 고유 식별자
 
-    @Column(name = "name", nullable=false, length=100)
+    @Column(name = "name", nullable = false, length = 100)
     private String name; // 카테고리명
 
-    @Column(name = "icon_url", length=255)
+    @Column(name = "icon_url", length = 255)
     private String iconUrl; // 카테고리 아이콘 이미지 경로
 
     @Column(name = "sort_order")
     private Integer sortOrder; // 정렬 순서
+
 }

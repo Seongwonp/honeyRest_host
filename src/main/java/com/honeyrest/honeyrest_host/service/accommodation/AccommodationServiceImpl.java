@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dto.accommodation.*;
 import com.honeyrest.honeyrest_host.entity.*;
+import com.honeyrest.honeyrest_host.repository.CancellationPolicyRepository;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
 import com.honeyrest.honeyrest_host.repository.RegionRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.*;
+import com.honeyrest.honeyrest_host.util.AmenitiesParser;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationImageRepository accommodationImageRepository;
     private final AccommodationTagMapRepository accommodationTagMapRepository;
     private final AccommodationImageService accommodationImageService;
+    private final CancellationPolicyRepository cancellationPolicyRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -441,4 +444,30 @@ public class AccommodationServiceImpl implements AccommodationService {
         return accommodationRepository.findById(accommodationId).map(Accommodation::getName).orElse("알수없음");
 
     }
+    @Override
+    public AccommodationCreateRequestDTO getDetail(Long accId) {
+        Accommodation acc = accommodationRepository.findById(accId)
+                .orElseThrow(() -> new IllegalArgumentException("숙소를 찾을 수 없습니다."));
+
+        // 기본 필드 채우기
+        AccommodationCreateRequestDTO dto = AccommodationCreateRequestDTO.builder()
+                .accommodationId(acc.getAccommodationId())
+                .name(acc.getName())
+                .address(acc.getAddress())
+                .description(acc.getDescription())
+                .build();
+
+        // 환불 정책 가져오기
+        CancellationPolicy policy = cancellationPolicyRepository
+                .findFirstByAccommodation_AccommodationId(accId)
+                .orElse(null);
+
+        if (policy != null) {
+            dto.setCancellationPolicyDetail(policy.getDetail());
+            dto.setCancellationPolicyItems(AmenitiesParser.toList(policy.getDetail()));
+        }
+
+        return dto;
+    }
 }
+

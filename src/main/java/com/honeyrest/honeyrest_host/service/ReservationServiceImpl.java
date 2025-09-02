@@ -102,7 +102,7 @@ public class ReservationServiceImpl implements ReservationService {
                 .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + reservationId));
 
         // 이미 취소면 중복 복구 방지
-        if ("CANCELLED".equals(r.getStatus())) return;
+        if ("CANCEL_REQUEST".equals(r.getStatus())) return;
 
         // 2) 재고 복구가 필요한 상태인지 판단
         boolean needRestock =
@@ -385,5 +385,28 @@ public class ReservationServiceImpl implements ReservationService {
                 .build();
 
     }
+    @Override
+    public Page<ReservationDTO> getCompanyReservations(
+            Long companyId, String status, String q, Long accId, Pageable pageable) {
 
+        String statusParam = normalizeStatus(status); // ALL/빈값 → null
+        String qParam = normalizeBlankToNull(q);
+
+        Page<Reservation> page = reservationRepository.searchCompanyReservations(
+                companyId, statusParam, qParam, accId, pageable);
+
+        // Page<Reservation> → Page<ReservationDTO>
+        return page.map(this::toDto);
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null) return null;
+        String s = status.trim();
+        return (s.isEmpty() || "ALL".equalsIgnoreCase(s)) ? null : s;
+    }
+    private String normalizeBlankToNull(String s) {
+        if (s == null) return null;
+        s = s.trim();
+        return s.isEmpty() ? null : s;
+    }
 }

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -92,5 +93,27 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                                          @Param("accommodationId") Long accommodationId,
                                                          @Param("startDate") LocalDate startDate,
                                                          @Param("endDate") LocalDate endDate);
-}
 
+
+
+        @Query("""
+        SELECT r
+        FROM Reservation r
+        JOIN r.accommodation a
+        JOIN a.company c
+        WHERE c.companyId = :companyId
+          AND (:status IS NULL OR :status = 'ALL' OR r.status = :status)
+          AND (:accId IS NULL OR a.accommodationId = :accId)
+          AND (
+               :q IS NULL OR :q = '' OR
+               r.reservationNumber LIKE CONCAT('%', :q, '%') OR
+               r.guestName        LIKE CONCAT('%', :q, '%') OR
+               r.roomName         LIKE CONCAT('%', :q, '%')
+          )
+        """)
+        Page<Reservation> searchCompanyReservations(@Param("companyId") Long companyId,
+                                                    @Param("status") String status,
+                                                    @Param("q") String q,
+                                                    @Param("accId") Long accId,
+                                                    Pageable pageable);
+    }

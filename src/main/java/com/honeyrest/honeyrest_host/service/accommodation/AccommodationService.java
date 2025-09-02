@@ -40,4 +40,6 @@ public interface AccommodationService {
 
     // 숙소 이름만 필요, 아무것도 말고 숙소명만 가져오기
     String getNameById(Long accommodationId);
+
+    AccommodationCreateRequestDTO getDetail(Long accId);
 }

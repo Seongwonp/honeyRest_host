@@ -89,6 +89,10 @@ public class AccommodationCreateRequestDTO {
     // 부가
     private List<AccommodationTagDTO> tags;
 
+    // 환불 규정 추가
+    private String cancellationPolicyDetail; // JSON 문자열 그대로 넣거나
+    private List<String> cancellationPolicyItems; // 파싱된 리스트로 내려주기 용도
+
 
 
 }

@@ -53,6 +53,11 @@ public class AccommodationUpdateRequestDTO {
     // 정책 textarea 바인딩용
     private String policyMultiline;
 
+    // 환불 규정 추가
+    private String cancellationPolicyDetail; // JSON 문자열 그대로 넣거나
+    private List<String> cancellationPolicyItems; // 파싱된 리스트로 내려주기 용도
+
+
 }
 
 

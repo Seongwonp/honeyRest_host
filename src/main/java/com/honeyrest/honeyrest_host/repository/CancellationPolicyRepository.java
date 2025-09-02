@@ -7,10 +7,13 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface CancellationPolicyRepository extends JpaRepository<CancellationPolicy, Long> {
-    Optional<CancellationPolicy> findByAccommodation_AccommodationId(Long accommodationId);
+    Optional<CancellationPolicy> findFirstByAccommodation_AccommodationId(Long accommodationId);
+
+    List<CancellationPolicy> findByAccommodation_AccommodationId(Long accommodationId);
 
     @Transactional
     void deleteByAccommodation_AccommodationId(Long accommodationId);

@@ -32,5 +32,7 @@ public interface AccommodationImageRepository extends JpaRepository<Accommodatio
     // 삭제
     void deleteByAccommodation_AccommodationId(Long accommodationId);
 
+    void deleteByAccommodation_AccommodationIdAndImageType(Long accommodationId, String imageType);
+
 
 }

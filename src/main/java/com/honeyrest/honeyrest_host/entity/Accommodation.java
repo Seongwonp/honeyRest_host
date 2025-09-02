@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -73,4 +75,6 @@ public class Accommodation {
 
     @Column(length = 20)
     private String status; // 운영 상태(active, inactive)
+
+
 }

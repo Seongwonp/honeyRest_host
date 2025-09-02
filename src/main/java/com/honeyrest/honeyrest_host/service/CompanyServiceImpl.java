@@ -2,11 +2,20 @@ package com.honeyrest.honeyrest_host.service;
 
 
 import com.honeyrest.honeyrest_host.dto.CompanyDTO;
+import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
+import com.honeyrest.honeyrest_host.dto.ReservationDTO;
 import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
 import com.honeyrest.honeyrest_host.entity.Company;
+import com.honeyrest.honeyrest_host.entity.Reservation;
 import com.honeyrest.honeyrest_host.repository.CompanyRepository;
+import com.honeyrest.honeyrest_host.repository.ReservationRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +33,10 @@ public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
     private final AccommodationRepository accommodationRepository;
+    private final ReservationRepository reservationRepository;
 
     // == mapper ==
-    private CompanyDTO toDTO(Company e){
+    private CompanyDTO toDTO(Company e) {
         if (e == null) return null;
         return CompanyDTO.builder()
                 .companyId(e.getCompanyId())
@@ -41,7 +51,8 @@ public class CompanyServiceImpl implements CompanyService {
                 .status(e.getStatus())
                 .build();
     }
-    private Company toEntity(CompanyDTO d){
+
+    private Company toEntity(CompanyDTO d) {
         if (d == null) return null;
         return Company.builder()
                 .companyId(d.getCompanyId())
@@ -60,7 +71,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public CompanyDTO create(CompanyDTO dto) {
         // 사업자 번호 중복 체크
-        if(dto.getBusinessNumber() != null && companyRepository.existsByBusinessNumber(dto.getBusinessNumber())) {
+        if (dto.getBusinessNumber() != null && companyRepository.existsByBusinessNumber(dto.getBusinessNumber())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 등록된 사업자번호입니다.");
         }
         Company entity = toEntity(dto);
@@ -110,22 +121,23 @@ public class CompanyServiceImpl implements CompanyService {
         }
         companyRepository.deleteById(id);
     }
+
     @Override
-    public CompanyDTO getByUserEmail(String email){
+    public CompanyDTO getByUserEmail(String email) {
         return toDTO(companyRepository.findCompanyByEmail(email));
     }
 
     @Override
     public Long getCompanyIdByUserEmail(String email) {
         return companyRepository.findCompanyIdByUserEmail(email)
-                .orElseThrow(()-> new IllegalArgumentException("업체 아아디인 이메일을 찾을 수 없습니다" +
-                                                                                                               "."));
+                .orElseThrow(() -> new IllegalArgumentException("업체 아아디인 이메일을 찾을 수 없습니다" +
+                                                                "."));
     }
 
     @Override
     public Long getCompanyIdByOfCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if(auth == null) throw new IllegalArgumentException("사용자권한없음.");
+        if (auth == null) throw new IllegalArgumentException("사용자권한없음.");
         return getCompanyIdByUserEmail(auth.getName()); // 로그인 username(email)로 회사 ID 조회
     }
 
@@ -133,4 +145,5 @@ public class CompanyServiceImpl implements CompanyService {
     public Long getCompanyIdByAccommodationId(Long accommodationId) {
         return accommodationRepository.findCompanyIdByAccommodationId(accommodationId);
     }
+
 }

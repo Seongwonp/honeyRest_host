@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -67,4 +69,5 @@ public class User extends BaseEntity {
 
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified = false; // 이메일 인증 여부
+
 }

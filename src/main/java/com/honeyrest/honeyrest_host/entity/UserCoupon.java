@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -40,4 +42,5 @@ public class UserCoupon {
 
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt; // 만료 일시
+
 }

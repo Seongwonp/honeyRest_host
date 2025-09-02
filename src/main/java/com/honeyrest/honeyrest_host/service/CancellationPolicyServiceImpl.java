@@ -29,6 +29,7 @@ public class CancellationPolicyServiceImpl implements CancellationPolicyService 
     private final ObjectMapper objectMapper;
 
 
+
     /* detail - 리스트 */
     private List<String> parseDetail(String raw) {
         if (raw == null || raw.isBlank()) return List.of();
@@ -59,7 +60,8 @@ public class CancellationPolicyServiceImpl implements CancellationPolicyService 
 
     @Override
     public String getMultilineByAccommodationId(Long accommodationId) {
-        return cancellationPolicyRepository.findByAccommodation_AccommodationId(accommodationId)
+        return cancellationPolicyRepository
+                .findFirstByAccommodation_AccommodationId(accommodationId) // 또는 OrderByIdDesc
                 .map(cp -> String.join("\n", parseJsonArray(cp.getDetail())))
                 .orElse("");
     }
@@ -84,6 +86,7 @@ public class CancellationPolicyServiceImpl implements CancellationPolicyService 
         } catch (Exception e) {
             json = "[]";
         }
+        List<CancellationPolicy> existingOpt = cancellationPolicyRepository.findByAccommodation_AccommodationId(accommodationId);
 
         CancellationPolicy entity = CancellationPolicy.builder()
                 .accommodation(accommodationRepository.getReferenceById(accommodationId))

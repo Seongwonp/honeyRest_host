@@ -33,10 +33,10 @@
             font-size: 14px;
             line-height: 1;
             cursor: pointer;
-            display: none; /* 기본은 숨김 */
+            display: none;
         }
         .img-wrap:hover button.remove-btn {
-            display: block; /* hover 시에만 표시 */
+            display: block;
         }
         .img-wrap button.remove-btn:hover {
             background: rgba(220,53,69,0.9);
@@ -112,31 +112,58 @@
                                 <!-- 소개 -->
                                 <div class="col-12">
                                     <label class="form-label">숙소 소개</label>
-                                    <textarea class="form-control" th:field="*{description}" rows="3"
-                                              placeholder="숙소 소개, 편의시설 등"></textarea>
+                                    <textarea class="form-control" rows="6" name="description" th:text="${form.description}"
+                                              placeholder="숙소 소개, 편의시설 등">
+
+                                    </textarea>
                                 </div>
 
                                 <!-- 편의시설 -->
                                 <div class="col-12">
-                                    <label class="form-label">확인사항 및 기타</label>
-                                    <textarea class="form-control" th:field="*{amenities}" rows="3"
-                                              placeholder="예) 와이파이,주차,수영장"></textarea>
+                                    <label class="form-label mt-3">확인사항 및 기타</label>
+                                    <textarea class="form-control" rows="6"
+                                              name="amenities"
+                                              th:text="${form.amenities}"></textarea>
                                 </div>
+                                <!-- 취소 규정 상세 -->
+                                <div>
+                                <label class="form-label mt-3">취소규정 상세</label>
+                                <textarea class="form-control" rows="6"
+                                          name="policyMultiline"
+                                          th:text="${form.policyMultiline}"></textarea>
+                                </div>
+
 
                                 <!-- 썸네일 -->
                                 <div class="col-12">
                                     <label class="form-label">썸네일(메인)</label>
+
+                                    <!-- 항상 프리뷰 컨테이너를 렌더링: 이미지 유무에 따라 show/hide -->
                                     <div class="d-flex align-items-center gap-3">
-                                        <div class="img-wrap" th:if="${acc != null and #strings.length(acc.thumbnail) > 0}">
-                                            <img id="thumbPreview" th:src="${acc.thumbnail}" alt="thumbnail">
-                                            <button type="button" class="remove-btn" id="removeThumb">×</button>
+                                        <div class="img-wrap" id="thumbWrap">
+                                            <img id="thumbPreview"
+                                                 th:if="${acc != null and #strings.length(acc.thumbnail) > 0}"
+                                                 th:src="${acc.thumbnail}"
+                                                 alt="thumbnail">
+                                            <img id="thumbPreviewEmpty"
+                                                 th:if="${acc == null or #strings.length(acc.thumbnail) == 0}"
+                                                 src=""
+                                                 alt="thumbnail"
+                                                 style="display:none;">
+                                            <button type="button" class="remove-btn" id="removeThumb" th:if="${acc != null and #strings.length(acc.thumbnail) > 0}">×</button>
                                         </div>
-                                        <span th:if="${acc == null or #strings.length(acc.thumbnail) == 0}"
-                                              class="text-muted" id="thumbEmpty">이미지 없음</span>
+                                        <span class="text-muted" id="thumbEmptyText"
+                                              th:if="${acc == null or #strings.length(acc.thumbnail) == 0}">
+                                          이미지 없음
+                                        </span>
                                     </div>
+
+                                    <!-- 서버 반영용 히든 -->
                                     <input type="hidden" th:field="*{thumbnail}">
                                     <input type="hidden" name="deleteThumbnail" id="deleteThumbnail" value="false">
+
                                     <div class="mt-2" style="max-width:360px">
+                                        <!-- 파일 선택 시 미리보기 갱신 -->
                                         <input type="file" id="thumbFile" name="thumbnailFile" accept="image/*" class="form-control">
                                     </div>
                                 </div>
@@ -144,7 +171,7 @@
                                 <!-- 서브 이미지 -->
                                 <div class="col-12 mt-4">
                                     <label class="form-label">서브 이미지들</label>
-                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <div class="d-flex flex-wrap gap-2 mb-2" id="subExistingList">
                                         <div th:each="img : ${images}" th:if="${img.imageType == 'SUB'}"
                                              class="img-wrap">
                                             <img th:src="${img.imageUrl}" alt="sub">
@@ -152,7 +179,10 @@
                                                     th:attr="data-id=${img.imageId}">×</button>
                                         </div>
                                     </div>
+
+                                    <!-- 새 파일 선택 -->
                                     <input type="file" name="subImages" id="subImages" accept="image/*" multiple class="form-control" style="max-width:480px">
+                                    <!-- 새 파일 미리보기 -->
                                     <div id="subPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
                                 </div>
                             </div>
@@ -172,20 +202,73 @@
 <th:block layout:fragment="script">
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 썸네일 삭제
-            const btn = document.getElementById('removeThumb');
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    document.getElementById('deleteThumbnail').value = 'true';
-                    const preview = document.getElementById('thumbPreview');
-                    if (preview) preview.style.display = 'none';
-                    btn.style.display = 'none';
-                    const empty = document.getElementById('thumbEmpty');
-                    if (empty) empty.style.display = 'inline';
+            /* ===============================
+             * 1) 썸네일 미리보기 (파일 선택 시)
+             * =============================== */
+            const thumbFile = document.getElementById('thumbFile');
+            const thumbWrap = document.getElementById('thumbWrap');
+            const thumbPreview = document.getElementById('thumbPreview');       // 기존 썸네일 있을 때
+            const thumbPreviewEmpty = document.getElementById('thumbPreviewEmpty'); // 기존 썸네일 없을 때 사용할 img
+            const thumbEmptyText = document.getElementById('thumbEmptyText');
+            const removeThumbBtn = document.getElementById('removeThumb');
+            const deleteThumbHidden = document.getElementById('deleteThumbnail');
+
+            if (thumbFile) {
+                thumbFile.addEventListener('change', () => {
+                    const f = thumbFile.files && thumbFile.files[0];
+                    if (!f) return;
+
+                    const url = URL.createObjectURL(f);
+
+                    // 기존 프리뷰가 있으면 그걸 쓰고, 없으면 empty img를 사용
+                    let targetImg = thumbPreview || thumbPreviewEmpty;
+                    targetImg.src = url;
+                    targetImg.style.display = 'block';
+
+                    // "이미지 없음" 텍스트 숨기기
+                    if (thumbEmptyText) thumbEmptyText.style.display = 'none';
+
+                    // 삭제 플래그는 해제 (새 파일 선택이므로)
+                    if (deleteThumbHidden) deleteThumbHidden.value = 'false';
+
+                    // 삭제 버튼이 없으면 생성(파일 선택으로 프리뷰가 생겼으니)
+                    if (!removeThumbBtn) {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.id = 'removeThumb';
+                        btn.className = 'remove-btn';
+                        btn.textContent = '×';
+                        btn.addEventListener('click', () => {
+                            // 삭제 표시 + 프리뷰 숨김
+                            if (deleteThumbHidden) deleteThumbHidden.value = 'true';
+                            targetImg.style.display = 'none';
+                            if (thumbEmptyText) thumbEmptyText.style.display = 'inline';
+
+                            // 파일 입력 초기화
+                            thumbFile.value = '';
+                            btn.remove();
+                        });
+                        thumbWrap.appendChild(btn);
+                    }
                 });
             }
 
-            // 서브 이미지 삭제
+            // 기존 썸네일 삭제 버튼 동작(초기 렌더에만 존재)
+            if (removeThumbBtn) {
+                removeThumbBtn.addEventListener('click', () => {
+                    if (deleteThumbHidden) deleteThumbHidden.value = 'true';
+                    if (thumbPreview) thumbPreview.style.display = 'none';
+                    if (thumbEmptyText) thumbEmptyText.style.display = 'inline';
+                    // 파일 입력도 초기화
+                    if (thumbFile) thumbFile.value = '';
+                    removeThumbBtn.remove();
+                });
+            }
+
+            /* ==================================
+             * 2) 서브 이미지(기존) 삭제 버튼
+             *    → hidden name=deleteSubImageIds 추가
+             * ================================== */
             document.querySelectorAll('.remove-sub').forEach(b => {
                 b.addEventListener('click', () => {
                     const id = b.getAttribute('data-id');
@@ -200,22 +283,101 @@
                 });
             });
 
-            // 새 서브 이미지 미리보기
-            const input = document.getElementById('subImages');
-            const box = document.getElementById('subPreview');
-            if (input && box) {
-                input.addEventListener('change', function () {
-                    box.innerHTML = '';
-                    Array.from(this.files).forEach(f => {
+            /* ==================================
+             * 3) 새 서브 이미지 미리보기 + X 제거
+             *    (파일 input 목록에서도 제거)
+             * ================================== */
+            const subInput = document.getElementById('subImages');
+            const subBox   = document.getElementById('subPreview');
+            if (subInput && subBox) {
+                subInput.addEventListener('change', () => {
+                    subBox.innerHTML = '';
+                    const files = Array.from(subInput.files || []);
+
+                    files.forEach((f, idx) => {
+                        if (!f.type.startsWith('image/')) return;
                         const url = URL.createObjectURL(f);
+
                         const wrap = document.createElement('div');
                         wrap.className = 'img-wrap';
+
                         const img = document.createElement('img');
                         img.src = url;
+                        img.alt = f.name;
+
+                        const x = document.createElement('button');
+                        x.type = 'button';
+                        x.className = 'remove-btn';
+                        x.textContent = '×';
+                        x.title = '이 파일 제거';
+
+                        x.addEventListener('click', () => {
+                            // DataTransfer로 해당 index 파일 제거
+                            const dt = new DataTransfer();
+                            Array.from(subInput.files).forEach((file, i) => {
+                                if (i !== idx) dt.items.add(file);
+                            });
+                            subInput.files = dt.files;
+                            subInput.dispatchEvent(new Event('change'));
+                        });
+
                         wrap.appendChild(img);
-                        box.appendChild(wrap);
+                        wrap.appendChild(x);
+                        subBox.appendChild(wrap);
                     });
                 });
+            }
+
+            /* ==================================
+             * 4) 지역(대) → 지역(소) 동적 로드
+             *    #mainRegion[data-url] 사용
+             * ================================== */
+            const mainRegion = document.getElementById('mainRegion');
+            const subRegion  = document.getElementById('subRegion');
+            if (mainRegion && subRegion) {
+                const dataUrl = mainRegion.getAttribute('data-url'); // 예: /admin/accommodations/regions/children
+
+                async function loadSubRegions(parentId, selectedValue) {
+                    if (!parentId) {
+                        subRegion.innerHTML = '<option value="">상위를 먼저 선택하세요</option>';
+                        return;
+                    }
+                    subRegion.innerHTML = '<option value="">불러오는 중...</option>';
+                    try {
+                        const res = await fetch(`${dataUrl}?parentId=${encodeURIComponent(parentId)}`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (!res.ok) throw new Error(res.status);
+                        const list = await res.json(); // [{id, name}, ...]
+
+                        subRegion.innerHTML = '<option value="">선택하세요</option>';
+                        list.forEach(item => {
+                            const opt = document.createElement('option');
+                            opt.value = item.id;
+                            opt.textContent = item.name;
+                            if (selectedValue && String(selectedValue) === String(item.id)) {
+                                opt.selected = true;
+                            }
+                            subRegion.appendChild(opt);
+                        });
+                    } catch (e) {
+                        console.error('지역(소) 로드 실패:', e);
+                        subRegion.innerHTML = '<option value="">불러오기 실패</option>';
+                    }
+                }
+
+                // 변경 시 로드
+                mainRegion.addEventListener('change', () => {
+                    const selected = subRegion.getAttribute('data-selected'); // 기존 선택 복원용
+                    loadSubRegions(mainRegion.value, selected);
+                });
+
+                // 최초 로딩 시, mainRegion 값이 이미 있으면 소지역 세팅
+                const initialMain = mainRegion.value;
+                if (initialMain) {
+                    const selected = subRegion.getAttribute('data-selected');
+                    loadSubRegions(initialMain, selected);
+                }
             }
         });
     </script>

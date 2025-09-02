@@ -114,14 +114,15 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
 
 
     @Override
+    @Transactional
     public AccommodationImageDTO upsertMainThumbnail(Long accommodationId, AccommodationImageDTO dto) {
         Accommodation accRef = accommodationRepository.getReferenceById(accommodationId);
 
         // 1) 업로드 or URL
         String imageUrl = dto.getImageUrl();
         if (dto.getFile() != null && !dto.getFile().isEmpty()) {
+            String folder = "accommodations/" + accommodationId + "/thumbnail";
             try {
-                String folder = "accommodations/" + accommodationId + "/thumbnail";
                 imageUrl = fileUploadUtil.upload(dto.getFile(), folder);
             } catch (Exception e) {
                 throw new IllegalStateException("썸네일 업로드 실패", e);
@@ -131,33 +132,19 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
             throw new IllegalArgumentException("메인 썸네일에는 파일 또는 imageUrl이 필요합니다.");
         }
 
-        // 2) MAIN이미지 존재 여부
-        Optional<AccommodationImage> existing =
-                accommodationImageRepository
-                        .findFirstByAccommodation_AccommodationIdAndImageTypeOrderBySortOrderAscImageIdAsc(accommodationId, "MAIN");
+        // 2) 기존 MAIN 전부 제거해서 '항상 1장' 보장
+        accommodationImageRepository.deleteByAccommodation_AccommodationIdAndImageType(accommodationId, "MAIN");
 
-        AccommodationImage toSave;
-        if (existing.isPresent()) {
-            AccommodationImage image = existing.get();
-            toSave = AccommodationImage.builder()
-                    .imageId(image.getImageId())
-                    .accommodation(accRef)
-                    .imageType("MAIN")
-                    .imageUrl(imageUrl)   // 반드시 설정
-                    .sortOrder(0)
-                    .build();
-        } else {
-            toSave = AccommodationImage.builder()
-                    .accommodation(accRef)
-                    .imageType("MAIN")
-                    .imageUrl(imageUrl)
-                    .sortOrder(0)
-                    .build();
-        }
+        // 3) 새 MAIN 저장
+        AccommodationImage entity = AccommodationImage.builder()
+                .accommodation(accRef)
+                .imageType("MAIN")
+                .sortOrder(0)
+                .imageUrl(imageUrl)
+                .build();
 
-        AccommodationImage saved = accommodationImageRepository.save(toSave);
+        AccommodationImage saved = accommodationImageRepository.save(entity);
         return toDTO(saved);
-
     }
 
     @Override
