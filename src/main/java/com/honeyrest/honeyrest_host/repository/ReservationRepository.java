@@ -5,11 +5,13 @@ import com.honeyrest.honeyrest_host.entity.Reservation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,32 +25,32 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     // 기간과 "겹치는" 예약들 조회 (체크인 < ednDate and 체크아웃 > startDate) -> 구간 겹침)
     @Query("""
-        select r
-          from Reservation r
-         where r.room.roomId = :roomId
-           and r.checkInDate < :endDate
-           and r.checkOutDate > :startDate
-    """)
+                select r
+                  from Reservation r
+                 where r.room.roomId = :roomId
+                   and r.checkInDate < :endDate
+                   and r.checkOutDate > :startDate
+            """)
     List<Reservation> findByRoomIdAndDateBetween(@Param("roomId") Long roomId,
-                                      @Param("startDate") LocalDate startDate,
-                                      @Param("endDate") LocalDate endDate);
+                                                 @Param("startDate") LocalDate startDate,
+                                                 @Param("endDate") LocalDate endDate);
 
 
     // 회사별 예약 목록 (검색/상태 필터) ->예약 목록 페이지(검색창 + 상태 필터)
     @Query("""
-      select r
-      from Reservation r
-      join r.room rm
-      join rm.accommodation acc
-      where acc.company.companyId = :companyId
-        and (:status is null or r.status = :status)
-        and (
-           :q is null or :q = '' or
-           r.reservationNumber like concat('%', :q, '%') or
-           r.guestName like concat('%', :q, '%') or
-           r.guestPhone like concat('%', :q, '%')
-        )
-      """)
+            select r
+            from Reservation r
+            join r.room rm
+            join rm.accommodation acc
+            where acc.company.companyId = :companyId
+              and (:status is null or r.status = :status)
+              and (
+                 :q is null or :q = '' or
+                 r.reservationNumber like concat('%', :q, '%') or
+                 r.guestName like concat('%', :q, '%') or
+                 r.guestPhone like concat('%', :q, '%')
+              )
+            """)
     Page<Reservation> findCompanyReservations(@Param("companyId") Long companyId,
                                               @Param("status") String status,
                                               @Param("q") String q,
@@ -56,64 +58,131 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     // 전체 예약 중 취소되지 않은 예약 개수 ->전체  대시보드 통계용
     @Query("""
-        select count(r)
-        from Reservation r
-        where r.status <> 'CANCELLED'
-    """)
+                select count(r)
+                from Reservation r
+                where r.status <> 'CANCELLED'
+            """)
     long countActiveAll();
 
     // 회사별(Company) 취소 되지 않은 예약 . -> 회사별 대시보드 (내 예약이 몇건 있는지 알기 위함)
     @Query("""
-        select count(r)
-        from Reservation r
-        join r.room rm
-        join rm.accommodation a
-        join a.company c
-        where c.companyId = :companyId
-          and r.status <> 'CANCELLED'
-    """)
+                select count(r)
+                from Reservation r
+                join r.room rm
+                join rm.accommodation a
+                join a.company c
+                where c.companyId = :companyId
+                  and r.status <> 'CANCELLED'
+            """)
     long countActiveByCompanyId(@Param("companyId") Long companyId);
 
     // 회사(or 숙소) 객실의 월 범위에 걸친 예약들 싸그리
     // 체크인/ 체크아웃 날짜가 그달과 겹치는 모든 예약 포함. -> 월단위 캘린더 재고/예약 표시
     @Query("""
-        select r
-        from Reservation r
-        join r.room rm
-        join rm.accommodation a
-        where a.company.companyId = :companyId
-          and (:accommodationId is null or a.accommodationId = :accommodationId)
-          and r.status <> 'CANCELLED'
-          and (
-               r.checkInDate <= :endDate
-           and r.checkOutDate >  :startDate
-          )
-    """)
+                select r
+                from Reservation r
+                join r.room rm
+                join rm.accommodation a
+                where a.company.companyId = :companyId
+                  and (:accommodationId is null or a.accommodationId = :accommodationId)
+                  and r.status <> 'CANCELLED'
+                  and (
+                       r.checkInDate <= :endDate
+                   and r.checkOutDate >  :startDate
+                  )
+            """)
     List<Reservation> findOverlappedReservationsForMonth(@Param("companyId") Long companyId,
                                                          @Param("accommodationId") Long accommodationId,
                                                          @Param("startDate") LocalDate startDate,
                                                          @Param("endDate") LocalDate endDate);
 
 
+    @Query("""
+            select r from Reservation r
+            join r.accommodation a
+            join a.company c
+            where c.companyId = :companyId
+              and r.status = 'CANCEL_REQUEST'
+              and (:q is null or :q = '' or
+                   r.reservationNumber like concat('%',:q,'%')
+                   or r.guestName like concat('%',:q,'%')
+                   or r.guestPhone like concat('%',:q,'%'))
+            """)
+    Page<Reservation> findCancelRequestsByCompanyViaAcc(
+            @Param("companyId") Long companyId,
+            @Param("q") String q,
+            Pageable pageable);
 
-        @Query("""
-        SELECT r
-        FROM Reservation r
-        JOIN r.accommodation a
-        JOIN a.company c
-        WHERE c.companyId = :companyId
-          AND (:status IS NULL OR :status = 'ALL' OR r.status = :status)
-          AND (:accId IS NULL OR a.accommodationId = :accId)
-          AND (
-               :q IS NULL OR :q = '' OR
-               r.reservationNumber LIKE CONCAT('%', :q, '%') OR
-               r.guestName        LIKE CONCAT('%', :q, '%') OR
-               r.roomName         LIKE CONCAT('%', :q, '%')
-          )
-        """)
-        Page<Reservation> searchCompanyReservations(@Param("companyId") Long companyId,
-                                                    @Param("status") String status,
-                                                    @Param("q") String q,
-                                                    @Param("accId") Long accId,
-                                                    Pageable pageable);
-    }
+    // ReservationRepository.java
+    @Query("""
+                SELECT r
+                FROM Reservation r
+                JOIN r.room rm
+                JOIN rm.accommodation a
+                JOIN a.company c
+                WHERE c.companyId = :companyId
+                  AND (:status IS NULL OR :status = 'ALL' OR UPPER(r.status) = UPPER(:status))
+                  AND (:accId IS NULL OR a.accommodationId = :accId)
+                  AND (
+                       :q IS NULL OR :q = '' OR
+                       r.reservationNumber LIKE CONCAT('%', :q, '%') OR
+                       r.guestName        LIKE CONCAT('%', :q, '%') OR
+                       r.roomName         LIKE CONCAT('%', :q, '%')
+                  )
+            """)
+    Page<Reservation> searchCompanyReservations(
+            @Param("companyId") Long companyId,
+            @Param("status") String status,
+            @Param("q") String q,
+            @Param("accId") Long accId,
+            Pageable pageable);
+
+
+    // 취소 승인
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+                update Reservation r
+                   set r.status = 'CANCELLED',
+                       r.cancelReason = :reason,
+                       r.updatedAt = :now
+                 where r.reservationId = :id
+                   and r.status = 'CANCEL_REQUEST'
+            """)
+    int approveCancelRequest(@Param("id") Long id, @Param("reason") String reason, @Param("now") LocalDateTime now);
+
+    // 취소 거부(확정으로 복귀)
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+                update Reservation r
+                   set r.status = 'CONFIRMED',
+                       r.cancelReason = concat('[REJECT] ', coalesce(:reason,'')),
+                       r.updatedAt = :now
+                 where r.reservationId = :id
+                   and r.status = 'CANCEL_REQUEST'
+            """)
+    int rejectCancelRequest(@Param("id") Long id, @Param("reason") String reason, @Param("now") LocalDateTime now);
+
+    // 체크아웃 완료 -> COMPLETED
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+                update Reservation r
+                   set r.status = 'COMPLETED',
+                       r.updatedAt = :now
+                 where r.reservationId = :id
+                   and r.status = 'CONFIRMED'
+            """)
+    int markCompleted(@Param("id") Long id, @Param("now") LocalDateTime now);
+
+    // 노쇼 처리 -> NO_SHOW
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+                update Reservation r
+                   set r.status = 'NO_SHOW',
+                       r.updatedAt = :now
+                 where r.reservationId = :id
+                   and r.status in ('PENDING','CONFIRMED')
+            """)
+    int markNoShow(@Param("id") Long id, @Param("now") LocalDateTime now);
+}
+
+

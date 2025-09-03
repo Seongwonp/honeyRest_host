@@ -30,7 +30,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     // 기본적으로 보여줄 결제 상태(결제완료 + 환불)
     private static final List<String> DEFAULT_STATUSES =
-            List.of("PENDING", "PAID", "CANCELED", "REFUNDED"); // 결제대기, 결제완료, 결제취소, 환불완료
+            List.of("DONE", "CANCEL" ); // 결제대기, 결제완료, 결제취소, 환불완료
 
 
     @Override

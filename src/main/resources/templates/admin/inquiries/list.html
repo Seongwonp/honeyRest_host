@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <title>문의 목록</title>
+    <th:block layout:fragment="head">
+        <style>
+            :root{
+                --ink:#0F172A; --muted:#64748B; --line:#E5E7EB;
+                --pri:#4F46E5; --pri-soft:#EEF2FF;
+                --ok:#059669; --ok-soft:#DCFCE7;
+            }
+            body{ background:#F8FAFC; }
+            .page-header h3{ font-weight:800; color:var(--ink); }
+            .subtext{ color:var(--muted); }
+
+            .card{
+                background:#fff; border:1px solid var(--line);
+                border-radius:14px; box-shadow:0 10px 30px rgba(2,6,23,.06); overflow:hidden;
+            }
+
+            /* 헤더를 얇게 + 작은 글씨 */
+            .table thead th{
+                background:#fff; color:#475569;
+                font-weight:600; font-size:.9rem;
+                border-bottom:1px solid #E9EEF5 !important;
+                padding-top:.9rem; padding-bottom:.9rem;
+            }
+            .table tbody td{
+                vertical-align:middle; border-color:#F1F5F9; color:#334155;
+                padding-top:.9rem; padding-bottom:.9rem;
+            }
+            .table-hover tbody tr:hover{ background:#FAFBFF; }
+
+            .pill{ border-radius:9999px; padding:.22rem .6rem; font-weight:700; font-size:.78rem; border:1px solid transparent; }
+            .pill-yes{ background:var(--ok-soft); color:var(--ok); border-color:#BBF7D0; }
+            .pill-no{ background:#F1F5F9; color:#475569; border-color:#E2E8F0; }
+
+            /* 검색바 */
+            .searchbar{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+            .searchbar input{ min-width:420px; } /* ← 폭 살짝 더 늘림 */
+            .btn-chip{ border-radius:9999px; padding:.38rem .9rem; font-weight:800; white-space:nowrap; }
+            .btn-outline-primary{ border-color:#CBD5E1; color:#334155; }
+            .btn-outline-primary:hover{ background:var(--pri-soft); color:var(--pri); border-color:#C7D2FE; }
+            .btn-primary-soft{ background:var(--pri-soft); color:var(--pri); border:1px solid #C7D2FE; }
+            .btn-primary-soft:hover{ background:#E0E7FF; }
+
+            /* 제목 링크 스타일 */
+            .link-title{ color:#0f172a; text-decoration:none; font-weight:600; }
+            .link-title:hover{ text-decoration:underline; }
+
+            /* 페이징 */
+            .pagination{ gap:6px; }
+            .pagination .page-link{
+                width:34px; height:34px; display:flex; justify-content:center; align-items:center;
+                border-radius:50%; font-weight:700; border:none; color:#475569; background:#F3F4F6;
+            }
+            .pagination .page-item.active .page-link{ background:var(--pri-soft); color:var(--pri); }
+            .pagination .page-item.disabled .page-link{ background:transparent; color:#94A3B8; cursor:not-allowed; }
+        </style>
+    </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+
+    <div class="page-header mb-3">
+        <h3 class="mb-1">문의 목록</h3>
+        <div class="subtext">사용자 1:1 문의를 확인하고 답변할 수 있습니다.</div>
+    </div>
+
+    <div th:if="${msg}" class="alert alert-info" role="alert" th:text="${msg}">알림</div>
+
+    <!-- 검색 영역 -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="searchbar">
+                <input type="hidden" name="page" th:value="${currentPage}">
+                <input type="hidden" name="size" th:value="${pageSize}">
+                <select class="form-select form-select-sm" name="replied" style="width:auto">
+                    <option value="" th:selected="${replied == null}">답변여부 전체</option>
+                    <option th:value="true"  th:selected="${replied == true}">답변완료</option>
+                    <option th:value="false" th:selected="${replied == false}">미답변</option>
+                </select>
+
+                <input class="form-control form-control-sm"
+                       name="q" placeholder="제목/내용/사용자 검색"
+                       th:value="${q}">
+
+                <button class="btn btn-primary-soft btn-chip" type="submit">검색</button>
+                <a class="btn btn-outline-primary btn-chip" th:href="@{/admin/inquiries/list}">초기화</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- 목록 카드 -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th class="text-center" style="width:60px">번호</th>
+                    <th style="min-width:280px">제목</th>
+                    <th style="min-width:140px">작성자</th>
+                    <th style="min-width:180px">숙소명</th>
+                    <th class="text-center" style="width:160px">작성일</th>
+                    <th class="text-center" style="width:120px">답변 여부</th>
+                    <th class="text-center" style="width:120px">액션</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:if="${#lists.isEmpty(list)}">
+                    <td colspan="7" class="text-center py-5 text-muted">표시할 문의가 없습니다.</td>
+                </tr>
+
+                <tr class="row-item" th:each="inq,iter : ${list}">
+                    <td class="text-center" th:text="${(currentPage-1) * pageSize + iter.index + 1}">1</td>
+
+                    <!-- 제목: 상세 페이지로 링크 -->
+                    <td>
+                        <a class="link-title"
+                           th:text="${inq.title}"
+                           th:href="@{/admin/inquiries/{id}(id=${inq.inquiryId})}">문의 제목</a>
+                    </td>
+
+                    <td th:text="${inq.userName ?: '-'}">홍길동</td>
+                    <td th:text="${inq.accommodationName ?: '-'}">숙소명</td>
+
+                    <td class="text-center"
+                        th:text="${inq.createdAt != null ? #temporals.format(inq.createdAt, 'yyyy-MM-dd HH:mm') : '-'}">-</td>
+
+                    <td class="text-center">
+                        <span class="pill"
+                              th:classappend="${inq.isReplied} ? ' pill-yes' : ' pill-no'"
+                              th:text="${inq.isReplied} ? '완료' : '미답변'">미답변</span>
+                    </td>
+
+                    <td class="text-center">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal" data-bs-target="#replyModal"
+                                th:attr="data-id=${inq.inquiryId}, data-title=${inq.title}, data-reply=${inq.reply}">
+                            답변 등록
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 페이징 -->
+        <div class="card-footer d-flex justify-content-center align-items-center">
+            <nav th:if="${totalPages > 0}">
+                <ul class="pagination mb-0">
+                    <li class="page-item" th:classappend="${currentPage == 1}? ' disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/inquiries/list(page=${currentPage-1}, size=${pageSize}, q=${q}, replied=${replied})}">&laquo;</a>
+                    </li>
+                    <li class="page-item"
+                        th:each="p : ${#numbers.sequence( (currentPage-2 > 0 ? currentPage-2 : 1), (currentPage+2 < totalPages ? currentPage+2 : totalPages))}"
+                        th:classappend="${p == currentPage}? ' active'">
+                        <a class="page-link"
+                           th:text="${p}"
+                           th:href="@{/admin/inquiries/list(page=${p}, size=${pageSize}, q=${q}, replied=${replied})}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages || totalPages == 0}? ' disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/inquiries/list(page=${currentPage+1}, size=${pageSize}, q=${q}, replied=${replied})}">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 답변 등록 모달 -->
+    <div class="modal fade" id="replyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" method="post" id="replyForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">답변 등록</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2 text-muted small" id="replyInfo">-</div>
+                    <textarea class="form-control" name="replyText" rows="5" placeholder="답변 내용을 입력하세요."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <!-- CSRF 필요 시 해제 -->
+                    <!-- <input type="hidden" name="_csrf" th:if="${_csrf}" th:value="${_csrf.token}"> -->
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary-soft">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</th:block>
+
+<th:block layout:fragment="script">
+    <script>
+        // 모달 오픈 시 폼 action/정보 세팅
+        const replyModal = document.getElementById('replyModal');
+        replyModal.addEventListener('show.bs.modal', function (event) {
+            const btn = event.relatedTarget;
+            const id = btn.getAttribute('data-id');
+            const title = btn.getAttribute('data-title') || '';
+            const reply = btn.getAttribute('data-reply') || '';
+
+            const form = document.getElementById('replyForm');
+            form.action = `/admin/inquiries/${id}/reply`;
+
+            document.querySelector('#replyInfo').textContent = `제목: ${title}`;
+            form.querySelector('textarea[name="replyText"]').value = reply;
+        });
+    </script>
+</th:block>
+</body>
+</html>

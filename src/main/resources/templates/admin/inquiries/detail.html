@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <title>문의 상세</title>
+    <th:block layout:fragment="head">
+        <style>
+            :root{
+                --pri:#6D28D9; --pri-soft:#F3E8FF;
+                --mint:#10B981; --mint-soft:#ECFDF5;
+                --danger:#EF4444; --danger-soft:#FEE2E2;
+                --ink:#0F172A; --muted:#64748B; --line:#E5E7EB;
+                --card:16px; --chip:9999px; --shadow:0 10px 30px rgba(2,6,23,.06);
+            }
+            body{ background:#F8FAFC; }
+            .card{ background:#fff; border:1px solid var(--line);
+                border-radius:var(--card); box-shadow:var(--shadow); overflow:hidden; }
+
+            .page-header h3{ font-weight:800; color:var(--ink); }
+            .meta{ color:#64748B; font-size:.9rem; }
+
+            .badge{ border-radius:var(--chip); font-weight:800; font-size:.8rem; padding:.28rem .6rem; border:1px solid transparent; }
+            .badge-replied{ background:var(--mint-soft); color:var(--mint); border-color:#A7F3D0; }
+            .badge-pending{ background:#FFF7ED; color:#C2410C; border-color:#FED7AA; }
+
+            .btn-pill{ border-radius:var(--chip); padding:.45rem .9rem; font-weight:800; }
+            .btn-outline{ background:#fff; border:1px solid var(--line); color:#334155; }
+            .btn-outline:hover{ background:#F3E8FF; color:#5B21B6; border-color:#E9D5FF; }
+            .btn-danger{ background:#fff; border:1px solid var(--danger); color:#B91C1C; }
+            .btn-danger:hover{ background:var(--danger-soft); }
+
+            .q-title{ font-weight:800; font-size:1.1rem; color:#111827; }
+            .q-body{ white-space:pre-line; color:#334155; }
+            .reply-box{ background:#F8FAFC; border:1px solid var(--line); border-radius:12px; padding:12px; }
+            .reply-text{ white-space:pre-line; color:#334155; }
+        </style>
+    </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+
+    <div th:if="${msg}" class="alert alert-info" role="alert" th:text="${msg}">알림</div>
+
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <div>
+            <h3 class="mb-1">문의 상세</h3>
+            <div class="meta">
+                상태:
+                <span class="badge"
+                      th:classappend="${inquiry.isReplied} ? ' badge-replied' : ' badge-pending'"
+                      th:text="${inquiry.isReplied} ? '답변완료' : '미답변'">미답변</span>
+                <span class="ms-2" th:text="${inquiry.createdAt != null ? #temporals.format(inquiry.createdAt,'yyyy-MM-dd HH:mm') : '-'}">-</span>
+            </div>
+        </div>
+        <div>
+            <a class="btn btn-outline btn-pill btn-sm" th:href="@{/admin/inquiries}">목록</a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- 좌: 문의 내용 -->
+        <div class="col-12 col-lg-7">
+            <div class="card p-3">
+                <div class="q-title mb-1" th:text="${inquiry.title}">제목</div>
+                <div class="meta mb-2">
+                    사용자: <b th:text="${inquiry.userName != null ? inquiry.userName : ('#'+inquiry.userId)}">홍길동</b>
+                    <span class="ms-2">· 숙소: <span th:text="${inquiry.accommodationName != null ? inquiry.accommodationName : (inquiry.accommodationId != null ? ('#'+inquiry.accommodationId) : '-')}">-</span></span>
+                    <span class="ms-2">· 카테고리: <span th:text="${inquiry.category != null ? inquiry.category : '-'}">-</span></span>
+                </div>
+                <div class="q-body" th:text="${inquiry.content}">내용</div>
+            </div>
+        </div>
+
+        <!-- 우: 답변/관리 -->
+        <div class="col-12 col-lg-5">
+            <div class="card p-3">
+                <h6 class="mb-2" style="font-weight:800;">답변</h6>
+
+                <!-- 이미 답변이 있으면 상단에 출력 -->
+                <div class="reply-box mb-2" th:if="${inquiry.reply}">
+                    <div class="meta mb-1">현재 등록된 답변</div>
+                    <div class="reply-text" th:text="${inquiry.reply}">답변 내용</div>
+                </div>
+
+                <!-- 답변 등록/수정 -->
+                <form th:action="@{/admin/inquiries/{id}/reply(id=${inquiry.inquiryId})}" method="post">
+                    <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                    <div class="mb-2">
+                        <textarea class="form-control" name="reply" rows="6"
+                                  placeholder="답변을 입력하세요."
+                                  th:text="${inquiry.reply}"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline btn-pill" type="submit">답변 저장</button>
+                        <form th:action="@{/admin/inquiries/{id}/delete(id=${inquiry.inquiryId})}"
+                              method="post" onsubmit="return confirm('삭제하시겠습니까?');">
+                            <input type="hidden" th:name="${_csrf?.parameterName}" th:value="${_csrf?.token}">
+                            <button class="btn btn-danger btn-pill" type="submit">삭제</button>
+                        </form>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

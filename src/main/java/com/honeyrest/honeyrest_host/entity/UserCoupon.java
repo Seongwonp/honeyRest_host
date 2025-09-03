@@ -37,7 +37,7 @@ public class UserCoupon {
     @Column(name = "issued_at", nullable = false)
     private LocalDateTime issuedAt; // 발급 일시
 
-    @Column(name = "used_at", nullable = false)
+    @Column(name = "used_at")
     private LocalDateTime usedAt; // 사용 일시
 
     @Column(name = "expired_at", nullable = false)

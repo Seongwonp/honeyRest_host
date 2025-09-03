@@ -27,7 +27,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             and(:accommodationId is null or r.accommodation.accommodationId = :accommodationId) 
             and(:methodsEmpty = true or p.paymentMethod in :methods) 
             and(:statusesEmpty = true or p.paymentStatus in :statuses) 
-            and(:from is null or p.paymentDate >= : from) 
+            and(:from is null or p.paymentDate >= :from) 
             and(:to is null or p.paymentDate < :to) 
             and(
             :q is null or :q = '' or

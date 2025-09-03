@@ -1,17 +1,11 @@
 package com.honeyrest.honeyrest_host.service;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.dto.RoomCancellationPolicyDTO;
 import com.honeyrest.honeyrest_host.entity.CancellationPolicy;
-import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repository.CancellationPolicyRepository;
-import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

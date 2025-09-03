@@ -21,9 +21,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -102,7 +101,7 @@ public class ReservationServiceImpl implements ReservationService {
                 .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + reservationId));
 
         // 이미 취소면 중복 복구 방지
-        if ("CANCEL_REQUEST".equals(r.getStatus())) return;
+        if ("CANCELLED".equalsIgnoreCase(r.getStatus())) return;
 
         // 2) 재고 복구가 필요한 상태인지 판단
         boolean needRestock =
@@ -122,74 +121,6 @@ public class ReservationServiceImpl implements ReservationService {
         }
     }
 
-    // 생성
-    @Override
-    public ReservationDTO createReservation(ReservationDTO dto) {
-        dto.setReservationId(null);
-
-        if (dto.getRoomId() == null) throw new IllegalStateException("roomId는 필수입니다.");
-        if (dto.getUserId() == null) throw new IllegalStateException("userId는 필수입니다.");
-        if (dto.getCheckInDate() != null && dto.getCheckOutDate() != null
-            && !dto.getCheckInDate().isBefore(dto.getCheckOutDate())) {
-            throw new IllegalArgumentException("체크인 날짜는 체크아웃보다 이전이어야 합니다.");
-        }
-
-        User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("유저를 찾을 수 없습니다. userId=" + dto.getUserId()));
-        Room room = roomRepository.findById(dto.getRoomId())
-                .orElseThrow(() -> new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + dto.getRoomId()));
-        Accommodation accommodation = accommodationRepository.findById(dto.getAccommodationId())
-                .orElseThrow(() -> new EntityNotFoundException("숙소를 찾을 수 없습니다. accommodationId=" + dto.getAccommodationId()));
-
-        //  여기에서 인원 검증
-        if (dto.getGuestCount() != null) {
-            if (room.getStandardOccupancy() != null && dto.getGuestCount() < room.getStandardOccupancy()) {
-                throw new IllegalArgumentException("기준 인원보다 적게 예약할 수 없습니다.");
-            }
-            if (room.getMaxOccupancy() != null && dto.getGuestCount() > room.getMaxOccupancy()) {
-                throw new IllegalArgumentException("최대 인원을 초과했습니다.");
-            }
-        }
-        //  1) 재고 차감 (원자적)
-        int updated = roomRepository.decreaseStock(room.getRoomId());
-        if (updated == 0) {
-            throw new IllegalStateException("해당 객실 타입의 재고가 부족합니다. (품절)");
-        }
-
-        // 필요시 숙소 정보 자동 채우기
-        Long accId = dto.getAccommodationId() != null ? dto.getAccommodationId() : room.getAccommodation().getAccommodationId();
-        String accNm = dto.getAccommodationName() != null ? dto.getAccommodationName() : room.getAccommodation().getName();
-        String roomName = room.getName();
-
-        String reservationNumber = (dto.getReservationNumber() != null && !dto.getReservationNumber().isBlank())
-                ? dto.getReservationNumber()
-                : genReservationNumber();
-
-        Reservation newEntity = Reservation.builder()
-                .user(user)
-                .room(room)
-                .accommodation(accommodation)
-                .accommodationName(accNm)
-                .roomName(roomName)
-                .reservationNumber(reservationNumber)
-                .checkInDate(dto.getCheckInDate())
-                .checkOutDate(dto.getCheckOutDate())
-                .guestCount(dto.getGuestCount())
-                .guestName(dto.getGuestName())
-                .guestPhone(dto.getGuestPhone())
-                .price(dto.getPrice())
-                .originalPrice(dto.getPrice())
-                .discountAmount(dto.getPrice() != null ? BigDecimal.ZERO : null)
-                .status(dto.getStatus() != null ? dto.getStatus() : "CONFIRMED") // 생성과 동시에 확정
-                .cancelReason(dto.getCancelReason())
-                .specialRequest(dto.getSpecialRequest())
-                .build();
-
-        newEntity.validateNew();
-
-        Reservation saved = reservationRepository.save(newEntity);
-        return modelMapper.map(saved, ReservationDTO.class);
-    }
 
     @Override
     public List<ReservationDTO> findRoomReservationsOverlapping(Long roomId, LocalDate start, LocalDate end) {
@@ -216,22 +147,6 @@ public class ReservationServiceImpl implements ReservationService {
 
 
     @Override
-    public List<ReservationDTO> findCompanyReservationsOnDate(Long companyId, Long accommodationId, LocalDate date) {
-        // “하루”를 보기 위해 start=date, end=date+1 로 겹침 검색
-        LocalDate start = date;
-        LocalDate end = date.plusDays(1);
-
-        List<Reservation> rows = reservationRepository
-                .findOverlappedReservationsForMonth(companyId, accommodationId, start, end);
-
-        List<ReservationDTO> dtoList = new ArrayList<>();
-        for (Reservation row : rows) {
-            dtoList.add(toDto(row));
-        }
-        return dtoList;
-    }
-
-    @Override
     public ReservationDTO getReservationDetail(Long id) {
         Reservation r = reservationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("예약 없음"));
@@ -250,7 +165,7 @@ public class ReservationServiceImpl implements ReservationService {
                 .paymentMethod(p.getPaymentMethod())
                 .paymentStatus(p.getPaymentStatus())
                 .amount(p.getAmount())
-                .paymentDate(p.getCreatedAt())
+                .paymentDate(p.getPaymentDate() != null ? p.getPaymentDate() : p.getCreatedAt())
                 .build()
         ).orElse(null);
 
@@ -295,6 +210,96 @@ public class ReservationServiceImpl implements ReservationService {
         return "HR-" + java.time.LocalDate.now() + "-" + rand.substring(Math.max(0, rand.length() - 6));
     }
 
+    @Override
+    public List<ReservationDTO> findCompanyReservationsOnDate(Long companyId,
+                                                              Long accommodationId,
+                                                              LocalDate date) {
+        LocalDate start = date;
+        LocalDate end = date.plusDays(1);
+
+        List<Reservation> rows = reservationRepository
+                .findOverlappedReservationsForMonth(companyId, accommodationId, start, end);
+
+        return rows.stream().map(this::toDto).toList();
+    }
+
+    @Override
+    public PageResponseDTO<ReservationDTO> getCancelRequestsForCompany(Long companyId, String q, PageRequestDTO pr) {
+        Pageable pageable = pr.getPageable(Sort.by("reservationId").descending());
+
+        String normQ = (q == null || q.isBlank()) ? null : q.trim();
+        // 상태는 고정
+        String status = "CANCEL_REQUEST";
+
+        Page<Reservation> page = reservationRepository
+                .searchCompanyReservations(companyId, status, normQ, null, pageable);
+
+        List<ReservationDTO> list = page.getContent().stream()
+                .map(this::toDto)
+                .toList();
+
+        return PageResponseDTO.<ReservationDTO>withAll()
+                .pageRequestDTO(pr)
+                .dtoList(list)
+                .total((int) page.getTotalElements())
+                .build();
+    }
+
+
+    @Transactional
+    @Override
+    public ReservationDTO createReservation(ReservationDTO dto) {
+        dto.setReservationId(null);
+
+        if (dto.getRoomId() == null) throw new IllegalStateException("roomId는 필수입니다.");
+        if (dto.getUserId() == null) throw new IllegalStateException("userId는 필수입니다.");
+        if (dto.getCheckInDate() != null && dto.getCheckOutDate() != null
+            && !dto.getCheckInDate().isBefore(dto.getCheckOutDate())) {
+            throw new IllegalArgumentException("체크인 날짜는 체크아웃보다 이전이어야 합니다.");
+        }
+
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new EntityNotFoundException("유저를 찾을 수 없습니다. userId=" + dto.getUserId()));
+        Room room = roomRepository.findById(dto.getRoomId())
+                .orElseThrow(() -> new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + dto.getRoomId()));
+        Accommodation accommodation = accommodationRepository.findById(
+                dto.getAccommodationId() != null ? dto.getAccommodationId() : room.getAccommodation().getAccommodationId()
+        ).orElseThrow(() -> new EntityNotFoundException("숙소를 찾을 수 없습니다."));
+
+        int updated = roomRepository.decreaseStock(room.getRoomId());
+        if (updated == 0) throw new IllegalStateException("해당 객실 타입의 재고가 부족합니다. (품절)");
+
+        String reservationNumber =
+                (dto.getReservationNumber() != null && !dto.getReservationNumber().isBlank())
+                        ? dto.getReservationNumber()
+                        : genReservationNumber();
+
+        Reservation entity = Reservation.builder()
+                .user(user)
+                .room(room)
+                .accommodation(accommodation)
+                .accommodationName(accommodation.getName())
+                .roomName(room.getName())
+                .reservationNumber(reservationNumber)
+                .checkInDate(dto.getCheckInDate())
+                .checkOutDate(dto.getCheckOutDate())
+                .guestCount(dto.getGuestCount())
+                .guestName(dto.getGuestName())
+                .guestPhone(dto.getGuestPhone())
+                .price(dto.getPrice())
+                .originalPrice(dto.getOriginalPrice() != null ? dto.getOriginalPrice() : dto.getPrice())
+                .discountAmount(dto.getDiscountAmount())
+                .status(dto.getStatus() != null ? dto.getStatus() : "CONFIRMED")
+                .cancelReason(dto.getCancelReason())
+                .specialRequest(dto.getSpecialRequest())
+                .build();
+
+        entity.validateNew(); // 있으면 유지
+
+        Reservation saved = reservationRepository.save(entity);
+        return toDto(saved);
+    }
+
 
     private ReservationDTO toDto(Reservation r) {
         ReservationDTO dto = ReservationDTO.builder()
@@ -305,7 +310,7 @@ public class ReservationServiceImpl implements ReservationService {
                 .roomName(r.getRoom().getName())
                 .discountAmount(r.getDiscountAmount())
                 .price(r.getPrice())
-                .originalPrice(r.getPrice())
+                .originalPrice(r.getOriginalPrice())
                 .cancelReason(r.getCancelReason())
                 .checkInDate(r.getCheckInDate())
                 .checkOutDate(r.getCheckOutDate())
@@ -334,28 +339,6 @@ public class ReservationServiceImpl implements ReservationService {
 
     }
 
-    private Reservation toEntity(ReservationDTO d) {
-        return Reservation.builder()
-                .accommodation(accommodationRepository.getReferenceById(d.getAccommodationId()))
-                .user(userRepository.getReferenceById(d.getUserId()))
-                .room(roomRepository.getReferenceById(d.getRoomId()))
-                .price(d.getPrice())
-                .originalPrice(d.getOriginalPrice())
-                .discountAmount(d.getDiscountAmount())
-                .accommodationName(d.getAccommodationName())
-                .roomName(d.getRoomName())
-                .cancelReason(d.getCancelReason())
-                .checkInDate(d.getCheckInDate())
-                .checkOutDate(d.getCheckOutDate())
-                .guestName(d.getGuestName())
-                .guestPhone(d.getGuestPhone())
-                .guestCount(d.getGuestCount())
-                .price(d.getPrice())
-                .specialRequest(d.getSpecialRequest())
-                .status(d.getStatus())
-                .build();
-    }
-
     @Override
     public PageResponseDTO<ReservationDTO> getCompanyReservations(Long companyId,
                                                                   String status,
@@ -366,7 +349,7 @@ public class ReservationServiceImpl implements ReservationService {
         String st = null;
         if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
             st = status.toUpperCase();
-            List<String> validStatuses = List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED", "NO_SHOW");
+            List<String> validStatuses = List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCEL_REQUEST", "NO_SHOW");
             if (!validStatuses.contains(st)) {
                 throw new IllegalArgumentException("유효하지 않은 예약 상태: " + status);
             }
@@ -385,6 +368,7 @@ public class ReservationServiceImpl implements ReservationService {
                 .build();
 
     }
+
     @Override
     public Page<ReservationDTO> getCompanyReservations(
             Long companyId, String status, String q, Long accId, Pageable pageable) {
@@ -399,11 +383,58 @@ public class ReservationServiceImpl implements ReservationService {
         return page.map(this::toDto);
     }
 
+    /* 예약 상태에 따른 로직(총 5가지) */
+    @Override
+    public ReservationDTO approveCancelRequest(Long reservationId, String reason) {
+        int updated = reservationRepository.approveCancelRequest(
+                reservationId, reason, LocalDateTime.now());
+
+        if (updated == 0) {
+            throw new IllegalStateException("취소요청 상태의 예약만 승인할 수 있습니다. id=" + reservationId);
+        }
+        log.info("예약 취소 승인 완료: reservationId={}, reason={}", reservationId, reason);
+        return null;
+    }
+
+    @Override
+    public void rejectCancelRequest(Long reservationId, String reason) {
+        int updated = reservationRepository.rejectCancelRequest(
+                reservationId, reason, LocalDateTime.now());
+
+        if (updated == 0) {
+            throw new IllegalStateException("취소요청 상태의 예약만 거부할 수 있습니다. id=" + reservationId);
+        }
+        log.info("예약 취소 거부 완료: reservationId={}, reason={}", reservationId, reason);
+    }
+
+    @Override
+    public void markCompleted(Long reservationId) {
+        int updated = reservationRepository.markCompleted(reservationId, LocalDateTime.now());
+
+        if (updated == 0) {
+            throw new IllegalStateException("CONFIRMED 상태의 예약만 COMPLETED로 변경 가능합니다. id=" + reservationId);
+        }
+        log.info("체크아웃 완료 처리: reservationId={}", reservationId);
+    }
+
+    @Override
+    public void markNoShow(Long reservationId) {
+        int updated = reservationRepository.markNoShow(reservationId, LocalDateTime.now());
+
+        if (updated == 0) {
+            throw new IllegalStateException("PENDING/CONFIRMED 상태만 NO_SHOW 처리 가능합니다. id=" + reservationId);
+        }
+        log.info("노쇼 처리 완료: reservationId={}", reservationId);
+    }
+
+    // ===================================================
+
     private String normalizeStatus(String status) {
         if (status == null) return null;
         String s = status.trim();
         return (s.isEmpty() || "ALL".equalsIgnoreCase(s)) ? null : s;
     }
+
     private String normalizeBlankToNull(String s) {
         if (s == null) return null;
         s = s.trim();

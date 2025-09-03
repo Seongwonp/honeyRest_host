@@ -4,47 +4,294 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
 <head>
-    <meta charset="UTF-8">
-    <title>결제 수단</title>
+    <title>결제 내역</title>
+
     <th:block layout:fragment="head">
+        <style>
+            :root{
+                --ink:#0F172A; --muted:#64748B; --line:#E5E7EB;
+                --pri:#4F46E5; --pri-soft:#EEF2FF;
+                --ok:#10B981; --ok-soft:#E9FAF3;
+                --warn:#F59E0B; --warn-soft:#FEF3C7;
+                --pill:999px; --shadow:0 10px 30px rgba(2,6,23,.06);
+            }
+            body{ background:#F8FAFC; }
+            .page-header h3{ font-weight:800; color:var(--ink); }
+
+            /* 테이블 헤더 */
+            .table thead th{
+                background:#F8FAFC; border-bottom:1px solid var(--line);
+                color:#111827; font-weight:800; letter-spacing:.2px;
+                font-size:14px; padding-top:14px; padding-bottom:14px;
+            }
+            .table tbody td{ vertical-align:middle; color:#334155; }
+
+            /* 예약자/예약번호 셀 */
+            .guest-col .name{ font-weight:800; color:#111827; font-size:15px; }
+            .guest-col .sub{ color:var(--muted); font-size:12px; }
+            .ellipsis{
+                max-width: 220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                display:inline-block; vertical-align:bottom;
+            }
+
+            /* 드롭다운 */
+            .btn-mini{
+                --bs-btn-padding-y:.2rem; --bs-btn-padding-x:.55rem; --bs-btn-font-size:.75rem;
+                border-radius: var(--pill);
+            }
+            .dropdown-menu.compact{
+                padding:.6rem .7rem; min-width: 260px; box-shadow: var(--shadow);
+                border-radius:12px;
+            }
+            .dropdown-menu.compact .label{ font-size:.72rem; color:var(--muted); }
+            .dropdown-menu.compact code{ font-size:.85rem; color:#1F2937; }
+
+            /* 필터 드롭다운 */
+            .filter .form-select{
+                padding:.35rem 2rem .35rem .75rem; font-size:.85rem; border-radius:16px;
+            }
+
+            /* pill (배지) */
+            .pill{border-radius:var(--pill); font-weight:700; font-size:.78rem; padding:.28rem .6rem;}
+            .pill-method{ background: var(--pri-soft); color: var(--pri); border:1px solid #C7D2FE; }
+            .pill-pending{ background: var(--warn-soft); color:#B45309; border:1px solid #FCD34D;}
+            .pill-done{ background: var(--ok-soft); color: var(--ok); border:1px solid #BBF7D0;}
+            .pill-cancel{ background:#FEE2E2; color:#EF4444; border:1px solid #FCA5A5;}
+
+            /* 우측 버튼 */
+            .btn-soft{ border-radius:16px; font-weight:700; }
+            .btn-soft-primary{ background:var(--pri-soft); color:var(--pri); border:1px solid #C7D2FE; }
+            .btn-soft-secondary{ background:#F3F4F6; color:#374151; border:1px solid #E5E7EB; }
+            /* Pagination: 특이성을 높이기 위해 .card-footer nav .pagination 사용 */
+            .card-footer nav .pagination { gap: 6px; }
+            .card-footer nav .pagination .page-link{
+                border: none !important;
+                border-radius: 14px !important;
+                padding: 6px 12px !important;
+                background: #F3F4F6;      /* 연한 회색 배경 */
+                color: #475569;           /* slate-600 */
+                font-weight: 700;
+                box-shadow: 0 0 0 1px #E5E7EB inset;  /* 살짝 라인 */
+            }
+            .card-footer nav .pagination .page-item.active .page-link{
+                background: var(--pri-soft) !important; /* 라벤더 톤 */
+                color: var(--pri) !important;
+                box-shadow: 0 0 0 1px #C7D2FE inset;
+            }
+            .card-footer nav .pagination .page-item.disabled .page-link{
+                background: transparent !important;
+                color: #94A3B8 !important; /* slate-400 */
+                box-shadow: none !important;
+                cursor: not-allowed;
+            }
+            /* 화살표 아이콘 간격 */
+            .card-footer nav .pagination .page-link .bi{ position: relative; top: -1px; }
+        </style>
     </th:block>
 </head>
-
 <body>
 <th:block layout:fragment="content">
-    <table class="table">
-        <thead>
-        <tr>
-            <th>ID</th><th>예약번호</th><th>고객</th><th>숙소/객실</th>
-            <th class="text-end">금액</th><th>수단</th><th>상태</th><th>결제일시</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="p : ${items}">
-            <td th:text="${p.paymentId}">1</td>
-            <td th:text="${p.reservationNumber}">HR-123</td>
-            <td th:text="${p.guestName}">홍길동</td>
-            <td>
-                <div th:text="${p.accommodationName}">숙소</div>
-                <div class="text-muted small" th:text="${p.roomName}">객실</div>
-            </td>
-            <td class="text-end"
-                th:classappend="${p.amount.signum() < 0} ? 'text-danger' : ''"
-                th:text="${#numbers.formatDecimal(p.amount, 0, 'COMMA', 0, 'POINT')}">0</td>
-            <td th:text="${p.paymentMethod}">CARD</td>
-            <td>
-        <span th:text="${p.paymentStatus}"
-              th:classappend="${p.paymentStatus}=='REFUNDED' ? 'badge bg-secondary' : 'badge bg-success'">
-        </span>
-            </td>
-            <td th:text="${#temporals.format(p.paymentDate, 'yyyy-MM-dd HH:mm')}">-</td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(items)}">
-            <td colspan="8" class="text-center text-muted py-5">결제 내역이 없습니다.</td>
-        </tr>
-        </tbody>
-    </table>
-</th:block>
 
+    <div class="page-header mb-3 d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">결제 내역</h3>
+        <div class="d-flex gap-2">
+            <a class="btn btn-soft btn-soft-primary btn-sm"
+               th:href="@{/admin/point/refunds}">환불내역 가기</a>
+            <a class="btn btn-soft btn-soft-secondary btn-sm"
+               th:href="@{/admin/point/list}">초기화</a>
+        </div>
+    </div>
+
+    <!-- 검색 필터 -->
+    <form method="get" th:action="@{/admin/point/list}" class="card mb-3 p-3">
+        <div class="row g-2 align-items-center filter">
+            <div class="col-auto">
+                <select class="form-select" name="status">
+                    <option value="">전체 상태</option>
+                    <option th:each="s : ${statusList}" th:value="${s}" th:text="${s}"
+                            th:selected="${status!=null and status.contains(s)}"></option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <select class="form-select" name="method">
+                    <option value="">전체 결제수단</option>
+                    <option th:each="m : ${methodList}" th:value="${m}" th:text="${m}"
+                            th:selected="${method!=null and method.contains(m)}"></option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <input type="date" class="form-control" name="from" th:value="${from}">
+            </div>
+            <div class="col-auto">~</div>
+            <div class="col-auto">
+                <input type="date" class="form-control" name="to" th:value="${to}">
+            </div>
+            <div class="col-auto flex-grow-1">
+                <input type="text" class="form-control" name="q" placeholder="예약번호/고객"
+                       th:value="${q}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">검색</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- 결제 내역 테이블 -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                <tr>
+                    <th class="text-center" style="width:70px">번호</th>
+                    <th>예약자 / 예약번호</th>
+                    <th class="text-center" style="width:120px">결제수단</th>
+                    <th class="text-center" style="width:120px">상태</th>
+                    <th class="text-end" style="width:140px">금액</th>
+                    <th class="text-center" style="width:170px">결제일</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(items)}">
+                    <td colspan="6" class="text-center py-5 text-muted">결제 내역이 없습니다.</td>
+                </tr>
+
+                <tr th:each="p, iter : ${items}">
+                    <td class="text-center" th:text="${(page.number * page.size) + iter.index + 1}">1</td>
+
+                    <!-- 예약자/예약번호 -->
+                    <td class="guest-col">
+                        <div class="d-flex align-items-start gap-2">
+                            <div>
+                                <div class="name" th:text="${p.guestName}">홍길동</div>
+                                <div class="sub">
+                  <span class="ellipsis"
+                        th:text="${p.reservationNumber}"
+                        th:title="${p.reservationNumber}">R2025...</span>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-mini ms-1" type="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                    상세 ▾
+                                </button>
+                                <div class="dropdown-menu compact">
+                                    <div class="mb-1 label">예약번호</div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <code class="text-wrap" th:text="${p.reservationNumber}">R2025...</code>
+                                        <button class="btn btn-outline-secondary btn-mini"
+                                                type="button"
+                                                th:attr="data-copy=${p.reservationNumber}"
+                                                onclick="copyToClipboard(this)">복사</button>
+                                    </div>
+                                    <div class="mt-3 label">연락처</div>
+                                    <div class="small" th:text="${p.guestPhone}">010-****-****</div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- 결제수단 -->
+                    <td class="text-center">
+                        <span class="pill pill-method" th:text="${p.paymentMethod}">CARD</span>
+                    </td>
+
+                    <!-- 결제상태 -->
+                    <td class="text-center">
+            <span class="pill"
+                  th:classappend="${p.paymentStatus=='PENDING'} ? ' pill-pending' :
+                                  (${p.paymentStatus=='DONE'} ? ' pill-done' :
+                                  (${p.paymentStatus=='CANCEL'} ? ' pill-cancel' : ' pill-method'))"
+                  th:text="${p.paymentStatus}">DONE</span>
+                    </td>
+
+                    <!-- 금액 -->
+                    <td class="text-end fw-bold"
+                        th:text="${#numbers.formatInteger(p.amount != null ? p.amount.longValue() : 0, 3, 'COMMA')} + '원'">0원</td>
+
+                    <!-- 결제일 -->
+                    <td class="text-center"
+                        th:text="${p.paymentDate != null ?
+                        #temporals.format(p.paymentDate,'yyyy-MM-dd HH:mm') :
+                        '-'}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 페이징 -->
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div class="small text-muted">
+                총 <b th:text="${page.totalElements}">0</b>건
+            </div>
+
+            <nav th:with="
+        tp=${page.totalPages},
+        cur=${page.number + 1},
+        start=${cur-2 < 1 ? 1 : (cur+2 > tp ? (tp-4 > 1 ? tp-4 : 1) : cur-2)},
+        end=${start+4 > tp ? tp : start+4}">
+                <ul class="pagination pagination-sm mb-0">
+
+                    <!-- 첫 페이지 / 이전 -->
+                    <li class="page-item" th:classappend="${page.first}? ' disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/point/list(page=0, size=${page.size}, q=${q}, status=${status}, method=${method}, from=${from}, to=${to})}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${page.first}? ' disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/point/list(page=${page.number-1}, size=${page.size}, q=${q}, status=${status}, method=${method}, from=${from}, to=${to})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+
+                    <!-- 앞쪽 생략 ... -->
+                    <li class="page-item disabled" th:if="${start > 1}">
+                        <a class="page-link">…</a>
+                    </li>
+
+                    <!-- 중앙 5개 윈도우 -->
+                    <li class="page-item"
+                        th:each="p : ${#numbers.sequence(start, end)}"
+                        th:classappend="${p == cur}? ' active'">
+                        <a class="page-link" th:text="${p}"
+                           th:href="@{/admin/point/list(page=${p-1}, size=${page.size}, q=${q}, status=${status}, method=${method}, from=${from}, to=${to})}">1</a>
+                    </li>
+
+                    <!-- 뒤쪽 생략 ... -->
+                    <li class="page-item disabled" th:if="${end < tp}">
+                        <a class="page-link">…</a>
+                    </li>
+
+                    <!-- 다음 / 마지막 -->
+                    <li class="page-item" th:classappend="${page.last}? ' disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/point/list(page=${page.number+1}, size=${page.size}, q=${q}, status=${status}, method=${method}, from=${from}, to=${to})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${page.last}? ' disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/point/list(page=${tp-1}, size=${page.size}, q=${q}, status=${status}, method=${method}, from=${from}, to=${to})}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    <!-- JS -->
+    <script>
+        function copyToClipboard(btn){
+            const value = btn.getAttribute('data-copy') || '';
+            if (!value) return;
+            navigator.clipboard.writeText(value).then(()=>{
+                const original = btn.textContent;
+                btn.textContent = '복사됨!';
+                setTimeout(()=> btn.textContent = original, 900);
+            });
+        }
+    </script>
+
+</th:block>
 </body>
 </html>

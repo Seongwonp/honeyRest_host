@@ -4,141 +4,344 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
 <head>
-  <title>환불/취소 관리</title>
-  <th:block layout:fragment="head">
-    <style>
-      .table thead th { white-space: nowrap; }
-      .status-badge { font-weight: 600; }
-    </style>
-  </th:block>
+    <title>환불 내역</title>
+
+    <th:block layout:fragment="head">
+        <style>
+            :root{
+                --pri:#4F46E5; --pri-soft:#EEF2FF; --pri-deep:#4338CA;
+                --danger:#EF4444; --danger-soft:#FEE2E2;
+                --ink:#0F172A; --muted:#64748B; --line:#E5E7EB;
+            }
+            body{ background:#F7F9FC; }
+
+            /* 페이지 헤더 */
+            .page-header h3{ font-weight:800; color:var(--ink); margin-bottom:.25rem; }
+            .subtext{ color:var(--muted); }
+
+            /* ===== 바깥 큰 테두리 전용 컨테이너 (겹침 없음) ===== */
+            .page-frame{
+                background:#FFFFFF;
+                border:1px solid #E8EDF5;   /* 큰 테두리 */
+                border-radius:26px;
+                padding:16px;               /* 안쪽 여백 */
+            }
+
+            /* 내부 카드는 테두리/섀도우 제거 → 큰 테두리만 보이게 */
+            .card{ background:#fff; border:none; border-radius:14px; box-shadow:none; overflow:hidden; }
+
+            /* 표 스타일 */
+            .table thead th{
+                background:#F3F4F6; color:#334155; font-weight:800;
+                border-bottom:1px solid var(--line);
+                padding-top:1rem; padding-bottom:1rem;
+            }
+            .table tbody td{
+                vertical-align:middle; border-color:#F1F5F9; color:#334155;
+                padding:.9rem .75rem; font-weight:500;
+            }
+            .row-item:hover{ background:#FAFBFF; }
+
+            .ellipsis{ max-width:340px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            .price{ font-weight:800; letter-spacing:.2px; }
+
+            /* 상태 칩 */
+            .chip{ border-radius:9999px; font-weight:800; font-size:.8rem; padding:.35rem .7rem; border:1px solid transparent; }
+            .chip-cancel{ background:var(--danger-soft); color:var(--danger); border-color:#FCA5A5; }
+            .chip-refunded{ background:var(--pri-soft); color:var(--pri); border-color:#C7D2FE; }
+
+            /* 상세 버튼: 알약형 외곽선 */
+            .btn-pill-outline{
+                border:1.5px solid var(--pri); color:var(--pri);
+                background:#fff; border-radius:9999px; padding:.32rem .8rem; font-weight:700;
+                line-height:1; display:inline-flex; align-items:center; gap:.35rem;
+            }
+            .btn-pill-outline:hover{ background:var(--pri-soft); color:var(--pri-deep); border-color:var(--pri-deep); }
+
+            /* pagination */
+            .pagination{ gap:6px; }
+            .pagination .page-link{
+                width:34px; height:34px; display:flex; justify-content:center; align-items:center;
+                border-radius:50%; font-weight:700; border:none; color:#475569; background:#F3F4F6;
+            }
+            .pagination .page-item.active .page-link{ background:var(--pri-soft); color:var(--pri); }
+            .pagination .page-item.disabled .page-link{ background:transparent; color:#94A3B8; cursor:not-allowed; }
+
+            /* ===== 영수증 모달 (기존 스타일 유지) ===== */
+            .receipt-wrap{ padding:6px; background:transparent; border:0; }
+            .receipt{
+                background:#fffdfa; border:1px solid #f1e9dc; border-radius:16px;
+                overflow:hidden; box-shadow:0 12px 30px rgba(15,23,42,.10);
+                font-family: ui-sans-serif, system-ui, -apple-system, "Apple SD Gothic Neo", "Segoe UI", Roboto, "Noto Sans KR", "Malgun Gothic", sans-serif;
+            }
+            .receipt .tear{
+                height:12px;
+                background:
+                        radial-gradient(circle at 6px -3px, transparent 8px, #f1e9dc 8px) repeat-x,
+                        radial-gradient(circle at 6px 15px, #fffdfa 8px, #fffdfa 9px) repeat-x;
+                background-size:12px 12px, 12px 12px;
+            }
+            .receipt .header{ padding:16px 18px; background:#fff5e6; border-bottom:1px dashed #e6d9c4; }
+            .receipt .brand{ font-weight:800; color:#0f172a; font-size:1rem; }
+            .receipt .sub{ color:#6b7280; font-size:.8rem }
+            .receipt .body{ padding:16px 18px; }
+            .receipt .row{ display:flex; justify-content:space-between; gap:12px; margin:.25rem 0; font-size:.92rem; color:#334155; }
+            .receipt .row .label{ color:#64748b; min-width:96px; }
+            .receipt .hr{ margin:.75rem 0; border-top:1px dashed #e6d9c4; }
+            .receipt .total{ display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:1.05rem; color:#111827; }
+            .receipt .pill{ border-radius:9999px; padding:.15rem .5rem; font-weight:700; font-size:.75rem; border:1px solid rgba(0,0,0,.06); }
+            .receipt .pill-method{ background:#f5f3ff; color:#5b21b6; border-color:#e9d5ff; }
+            .receipt .pill-status{ background:#f0f9ff; color:#0369a1; border-color:#bae6fd; }
+            .receipt .barcode{ height:44px; margin-top:12px; border-radius:8px; overflow:hidden;
+                background:repeating-linear-gradient(90deg, #111 0 2px, transparent 2px 4px); opacity:.15; }
+            .receipt .reason{ background:#fff; border:1px dashed #e6d9c4; color:#7c2d12; border-radius:10px; padding:.5rem .6rem; font-size:.85rem; }
+            .receipt .section-title{ font-weight:800; color:#1f2937; margin:.35rem 0 .2rem; font-size:.9rem; }
+            .muted{ color:#6b7280; font-size:.85rem; }
+        </style>
+    </th:block>
 </head>
 <body>
 <th:block layout:fragment="content">
 
-  <div class="page-heading d-flex justify-content-between align-items-center">
-    <div>
-      <h3 class="mb-1">환불/취소 관리</h3>
-      <p class="text-muted mb-0">결제 기준으로 환불/취소 건을 확인하세요.</p>
+    <div class="page-header mb-3">
+        <h3>환불 내역</h3>
+        <div class="subtext">결제 취소(취소·환불 처리된 건)만 표시합니다.</div>
     </div>
-    <div class="d-flex gap-2">
-      <a class="btn btn-outline-secondary" th:href="@{/admin/reservations/list}">예약 목록</a>
-    </div>
-  </div>
 
-  <div class="page-content">
-    <div class="card shadow-sm">
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover mb-0 align-middle">
-            <thead class="table-light">
-            <tr>
-              <th style="width:90px" class="text-center">결제ID</th>
-              <th style="min-width:140px">예약번호</th>
-              <th style="min-width:220px">숙소 / 객실</th>
-              <th style="width:180px" class="text-center">결제일</th>
-              <th style="width:140px" class="text-end">금액</th>
-              <th style="min-width:160px">상태 / 방법</th>
-              <th style="width:120px" class="text-center">처리</th>
-            </tr>
-            </thead>
-            <tbody>
-            <!-- 결제(PaymentDTO) 리스트 -->
-            <tr th:each="p : ${list}">
-              <td class="text-center" th:text="${p.paymentId}">1</td>
+    <!-- 🔲 큰 테두리만 있는 래퍼 -->
+    <div class="page-frame">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th class="text-center" style="width:80px">번호</th>
+                        <th style="min-width:260px">예약번호</th>
+                        <th style="min-width:140px">고객명</th>
+                        <th class="text-end" style="width:160px">금액</th>
+                        <th class="text-center" style="width:130px">상태</th>
+                        <th class="text-center" style="width:180px">처리일</th>
+                        <th class="text-center" style="width:110px">상세</th>
+                    </tr>
+                    </thead>
 
-              <td class="fw-semibold" th:text="${p.reservationNumber}">HR-2025...</td>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(list)}">
+                        <td colspan="7" class="text-center py-5 text-muted">표시할 환불 내역이 없습니다.</td>
+                    </tr>
 
-              <td>
-                <div th:text="${p.accommodationName}">숙소명</div>
-                <div class="text-muted small" th:text="${p.roomName} ?: '-'">객실명</div>
-              </td>
+                    <tr class="row-item" th:each="p,iter : ${list}">
+                        <td class="text-center" th:text="${(currentPage-1) * pageSize + iter.index + 1}">1</td>
+                        <td class="ellipsis" th:title="${p.reservationNumber}" th:text="${p.reservationNumber}">R2025...</td>
+                        <td class="ellipsis" th:text="${p.guestName}">홍길동</td>
+                        <td class="text-end price"
+                            th:text="${#numbers.formatInteger(p.amount != null ? p.amount.longValue() : 0, 3, 'COMMA')} + '원'">0원</td>
+                        <td class="text-center">
+                            <span class="chip"
+                                  th:classappend="${p.paymentStatus=='CANCEL' ? ' chip-cancel' : ' chip-refunded'}"
+                                  th:text="${p.paymentStatus}">CANCEL</span>
+                        </td>
+                        <td class="text-center"
+                            th:text="${p.paymentDate != null ?
+                                     #temporals.format(p.paymentDate,'yyyy-MM-dd HH:mm') :
+                                     (p.createdAt != null ? #temporals.format(p.createdAt,'yyyy-MM-dd HH:mm') : '-') }">-</td>
+                        <td class="text-center">
+                            <button type="button"
+                                    class="btn btn-sm btn-pill-outline"
+                                    data-bs-toggle="modal" data-bs-target="#receiptModal"
+                                    th:attr="
+                                        data-payment-id=${p.paymentId},
+                                        data-resno=${p.reservationNumber},
+                                        data-guest=${p.guestName},
+                                        data-phone=${p.guestPhone},
+                                        data-acc=${p.accommodationName},
+                                        data-room=${p.roomName},
+                                        data-method=${p.paymentMethod},
+                                        data-status=${p.paymentStatus},
+                                        data-amount=${p.amount},
+                                        data-date=${p.paymentDate}">
+                                상세
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
 
-              <td class="text-center"
-                  th:text="${p.paymentDate != null ? #temporals.format(p.paymentDate,'yyyy-MM-dd HH:mm') : '-'}">-</td>
-
-              <!-- 금액: 환불이면 음수 금액을 권장 -->
-              <td class="text-end"
-                  th:text="${p.amount != null ? #numbers.formatDecimal(p.amount, 0, 'COMMA', 0, 'POINT') : '0'}">0</td>
-
-              <td>
-                <!-- 상태 뱃지 -->
-                <span class="badge status-badge me-1"
-                      th:text="${p.paymentStatus}">REFUNDED</span>
-
-                <!-- 방법/PG -->
-                <span class="badge bg-light text-dark"
-                      th:text="${p.paymentMethod ?: '-'}">KAKAOPAY</span>
-              </td>
-
-              <td class="text-center">
-                <!-- 필요시 상세/영수증/엑셀 등 액션 버튼 추가 -->
-                <!-- 예: 예약 상세 이동 (예약번호 기반 라우팅이면 아래처럼, 아니면 숨김) -->
-                <!-- <a class="btn btn-outline-primary btn-sm"
-                     th:href="@{|/admin/reservations/by-number/${p.reservationNumber}|}">상세</a> -->
-                <span class="text-muted small">—</span>
-              </td>
-            </tr>
-
-            <!-- 비어 있을 때 -->
-            <tr th:if="${#lists.isEmpty(list)}">
-              <td colspan="7" class="text-center py-5 text-muted">환불/취소 대상이 없습니다.</td>
-            </tr>
-            </tbody>
-          </table>
+            <!-- 페이징 -->
+            <div class="card-footer d-flex justify-content-center align-items-center">
+                <nav>
+                    <ul class="pagination mb-0">
+                        <li class="page-item" th:classappend="${currentPage == 1}? ' disabled'">
+                            <a class="page-link"
+                               th:href="@{/admin/point/refunds(page=${currentPage-1}, size=${pageSize}, q=${q})}">&laquo;</a>
+                        </li>
+                        <li class="page-item"
+                            th:each="p : ${#numbers.sequence( (currentPage-2 > 0 ? currentPage-2 : 1), (currentPage+2 < totalPages ? currentPage+2 : totalPages))}"
+                            th:classappend="${p == currentPage}? ' active'">
+                            <a class="page-link"
+                               th:text="${p}"
+                               th:href="@{/admin/point/refunds(page=${p}, size=${pageSize}, q=${q})}">1</a>
+                        </li>
+                        <li class="page-item" th:classappend="${currentPage == totalPages || totalPages == 0}? ' disabled'">
+                            <a class="page-link"
+                               th:href="@{/admin/point/refunds(page=${currentPage+1}, size=${pageSize}, q=${q})}">&raquo;</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </div>
-      </div>
-
-      <!-- 페이지네이션 (currentPage: 1-base 가정) -->
-      <div class="card-footer d-flex justify-content-between align-items-center">
-        <div class="text-muted">
-          총 <span th:text="${total}">0</span>건
-        </div>
-
-        <nav th:if="${totalPages > 1}">
-          <ul class="pagination mb-0">
-            <li class="page-item" th:classappend="${currentPage == 1} ? ' disabled'">
-              <a class="page-link"
-                 th:href="@{|?page=${currentPage-1}&size=${pageSize}|}" aria-label="Previous">&laquo;</a>
-            </li>
-
-            <li class="page-item"
-                th:each="p : ${#numbers.sequence(1, totalPages)}"
-                th:classappend="${p == currentPage} ? ' active'">
-              <a class="page-link" th:text="${p}"
-                 th:href="@{|?page=${p}&size=${pageSize}|}">1</a>
-            </li>
-
-            <li class="page-item" th:classappend="${currentPage == totalPages} ? ' disabled'">
-              <a class="page-link"
-                 th:href="@{|?page=${currentPage+1}&size=${pageSize}|}" aria-label="Next">&raquo;</a>
-            </li>
-          </ul>
-        </nav>
-      </div>
     </div>
-  </div>
 
-  <!-- 플래시 메시지 -->
-  <div th:if="${msg}">
-    <script th:inline="javascript"> alert([[${msg}]]); </script>
-  </div>
+    <!-- Receipt Detail Modal (동일) -->
+    <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content receipt-wrap">
+                <div class="receipt">
+                    <div class="tear"></div>
+                    <div class="header">
+                        <div class="brand">결제 영수증</div>
+                        <div class="sub">Refund / Cancel Receipt</div>
+                    </div>
+
+                    <div class="body">
+                        <div class="row"><div class="label">예약번호</div><div class="value" id="rcpt-resno">-</div></div>
+                        <div class="row"><div class="label">예약자</div><div class="value"><span id="rcpt-guest">-</span> <span class="muted" id="rcpt-phone"></span></div></div>
+                        <div class="row">
+                            <div class="label">숙소/객실</div>
+                            <div class="value"><span id="rcpt-acc">-</span><span class="muted"> / </span><span id="rcpt-room">-</span></div>
+                        </div>
+
+                        <div class="hr"></div>
+
+                        <div class="row"><div class="label">결제수단</div><div class="value"><span class="pill pill-method" id="rcpt-method">-</span></div></div>
+                        <div class="row"><div class="label">결제상태</div><div class="value"><span class="pill pill-status" id="rcpt-status">-</span></div></div>
+                        <div class="row"><div class="label">처리일시</div><div class="value" id="rcpt-date">-</div></div>
+
+                        <div class="hr"></div>
+
+                        <div class="total">
+                            <div>결제금액</div>
+                            <div id="rcpt-amount">0원</div>
+                        </div>
+
+                        <div id="rcpt-reason-wrap" class="mt-2" style="display:none;">
+                            <div class="reason">
+                                <div class="fw-bold mb-1">취소/환불 사유</div>
+                                <div id="rcpt-reason">-</div>
+                            </div>
+                        </div>
+
+                        <div id="detail-section" style="display:none;">
+                            <div class="hr"></div>
+                            <div class="section-title">결제 상세</div>
+
+                            <div id="detail-card" style="display:none;">
+                                <div class="row"><div class="label">카드사</div><div class="value" id="d-card-company">-</div></div>
+                                <div class="row"><div class="label">카드번호</div><div class="value" id="d-card-number">-</div></div>
+                                <div class="row"><div class="label">할부개월</div><div class="value" id="d-installments">-</div></div>
+                            </div>
+
+                            <div id="detail-vacct" style="display:none;">
+                                <div class="row"><div class="label">가상계좌</div><div class="value" id="d-vacct-number">-</div></div>
+                                <div class="row"><div class="label">은행/예금주</div><div class="value"><span id="d-vacct-bank">-</span> / <span id="d-vacct-holder">-</span></div></div>
+                                <div class="row"><div class="label">입금기한</div><div class="value" id="d-vacct-expire">-</div></div>
+                            </div>
+
+                            <div id="detail-toss" style="display:none;">
+                                <div class="row"><div class="label">토스키</div><div class="value" id="d-toss-key">-</div></div>
+                            </div>
+                        </div>
+
+                        <div class="barcode"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </th:block>
 
-<!-- 상태 뱃지 색상 매핑은 간단히 JS로 처리해도 됩니다 (선택) -->
 <th:block layout:fragment="script">
-  <script th:inline="javascript">
-    // 상태 뱃지 컬러링
-    document.querySelectorAll('.status-badge').forEach(function(el){
-      const v = (el.textContent || '').trim().toUpperCase();
-      el.classList.remove('bg-success','bg-info','bg-secondary','bg-warning','bg-light','text-dark');
-      if (v === 'PAID') el.classList.add('bg-success');
-      else if (v === 'REFUNDED') el.classList.add('bg-info');
-      else if (v === 'CANCELED' || v === 'CANCELLED') el.classList.add('bg-secondary');
-      else if (v === 'PENDING') el.classList.add('bg-warning','text-dark');
-      else el.classList.add('bg-light','text-dark');
-    });
-  </script>
+    <script>
+        function formatKRW(v){
+            if (v == null || v === '') return '0원';
+            const n = Number(v);
+            if (Number.isNaN(n)) return String(v);
+            return n.toLocaleString('ko-KR') + '원';
+        }
+        function shortText(s, n){ if(!s) return '-'; return s.length > n ? (s.slice(0,n)+'…') : s; }
+        function fmtDateLike(d){ return d || '-'; }
+
+        const receiptModal = document.getElementById('receiptModal');
+        receiptModal.addEventListener('show.bs.modal', async function (event) {
+            const btn = event.relatedTarget;
+
+            const paymentId = btn.getAttribute('data-payment-id');
+            const resno = btn.getAttribute('data-resno') || '-';
+            const guest = btn.getAttribute('data-guest') || '-';
+            const phone = btn.getAttribute('data-phone') || '';
+            const acc = btn.getAttribute('data-acc') || '-';
+            const room = btn.getAttribute('data-room') || '-';
+            const method = btn.getAttribute('data-method') || '-';
+            const status = btn.getAttribute('data-status') || '-';
+            const amount = btn.getAttribute('data-amount') || '0';
+            const date = btn.getAttribute('data-date') || '-';
+
+            document.getElementById('rcpt-resno').textContent = resno;
+            document.getElementById('rcpt-guest').textContent = guest;
+            document.getElementById('rcpt-phone').textContent = phone ? `(${phone})` : '';
+            document.getElementById('rcpt-acc').textContent = shortText(acc, 18);
+            document.getElementById('rcpt-room').textContent = room || '-';
+            document.getElementById('rcpt-method').textContent = method || '-';
+            document.getElementById('rcpt-status').textContent = status || '-';
+            document.getElementById('rcpt-date').textContent = fmtDateLike(date);
+            document.getElementById('rcpt-amount').textContent = formatKRW(amount);
+
+            const reasonWrap = document.getElementById('rcpt-reason-wrap');
+            const reasonBox  = document.getElementById('rcpt-reason');
+            reasonWrap.style.display = 'none'; reasonBox.textContent = '';
+
+            const sec = document.getElementById('detail-section');
+            const card = document.getElementById('detail-card');
+            const vacct = document.getElementById('detail-vacct');
+            const toss = document.getElementById('detail-toss');
+            sec.style.display = 'none'; card.style.display='none'; vacct.style.display='none'; toss.style.display='none';
+
+            if (paymentId) {
+                try {
+                    const resp = await fetch(`/admin/point/payments/${paymentId}/detail`, {headers:{'Accept':'application/json'}});
+                    if (resp.ok) {
+                        const d = await resp.json();
+                        if (d.cancelReason && d.cancelReason.trim() !== '') {
+                            reasonWrap.style.display = 'block';
+                            reasonBox.textContent = d.cancelReason;
+                        }
+                        let hasDetail = false;
+                        if (d.cardCompany || d.cardNumber || d.installmentMonths != null) {
+                            hasDetail = true; card.style.display = 'block';
+                            document.getElementById('d-card-company').textContent = d.cardCompany || '-';
+                            document.getElementById('d-card-number').textContent = d.cardNumber || '-';
+                            document.getElementById('d-installments').textContent = (d.installmentMonths != null ? d.installmentMonths : '-') + (d.installmentMonths != null ? ' 개월' : '');
+                        }
+                        if (d.virtualAccountNumber || d.virtualAccountBank || d.virtualAccountHolder || d.virtualAccountExpire) {
+                            hasDetail = true; vacct.style.display = 'block';
+                            document.getElementById('d-vacct-number').textContent = d.virtualAccountNumber || '-';
+                            document.getElementById('d-vacct-bank').textContent = d.virtualAccountBank || '-';
+                            document.getElementById('d-vacct-holder').textContent = d.virtualAccountHolder || '-';
+                            document.getElementById('d-vacct-expire').textContent = d.virtualAccountExpire ? fmtDateLike(d.virtualAccountExpire) : '-';
+                        }
+                        if (d.tossPaymentKey) {
+                            hasDetail = true; toss.style.display = 'block';
+                            document.getElementById('d-toss-key').textContent = d.tossPaymentKey;
+                        }
+                        if (hasDetail) sec.style.display = 'block';
+                    }
+                } catch (e) { console.warn('payment detail fetch failed', e); }
+            }
+        });
+    </script>
 </th:block>
+
 </body>
 </html>

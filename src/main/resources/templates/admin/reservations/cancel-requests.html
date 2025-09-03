@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <title>취소요청 목록</title>
+    <th:block layout:fragment="head">
+        <style>
+            :root{
+                --thead:#F8FAFC; --line:#E5E7EB; --ink:#0F172A; --muted:#64748B;
+                --lav:#7C3AED; --lav-soft:#F3E8FF;
+            }
+            body{ background:#f7f9fc; }
+
+            /* 🔲 바깥 큰 테두리만 (겹침 없음) */
+            .page-frame{
+                background:#fff;
+                border:1px solid #E8EDF5;
+                border-radius:26px;
+                padding:16px;
+            }
+
+            /* 내부 카드는 테두리/섀도우 제거 → 큰 테두리만 보이게 */
+            .card{ border:none; border-radius:16px; box-shadow:none; }
+
+            /* 표 스타일 */
+            .table thead th{
+                background:var(--thead); color:#334155; font-weight:800;
+                border-bottom:1px solid var(--line)!important;
+                padding-top:1rem; padding-bottom:1rem;
+            }
+            .table tbody td{
+                vertical-align:middle; border-color:#f1f5f9;
+                padding:.9rem .75rem; color:#334155; font-weight:500;
+            }
+            .table-hover tbody tr:hover{ background:#FBFEFF; }
+
+            /* 폭 재배치 */
+            .w-idx{ width:70px }
+            .w-guest{ width:260px }
+            .w-resno{ width:200px }         /* 예약번호 ↓ */
+            .w-accroom{ min-width:320px }   /* 숙소/객실 ↑ */
+            .w-date{ width:150px }          /* 체크인/아웃 ↑ */
+            .w-amount{ width:150px }
+            .w-method{ width:120px }
+            .w-reason{ width:200px }
+            .w-actions{ width:210px }
+
+            .ellipsis{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            .ellipsis-sm{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,"Cascadia Mono","Segoe UI Mono","Roboto Mono",monospace}
+
+            /* 버튼 톤 그대로 */
+            .btn-lavender{background:var(--lav-soft);color:var(--lav);border:1px solid #E9D5FF}
+            .btn-lavender:hover{background:#E9D5FF;color:#5B21B6}
+            .btn-ghost{background:#fff;border:1px solid var(--line);color:#334155}
+
+            /* 배지 */
+            .pill{
+                border-radius:9999px; padding:.25rem .6rem; font-weight:700; font-size:.75rem;
+                border:1px solid #E2E8F0; background:#f8fafc; color:#334155;
+            }
+
+            /* ===== 영수증 모달 (색감+찢어진 상단+바코드) ===== */
+            .receipt{
+                background:#fffdfa;border:1px solid #f1e9dc;border-radius:18px;overflow:hidden;
+                box-shadow:0 28px 60px rgba(15,23,42,.18);
+                width:420px; max-width:90vw;
+            }
+            .tear{
+                height:12px;background:
+                    radial-gradient(circle at 6px -3px, transparent 8px, #f1e9dc 8px) repeat-x,
+                    radial-gradient(circle at 6px 15px, #fffdfa 8px, #fffdfa 9px) repeat-x;
+                background-size:12px 12px,12px 12px;
+            }
+            .receipt-header{
+                background:linear-gradient(180deg,#FFEED5 0%,#FFF8EC 60%,#FFFFFF 100%);
+                border-bottom:1px dashed #e6d9c4; padding:16px 18px;
+            }
+            .receipt-title{font-weight:800;color:#0f172a;margin:0}
+            .receipt-sub{color:#6b7280;font-size:.85rem}
+            .receipt-body{padding:16px 18px}
+            .kv{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px dashed #F1F5F0}
+            .kv:last-child{border-bottom:none}
+            .kv .k{color:#64748B;font-weight:700}
+            .kv .v{color:#0F172A;font-weight:700}
+            .reason-box{background:#FFF7ED;border:1px dashed #FCD9BD;border-radius:12px;padding:10px 12px;color:#9A3412;white-space:pre-line}
+            .barcode{
+                height:58px;margin-top:12px;border-radius:10px;overflow:hidden;background:
+                    repeating-linear-gradient(90deg, rgba(0,0,0,.24) 0 2px, transparent 2px 6px);
+                opacity:.55;
+            }
+            .receipt-foot{padding:12px 18px;border-top:1px dashed #e6d9c4;background:#FAFAFF;color:#475569;font-size:.9rem}
+
+            /* 환불내역과 동일한 pagination */
+            .pagination{ gap:6px; }
+            .pagination .page-link{
+                width:34px; height:34px; display:flex; justify-content:center; align-items:center;
+                border-radius:50%; font-weight:700; border:none; color:#475569; background:#F3F4F6;
+            }
+            .pagination .page-item.active .page-link{ background:#EEF2FF; color:#4F46E5; }
+            .pagination .page-item.disabled .page-link{ background:transparent; color:#94A3B8; cursor:not-allowed; }
+        </style>
+    </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+
+    <div th:if="${msg}" class="alert alert-info" role="alert" th:text="${msg}">알림</div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="page-title mb-1">취소요청 목록</h3>
+            <div class="text-muted">사용자가 취소요청한 예약만 보여줍니다.</div>
+        </div>
+        <div>
+            <a class="btn btn-sm btn-outline-secondary" href="/admin/point/refunds">환불내역 가기</a>
+        </div>
+    </div>
+
+    <!-- 검색 상단 (그대로) -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" class="form-control form-control-sm"
+                           name="q" placeholder="예약번호/고객명/전화 검색" th:value="${q}">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="size">
+                        <option th:value="10" th:selected="${pageSize==10}">10개</option>
+                        <option th:value="20" th:selected="${pageSize==20}">20개</option>
+                        <option th:value="50" th:selected="${pageSize==50}">50개</option>
+                    </select>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-lavender btn-sm" type="submit">조회</button>
+                    <a class="btn btn-ghost btn-sm" th:href="@{/admin/reservations/cancel-request}">검색 초기화</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 🔲 바깥 큰 테두리만 -->
+    <div class="page-frame mb-3">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <colgroup>
+                        <col class="w-idx"><col class="w-guest"><col class="w-resno">
+                        <col class="w-accroom"><col class="w-date"><col class="w-date">
+                        <col class="w-amount"><col class="w-method"><col class="w-reason"><col class="w-actions">
+                    </colgroup>
+                    <thead>
+                    <tr>
+                        <th class="text-center">#</th>
+                        <th>예약자 / 연락처</th>
+                        <th>예약번호</th>
+                        <th>숙소 / 객실</th>
+                        <th class="text-center">체크인</th>
+                        <th class="text-center">체크아웃</th>
+                        <th class="text-end">결제금액</th>
+                        <th class="text-center">결제수단</th>
+                        <th class="text-center">취소사유(요약)</th>
+                        <th class="text-center">관리</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr th:each="r,iter : ${list}">
+                        <td class="text-center" th:text="${(currentPage-1)*pageSize + iter.index + 1}">1</td>
+
+                        <td>
+                            <div class="fw-bold" th:text="${r.guestName}">홍길동</div>
+                            <div class="text-muted small" th:text="${r.guestPhone}">010-0000-0000</div>
+                        </td>
+
+                        <!-- 예약번호: 14자로 더 짧게 -->
+                        <td>
+                            <div class="ellipsis mono"
+                                 th:title="${r.reservationNumber}"
+                                 th:text="${#strings.length(r.reservationNumber) > 14 ? r.reservationNumber.substring(0,14) + '…' : r.reservationNumber}">
+                                R2025-…
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="fw-semibold ellipsis" th:title="${r.accommodationName}"
+                                 th:text="${r.accommodationName}">숙소명</div>
+                            <div class="text-muted small ellipsis-sm" th:title="${r.roomName}" th:text="${r.roomName}">객실명</div>
+                        </td>
+
+                        <td class="text-center" th:text="${r.checkInDate}">2025-09-10</td>
+                        <td class="text-center" th:text="${r.checkOutDate}">2025-09-12</td>
+
+                        <td class="text-end"
+                            th:text="${#numbers.formatInteger(r.price != null ? r.price.longValue() : 0, 3, 'COMMA')} + '원'">0원</td>
+
+                        <td class="text-center">
+                            <span class="pill" th:text="'-'">-</span>
+                        </td>
+
+                        <td class="text-center">
+                            <div class="ellipsis-sm"
+                                 th:title="${r.cancelReason}"
+                                 th:text="${(r.cancelReason == null || r.cancelReason.isBlank()) ? '-' : (#strings.length(r.cancelReason) > 18 ? r.cancelReason.substring(0,18) + '…' : r.cancelReason)}">-
+                            </div>
+                        </td>
+
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <!-- 상세(영수증) -->
+                                <button type="button" class="btn btn-outline-secondary"
+                                        data-bs-toggle="modal" data-bs-target="#receiptModal"
+                                        th:attr="
+                                            data-resno=${r.reservationNumber},
+                                            data-guest=${r.guestName},
+                                            data-phone=${r.guestPhone},
+                                            data-acc=${r.accommodationName},
+                                            data-room=${r.roomName},
+                                            data-method=${'-'},
+                                            data-status=${r.status},
+                                            data-amount=${r.price},
+                                            data-date=${r.updatedAt},
+                                            data-reason=${r.cancelReason}">
+                                    상세
+                                </button>
+                                <!-- 승인 -->
+                                <button type="button" class="btn btn-lavender js-approve"
+                                        th:attr="data-id=${r.reservationId}">
+                                    승인
+                                </button>
+                                <!-- 거부 -->
+                                <button type="button" class="btn btn-outline-secondary"
+                                        data-bs-toggle="modal" data-bs-target="#reasonModal"
+                                        th:attr="data-id=${r.reservationId},data-action='reject',data-name=${r.guestName}">
+                                    거부
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(list)}">
+                        <td colspan="10" class="text-center py-5 text-muted">취소요청 데이터가 없습니다.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 페이징 (그대로) -->
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <div class="small text-muted">
+                    총 <span th:text="${total}">0</span>건 · 페이지
+                    <span th:text="${currentPage}">1</span>/<span th:text="${totalPages}">1</span>
+                </div>
+
+                <nav th:if="${totalPages > 0}">
+                    <ul class="pagination mb-0">
+                        <li class="page-item page-arrows" th:classappend="${currentPage == 1} ? ' disabled'">
+                            <a class="page-link"
+                               th:href="@{/admin/reservations/cancel-request(page=${currentPage-1 <= 1 ? 1 : currentPage-1}, size=${pageSize}, q=${q})}">&laquo;</a>
+                        </li>
+
+                        <th:block th:with="start=${ ( ( (currentPage-1) / 5) * 5 ) + 1 }, end=${ T(java.lang.Math).min(start + 4, totalPages) }">
+                            <li class="page-item page-numbers"
+                                th:each="i : ${#numbers.sequence(start, end)}"
+                                th:classappend="${i==currentPage} ? ' active'">
+                                <a class="page-link"
+                                   th:text="${i}"
+                                   th:href="@{/admin/reservations/cancel-request(page=${i}, size=${pageSize}, q=${q})}">1</a>
+                            </li>
+                        </th:block>
+
+                        <li class="page-item page-arrows" th:classappend="${currentPage == totalPages} ? ' disabled'">
+                            <a class="page-link"
+                               th:href="@{/admin/reservations/cancel-request(page=${currentPage+1 > totalPages ? totalPages : currentPage+1}, size=${pageSize}, q=${q})}">&raquo;</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사유 입력 모달(승인/거부 공용) -->
+    <div class="modal fade" id="reasonModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="post" id="reasonForm" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reasonModalTitle">사유 입력</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2 small text-muted" id="reasonSubtitle">처리 사유를 입력해 주세요.</p>
+                    <textarea class="form-control" name="reason" rows="4" placeholder="사유(선택)"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-lavender" id="reasonSubmitBtn">확인</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 상세(영수증) 모달 -->
+    <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-0 border-0 bg-transparent">
+                <div class="receipt">
+                    <div class="tear"></div>
+                    <div class="receipt-header">
+                        <h5 class="receipt-title">취소요청 상세 (Receipt)</h5>
+                        <div class="receipt-sub">Refund / Cancel Receipt</div>
+                    </div>
+                    <div class="receipt-body">
+                        <div class="kv"><div class="k">예약번호</div><div class="v mono" id="rcpResNo">-</div></div>
+                        <div class="kv"><div class="k">예약자</div><div class="v" id="rcpGuest">-</div></div>
+                        <div class="kv"><div class="k">연락처</div><div class="v" id="rcpPhone">-</div></div>
+                        <div class="kv"><div class="k">숙소 / 객실</div><div class="v" id="rcpAccRoom">-</div></div>
+                        <div class="kv"><div class="k">결제수단</div><div class="v" id="rcpMethod">-</div></div>
+                        <div class="kv"><div class="k">상태</div><div class="v" id="rcpStatus">CANCEL_REQUEST</div></div>
+                        <div class="kv"><div class="k">금액</div><div class="v" id="rcpAmount">0원</div></div>
+                        <div class="kv"><div class="k">요청일시</div><div class="v" id="rcpDate">-</div></div>
+
+                        <div class="mt-3">
+                            <div class="k mb-1">취소 사유</div>
+                            <div class="reason-box" id="rcpReason">-</div>
+                        </div>
+
+                        <div class="barcode"></div>
+                    </div>
+                    <div class="receipt-foot">
+                        ※ 본 내용은 사용자가 제출한 취소요청 정보를 바탕으로 표시됩니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+
+<th:block layout:fragment="script">
+    <script>
+        // 승인 버튼 즉시 승인
+        document.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.js-approve');
+            if (!btn) return;
+
+            const id = btn.getAttribute('data-id');
+            if (!id) return;
+
+            // CSRF 토큰 가져오기 (reasonModal 폼에 있는 hidden 사용)
+            const csrfInput = document.querySelector('#reasonModal input[name]');
+            const csrfHeaderName = csrfInput ? csrfInput.getAttribute('name') : null;
+            const csrfToken = csrfInput ? csrfInput.value : null;
+
+            try {
+                const resp = await fetch(`/admin/reservations/cancel-request/${id}/approve`, {
+                    method: 'POST',
+                    headers: Object.assign(
+                        { 'Accept': 'application/json' },
+                        csrfHeaderName && csrfToken ? { [csrfHeaderName]: csrfToken } : {}
+                    )
+                });
+
+                if (resp.ok) {
+                    // JSON을 주면 파싱, 리다이렉트면 그냥 새로고침
+                    let ok = true;
+                    try {
+                        const data = await resp.json();
+                        ok = data?.ok !== false;
+                    } catch(_) { /* json 아니면 무시 */ }
+
+                    if (ok) {
+                        alert('승인되었습니다.');
+                        // 간단히 새로고침해서 리스트/상태 동기화
+                        location.reload();
+                    } else {
+                        alert('승인 처리에 실패했습니다.');
+                    }
+                } else {
+                    alert('승인 요청 실패: ' + resp.status);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('네트워크 오류로 승인에 실패했습니다.');
+            }
+        });
+
+        // 상세(영수증) 모달 세팅 (기능 변경 없음)
+        const receiptModal = document.getElementById('receiptModal');
+        receiptModal.addEventListener('show.bs.modal', function (event) {
+            const btn = event.relatedTarget;
+
+            const resNo  = btn.getAttribute('data-resno')  || '-';
+            const guest  = btn.getAttribute('data-guest')  || '-';
+            const phone  = btn.getAttribute('data-phone')  || '-';
+            const acc    = btn.getAttribute('data-acc')    || '-';
+            const room   = btn.getAttribute('data-room')   || '-';
+            const method = btn.getAttribute('data-method') || '-';
+            const status = btn.getAttribute('data-status') || 'CANCEL_REQUEST';
+            const amount = btn.getAttribute('data-amount') || '0';
+            const date   = btn.getAttribute('data-date')   || '-';
+            const reason = btn.getAttribute('data-reason') || '-';
+
+            document.getElementById('rcpResNo').textContent = resNo;
+            document.getElementById('rcpGuest').textContent = guest;
+            document.getElementById('rcpPhone').textContent = phone;
+
+            const accRoom = `${acc} / ${room}`;
+            document.getElementById('rcpAccRoom').textContent = accRoom;
+            document.getElementById('rcpAccRoom').title = accRoom;
+
+            document.getElementById('rcpMethod').textContent = method;
+            document.getElementById('rcpStatus').textContent = status;
+
+            const n = Number(amount || 0);
+            document.getElementById('rcpAmount').textContent = isNaN(n) ? amount : n.toLocaleString('ko-KR') + '원';
+            document.getElementById('rcpDate').textContent = date;
+            document.getElementById('rcpReason').textContent = (reason && reason.trim().length > 0) ? reason : '-';
+        });
+    </script>
+</th:block>
+</body>
+</html>

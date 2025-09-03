@@ -6,11 +6,15 @@ import com.honeyrest.honeyrest_host.service.*;
 import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,7 +23,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
+
+@Log4j2
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/admin/reservations")
@@ -34,71 +41,90 @@ public class ReservationController {
 
 
     /**
-     * 예약 목록 페이지 + 조회
+     * 예약 목록 페이지 + 조회 -> 예약 취소 요청 목록으로 변경함
      */
-    @GetMapping("/list")
-    public String list(@RequestParam(required = false) String number,
-                       @RequestParam(defaultValue = "ALL") String status,
-                       @RequestParam(defaultValue = "ALL") String q,
-                       @RequestParam(defaultValue = "1") int page,
-                       @RequestParam(defaultValue = "10") int size,
-                       Model model) {
-        // 1) 로그인 사용자 기준 회사 ID 해석
-        Long companyId = companyService.getCompanyIdByOfCurrentUser(); // 프로젝트의 실제 메서드 사용
+    @GetMapping("/cancel-requests")
+    public String cancelRequests(@RequestParam(required = false) String q,
+                                 @RequestParam(defaultValue = "1") int page,
+                                 @RequestParam(defaultValue = "10") int size,
+                                 Model model) {
 
+        Long companyId = companyService.getCompanyIdByOfCurrentUser();
 
-
-        model.addAttribute("reservationStatuses", List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCELLED", "NO_SHOW"));
-
-        PageRequestDTO pr = PageRequestDTO.builder()
-                .page(page)
-                .size(size)
-                .build();
-
-        PageResponseDTO<ReservationDTO> resp;
-
-        // 1) 예약 번호로 바로 찾기
-        if (number != null && !number.isBlank()) {
-            try {
-                ReservationDTO dto = reservationService.getReservationByNumber(number.trim());
-                resp = PageResponseDTO.<ReservationDTO>withAll()
-                        .pageRequestDTO(pr)
-                        .dtoList(List.of(dto))
-                        .total(1)
-                        .build();
-                model.addAttribute("msg", null);
-            } catch (Exception e) {
-                resp = PageResponseDTO.<ReservationDTO>withAll()
-                        .pageRequestDTO(pr)
-                        .dtoList(List.of())
-                        .total(0)
-                        .build();
-                model.addAttribute("msg", "해당 예약번호를 찾을 수 없습니다.");
-            }
-            // 2) 회사 기준 목록 조회학( 상태/ 검색어)
-        } else {
-
-            resp = reservationService.getCompanyReservations(companyId, status, q, pr);
-        }
-
-        //  템플릿에서 쓰기 쉬운 평면 값들을 모델에 담아줌
-        int currentPage = pr.getPage();
-        int pageSize = pr.getSize();
-        int total = resp.getTotal();
-        int totalPages = (int) Math.ceil((double) total / pr.getSize());
+        PageRequestDTO pr = PageRequestDTO.builder().page(page).size(size).build();
+        PageResponseDTO<ReservationDTO> resp = reservationService.getCancelRequestsForCompany(companyId, q, pr);
 
         model.addAttribute("list", resp.getDtoList());
-        model.addAttribute("total", total);
-        model.addAttribute("currentPage", currentPage);
-        model.addAttribute("pageSize", pageSize);
-        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("total", resp.getTotal());
+        model.addAttribute("currentPage", pr.getPage());
+        model.addAttribute("pageSize", pr.getSize());
+        model.addAttribute("totalPages", (int)Math.ceil((double)resp.getTotal() / pr.getSize()));
+        model.addAttribute("q", q == null ? "" : q.trim());
 
-        model.addAttribute("selectedStatus", status);
-        model.addAttribute("number", number == null ? "" : number.trim());
-//        model.addAttribute("q", q == null ? "" : q.trim());
-
-        return "admin/reservations/list";
+        return "admin/reservations/cancel-requests";
     }
+
+    /**
+     * 취소승인 (사유 포함)
+     */
+    @PostMapping(value = "/cancel-request/{id}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> approve(@PathVariable Long id) {
+        try {
+            // 사유 없이 즉시 승인 (서비스 시그니처에 맞춰 호출)
+            ReservationDTO updated = reservationService.approveCancelRequest(id, null);
+
+            // 상태를 컨펌(예: CONFIRM/CONFIRMED 등)으로 바꾸는 로직은 서비스에 있어야 함
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "status", updated != null ? updated.getStatus() : "CONFIRM"
+            ));
+        } catch (IllegalStateException e) {
+            // 상태 충돌 등 비즈니스 예외
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("ok", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            log.warn("취소승인 실패 id={}, err={}", id, e.toString());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("ok", false, "message", "처리에 실패했습니다."));
+        }
+    }
+
+    /**
+     * 취소거부 (사유 포함)
+     */
+    @PostMapping("/cancel-request/{id}/reject")
+    public String reject(@PathVariable Long id,
+                         @RequestParam(required = false) String reason,
+                         RedirectAttributes rttr) {
+        try {
+            // 예약 상태는 변경하지 않고(서비스도 상태 변경하지 않게!)
+            reservationService.rejectCancelRequest(id, reason);
+            rttr.addFlashAttribute("msg", "취소요청을 거부했습니다.");
+        } catch (Exception e) {
+            log.warn("취소거부 실패 id={}, err={}", id, e.getMessage());
+            rttr.addFlashAttribute("msg", "취소거부에 실패했습니다: " + e.getMessage());
+        }
+        // ★ 목록 URL을 실제 매핑과 동일하게 복수형으로
+        return "redirect:/admin/reservations/cancel-requests";
+    }
+
+
+    @PostMapping("/admin/reservations/{id}/complete")
+    public String complete(@PathVariable Long id, RedirectAttributes ra) {
+        reservationService.markCompleted(id);
+        ra.addFlashAttribute("msg","체크아웃 완료 처리");
+        return "redirect:/admin/reservations/list-all";
+    }
+
+    @PostMapping("/admin/reservations/{id}/no-show")
+    public String noShow(@PathVariable Long id, RedirectAttributes ra) {
+        reservationService.markNoShow(id);
+        ra.addFlashAttribute("msg","노쇼 처리 완료");
+        return "redirect:/admin/reservations/list-all";
+    }
+
+
 
 
     /**
@@ -131,8 +157,8 @@ public class ReservationController {
         int totalPages = resp.getTotalPages();
 
         int blockSize = 5;
-        int startPage = ((currentPage - 1) / blockSize)  * blockSize + 1;
-        int endPage = Math.min(startPage + blockSize -1, totalPages);
+        int startPage = ((currentPage - 1) / blockSize) * blockSize + 1;
+        int endPage = Math.min(startPage + blockSize - 1, totalPages);
         boolean hasPrevBlock = startPage > 1;
         boolean hasNextBlock = endPage < totalPages;
 
@@ -152,7 +178,7 @@ public class ReservationController {
         model.addAttribute("selectedStatus", status);
         model.addAttribute("q", q == null ? "" : q);
 
-        model.addAttribute("accOptions" ,accommodationService.getAllById(companyId));
+        model.addAttribute("accOptions", accommodationService.getAllById(companyId));
         model.addAttribute("selectedAccId", accId);
 
         return "admin/reservations/my";
@@ -222,7 +248,7 @@ public class ReservationController {
     public String day(@RequestParam Long companyId,
                       @RequestParam(required = false) Long accommodationId,
                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
-                     Model model) {
+                      Model model) {
 
         // 날짜 파라미터가 없으면 오늘로 기본값
         if (date == null) {
@@ -233,7 +259,7 @@ public class ReservationController {
         model.addAttribute("accommodations", accommodationService.getAllById(companyId));
 
         // 목록 데이터: 회사(+선택 숙소)의 '해당 날짜에 걸치는' 예약만
-       List<ReservationDTO> list =
+        List<ReservationDTO> list =
                 reservationService.findCompanyReservationsOnDate(companyId, accommodationId, date);
 
         // 템플릿에서 쓰는 모델값들
