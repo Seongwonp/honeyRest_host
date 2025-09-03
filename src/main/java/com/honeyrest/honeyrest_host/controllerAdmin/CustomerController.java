@@ -3,8 +3,7 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 import com.honeyrest.honeyrest_host.dto.UserDetailDTO;
 import com.honeyrest.honeyrest_host.dto.UserListDTO;
-import com.honeyrest.honeyrest_host.repository.UserRepository;
-import com.honeyrest.honeyrest_host.service.CustomerService;
+import com.honeyrest.honeyrest_host.serviceAdmin.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;

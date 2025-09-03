@@ -1,11 +1,11 @@
 package com.honeyrest.honeyrest_host.controllerAdmin.dashboard;
 
 
-import com.honeyrest.honeyrest_host.repository.CompanyRepository;
-import com.honeyrest.honeyrest_host.repository.ReservationRepository;
-import com.honeyrest.honeyrest_host.repository.UserRepository;
-import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
-import com.honeyrest.honeyrest_host.service.UserService;
+import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
+import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
+import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
+import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
+import com.honeyrest.honeyrest_host.serviceAdmin.UserService;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.log4j.Log4j2;

@@ -1,16 +1,13 @@
 package com.honeyrest.honeyrest_host.config;
 
-import com.honeyrest.honeyrest_host.entity.User;
-import com.honeyrest.honeyrest_host.repository.UserRepository;
+import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
 import com.honeyrest.honeyrest_host.security.JwtAuthFilter;
-import com.honeyrest.honeyrest_host.service.AdminUserDetailsService;
-import io.micrometer.core.instrument.binder.logging.LogbackMetrics;
+import com.honeyrest.honeyrest_host.serviceAdmin.AdminUserDetailsService;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,7 +21,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 import java.util.List;
 

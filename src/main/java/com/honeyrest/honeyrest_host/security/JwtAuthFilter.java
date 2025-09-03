@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.security;
 
 import com.honeyrest.honeyrest_host.config.JwtTokenProvider;
-import com.honeyrest.honeyrest_host.repository.UserRepository;
+import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import jakarta.servlet.FilterChain;

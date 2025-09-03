@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.web;
 
 import com.honeyrest.honeyrest_host.entity.User;
-import com.honeyrest.honeyrest_host.repository.UserRepository;
+import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;

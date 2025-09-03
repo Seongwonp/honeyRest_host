@@ -3,11 +3,11 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 import com.honeyrest.honeyrest_host.dto.*;
 import com.honeyrest.honeyrest_host.entity.Company;
-import com.honeyrest.honeyrest_host.repository.CompanyRepository;
-import com.honeyrest.honeyrest_host.repository.accommodation.AccommodationRepository;
-import com.honeyrest.honeyrest_host.service.*;
-import com.honeyrest.honeyrest_host.service.accommodation.AccommodationService;
-import com.honeyrest.honeyrest_host.util.FileUploadUtil;
+import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
+import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
+import com.honeyrest.honeyrest_host.serviceAdmin.*;
+import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
+import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

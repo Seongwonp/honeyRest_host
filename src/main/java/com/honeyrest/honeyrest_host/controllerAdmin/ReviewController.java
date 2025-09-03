@@ -2,10 +2,9 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dto.*;
-import com.honeyrest.honeyrest_host.repository.ReservationRepository;
-import com.honeyrest.honeyrest_host.service.ReservationService;
-import com.honeyrest.honeyrest_host.service.ReviewImageService;
-import com.honeyrest.honeyrest_host.service.ReviewService;
+import com.honeyrest.honeyrest_host.serviceAdmin.ReservationService;
+import com.honeyrest.honeyrest_host.serviceAdmin.ReviewImageService;
+import com.honeyrest.honeyrest_host.serviceAdmin.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

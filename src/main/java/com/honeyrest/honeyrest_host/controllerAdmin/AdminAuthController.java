@@ -3,7 +3,7 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dto.AdminSignupRequestDTO;
 import com.honeyrest.honeyrest_host.dto.TokenResponseDTO;
-import com.honeyrest.honeyrest_host.service.AdminAuthService;
+import com.honeyrest.honeyrest_host.serviceAdmin.AdminAuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
