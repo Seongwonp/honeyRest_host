@@ -56,6 +56,13 @@ public class RoomController {
         return "owner/room/list";
     }
 
+    @GetMapping("/room/inActive/list")
+    public String inActiveList(@ModelAttribute PageRequestDTO pageRequestDTO,
+                               @RequestParam(required = false) Long companyId,
+                               Model model) {
+
+        return "owner/room/inActive";
+    }
 
     @GetMapping("/room/create")
     public String createRoom(@RequestParam Long accommodationId, Model model) {

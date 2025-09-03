@@ -25,4 +25,9 @@ public interface RoomService {
     void updateRoomImage(RoomImageDTO dto);
 
     List<RoomDTO> searchByNameContaining(Long accommodationId, String keyword);
+
+    Long getRoomIdByReviewId(Long reviewId);
+
+    RoomDTO getByAccommodationIdAndId(Long id, Long name);
+
 }

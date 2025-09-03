@@ -150,9 +150,6 @@
                 <div class="col-auto">
                     <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
                 </div>
-                <div class="col text-end">
-                    <a th:href="@{/owner/accommodation/create(companyId=${companyId})}" class="btn btn-primary">리뷰 등록</a>
-                </div>
             </form>
         </div>
     </div>
@@ -169,8 +166,14 @@
                             <p class="mb-1"><strong>사용자 ID:</strong> <span th:text="${review.userId}">hong123</span></p>
                             <p class="mb-1"><strong>평점:</strong> <span th:text="${review.rating}">4.5</span></p>
                             <p class="mb-1"><strong>리뷰 내용:</strong> <span th:text="${review.content}">좋은 숙소였습니다.</span></p>
-                            <p class="mb-1"><strong>답글:</strong> <span th:text="${review.reply}">감사합니다!</span></p>
-                            <p class="mb-1"><strong>좋아요 수:</strong> <span th:text="${review.likeCount}">5</span></p>
+                            <form th:action="@{'/owner/review/' + ${review.reviewId} + '/reply'}" method="post" class="mb-2">
+                                <div class="mb-2">
+                                    <label for="replyText" class="form-label"><strong>답글:</strong></label>
+                                    <textarea class="form-control form-control-sm" id="replyText" name="reply" rows="2"
+                                              th:text="${review.reply}" placeholder="답글을 입력하세요"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">답글 저장</button>
+                            </form>                            <p class="mb-1"><strong>좋아요 수:</strong> <span th:text="${review.likeCount}">5</span></p>
                             <p class="mb-1"><strong>상태:</strong> <span th:text="${review.status}">활성</span></p>
                         </div>
                         <div class="card-footer d-flex justify-content-end gap-2">

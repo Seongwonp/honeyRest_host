@@ -325,8 +325,18 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
+    public List<AccommodationDTO> searchByNameContaining(String keyword) {
+        return accommodationRepository.findByNameContainingIgnoreCase(keyword).stream().map(this::toDTO).toList();
+    }
+
+    @Override
     public Long getAccommodationIdByRoomId(Long roomId) {
         Room room = roomRepository.findByRoomId(roomId);
         return room.getAccommodation().getAccommodationId();
+    }
+
+    @Override
+    public AccommodationDTO getByName(String accommodationName){
+        return toDTO(accommodationRepository.findByName(accommodationName));
     }
 }

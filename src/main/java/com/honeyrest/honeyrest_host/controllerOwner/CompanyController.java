@@ -43,10 +43,10 @@ public class CompanyController {
     @GetMapping("/company/inActive/list")
     public String companyInActiveList(@ModelAttribute PageRequestDTO pageRequestDTO, Model model) {
         PageResponseDTO<CompanyDTO> responseDTO = companyService.getInActiveCompaniesWithPage(pageRequestDTO);
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         model.addAttribute("responseDTO", responseDTO);
         model.addAttribute("companies", responseDTO.getDtoList());
-        model.addAttribute("inActive", 1);
-        return "owner/company/list";
+        return "owner/company/inActive";
     }
 
 
@@ -84,7 +84,13 @@ public class CompanyController {
     @GetMapping("/company/search")
     @ResponseBody
     public List<CompanyDTO> searchCompanies(@RequestParam String keyword) {
-        return companyService.searchByNameContaining(keyword);
+        return companyService.searchByNameContaining(keyword).stream().filter(c-> c.getStatus().equalsIgnoreCase("active")).toList();
+    }
+    // 회사 검색 API (자동완성용)
+    @GetMapping("/company/inActive/search")
+    @ResponseBody
+    public List<CompanyDTO> searchInActiveCompanies(@RequestParam String keyword) {
+        return companyService.searchByNameContaining(keyword).stream().filter(c-> !c.getStatus().equalsIgnoreCase("active")).toList();
     }
 
     // 선택한 회사의 숙소 목록 JSON

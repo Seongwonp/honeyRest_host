@@ -59,8 +59,7 @@ public class AccommodationController {
         model.addAttribute("company", companyId != null ? companyService.getCompany(companyId) : null);
         model.addAttribute("responseDTO", responseDTO);
         model.addAttribute("accommodations", responseDTO.getDtoList());
-        model.addAttribute("inActive", 1);
-        return "owner/accommodation/list";
+        return "owner/accommodation/inActive";
     }
 
 
@@ -127,10 +126,17 @@ public class AccommodationController {
     }
 
     // 회사 검색 API (자동완성용)
-    @GetMapping("/accommodation/search")
+    @GetMapping("/accommodation/companyId/search")
     @ResponseBody
-    public List<AccommodationDTO> searchCompanies(@RequestParam Long companyId, @RequestParam String keyword) {
-        return accommodationService.searchByNameContaining(companyId, keyword);
+    public List<AccommodationDTO> searchAccommodation(@RequestParam Long companyId, @RequestParam String keyword) {
+        return accommodationService.searchByNameContaining(companyId, keyword).stream().filter(a-> a.getStatus().equalsIgnoreCase("active")).toList();
+    }
+
+    // 회사 검색 API (자동완성용)
+    @GetMapping("/accommodation/inActive/search")
+    @ResponseBody
+    public List<AccommodationDTO> searchInActiveAccommodation(@RequestParam Long companyId, @RequestParam String keyword) {
+        return accommodationService.searchByNameContaining(companyId, keyword).stream().filter(a-> !a.getStatus().equalsIgnoreCase("active")).toList();
     }
 
     // 선택한 회사의 숙소 목록 JSON

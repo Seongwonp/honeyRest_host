@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -49,5 +50,10 @@ public class UserService {
 
     public UserDTO getUserByNameAndPhone(String name, String phone) {
         return modelMapper.map(userRepository.findByNameAndPhone(name, phone), UserDTO.class);
+    }
+
+    public List<UserDTO> searchByNameContaining(String name) {
+        return userRepository.findByNameContainingIgnoreCase(name).stream().map(u -> modelMapper.map(u, UserDTO.class)).toList();
+
     }
 }

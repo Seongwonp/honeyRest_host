@@ -103,7 +103,7 @@ public class ReservationService {
     public List<ReservationDTO> getReservationsByActive() {
         return reservationRepository.findAll()
                 .stream()
-                .filter(reservation -> !"CANCEL".equals(reservation.getStatus()))
+                .filter(reservation -> !"CANCEL".equalsIgnoreCase(reservation.getStatus()))
                 .map(this::toDTO)
                 .toList();
     }
@@ -212,11 +212,10 @@ public class ReservationService {
 
         List<ReservationDTO> list = page.getContent().stream()
                 .map(this::toDTO)
-                .filter(reservation -> reservation.getStatus().equalsIgnoreCase("cancel_request")
-                )
+                .filter(reservation -> reservation.getStatus().equalsIgnoreCase("cancel_request"))
                 .toList();
 
-        long total = page.getTotalElements();
+        long total = list.size();
 
         return PageResponseDTO.<ReservationDTO>withAll()
                 .dtoList(list)

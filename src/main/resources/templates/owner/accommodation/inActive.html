@@ -76,7 +76,7 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <h3 th:text="${company != null} ? ${company.name} : '전체 숙소 리스트'">숙소 리스트</h3>
+        <h3 th:text="${company != null} ? ${company.name} : '비활성 숙소 리스트'">숙소 리스트</h3>
         <!-- 회사 정보 카드 -->
         <div class="card shadow-lg border-0 mb-4" th:if="${company != null}">
             <!-- 헤더 -->
@@ -91,73 +91,73 @@
             <div class="card-body p-4">
                 <!-- 업체 기본 정보 -->
                 <div class="row g-4 mb-3">
-                <div class="row g-4 ">
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">업체명</label>
-                        <div class="fs-5 fw-bold" th:text="${company.name}">한강리조트</div>
+                    <div class="row g-4 ">
+                        <div class="col-md-6">
+                            <label class="text-muted small fw-semibold">업체명</label>
+                            <div class="fs-5 fw-bold" th:text="${company.name}">한강리조트</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small fw-semibold">대표자명</label>
+                            <div class="fs-5" th:text="${company.ownerName}">홍길동</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small fw-semibold">사업자등록번호</label>
+                            <div th:text="${company.businessNumber}">123-45-67890</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small fw-semibold">수수료율</label>
+                            <div class="fw-semibold text-primary" th:text="${company.commissionRate + '%'}">10%</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small fw-semibold">이메일</label>
+                            <div th:text="${company.email}">email@example.com</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small fw-semibold">전화번호</label>
+                            <div th:text="${company.phone}">010-1234-5678</div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="text-muted small fw-semibold">주소</label>
+                            <div th:text="${company.address}">서울특별시 강남구 ...</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small fw-semibold">가입일</label>
+                            <div th:text="${#temporals.format(company.createdAt, 'yyyy-MM-dd HH:mm')}">2025-08-31</div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">대표자명</label>
-                        <div class="fs-5" th:text="${company.ownerName}">홍길동</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">사업자등록번호</label>
-                        <div th:text="${company.businessNumber}">123-45-67890</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">수수료율</label>
-                        <div class="fw-semibold text-primary" th:text="${company.commissionRate + '%'}">10%</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">이메일</label>
-                        <div th:text="${company.email}">email@example.com</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">전화번호</label>
-                        <div th:text="${company.phone}">010-1234-5678</div>
-                    </div>
-                    <div class="col-md-12">
-                        <label class="text-muted small fw-semibold">주소</label>
-                        <div th:text="${company.address}">서울특별시 강남구 ...</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">가입일</label>
-                        <div th:text="${#temporals.format(company.createdAt, 'yyyy-MM-dd HH:mm')}">2025-08-31</div>
-                    </div>
-                </div>
 
-                <!-- 정산 계좌 -->
-                <div class="mt-4 pt-3 border-top">
-                    <h6 class="fw-bold mb-3">
-                        <i class="bi bi-bank me-2 text-primary"></i> 정산 계좌 정보
-                    </h6>
-                    <div class="fs-6 ps-2 border-start border-3 border-primary" th:text="${company.bankInfo}">
-                        신한은행 123-456-789012
+                    <!-- 정산 계좌 -->
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="fw-bold mb-3">
+                            <i class="bi bi-bank me-2 text-primary"></i> 정산 계좌 정보
+                        </h6>
+                        <div class="fs-6 ps-2 border-start border-3 border-primary" th:text="${company.bankInfo}">
+                            신한은행 123-456-789012
+                        </div>
                     </div>
-                </div>
 
-                <!-- 버튼 영역 -->
-                <div class="mt-4 text-end d-flex justify-content-end gap-2 flex-wrap">
-                    <a th:href="@{'/owner/sales/day/company/' + ${company.companyId}}" class="btn btn-success btn-sm px-3">
-                        <i class="bi bi-graph-up me-1"></i> 매출 보기
-                    </a>
-                    <a th:href="@{'/owner/calendar/company/' + ${company.companyId} + '/calendar'}" class="btn btn-secondary btn-sm px-3">
-                        <i class="bi bi-calendar-event me-1"></i> 예약 캘린더
-                    </a>
-                    <a th:href="@{'/owner/company/' + ${company.companyId} + '/modify'}" class="btn btn-primary btn-sm px-3">
-                        <i class="bi bi-pencil-square me-1"></i> 업체 수정
-                    </a>
-                    <form th:action="@{'/owner/company/' + ${company.companyId} + '/delete'}"
-                          method="post" style="display:inline-block;"
-                          onsubmit="return confirm('정말 삭제하시겠습니까?');">
-                        <button type="submit" class="btn btn-danger btn-sm px-3">
-                            <i class="bi bi-trash me-1"></i> 삭제
-                        </button>
-                    </form>
+                    <!-- 버튼 영역 -->
+                    <div class="mt-4 text-end d-flex justify-content-end gap-2 flex-wrap">
+                        <a th:href="@{'/owner/sales/day/company/' + ${company.companyId}}" class="btn btn-success btn-sm px-3">
+                            <i class="bi bi-graph-up me-1"></i> 매출 보기
+                        </a>
+                        <a th:href="@{'/owner/calendar/company/' + ${company.companyId} + '/calendar'}" class="btn btn-secondary btn-sm px-3">
+                            <i class="bi bi-calendar-event me-1"></i> 예약 캘린더
+                        </a>
+                        <a th:href="@{'/owner/company/' + ${company.companyId} + '/modify'}" class="btn btn-primary btn-sm px-3">
+                            <i class="bi bi-pencil-square me-1"></i> 업체 수정
+                        </a>
+                        <form th:action="@{'/owner/company/' + ${company.companyId} + '/delete'}"
+                              method="post" style="display:inline-block;"
+                              onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                            <button type="submit" class="btn btn-danger btn-sm px-3">
+                                <i class="bi bi-trash me-1"></i> 삭제
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
         <p class="text-subtitle text-muted" th:if="${company == null}">
             업체 선택 시 해당 업체의 숙소만 조회됩니다.
         </p>
@@ -180,7 +180,7 @@
             </form>
         </div>
 
-    <!-- 객실 리스트 카드 -->
+        <!-- 객실 리스트 카드 -->
         <div class="mt-4">
             <h6 class="fw-bold mb-3">숙소 목록</h6>
             <div class="row g-4">
@@ -229,26 +229,26 @@
 
 
         <div class="pagination mt-3">
-        <ul class="pagination">
-            <li class="page-item" th:if="${responseDTO.prev}">
-                <a class="page-link"
-                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}">이전</a>
-            </li>
+            <ul class="pagination">
+                <li class="page-item" th:if="${responseDTO.prev}">
+                    <a class="page-link"
+                       th:href="@{/owner/accommodation/inActive(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}">이전</a>
+                </li>
 
-            <li class="page-item"
-                th:each="num : ${responseDTO.pageNumList}"
-                th:classappend="${num == responseDTO.current} ? 'active'">
-                <a class="page-link"
-                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${num}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}"
-                   th:text="${num}"></a>
-            </li>
+                <li class="page-item"
+                    th:each="num : ${responseDTO.pageNumList}"
+                    th:classappend="${num == responseDTO.current} ? 'active'">
+                    <a class="page-link"
+                       th:href="@{/owner/accommodation/inActive(page=${num}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}"
+                       th:text="${num}"></a>
+                </li>
 
-            <li class="page-item" th:if="${responseDTO.next}">
-                <a class="page-link"
-                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}">다음</a>
-            </li>
-        </ul>
-    </div>
+                <li class="page-item" th:if="${responseDTO.next}">
+                    <a class="page-link"
+                       th:href="@{/owner/accommodation/inActive(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}">다음</a>
+                </li>
+            </ul>
+        </div>
     </div>
 </th:block>
 </body>
@@ -270,7 +270,7 @@
                 return;
             }
 
-            fetch(`/owner/accommodation/companyId/search?companyId=${companyId}&keyword=${keyword}`)
+            fetch(`/owner/accommodation/inActive/search?companyId=${companyId}&keyword=${keyword}`)
                 .then(res => res.json())
                 .then(data => {
                     accommodationSearchResult.innerHTML = "";
@@ -316,10 +316,10 @@
         document.getElementById('searchForm').addEventListener('submit', function (event) {
             // const companyId = companyIdInput.value;
             const accommodationId = accommodationIdInput.value;
-            let actionUrl = "/owner/accommodation/list";
+            let actionUrl = "/owner/accommodation/inActive";
 
             if (accommodationId) {
-                actionUrl = `/owner/accommodation/${accommodationId}/rooms`;
+                actionUrl = `/owner/room/inActive`;
             }
             this.action = actionUrl;
         });

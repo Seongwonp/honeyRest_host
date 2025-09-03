@@ -98,10 +98,10 @@ public class CompanyService {
 
         try {
             if (dto.getBankInfo() != null && !dto.getBankInfo().isBlank()) {
-                BankInfoJson = objectMapper.writeValueAsString(parseBankInfoToJson(dto.getBankInfo()));
+                BankInfoJson = parseBankInfoToJson(dto.getBankInfo());
             }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace(); // 변환 실패 시 로그 출력
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         return Company.builder()
                 .name(dto.getName())

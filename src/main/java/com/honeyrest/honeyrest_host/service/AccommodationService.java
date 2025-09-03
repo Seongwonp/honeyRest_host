@@ -36,5 +36,10 @@ public interface AccommodationService {
 
     List<AccommodationDTO> searchByNameContaining(Long companyId, String keyword);
 
+    List<AccommodationDTO> searchByNameContaining(String keyword);
+
+
     Long getAccommodationIdByRoomId(Long roomId);
+
+    AccommodationDTO getByName(String accommodationName);
 }

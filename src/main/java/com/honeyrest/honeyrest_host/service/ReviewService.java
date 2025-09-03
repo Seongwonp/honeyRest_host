@@ -124,4 +124,60 @@ public class ReviewService {
 
         return responseDTO;
     }
+
+    public ReviewDTO getReviewById(Long reviewId) {
+        return toDTO(reviewRepository.findByReviewId(reviewId));
+    }
+
+    public PageResponseDTO<ReviewDTO> getReviewsByUserId(String name , String phone ,PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("reviewId").descending());
+
+        Page<Review> page = reviewRepository.findByUser_UserId(userRepository.findByNameAndPhone(name, phone).getUserId() ,pageable);
+
+        List<ReviewDTO> list = page.getContent().stream().map(this::toDTO).toList();
+
+        long total = page.getTotalElements();
+
+        PageResponseDTO<ReviewDTO> responseDTO = PageResponseDTO.<ReviewDTO>withAll()
+                .dtoList(list)
+                .pageRequestDTO(pageRequestDTO)
+                .totalCount(total)
+                .build();
+
+        return responseDTO;
+
+    }
+    public PageResponseDTO<ReviewDTO> getReviewsByRoomID(Long roomId, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("reviewId").descending());
+
+        Page<Review> page;
+
+        if (roomId != null && roomId > 0) {
+            page = reviewRepository.findByRoomId(roomId, pageable); // 쿼리 메서드 필요
+        } else {
+            page = reviewRepository.findAll(pageable);
+        }
+
+        List<ReviewDTO> list = page.getContent().stream().map(this::toDTO).toList();
+
+        long total = page.getTotalElements();
+
+        PageResponseDTO<ReviewDTO> responseDTO = PageResponseDTO.<ReviewDTO>withAll()
+                .dtoList(list)
+                .pageRequestDTO(pageRequestDTO)
+                .totalCount(total)
+                .build();
+
+        return responseDTO;
+    }
+
+    public void saveReply(Long reviewId, String reply){
+        Review review= reviewRepository.findByReviewId(reviewId);
+        ReviewDTO dto = toDTO(review);
+        dto.setReply(reply);
+
+        reviewRepository.save(toEntity(dto));
+    }
 }

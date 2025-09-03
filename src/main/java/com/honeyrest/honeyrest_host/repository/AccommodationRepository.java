@@ -21,4 +21,5 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
 
     List<Accommodation> findByNameContainingIgnoreCase(String keyword);
 
+    Accommodation findByName(String accommodationName);
 }

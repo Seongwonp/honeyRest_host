@@ -12,6 +12,7 @@ import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.entity.RoomImage;
 import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
+import com.honeyrest.honeyrest_host.repository.ReviewRepository;
 import com.honeyrest.honeyrest_host.repository.RoomImageRepository;
 import com.honeyrest.honeyrest_host.repository.RoomRepository;
 import jakarta.transaction.Transactional;
@@ -33,6 +34,7 @@ public class RoomServiceImpl implements RoomService{
     private final AccommodationRepository accommodationRepository;
     private final ObjectMapper objectMapper;
     private final RoomImageRepository roomImageRepository;
+    private final ReviewRepository reviewRepository;
 
     private String parseJson(String input) {
         if (input == null || input.isBlank()) return "[]";
@@ -103,6 +105,7 @@ public class RoomServiceImpl implements RoomService{
                 .maxOccupancy(d.getMaxOccupancy())
                 .standardOccupancy(d.getStandardOccupancy())
                 .extraPersonFee(d.getExtraPersonFee())
+                .maxOccupancy(d.getMaxOccupancy())
                 .bedInfo(bedInfoJson)
                 .amenities(amenitiesJson)
                 .description(d.getDescription())
@@ -195,5 +198,15 @@ public class RoomServiceImpl implements RoomService{
     public List<RoomDTO> searchByNameContaining(Long accommodationId, String keyword) {
         return roomRepository.findByAccommodation_AccommodationIdAndNameContainingIgnoreCase(accommodationId, keyword)
                 .stream().map(this::toDTO).toList();
+    }
+
+    @Override
+    public Long getRoomIdByReviewId(Long reviewId){
+        return reviewRepository.findByReviewId(reviewId).getRoomId();
+    }
+
+    @Override
+    public RoomDTO getByAccommodationIdAndId(Long id, Long name) {
+        return toDTO(roomRepository.findByAccommodation_AccommodationIdAndRoomId(id, name));
     }
 }
