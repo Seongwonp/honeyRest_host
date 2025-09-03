@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+<head>
+    <title>숙소 캘린더</title>
+    <th:block layout:fragment="head"></th:block>
+</head>
+<style>
+    .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+
+    .day {
+        border: 1px solid #ccc;
+        min-height: 100px;
+        padding: 5px;
+    }
+
+    .header {
+        font-weight: bold;
+        background: #f8f9fa;
+        text-align: center;
+    }
+
+    .soldout {
+        color: red;
+    }
+
+    .available {
+        color: green;
+    }
+
+    .day-number {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+</style>
+<body>
+<th:block layout:fragment="content">
+
+    <div class="page-heading">
+        <h3>캘린더</h3>
+    </div>
+
+    <!-- 검색 폼 -->
+    <div class="card p-4 mb-4 shadow-sm">
+        <form method="get"
+              action="/owner/calendar/list"
+              class="row g-3 align-items-end"
+              id="searchForm">
+
+            <!-- 회사 선택 -->
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
+                <select name="companyId" class="form-select" id="companySelect">
+                    <option value="">회사 선택</option>
+                </select>
+            </div>
+
+            <!-- 숙소 선택 -->
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
+                <select name="accommodationId" class="form-select" id="accommodationSelect">
+                    <option value="">숙소 선택</option>
+                </select>
+            </div>
+
+            <div class="col-auto">
+                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 캘린더 출력 -->
+    <th:block th:each="room : ${roomList}">
+        <h3 th:text="${room.name}"></h3>
+
+        <div class="calendar">
+            <!-- 요일 헤더 -->
+            <div class="header">일</div>
+            <div class="header">월</div>
+            <div class="header">화</div>
+            <div class="header">수</div>
+            <div class="header">목</div>
+            <div class="header">금</div>
+            <div class="header">토</div>
+
+            <!-- 날짜 셀 -->
+            <th:block th:each="d : ${#numbers.sequence(1, endDate.lengthOfMonth())}">
+                <div class="day">
+                    <div class="day-number" th:text="${d}"></div>
+
+                    <th:block th:with="roomCalendar=${calendarDataMap.get(room.roomId)},
+                                       date=${startDate.withDayOfMonth(d)},
+                                       data=${roomCalendar != null ? roomCalendar.get(date) : null}">
+
+                        <div th:if="${data != null}">
+                            <div>가격: <span th:text="${#numbers.formatInteger(data.price, 0, 'COMMA')} + '원'"></span></div>
+                            <div th:classappend="${data.availableRoom > 0} ? 'available' : 'soldout'">
+                                <span th:text="${data.availableRoom > 0 ? '잔여 ' + data.availableRoom + '실' : '매진'}"></span>
+                            </div>
+                            <button type="button"
+                                    th:attr="data-date=${date}, data-roomid=${room.roomId}"
+                                    class="editBtn">수정
+                            </button>
+                        </div>
+
+                        <div th:if="${data == null}">
+                            <span class="text-muted">데이터 없음</span>
+                            <button type="button"
+                                    th:attr="data-date=${date}, data-roomid=${room.roomId}"
+                                    class="editBtn">등록
+                            </button>
+                        </div>
+
+                    </th:block>
+                </div>
+            </th:block>
+        </div>
+    </th:block>
+</th:block>
+</body>
+</html>
+<!-- JS -->
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const companySelect = document.getElementById("companySelect");
+        const accommodationSelect = document.getElementById("accommodationSelect");
+
+        const companies = /*[[${companies}]]*/ [];
+        const accommodations = /*[[${accommodations}]]*/ [];
+
+        const selectedCompanyId = /*[[${companyId}]]*/ '';
+        const selectedAccommodationId = /*[[${accommodationId}]]*/ '';
+
+        function loadCompanyOptions() {
+            companySelect.innerHTML = '<option value="">회사 선택</option>';
+            companies.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.companyId;
+                opt.textContent = c.name;
+                if (c.companyId == selectedCompanyId) opt.selected = true;
+                companySelect.appendChild(opt);
+            });
+        }
+
+        function loadAccommodationOptions(companyId) {
+            accommodationSelect.innerHTML = '<option value="">숙소 선택</option>';
+            let filtered = accommodations;
+            if (companyId) {
+                filtered = accommodations.filter(a => a.companyId == companyId);
+            }
+            filtered.forEach(a => {
+                const opt = document.createElement("option");
+                opt.value = a.accommodationId;
+                opt.textContent = a.name;
+                if (a.accommodationId == selectedAccommodationId) opt.selected = true;
+                accommodationSelect.appendChild(opt);
+            });
+        }
+
+        companySelect.addEventListener("change", function () {
+            loadAccommodationOptions(this.value);
+        });
+
+        // 초기 로딩
+        loadCompanyOptions();
+        loadAccommodationOptions(selectedCompanyId);
+
+        document.getElementById('searchForm').addEventListener('submit', function (event) {
+            const companyId = companySelect.value;
+            const accommodationId = accommodationSelect.value;
+            let actionUrl = "/owner/calendar/company";
+
+            if (accommodationId) {
+                actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar`;
+            } else if (companyId) {
+                actionUrl = `/owner/calendar/company/${companyId}/calendar`;
+            }
+
+            this.action = actionUrl;
+        });
+    })
+</script>

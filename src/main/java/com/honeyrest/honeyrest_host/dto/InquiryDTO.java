@@ -1,7 +1,6 @@
 package com.honeyrest.honeyrest_host.dto;
 
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

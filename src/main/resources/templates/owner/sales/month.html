@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+
+<head>
+    <title>매출 현황</title>
+    <style>
+        .btn-outline-warning:hover {
+            background-color: #ffc107;
+            color: #212529;
+            border-color: #ffc107;
+        }
+    </style>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <h3 class="mb-4"  th:text="${companyId != null} ? ${company.name} + ' 매출 현황'
+             : (${accommodationId != null} ? ${accommodation.name} + ' 매출 현황'
+                                           : '전체 매출 현황')"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <form method="get" action="/owner/sales/month" class="row g-3 align-items-end" id="searchForm">
+<!--            <div class="col-auto">-->
+<!--                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>-->
+<!--                <input type="date" name="startDate"  class="form-control">-->
+<!--            </div>-->
+<!--            <div class="col-auto">-->
+<!--                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>-->
+<!--                <input type="date" name="endDate"  class="form-control">-->
+<!--            </div>-->
+            <div class="col-auto">
+                <label class="form-label"><i class="bi bi-filter-square me-1"></i>검색 조건</label>
+                <select name="searchType" class="form-select" id="searchTypeSelect">
+                    <option value="companyName" th:selected="${searchType == 'companyName'}">회사명</option>
+                    <option value="accommodationName" th:selected="${searchType == 'accommodationName'}">숙소명</option>
+                </select>
+            </div>
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-search me-1"></i>검색어</label>
+                <select name="keyword" class="form-select" id="keywordSelect">
+                    <!-- 옵션은 JS에서 넣어줌 -->
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+            </div>
+        </form>
+    </div>
+
+
+
+    <div class="mb-4">
+        <a th:href="${companyId != null} ? '/owner/sales/day/company/' + ${companyId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+          : (${accommodationId != null} ? '/owner/sales/day/accommodation/' + ${accommodationId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+                                        : '/owner/sales/day')"
+           class="btn btn-outline-warning  me-2"
+           aria-current="page"><i class="bi bi-calendar-day me-1"></i>일별</a>
+        <a th:href="${companyId != null} ? '/owner/sales/month/company/' + ${companyId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+         : (${accommodationId != null} ? '/owner/sales/month/accommodation/' + ${accommodationId} + '?searchType='+ ${searchType} + '&keyword=' + ${keyword}
+                                       : '/owner/sales/month')"
+           class="btn btn-warning text-dark custom-hover-dark me-2 active"><i class="bi bi-calendar3 me-1"></i>월별</a>
+    </div>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <h6 class="card-title mb-3">
+            <i class="bi bi-graph-up-arrow me-2"></i>월별 매출 차트
+        </h6>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="text-muted mb-0">
+                <i class="bi bi-calendar-event me-1"></i>
+                현재 기간:
+                <span th:text="${#temporals.format(startDate, 'yyyy-MM')}"></span> ~
+                <span th:text="${#temporals.format(endDate, 'yyyy-MM')}"></span>
+            </p>
+            <div>
+                <span class="fw-bold text-dark ms-3"
+                      th:text="${startDate != null} ? ${#temporals.format(startDate, 'yyyy년')} : ${#temporals.format(#temporals.createNow(), 'yyyy년')}">
+                2025년 08월
+                </span>
+                <button type="button" class="btn btn-outline-primary btn-sm me-2" id="prevYearBtn">
+                    <i class="bi bi-arrow-left-circle me-1"></i>이전연도
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="nextYearBtn">
+                    다음연도<i class="bi bi-arrow-right-circle ms-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <canvas id="monthlySalesChart" style="max-width: 100%; height: 500px;"></canvas>
+    </div>
+
+
+
+    <div class="card mt-4 p-4 mb-4 shadow-sm">
+        <h6 class="card-title mb-3"><i class="bi bi-list-ul me-2"></i>📄 일별 매출 상세 리스트</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover align-middle text-center">
+                <thead class="table-light">
+                <tr>
+                    <th>날짜</th>
+                    <th>주문 수 (건)</th>
+                    <th>매출액 (₩)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${monthSales == null or #lists.isEmpty(monthSales)}">
+                    <td colspan="3" class="text-center text-muted">검색 결과가 없습니다.</td>
+                </tr>
+                <tr th:each="item : ${monthSales}">
+                    <td th:text="${item.date}">2025-07-01</td>
+                    <td th:text="${item.quantity}">12</td>
+                    <td th:text="${#numbers.formatInteger(item.monthPrice, 0, 'COMMA')}">9,300</td>
+                </tr>
+                </tbody>
+                <tfoot th:if="${monthSales != null and !#lists.isEmpty(monthSales)}">
+                <tr class="fw-bold">
+                    <td>합계</td>
+                    <td th:text="${quantity}">0</td>
+                    <td th:text="${#numbers.formatInteger(monthPrice, 0, 'COMMA')}">0</td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="card mt-3 p-3 shadow-sm">
+        <h6 class="card-title mb-2"><i class="bi bi-percent me-2"></i>회사별 수수료율 및 수수료 금액</h6>
+        <div th:if="${company != null and monthPrice != null}">
+            <p>회사명: <strong th:text="${company.name}">회사명</strong></p>
+            <p>수수료율: <strong th:text="${company.commissionRate}">0</strong>%</p>
+            <p>
+                수수료 금액:
+                <strong th:text="${#numbers.formatInteger(monthPrice * company.commissionRate / 100, 0, 'COMMA')}">0</strong>₩
+            </p>
+        </div>
+        <p th:if="${company == null or monthPrice == null}" class="text-muted">
+            회사 정보 또는 매출액 데이터가 없습니다.
+        </p>
+    </div>
+</main>
+<script layout:fragment="script" th:inline="javascript">
+    /*<![CDATA[*/
+    let monthSales = /*[[${monthSales}]]*/ [];
+    console.log(monthSales)
+    if (monthSales && monthSales.length > 0) {
+        const allMonths = Array.from({length: 12}, (_, i) => (i + 1).toString().padStart(2, '0'));
+        const salesMap = {};
+        const orderCountsMap = {};
+
+        monthSales.forEach(s => {
+            const month = s.date.split('-')[1]; // 'YYYY-MM-DD' → 'MM'
+            salesMap[month] = s.monthPrice;
+            orderCountsMap[month] = s.quantity;
+        });
+
+        const sales = allMonths.map(m => salesMap[m] || 0);
+        const orderCounts = allMonths.map(m => orderCountsMap[m] || 0);
+
+        const ctx = document.getElementById('monthlySalesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: allMonths.map(m => `${m}월`),
+                datasets: [
+                    {
+                        label: '월별 매출',
+                        data: sales,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#4CAF50',
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '주문 수',
+                        data: orderCounts,
+                        type: 'bar',
+                        backgroundColor: '#FFC107',
+                        yAxisID: 'y2'
+
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {title: {display: true, text: '월'}},
+                    y1: {type: 'linear', position: 'left', title: {display: true, text: '매출액 (₩)'}, max:5000000},
+                    y2: {type: 'linear', position: 'right', title: {display: true, text: '주문 수 (건)'}, max: 100}
+                }
+            }
+        });
+    }
+
+    // 연도 버튼 처리
+    let currentYear = /*[[${#temporals.format(startDate, 'yyyy')}]]*/ '2025';
+
+    function changeYear(year, offset) {
+        const newYear = parseInt(year) + offset;
+        const startDate = `${newYear}-01-01`;
+        const endDate = `${newYear}-12-31`;
+        return {startDate, endDate};
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const prevBtn = document.getElementById('prevYearBtn');
+        const nextBtn = document.getElementById('nextYearBtn');
+
+        // Thymeleaf에서 companyId 받아오기
+        let companyId = /*[[${companyId}]]*/'';
+        const accommodationId = /*[[${accommodationId}]]*/'';
+
+        prevBtn.addEventListener('click', () => {
+            const {startDate, endDate} = changeYear(currentYear, -1);
+
+            let url;
+            const searchType = document.getElementById('searchTypeSelect').value;
+            const keyword = document.getElementById('keywordSelect').value;
+            if (companyId) {
+                url = `/owner/sales/month/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            } else if (accommodationId) {
+                url = `/owner/sales/month/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            }
+            else {
+                url = `/owner/sales/month?startDate=${startDate}&endDate=${endDate}`;
+            }
+            window.location.href = url;
+        });
+
+        nextBtn.addEventListener('click', () => {
+            const {startDate, endDate} = changeYear(currentYear, 1);
+
+            let url;
+            const searchType = document.getElementById('searchTypeSelect').value;
+            const keyword = document.getElementById('keywordSelect').value;
+            if (companyId) {
+                url = `/owner/sales/month/company/${companyId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            } else if (accommodationId) {
+                url = `/owner/sales/month/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}&searchType=${searchType}&keyword=${keyword}`;
+            }
+            else {
+                url = `/owner/sales/month?startDate=${startDate}&endDate=${endDate}`;
+            }
+            window.location.href = url;
+        });
+        const searchTypeSelect = document.getElementById("searchTypeSelect");
+        const keywordSelect = document.getElementById("keywordSelect");
+
+        // 회사명과 숙소명을 JS 배열로 변환
+        const companies = /*[[${companies}]]*/ [];
+        const accommodations = /*[[${accommodations}]]*/ [];
+        const selectedSearchType = /*[[${searchType}]]*/ 'companyName';
+
+        const company = /*[[${company}]]*/'';
+        const accommodation = /*[[${accommodation}]]*/'';
+
+        function getCompanyIdByName(name) {
+            if (!companies || !Array.isArray(companies)) return null;
+            const comp = companies.find(c => c.name === name);
+            return comp ? comp.companyId : null;
+        }
+
+        function getAccommodationIdByName(name) {
+            if (!accommodations || !Array.isArray(accommodations)) return null;
+            const accom = accommodations.find(a => a.name === name);
+            return accom ? accom.accommodationId : null;
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            const searchType = document.getElementById('searchTypeSelect').value;
+            const keyword = document.getElementById('keywordSelect').value;
+            console.log(keyword);
+            let actionUrl = '';
+
+            if (searchType === 'companyName') {
+                const companyId = getCompanyIdByName(keyword);
+                if (!companyId) {
+                    actionUrl = `/owner/sales/month`;
+                } else
+                    actionUrl = `/owner/sales/month/company/${companyId}`;
+            } else if (searchType === 'accommodationName') {
+                const accommodationId = getAccommodationIdByName(keyword);
+                if (!accommodationId) {
+                    actionUrl = `/owner/sales/month`;
+                } else
+                    actionUrl = `/owner/sales/month/accommodation/${accommodationId}`;
+            }
+
+            this.action = actionUrl;
+        })
+
+        function updateKeywordOptions(type) {
+            keywordSelect.innerHTML = '<option value="">전체</option>';
+
+            const keyword = /*[[${keyword}]]*/"";
+            let items = [];
+            if (type === "companyName") {
+                items = companies.map(c => c.name);
+            } else if (type === "accommodationName") {
+                items = accommodations.map(a => a.name);
+            }
+
+            items.forEach(name => {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.textContent = name;
+                if (name === keyword) {
+                    opt.selected = true;
+                }
+                keywordSelect.appendChild(opt);
+            });
+        }
+
+        // 초기화 시 기본 선택 (회사명)
+        updateKeywordOptions(searchTypeSelect.value);
+
+        // 변경 시 옵션 다시 로드
+        searchTypeSelect.addEventListener("change", function () {
+            updateKeywordOptions(this.value);
+        });
+
+    });
+    /*]]>*/
+</script>
+</body>
+
+</html>

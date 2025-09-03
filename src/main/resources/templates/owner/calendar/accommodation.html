@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading">
+        <h3 th:text="${company != null} ? ${company.name} + ' 숙소 리스트' : '전체 숙소 리스트'">숙소 리스트</h3>
+        <p class="text-subtitle text-muted" th:if="${company != null}">
+            사업자명: <span th:text="${company.ownerName}"></span> |
+            전화: <span th:text="${company.phone}"></span> |
+            이메일: <span th:text="${company.email}"></span> |
+            주소: <span th:text="${company.address}"></span>
+        </p>
+        <p class="text-subtitle text-muted" th:if="${company == null}">
+            업체 선택 시 해당 업체의 숙소만 조회됩니다.
+        </p>
+        <div>
+            <a th:href="@{/owner/accommodation/create(companyId=${companyId})}" class="btn btn-primary">숙소 등록</a>
+        </div>
+        <!-- 업체 선택 폼 -->
+        <form id="companyForm">
+            <select id="companySelect" class="form-select">
+                <option value="0">전체 숙소</option>
+                <option value="">전체 업체</option>
+                <option th:each="c : ${companies}" th:value="${c.companyId}" th:text="${c.name}"
+                        th:selected="${company != null} ? ${c.companyId} == ${company.companyId} : false">
+                </option>
+            </select>
+        </form>
+    </div>
+    <div class="page-content">
+        <section class="section">
+            <div class="row">
+                <div class="col-12">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>숙소 ID</th>
+                            <th>숙소명</th>
+                            <th>주소</th>
+                            <th>가격</th>
+                            <th>상태</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="acc : ${accommodations}">
+                            <td th:text="${acc.accommodationId}"></td>
+                            <td><a th:href="@{'/owner/accommodation/' + ${acc.accommodationId} + '/rooms'}"
+                                   th:text="${acc.name}"></a></td>
+                            <td th:text="${acc.address}"></td>
+                            <td th:text="${acc.minPrice}"></td>
+                            <td th:text="${acc.status}"></td>
+                            <td>
+
+                                <a th:href="@{'/owner/accommodation/' + ${acc.accommodationId} + '/modify'}"
+                                   class="btn btn-primary btn-sm">수정</a>
+                            </td>
+                            <td>
+
+                                <form th:action="@{'/owner/accommodation/' + ${acc.accommodationId} + '/delete'}"
+                                      method="post"
+                                      onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</th:block>
+</body>
+</html>
+<script>
+    document.getElementById('companySelect').addEventListener('change', function () {
+        const companyId = this.value;
+        if (companyId === "0") {
+            window.location.href = `/owner/accommodation/list`
+        } else if (companyId) {
+            window.location.href = `/owner/company/${companyId}/accommodations`;
+        } else {
+            window.location.href = `/owner/company/list`
+        }
+    });
+</script>

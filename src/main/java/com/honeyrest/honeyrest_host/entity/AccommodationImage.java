@@ -31,5 +31,4 @@ public class AccommodationImage extends BaseEntity {
     @Column(name = "sort_order")
     private Integer sortOrder; //정렬 순서
 
-
 }

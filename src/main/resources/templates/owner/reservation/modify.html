@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading mb-4">
+        <h3>예약 수정</h3>
+        <p class="text-subtitle text-muted">예약 정보를 수정합니다.</p>
+    </div>
+
+    <div class="page-content">
+        <form th:action="@{/owner/reservation/modify}" method="post" class="needs-validation" novalidate>
+            <input type="hidden" name="reservationId" th:value="${reservation.reservationId}" />
+
+            <!-- 예약 기본 정보 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">기본 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">예약 번호</label>
+                        <input type="text" name="reservationNumber" class="form-control" th:value="${reservation.reservationNumber}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">예약 상태</label>
+                        <select name="status" class="form-select" required>
+                            <option value="PENDING" th:selected="${reservation.status == 'PENDING'}">대기</option>
+                            <option value="CONFIRMED" th:selected="${reservation.status == 'CONFIRMED'}">확정</option>
+                            <option value="CANCELLED" th:selected="${reservation.status == 'CANCELLED'}">취소</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">체크인 날짜</label>
+                        <input type="date" name="checkInDate" class="form-control" th:value="${reservation.checkInDate}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">체크아웃 날짜</label>
+                        <input type="date" name="checkOutDate" class="form-control" th:value="${reservation.checkOutDate}" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 고객 정보 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">고객 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">고객 이름</label>
+                        <input type="text" name="guestName" class="form-control" th:value="${reservation.guestName}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">고객 전화번호</label>
+                        <input type="text" name="guestPhone" class="form-control" th:value="${reservation.guestPhone}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">인원 수</label>
+                        <input type="number" name="guestCount" class="form-control" th:value="${reservation.guestCount}" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 숙소 및 객실 정보 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">숙소 및 객실 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">숙소 ID</label>
+                        <input type="number" name="accommodationId" class="form-control" th:value="${reservation.accommodationId}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">숙소 이름</label>
+                        <input type="text" name="accommodationName" class="form-control" th:value="${reservation.accommodationName}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">객실 ID</label>
+                        <input type="number" name="roomId" class="form-control" th:value="${reservation.roomId}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">객실 이름</label>
+                        <input type="text" name="roomName" class="form-control" th:value="${reservation.roomName}" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 가격 정보 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">가격 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">원래 가격</label>
+                        <input type="number" name="originalPrice" class="form-control" id="originalPrice"
+                               th:value="${reservation.originalPrice}" step="100">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">할인 금액</label>
+                        <input type="number" name="discountAmount" class="form-control" id="discountAmount"
+                               th:value="${reservation.discountAmount}" step="100">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">최종 가격</label>
+                        <input type="number" name="price" class="form-control" id="price"
+                               th:value="${reservation.price}" step="100" required readonly>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 기타 -->
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">기타 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label">요청 사항</label>
+                        <textarea name="specialRequests" class="form-control" rows="2" th:text="${reservation.specialRequest}"></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">취소 사유</label>
+                        <textarea name="cancelReason" class="form-control" rows="2" th:text="${reservation.cancelReason}"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 사용자 정보 -->
+            <input type="hidden" name="userId" th:value="${reservation.userId}" />
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-1"></i> 저장
+                </button>
+            </div>
+        </form>
+    </div>
+</th:block>
+</body>
+</html>
+<script>
+    // 가격 계산 함수
+    function calculatePrice() {
+        const original = parseFloat(document.getElementById("originalPrice").value) || 0;
+        const discount = parseFloat(document.getElementById("discountAmount").value) || 0;
+
+        if (discount > original) {
+            alert("할인 금액은 원래 가격보다 클 수 없습니다!");
+            document.getElementById("discountAmount").value = original; // 할인 금액을 원래 가격으로 맞춤
+            document.getElementById("price").value = 0;
+        } else {
+            const result = original - discount;
+            document.getElementById("price").value = result;
+        }
+    }
+
+    // 이벤트 연결
+    document.getElementById("originalPrice").addEventListener("input", calculatePrice);
+    document.getElementById("discountAmount").addEventListener("input", calculatePrice);
+
+    // 페이지 로드시 초기 계산
+    window.addEventListener("DOMContentLoaded", calculatePrice);
+</script>

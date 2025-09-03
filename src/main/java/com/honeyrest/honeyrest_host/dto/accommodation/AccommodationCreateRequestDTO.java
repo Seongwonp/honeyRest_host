@@ -1,8 +1,6 @@
 package com.honeyrest.honeyrest_host.dto.accommodation;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -92,7 +90,5 @@ public class AccommodationCreateRequestDTO {
     // 환불 규정 추가
     private String cancellationPolicyDetail; // JSON 문자열 그대로 넣거나
     private List<String> cancellationPolicyItems; // 파싱된 리스트로 내려주기 용도
-
-
 
 }

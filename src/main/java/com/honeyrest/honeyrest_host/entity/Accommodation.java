@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -70,11 +71,15 @@ public class Accommodation {
     @Column(precision = 2, scale = 1)
     private BigDecimal rating; // 평균 평점
 
-    @Column(name = "min_price", precision = 10, scale = 1)
+    @Column(name = "min_price", precision = 10, scale = 2)
     private BigDecimal minPrice; // 최저 가격
 
     @Column(length = 20)
-    private String status; // 운영 상태(active, inactive)
+    private String status; // 운영 상태(active, inactive
 
+    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Room> rooms = new ArrayList<>();
 
+    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AccommodationTagMap> tagMaps = new ArrayList<>();
 }

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading mb-4">
+        <h3>리뷰 수정</h3>
+        <p class="text-subtitle text-muted">리뷰 정보를 수정합니다.</p>
+    </div>
+
+    <div class="page-content">
+        <form th:action="@{/owner/review/modify}" method="post" class="needs-validation" novalidate>
+            <input type="hidden" name="reviewId" th:value="${review.reviewId}" />
+
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">리뷰 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">숙소</label>
+                        <select name="accommodationId" class="form-select" required>
+                            <option value="">숙소 선택</option>
+                            <option th:each="a : ${accommodations}"
+                                    th:value="${a.accommodationId}"
+                                    th:text="${a.name}"
+                                    th:selected="${a.accommodationId == review.accommodationId}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">객실</label>
+                        <select name="roomId" class="form-select" required>
+                            <option value="">객실 선택</option>
+                            <option th:each="r : ${rooms}"
+                                    th:value="${r.roomId}"
+                                    th:text="${r.name}"
+                                    th:selected="${r.roomId == review.roomId}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">예약 ID</label>
+                        <input type="number" name="reservationId" class="form-control" th:value="${review.reservationId}" required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">작성자 (User ID)</label>
+                        <input type="number" name="userId" class="form-control" th:value="${review.userId}" required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">상태</label>
+                        <select name="status" class="form-select" required>
+                            <option value="ACTIVE" th:selected="${review.status == 'ACTIVE'}">활성</option>
+                            <option value="DELETED" th:selected="${review.status == 'DELETED'}">삭제됨</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">총 평점</label>
+                        <input type="number" step="0.01" name="rating" class="form-control"
+                               th:value="${review.rating}" required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">청결도</label>
+                        <input type="number" step="0.01" name="cleanlinessRating" class="form-control"
+                               th:value="${review.cleanlinessRating}" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">시설</label>
+                        <input type="number" step="0.01" name="facilitiesRating" class="form-control"
+                               th:value="${review.facilitiesRating}" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">위치</label>
+                        <input type="number" step="0.01" name="locationRating" class="form-control"
+                               th:value="${review.locationRating}" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">서비스</label>
+                        <input type="number" step="0.01" name="serviceRating" class="form-control"
+                               th:value="${review.serviceRating}" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">좋아요 수</label>
+                        <input type="number" name="likeCount" class="form-control"
+                               th:value="${review.likeCount}" />
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label">리뷰 내용</label>
+                    <textarea name="content" class="form-control" rows="3"
+                              th:text="${review.content}"></textarea>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label">숙소주인 답글</label>
+                    <textarea name="reply" class="form-control" rows="2"
+                              th:text="${review.reply}"></textarea>
+                </div>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-1"></i> 저장
+                </button>
+            </div>
+        </form>
+    </div>
+</th:block>
+</body>
+</html>

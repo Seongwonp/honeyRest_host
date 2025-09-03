@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading"><h3>쿠폰 리스트</h3>
+        <p class="text-subtitle text-muted">쿠폰 현황</p>
+    </div>
+
+    <div class="page-content">
+        <section class="section">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">쿠폰 목록</h5>
+                            <div class="d-flex justify-content-end mb-3">
+                                <a th:href="@{/owner/coupon/create}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i> 쿠폰 등록
+                                </a>
+                            </div>
+                            <div class="table-responsive">
+
+                                <table class="table table-striped align-middle text-center">
+                        <thead>
+                        <tr>
+                            <th>쿠폰 ID</th>
+                            <th>쿠폰 이름</th>
+                            <th>할인 값</th>
+                            <th>적용 대상</th>
+                            <th>활성 여부</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="c : ${coupons}">
+                            <td th:text="${c.couponId}"></td>
+                            <td th:text="${c.name}"></td>
+                            <td th:text="${c.discountValue}"></td>
+                            <td th:text="${c.targetType}"></td>
+                            <td th:text="${c.isActive()}"></td>
+                        </tr>
+                        </tbody>
+                                </table>
+                            </div> <!-- /.table-responsive -->
+                        </div> <!-- /.card-body -->
+                    </div> <!-- /.card -->
+                </div>
+            </div>
+        </section>
+    </div>
+</th:block>
+</body>
+</html>

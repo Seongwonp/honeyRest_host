@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading mb-4">
+        <h3>숙소 수정</h3>
+        <p class="text-subtitle text-muted">숙소 정보를 수정합니다.</p>
+    </div>
+
+    <div class="page-content">
+        <form th:action="@{/owner/accommodation/modify}" method="post" enctype="multipart/form-data" class="needs-validation" >
+            <input type="hidden" name="accommodationId" th:value="${accommodation.accommodationId}" />
+
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">기본 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">업체</label>
+                        <select name="companyId" class="form-select" required>
+                            <option value="">업체 선택</option>
+                            <option th:each="c : ${companies}"
+                                    th:value="${c.companyId}"
+                                    th:text="${c.name}"
+                                    th:selected="${c.companyId == accommodation.companyId}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">카테고리</label>
+                        <select name="categoryId" class="form-select" required>
+                            <option th:each="cat : ${categories}"
+                                    th:value="${cat.categoryId}"
+                                    th:text="${cat.name}"
+                                    th:selected="${cat.categoryId == accommodation.categoryId}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">메인 지역</label>
+                        <select name="mainRegionId" class="form-select" id="mainRegionId" required>
+                            <option value="">메인 지역 선택</option>
+                            <option th:each="r : ${regions}" th:if="${r.level == 1}"
+                                    th:value="${r.regionId}" th:text="${r.name}"
+                                    th:selected="${r.regionId == accommodation.mainRegionId}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">서브 지역</label>
+                        <select name="subRegionId" class="form-select" id="subRegionId" required>
+                            <option value="">서브 지역 선택</option>
+                            <option th:each="r : ${regions}" th:if="${r.level == 2 && r.parentId == accommodation.mainRegionId}"
+                                    th:value="${r.regionId}" th:text="${r.name}"
+                                    th:selected="${r.regionId == accommodation.subRegionId}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">숙소 이름</label>
+                        <input type="text" name="name" class="form-control" th:value="${accommodation.name}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">주소</label>
+                        <input type="text" name="address" class="form-control" th:value="${accommodation.address}" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">이미지 및 설명</h5>
+                <div class="mb-3">
+                    <label class="form-label">숙소 메인 이미지</label>
+                    <input type="file" class="form-control" name="file">
+                    <div class="mt-2" th:if="${accommodation.thumbnailUrl != null}">
+                        <small>현재 이미지:</small><br>
+                        <img th:src="${accommodation.thumbnailUrl}" style="max-width: 300px;" alt="이미지">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">숙소 추가 이미지</label>
+                    <input type="file" class="form-control" name="images" multiple>
+                    <div class="mt-2 d-flex flex-wrap gap-2" th:if="${accommodationImages != null}">
+                        <div th:each="img : ${accommodationImages}">
+                            <img th:src="${img.imageUrl}" style="height: 150px; border: 1px solid #ddd; padding: 3px;" alt="이미지"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">설명</label>
+                    <textarea name="description" class="form-control" rows="3" th:text="${accommodation.description}"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">편의시설 (JSON)</label>
+                    <textarea name="amenities" class="form-control" rows="3" th:text="${accommodation.amenities}"></textarea>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4 p-4">
+                <h5 class="mb-3">운영 정보</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">체크인 시간</label>
+                        <input type="time" name="checkInTime" class="form-control" th:value="${accommodation.checkInTime}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">체크아웃 시간</label>
+                        <input type="time" name="checkOutTime" class="form-control" th:value="${accommodation.checkOutTime}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">평점</label>
+                        <input type="number" name="rating" class="form-control" th:value="${accommodation.rating}" step="0.1" min="0" max="5">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">최소 가격</label>
+                        <input type="number" name="minPrice" class="form-control" th:value="${accommodation.minPrice}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">상태</label>
+                        <select name="status" class="form-select" required>
+                            <option value="ACTIVE" th:selected="${accommodation.status == 'ACTIVE'}">활성</option>
+                            <option value="INACTIVE" th:selected="${accommodation.status == 'INACTIVE'}">비활성</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-1"></i> 저장
+                </button>
+            </div>
+        </form>
+    </div>
+</th:block>
+</body>
+</html>
+<script th:inline="javascript">
+    let regions = [[${regions}]];
+    const mainSelect = document.getElementById("mainRegionId");
+    const subSelect = document.getElementById("subRegionId");
+
+    mainSelect.addEventListener("change", function() {
+        const selectedMainId = this.value;
+        subSelect.innerHTML = '<option value="">서브 지역 선택</option>';
+        regions.filter(r => r.level === 2 && r.parentId == selectedMainId)
+            .forEach(sr => {
+                const option = document.createElement("option");
+                option.value = sr.regionId;
+                option.textContent = sr.name;
+                subSelect.appendChild(option);
+            });
+    });
+</script>

@@ -1,5 +1,4 @@
 package com.honeyrest.honeyrest_host.dto;
-import com.honeyrest.honeyrest_host.entity.Room;
 import lombok.*;
 
 

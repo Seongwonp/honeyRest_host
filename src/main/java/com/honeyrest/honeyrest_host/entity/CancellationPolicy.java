@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+
 
 @Entity
 @Table(name = "cancellation_policy")

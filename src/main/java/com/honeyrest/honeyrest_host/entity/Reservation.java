@@ -10,8 +10,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -81,7 +79,7 @@ public class Reservation extends BaseEntity{
     private String specialRequest; // 특별 요청 사항
 
     @Version
-    private Long version; // ✅ 낙관적 락
+    private Long version; //  낙관적 락
 
     // -------- 생성 시 필수값 검증 (엔티티 내부) --------
     public void validateNew() {

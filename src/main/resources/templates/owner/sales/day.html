@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+
+<head>
+    <title>매출 현황</title>
+    <style>
+        .btn-outline-warning:hover {
+            background-color: #ffc107;
+            color: #212529;
+            border-color: #ffc107;
+        }
+    </style>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <h3 class="mb-4"  th:text="${companyId != null} ? ${company.name} + ' 매출 현황'
+             : (${accommodationId != null} ? ${accommodation.name} + ' 매출 현황'
+                                           : '전체 매출 현황')"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
+    <div class="card p-4 mb-4 shadow-sm">
+        <form method="get" action="/owner/sales/day" class="row g-3 align-items-end" id="searchForm">
+<!--            <div class="col-auto">-->
+<!--                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>-->
+<!--                <input type="date" name="startDate" class="form-control">-->
+<!--            </div>-->
+<!--            <div class="col-auto">-->
+<!--                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>-->
+<!--                <input type="date" name="endDate" class="form-control">-->
+<!--            </div>-->
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-building me-1"></i>회사</label>
+                <select name="companyId" class="form-select" id="companySelect">
+                    <option value="">전체</option>
+                    <!-- 회사 목록은 JS로 채움 -->
+                </select>
+            </div>
+
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>
+                <select name="accommodationId" class="form-select" id="accommodationSelect">
+                    <option value="">전체</option>
+                    <!-- 선택한 회사의 숙소 목록만 JS로 채움 -->
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+            </div>
+        </form>
+    </div>
+
+
+    <div class="mb-4">
+        <a th:href="${companyId != null} ? '/owner/sales/day/company/' + ${companyId}
+          : (${accommodationId != null} ? '/owner/sales/day/accommodation/' + ${accommodationId}
+                                        : '/owner/sales/day')"
+           class="btn btn-warning text-dark custom-hover-dark me-2 active"
+           aria-current="page"><i class="bi bi-calendar-day me-1"></i>일별</a>
+        <a th:href="${companyId != null} ? '/owner/sales/month/company/' + ${companyId}
+         : (${accommodationId != null} ? '/owner/sales/month/accommodation/' + ${accommodationId}
+                                       : '/owner/sales/month')"
+           class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
+    </div>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <h6 class="card-title mb-3">
+            <i class="bi bi-graph-up-arrow me-2"></i>일별 매출 차트
+        </h6>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="text-muted mb-0">
+                <i class="bi bi-calendar-event me-1"></i>
+                오늘 날짜: <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">2025-07-31</span>
+
+            </p>
+            <div>
+                <span class="fw-bold text-dark ms-3"
+                      th:text="${startDate != null} ? ${#temporals.format(startDate, 'yyyy년 MM월')} : ${#temporals.format(#temporals.createNow(), 'yyyy년 MM월')}">
+                2025년 08월
+                </span>
+                <button type="button" class="btn btn-outline-primary btn-sm me-2" id="prevMonthBtn">
+                    <i class="bi bi-arrow-left-circle me-1"></i>이전달
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="nextMonthBtn">
+                    다음달<i class="bi bi-arrow-right-circle ms-1"></i>
+                </button>
+            </div>
+
+        </div>
+
+        <canvas id="dailySalesChart" style="max-width: 100%; height: 500px;"></canvas>
+    </div>
+
+
+    <div class="card mt-4 p-4 mb-4 shadow-sm">
+
+        <h6 class="card-title mb-3"><i class="bi bi-list-ul me-2"></i>📄 일별 매출 상세 리스트</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover align-middle text-center">
+                <thead class="table-light">
+                <tr>
+                    <th>날짜</th>
+                    <th>주문 수 (건)</th>
+                    <th>매출액 (₩)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${daySales == null or #lists.isEmpty(daySales)}">
+                    <td colspan="3" class="text-center text-muted">검색 결과가 없습니다.</td>
+                </tr>
+                <tr th:each="item : ${daySales}">
+                    <td th:text="${item.date}">2025-07-01</td>
+                    <td th:text="${item.quantity}">12</td>
+                    <td th:text="${#numbers.formatInteger(item.dayPrice, 0, 'COMMA')}">9,300</td>
+                </tr>
+                </tbody>
+                <tfoot th:if="${daySales != null and !#lists.isEmpty(daySales)}">
+                <tr class="fw-bold">
+                    <td>합계</td>
+                    <td th:text="${0}">0</td>
+                    <td th:text="${#numbers.formatInteger(dayPrice, 0, 'COMMA')}">0</td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <!-- 기존 일별 매출 상세 리스트 밑에 추가 -->
+
+
+</main>
+<script layout:fragment="script" th:inline="javascript">
+    /*<![CDATA[*/
+    let daySales = /*[[${daySales}]]*/ [];
+
+    console.log(daySales);
+    if (daySales && daySales.length > 0) {
+        const allDays = Array.from({length: 31}, (_, i) => (i + 1).toString().padStart(2, '0'));
+        const salesMap = {};
+        daySales.forEach(s => {
+            const day = s.date.split('-')[2]; // 'YYYY-MM-DD' → 'DD'
+
+            salesMap[day] = s.dayPrice;
+        });
+        const sales = allDays.map(day => salesMap[day] || 0);
+        const orderCountsMap = {};
+        daySales.forEach(s => {
+            const day = s.date.split('-')[2]; // 'YYYY-MM-DD' → 'DD'
+            orderCountsMap[day] = s.quantity;
+        });
+        const orderCounts = allDays.map(day => orderCountsMap[day] || 0);
+        const labels = allDays;
+
+        const ctx = document.getElementById('dailySalesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '일별 매출',
+                        data: sales,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#4CAF50',
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '주문 수',
+                        data: orderCounts,
+                        type: 'bar',
+                        backgroundColor: '#FFC107',
+                        yAxisID: 'y2'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {display: true},
+                    tooltip: {enabled: true}
+                },
+                scales: {
+                    x: {title: {display: true, text: '날짜'}},
+                    y1: {
+                        type: 'linear',
+                        position: 'left',
+                        title: {display: true, text: '매출액 (₩)'},
+                        beginAtZero: true,
+                        max: 500000
+                    },
+                    y2: {
+                        type: 'linear',
+                        position: 'right',
+                        title: {display: true, text: '주문 수 (건)'},
+                        beginAtZero: true,
+                        grid: {drawOnChartArea: false},
+                        max: 10
+                    }
+                }
+            }
+        });
+    } else {
+        console.log("일별 매출 데이터 없음!");
+    }
+    let startDateFromServer = /*[[${startDate}]]*/ '';
+    let currentYearMonth = '';
+
+    console.log(startDateFromServer);
+    if (startDateFromServer !== '') {
+        currentYearMonth = startDateFromServer.substring(0, 7);
+    } else {
+        currentYearMonth = /*[[${#temporals.format(#temporals.createNow(), 'yyyy-MM')}]]*/ '2025-07';
+    }
+
+    function changeMonth(yearMonth, offset) {
+        const [year, month] = yearMonth.split('-').map(Number);
+        let newYear = year;
+        let newMonth = month + offset;
+
+        if (newMonth === 0) {
+            newYear -= 1;
+            newMonth = 12;
+        } else if (newMonth === 13) {
+            newYear += 1;
+            newMonth = 1;
+        }
+
+        const startDate = `${newYear}-${String(newMonth).padStart(2, '0')}-01`;
+
+        // 다음달 첫날에서 하루 뺀 날 (마지막 날)
+        const endDateObj = new Date(newYear, newMonth, 0);
+        const endDate = `${endDateObj.getFullYear()}-${String(endDateObj.getMonth() + 1).padStart(2, '0')}-${String(endDateObj.getDate()).padStart(2, '0')}`;
+
+        return {startDate, endDate};
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const prevBtn = document.getElementById('prevMonthBtn');
+        const nextBtn = document.getElementById('nextMonthBtn');
+
+        // Thymeleaf로 companyId 값을 JS 변수에 전달 (null일 수도 있으니 대비)
+        const companyId = /*[[${companyId}]]*/'';
+        const accommodationId = /*[[${accommodationId}]]*/'';
+
+        prevBtn.addEventListener('click', () => {
+            const {startDate, endDate} = changeMonth(currentYearMonth, -1);
+            console.log(startDate);
+            const companySelect = document.getElementById('companySelect').value;
+            const accommodationSelect = document.getElementById('accommodationSelect').value;
+            let url;
+            if (companyId) {
+                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
+            } else if (accommodationId) {
+                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}`;
+            }
+            else {
+                url = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
+            }
+            window.location.href = url;
+        });
+
+        nextBtn.addEventListener('click', () => {
+            const {startDate, endDate} = changeMonth(currentYearMonth, 1);
+            let url;
+            const companySelect = document.getElementById('companySelect').value;
+            const accommodationSelect = document.getElementById('accommodationSelect').value;
+            if (companyId) {
+                url = `/owner/sales/day/company/${companyId}?startDate=${startDate}&endDate=${endDate}`;
+            } else if (accommodationId) {
+                url = `/owner/sales/day/accommodation/${accommodationId}?startDate=${startDate}&endDate=${endDate}`;
+            }
+            else {
+                url = `/owner/sales/day?startDate=${startDate}&endDate=${endDate}`;
+            }
+            window.location.href = url;
+        });
+
+        const companySelect = document.getElementById("companySelect");
+        const accommodationSelect = document.getElementById("accommodationSelect");
+
+        const companies = /*[[${companies}]]*/ [];
+        const accommodations = /*[[${accommodations}]]*/ [];
+        const company = /*[[${company}]]*/'';
+        const accommodation = /*[[${accommodation}]]*/'';
+
+        const selectedCompanyId = /*[[${selectedCompanyId}]]*/ '';
+        const selectedAccommodationId = /*[[${selectedAccommodationId}]]*/ '';
+
+        function loadCompanyOptions() {
+            companySelect.innerHTML = '<option value="">전체</option>';
+            companies.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.companyId;
+                opt.textContent = c.name;
+                if (c.companyId == selectedCompanyId) opt.selected = true;
+                companySelect.appendChild(opt);
+            });
+        }
+
+        function loadAccommodationOptions(companyId) {
+            accommodationSelect.innerHTML = '<option value="">전체</option>';
+            let filtered = accommodations;
+            if (companyId) {
+                filtered = accommodations.filter(a => a.companyId == companyId);
+            }
+            filtered.forEach(a => {
+                const opt = document.createElement("option");
+                opt.value = a.accommodationId;
+                opt.textContent = a.name;
+                if (a.accommodationId == selectedAccommodationId) opt.selected = true;
+                accommodationSelect.appendChild(opt);
+            });
+        }
+
+// 회사 선택 시 숙소 옵션 갱신
+        companySelect.addEventListener("change", function() {
+            loadAccommodationOptions(this.value);
+        });
+
+// 초기 로딩
+        loadCompanyOptions();
+        loadAccommodationOptions(companySelect.value);
+
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            const companyId = companySelect.value;
+            const accommodationId = accommodationSelect.value;
+            let actionUrl = "/owner/sales/day";
+
+            if (accommodationId) {
+                actionUrl = `/owner/sales/day/accommodation/${accommodationId}`;
+            } else if (companyId) {
+                actionUrl = `/owner/sales/day/company/${companyId}`;
+            }
+
+            this.action = actionUrl;
+        });
+
+    });
+    /*]]>*/
+</script>
+</body>
+
+</html>

@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.3.5'
+    id 'org.springframework.boot' version '3.5.4'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -44,7 +44,7 @@ dependencies {
 
     // API 문서화
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0' // Swagger UI 및 OpenAPI 문서 자동 생성
-//    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
     // 캐시 및 성능 향상
     implementation 'org.springframework.boot:spring-boot-starter-cache' // 캐시 추상화 (Redis 등과 연동 가능)
 
@@ -93,6 +93,9 @@ dependencies {
     // https://mvnrepository.com/artifact/org.modelmapper/modelmapper <- ModelMapper
     implementation("org.modelmapper:modelmapper:3.2.0")
 
+    // 파일 업로드 및 이미지 처리
+    implementation("com.google.firebase:firebase-admin:9.2.0")
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -103,8 +106,6 @@ dependencies {
     runtimeOnly   'io.jsonwebtoken:jjwt-impl:0.12.5'
     runtimeOnly   'io.jsonwebtoken:jjwt-jackson:0.12.5'
 
-    // 이미지 사진
-    implementation("com.google.firebase:firebase-admin:9.2.0")
 }
 
 configurations {
