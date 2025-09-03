@@ -112,7 +112,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("q") String q,
             Pageable pageable);
 
-    // ReservationRepository.java
+
     @Query("""
                 SELECT r
                 FROM Reservation r
@@ -182,6 +182,65 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                    and r.status in ('PENDING','CONFIRMED')
             """)
     int markNoShow(@Param("id") Long id, @Param("now") LocalDateTime now);
+
+    // 회사 기준 체크인 예정 (예: CONFIRMED/PAID)
+    @Query(value = """
+        SELECT 
+            r.reservation_id,
+            r.guest_name,
+            a.name AS accommodation_name,
+            rm.name AS room_name,
+            r.check_in_date,
+            DATEDIFF(r.check_out_date, r.check_in_date) AS nights
+        FROM reservation r
+        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+        LEFT JOIN room rm ON rm.room_id = r.room_id
+        WHERE a.company_id = :companyId
+          AND r.status IN ('CONFIRMED','PAID')
+          AND DATE(r.check_in_date) = :date
+        ORDER BY r.check_in_date ASC
+        LIMIT :size
+        """, nativeQuery = true)
+    List<Object[]> findUpcomingCheckins(@Param("companyId") Long companyId,
+                                        @Param("date") LocalDate date,
+                                        @Param("size") int size);
+
+    // 전체/취소 건수 요약
+    @Query(value = """
+        SELECT 
+            SUM(CASE WHEN r.status IN ('CANCELED','REFUNDED') THEN 1 ELSE 0 END) AS canceled,
+            COUNT(*) AS total
+        FROM reservation r
+        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+        WHERE a.company_id = :companyId
+          AND DATE(r.created_at) BETWEEN :from AND :to
+        """, nativeQuery = true)
+    Object[] findCancelSummary(@Param("companyId") Long companyId,
+                               @Param("from") LocalDate from,
+                               @Param("to") LocalDate to);
+
+    // 기간과 겹치는 판매박수(상태 기준은 정책에 맞게 조정)
+    @Query(value = """
+        SELECT COALESCE(SUM(
+                 GREATEST(0,
+                   DATEDIFF(
+                     LEAST(r.check_out_date, DATE_ADD(:to, INTERVAL 1 DAY)),
+                     GREATEST(r.check_in_date, :from)
+                   )
+                 )
+               ), 0) AS soldNights
+        FROM reservation r
+        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+        WHERE a.company_id = :companyId
+          AND r.status IN ('CONFIRMED','PAID','CHECKED_IN','CHECKED_OUT')
+          AND r.check_in_date < DATE_ADD(:to, INTERVAL 1 DAY)
+          AND r.check_out_date > :from
+        """, nativeQuery = true)
+    Integer calcSoldNights(@Param("companyId") Long companyId,
+                           @Param("from") LocalDate from,
+                           @Param("to") LocalDate to);
 }
+
+
 
 

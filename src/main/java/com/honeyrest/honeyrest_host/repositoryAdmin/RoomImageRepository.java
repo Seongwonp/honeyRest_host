@@ -20,6 +20,16 @@ public interface RoomImageRepository extends JpaRepository<RoomImage, Long> {
     List<RoomImage> findMainImagesByRoomIds(@Param("roomIds") List<Long> roomIds);
 
     List<RoomImage> findByRoom_RoomIdOrderBySortOrderAsc(Long roomId);
+
+
+    @Query(value = """
+        SELECT COUNT(*) 
+        FROM room rm 
+        JOIN accommodation a ON a.accommodation_id = rm.accommodation_id
+        WHERE a.company_id = :companyId
+        """, nativeQuery = true)
+    int countRoomsByCompany(@Param("companyId") Long companyId);
 }
+
 
 

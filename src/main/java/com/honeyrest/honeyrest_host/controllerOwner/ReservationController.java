@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.service.*;
+import com.honeyrest.honeyrest_host.serviceOwner.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
@@ -9,17 +9,17 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-@Controller
+@Controller("ownerReservationController")
 @RequestMapping("/owner")
 @RequiredArgsConstructor
 @Log4j2
 public class ReservationController {
 
-    private final CompanyService companyService;
-    private final AccommodationService accommodationService;
-    private final RoomService roomService;
-    private final ReservationService reservationService;
-    private final UserService userService;
+    private final OCompanyService companyService;
+    private final OAccommodationService accommodationService;
+    private final ORoomService roomService;
+    private final OReservationService reservationService;
+    private final OUserService userService;
 
 
     @GetMapping("/reservation/accommodations")

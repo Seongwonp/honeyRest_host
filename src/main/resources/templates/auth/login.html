@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{common/layout/blank}">
+<head>
+    <meta charset="UTF-8">
+    <title layout:fragment="title">로그인</title>
+    <th:block layout:fragment="head">
+        <style>
+            .login-card { max-width: 420px; margin: 80px auto; }
+        </style>
+    </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+    <section class="section">
+        <div class="container">
+            <div class="card login-card shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title mb-4 fw-bold">관리자 로그인</h4>
+
+                    <form method="post" th:action="@{/auth/login}" class="mt-4">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">이메일</label>
+                            <input type="email" class="form-control" id="email"
+                                   name="email" required autocomplete="username" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="password" class="form-label">비밀번호</label>
+                            <input type="password" class="form-control" id="password"
+                                   name="password" required autocomplete="current-password" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">로그인</button>
+                    </form>
+
+                    <!-- ↓ 옵션: 실패 시 ?error 파라미터로 메시지 표시 -->
+                    <div th:if="${param.error}" class="text-danger mt-3">
+                        로그인에 실패했습니다. 이메일/비밀번호를 확인하세요.
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+</th:block>
+
+<th:block layout:fragment="script">
+    <script>
+        /*<![CDATA[*/
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has("logout")) {
+            alert("로그아웃되었습니다.");
+        }
+        /*]]>*/
+
+    </script>
+</th:block>
+</body>
+</html>

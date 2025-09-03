@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.AdminSignupRequestDTO;
-import com.honeyrest.honeyrest_host.service.AdminAuthService;
+import com.honeyrest.honeyrest_host.serviceOwner.OAdminAuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/owner/auth")
 @RequiredArgsConstructor
 public class OwnerAuthController {
-    private final AdminAuthService adminAuthService;
+    private final OAdminAuthService adminAuthService;
 
     @PostMapping("/signup")
     public ResponseEntity<Void> signUp(@Valid @RequestBody AdminSignupRequestDTO adminSignupRequestDTO) {

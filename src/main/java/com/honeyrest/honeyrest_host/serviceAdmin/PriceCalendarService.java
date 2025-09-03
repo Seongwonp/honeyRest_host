@@ -4,7 +4,7 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 import com.honeyrest.honeyrest_host.dto.DailyOverviewDTO;
 import com.honeyrest.honeyrest_host.dto.GridCellDTO;
 import com.honeyrest.honeyrest_host.dto.PriceCalendarDTO;
-import com.honeyrest.honeyrest_host.dto.SalesStatDTO;
+import com.honeyrest.honeyrest_host.dto.reports.SalesStatDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

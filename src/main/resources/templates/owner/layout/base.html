@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
@@ -25,8 +24,7 @@
 <div id="app">
     <div id="main">
 
-<<<<<<<< HEAD:src/main/resources/templates/admin/layout/base.html
-        <div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+
         <div class="sidebar-item">
             <a href="#" class="btn btn-link"
                onclick="document.getElementById('logoutForm').submit(); return false;">
@@ -34,9 +32,9 @@
             </a>
             <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none"></form>
         </div>
-========
+
         <div th:replace="owner/fragments/sidebar :: sidebar"></div>
->>>>>>>> origin/SHO:src/main/resources/templates/owner/layout/base.html
+
 
 
         <header class="mb-3">
@@ -53,11 +51,8 @@
         </main>
 
 
-<<<<<<<< HEAD:src/main/resources/templates/admin/layout/base.html
-        <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
-========
         <footer th:replace="owner/fragments/footer :: footer"></footer>
->>>>>>>> origin/SHO:src/main/resources/templates/owner/layout/base.html
+
     </div>
 </div>
 

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <title>일별 매출 통계</title>
+
+    <th:block layout:fragment="head">
+        <style>
+            :root{
+                --radius:16px;
+                --shadow:0 8px 24px rgba(0,0,0,.06);
+                --border:1px solid rgba(0,0,0,.06);
+                --ink:#111827;
+                --muted:#6b7280;
+                --accent:#4f46e5;
+                --bg-soft: var(--bs-body-bg, #fff);
+            }
+
+            .page-heading h3{ font-weight:800; letter-spacing:.1px; }
+            .page-heading p{ color:var(--muted); }
+
+            /* Top Controls (필터+세그먼트) */
+            .toolbar{
+                display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+            }
+            .toolbar-left, .toolbar-right{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+            .seg{
+                display:inline-flex; border:var(--border); border-radius:999px; overflow:hidden; background:var(--bg-soft);
+                box-shadow: var(--shadow);
+            }
+            .seg button{
+                border:0; background:transparent; padding:8px 14px; font-weight:600; color:var(--muted); cursor:pointer;
+            }
+            .seg button.active{
+                background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff;
+            }
+            .chip{
+                border:var(--border); border-radius:999px; padding:8px 12px; background:var(--bg-soft); cursor:pointer;
+            }
+            .chip:focus{ outline:2px solid rgba(79,70,229,.3); }
+
+            /* KPI */
+            .kpi-grid{
+                display:grid; grid-template-columns:repeat(12,1fr); gap:16px; margin-top:14px;
+            }
+            @media (max-width:1199px){ .kpi-grid{ grid-template-columns:repeat(6,1fr);} }
+            @media (max-width:767px){  .kpi-grid{ grid-template-columns:repeat(2,1fr);} }
+
+            .kpi{
+                grid-column: span 4 / span 4; background:var(--bg-soft); border:var(--border); border-radius:var(--radius);
+                box-shadow:var(--shadow); padding:18px;
+            }
+            .kpi .title{ margin:0; color:var(--muted); font-size:.95rem; letter-spacing:.2px; }
+            .kpi .value{ margin:2px 0 0; font-weight:900; font-size:2rem; color:var(--ink); line-height:1.1; }
+
+            /* Card */
+            .card-soft{ background:var(--bg-soft); border:var(--border); border-radius:var(--radius); box-shadow:var(--shadow); }
+            .card-soft .card-body{ padding:20px; }
+            .chart-wrap{ position:relative; min-height:380px; }
+
+            /* Table */
+            .table th{ color:var(--muted); font-weight:600; }
+            .text-end{ text-align:right; }
+        </style>
+    </th:block>
+</head>
+
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading">
+        <h3>매출 통계</h3>
+        <p class="text-subtitle text-muted">기간·그룹 단위에 따라 매출/주문 추이를 확인하세요.</p>
+    </div>
+
+    <div class="page-content">
+        <section class="section">
+
+            <!-- Toolbar -->
+            <div class="card-soft mb-3">
+                <div class="card-body">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="seg" role="tablist" aria-label="집계 단위 선택">
+                                <button type="button" class="active" data-group="day"   role="tab" aria-selected="true">일</button>
+                                <button type="button" data-group="week"  role="tab" aria-selected="false">주</button>
+                                <button type="button" data-group="month" role="tab" aria-selected="false">월</button>
+                                <button type="button" data-group="weekday" role="tab" aria-selected="false">요일</button>
+                            </div>
+
+                            <div class="chip">
+                                <label class="m-0" for="from" style="margin-right:6px;color:var(--muted);">시작</label>
+                                <input id="from" type="date" class="border-0" style="outline:none;">
+                            </div>
+                            <div class="chip">
+                                <label class="m-0" for="to" style="margin-right:6px;color:var(--muted);">종료</label>
+                                <input id="to" type="date" class="border-0" style="outline:none;">
+                            </div>
+                        </div>
+
+                        <div class="toolbar-right">
+                            <button id="btnLast7"  class="chip" type="button">최근 7일</button>
+                            <button id="btnLast30" class="chip" type="button">최근 30일</button>
+                            <button id="btnApply"  class="btn btn-primary" type="button">적용</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI -->
+            <div class="kpi-grid">
+                <div class="kpi">
+                    <p class="title">기간 총 매출</p>
+                    <p class="value" id="kpiTotalSales">-</p>
+                </div>
+                <div class="kpi">
+                    <p class="title">총 주문 수</p>
+                    <p class="value" id="kpiTotalOrders">-</p>
+                </div>
+                <div class="kpi">
+                    <p class="title">평균 주문 금액</p>
+                    <p class="value" id="kpiAov">-</p>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="card-soft mt-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="m-0">매출 추이</h5>
+                        <small class="text-muted" id="subtitleLabel">단위: 일</small>
+                    </div>
+                    <div class="chart-wrap mt-2">
+                        <canvas id="salesChart" aria-label="매출 추이 차트" role="img"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="card-soft mt-3">
+                <div class="card-body table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>버킷</th>
+                            <th class="text-end">매출</th>
+                            <th class="text-end">주문 수</th>
+                            <th class="text-end">평균 주문 금액</th>
+                        </tr>
+                        </thead>
+                        <tbody id="rowsTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </div>
+</th:block>
+
+<th:block layout:fragment="script">
+    <!-- Chart.js가 base에 없으면 CDN 로드 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ===== 디자인용 JS (데이터 바인딩은 이후 서비스 연동 시 그대로 사용) =====
+        const fmtCurrency = n => new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(n ?? 0);
+        const fmtNumber   = n => new Intl.NumberFormat('ko-KR').format(n ?? 0);
+        const pad = n => String(n).padStart(2,'0');
+        const toIso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+        function setDefaultDates(days=7){
+            const to = new Date(), from = new Date(); from.setDate(to.getDate()-(days-1));
+            document.getElementById('from').value = toIso(from);
+            document.getElementById('to').value   = toIso(to);
+        }
+
+        // 현재 그룹 상태
+        let groupBy = 'day'; // day | week | month | weekday
+        let chart;
+
+        // 세그먼트 탭 UI
+        document.addEventListener('click', (e)=>{
+            if(e.target.closest('.seg button')){
+                const btn = e.target.closest('.seg button');
+                document.querySelectorAll('.seg button').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+                btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+                groupBy = btn.dataset.group;
+                document.getElementById('subtitleLabel').textContent =
+                    '단위: ' + (groupBy==='day'?'일':groupBy==='week'?'주':groupBy==='month'?'월':'요일');
+            }
+        });
+
+        // 데이터 요청 (일단 디자인: day는 기존 엔드포인트, 나머지는 groupBy 파라미터만 추가)
+        async function fetchData(from, to){
+            const base = '/admin/reports/daily-sales';
+            const url  = groupBy==='day'
+                ? `${base}?from=${from}&to=${to}`
+                : `${base}?from=${from}&to=${to}&groupBy=${groupBy}`;
+            const res = await fetch(url, { headers:{'Accept':'application/json'} });
+            if(!res.ok) throw new Error('데이터 로드 실패');
+            return res.json();
+        }
+
+        function renderKpis(rows){
+            const totalSales  = rows.reduce((s,r)=> s + Number(r.totalSales ?? 0), 0);
+            const totalOrders = rows.reduce((s,r)=> s + Number(r.totalOrders ?? 0), 0);
+            const aov         = totalOrders ? totalSales/totalOrders : 0;
+            document.getElementById('kpiTotalSales').textContent  = fmtCurrency(totalSales);
+            document.getElementById('kpiTotalOrders').textContent = fmtNumber(totalOrders);
+            document.getElementById('kpiAov').textContent         = fmtCurrency(aov);
+        }
+
+        function normalizeBucket(b){
+            // LocalDate 직렬화 문자열 or [yyyy, m, d] 배열 모두 처리
+            if (Array.isArray(b)) return `${b[0]}-${pad(b[1])}-${pad(b[2])}`;
+            return b;
+        }
+
+        function renderTable(rows){
+            const tb = document.getElementById('rowsTbody'); tb.innerHTML='';
+            for(const r of rows){
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+          <td>${normalizeBucket(r.bucket)}</td>
+          <td class="text-end">${fmtCurrency(r.totalSales)}</td>
+          <td class="text-end">${fmtNumber(r.totalOrders)}</td>
+          <td class="text-end">${fmtCurrency(r.avgOrderPrice)}</td>
+        `;
+                tb.appendChild(tr);
+            }
+        }
+
+        function renderChart(rows){
+            const labels = rows.map(r => normalizeBucket(r.bucket));
+            const sales  = rows.map(r => Number(r.totalSales ?? 0));
+            const orders = rows.map(r => Number(r.totalOrders ?? 0));
+
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                data: {
+                    labels,
+                    datasets: [
+                        { type: 'bar',  label: '매출(원)', data: sales, yAxisID: 'y1' },
+                        { type: 'line', label: '주문 수',  data: orders, yAxisID: 'y2', tension:.35, pointRadius:3 }
+                    ]
+                },
+                options: {
+                    responsive:true,
+                    interaction:{ mode:'index', intersect:false },
+                    plugins:{
+                        legend:{ display:true },
+                        tooltip:{ callbacks:{
+                                label: (ctx) => ctx.dataset.label.includes('매출')
+                                    ? `${ctx.dataset.label}: ${fmtCurrency(ctx.raw)}`
+                                    : `${ctx.dataset.label}: ${fmtNumber(ctx.raw)}건`
+                            }}
+                    },
+                    scales:{
+                        y1:{ position:'left',  ticks:{ callback:v=>fmtNumber(v) } },
+                        y2:{ position:'right', grid:{ drawOnChartArea:false }, ticks:{ precision:0 } }
+                    }
+                }
+            });
+        }
+
+        async function apply(){
+            const from = document.getElementById('from').value;
+            const to   = document.getElementById('to').value;
+            const rows = await fetchData(from, to);
+            renderKpis(rows);
+            renderChart(rows);
+            renderTable(rows);
+        }
+
+        document.addEventListener('DOMContentLoaded', ()=>{
+            setDefaultDates(7);
+            document.getElementById('btnApply').addEventListener('click', apply);
+            document.getElementById('btnLast7').addEventListener('click',  ()=>{ setDefaultDates(7);  apply(); });
+            document.getElementById('btnLast30').addEventListener('click', ()=>{ setDefaultDates(30); apply(); });
+            apply();
+        });
+    </script>
+</th:block>
+</body>
+</html>

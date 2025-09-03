@@ -3,7 +3,7 @@ package com.honeyrest.honeyrest_host.controllerOwner;
 import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.UserDTO;
-import com.honeyrest.honeyrest_host.service.UserService;
+import com.honeyrest.honeyrest_host.serviceOwner.OUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,12 +11,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-@Controller
+@Controller("ownerUserController")
 @RequiredArgsConstructor
 @RequestMapping("/owner")
 public class UserController {
 
-    private final UserService userService;
+    private final OUserService userService;
 
     @GetMapping("/user/list")
     public String userList(

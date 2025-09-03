@@ -4,8 +4,8 @@ import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
-import com.honeyrest.honeyrest_host.service.AccommodationService;
-import com.honeyrest.honeyrest_host.service.CompanyService;
+import com.honeyrest.honeyrest_host.serviceOwner.OAccommodationService;
+import com.honeyrest.honeyrest_host.serviceOwner.OCompanyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,8 +17,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/owner")
 public class CompanyController {
-    private final CompanyService companyService;
-    private final AccommodationService accommodationService;
+    private final OCompanyService companyService;
+    private final OAccommodationService accommodationService;
 
     @GetMapping("/company/list")
     public String companyList(

@@ -1,10 +1,13 @@
 package com.honeyrest.honeyrest_host.controllerAdmin.dashboard;
 
 
+import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
+import com.honeyrest.honeyrest_host.dto.DashboardDTO;
 import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
+import com.honeyrest.honeyrest_host.serviceAdmin.DashboardService;
 import com.honeyrest.honeyrest_host.serviceAdmin.UserService;
 import lombok.RequiredArgsConstructor;
 
@@ -17,54 +20,33 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.Optional;
 
-@Controller
+@Controller("adminDashboardController")
 @RequestMapping("/admin")
 @RequiredArgsConstructor
 @Log4j2
 public class DashboardController {
 
-    private final UserRepository userRepository;
-    private final AccommodationRepository accommodationRepository;
-    private final ReservationRepository reservationRepository;
-    private final CompanyRepository companyRepository;
-    private final UserService userService;
+    private final DashboardService dashboardService; // ✅ Service만 의존
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
 
-        String email = (authentication.getPrincipal() instanceof String s) ? s : authentication.getName();
+        String email = authentication.getName(); // Authentication에서 email 추출
 
-        var admin = userService.getUserByEmail(email);
-        if (admin == null) return "redirect:/admin/auth/login";
-
-        long accCount;
-        long resCount;
-
-        if (admin.getRole() == "SUPER_ADMIN") {
-            // 전체 합계
-            accCount = accommodationRepository.count();
-            resCount = reservationRepository.countActiveAll(); // 취소 제외 예시
-        } else if (admin.getRole() =="COMPANY_ADMIN") {
-            Optional<Long> companyIdOpt = companyRepository.findCompanyIdByUserEmail(admin.getEmail());
-            Long companyId = companyIdOpt.orElse(null); // ← Optional 처리
-            log.info("companyId from email: {}", companyId);
-            if (companyId == null) {
-                accCount = 0;
-                resCount = 0;
-            } else {
-                accCount = accommodationRepository.countByCompany_CompanyId(companyId);
-                resCount = reservationRepository.countActiveByCompanyId(companyId);
-            }
-        } else {
-            // 그 외 ROLE이면 필요에 맞게
-            accCount = 0;
-            resCount = 0;
+        AdminLoginRequestDTO admin = dashboardService.getCurrentAdmin(email);
+        if (admin == null) {
+            return "redirect:/auth/login";
         }
 
-        model.addAttribute("accCount", accCount);
-        model.addAttribute("resCount", resCount);
+        DashboardDTO counts = dashboardService.getCountsFor(email);
+
+        // 뷰에서 사용할 데이터 모델에 담기
+        model.addAttribute("accCount", counts.getAccCount());
+        model.addAttribute("resCount", counts.getResCount());
+        model.addAttribute("roomCount", counts.getRoomCount());
         model.addAttribute("currentAdmin", admin);
 
         return "admin/dashboard/dashboard";
     }
+
 }

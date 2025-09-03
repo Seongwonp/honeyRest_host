@@ -14,6 +14,10 @@ import java.util.Optional;
 
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
+    long count();
+    @Query("select count(r) from Room r where r.accommodation.company.companyId = :companyId")
+    long countByCompanyId(@Param("companyId") Long companyId);
+
     // 페이징
     Page<Room> findByAccommodation_AccommodationId(Long accommodationId, Pageable pageable);
 
@@ -49,6 +53,13 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @Query("select r from Room r where r.roomId = :id")
     Optional<Room> findByIdWithAccommodation(Long id);
 
+    // fetch join으로 즉시 로딩 (멀티라인 X, 별칭 제거)
+    @Query("select r from Room r join fetch r.accommodation where r.roomId = :roomId")
+    Optional<Room> findWithAccommodationByRoomId(@Param("roomId") Long roomId);
+
+
+
+
     // 목록에서 숙소명 필요할 때 (N+1 방지)
     @EntityGraph(attributePaths = {"accommodation"})
     @Query("select r from Room r")
@@ -67,7 +78,13 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             join fetch r.accommodation a
             where r.roomId = :roomId
             """)
-    Optional<Room> findWithAccommodationByRoomId(Long roomId);
+    // PK가 roomId인 경우
+    @EntityGraph(attributePaths = "accommodation")
+    Optional<Room> findByRoomId(Long roomId);
+
+    // 또는, PK가 roomId이고 JpaRepository의 findById를 재정의해도 됨
+    @EntityGraph(attributePaths = "accommodation")
+    Optional<Room> findById(Long roomId);
 
     @Query("select r.name from Room r where r.roomId = :id")
     Optional<String> findNameById(@Param("id") Long id);

@@ -1,10 +1,10 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.service.AccommodationService;
-import com.honeyrest.honeyrest_host.service.CompanyService;
-import com.honeyrest.honeyrest_host.service.ReservationService;
-import com.honeyrest.honeyrest_host.service.RoomService;
+import com.honeyrest.honeyrest_host.serviceOwner.OAccommodationService;
+import com.honeyrest.honeyrest_host.serviceOwner.OCompanyService;
+import com.honeyrest.honeyrest_host.serviceOwner.OReservationService;
+import com.honeyrest.honeyrest_host.serviceOwner.ORoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -24,10 +24,10 @@ import java.util.Map;
 @RequestMapping("/owner")
 @Log4j2
 public class CalendarController {
-    private final RoomService roomService;
-    private final CompanyService companyService;
-    private final AccommodationService accommodationService;
-    private final ReservationService reservationService;
+    private final ORoomService roomService;
+    private final OCompanyService companyService;
+    private final OAccommodationService accommodationService;
+    private final OReservationService reservationService;
 
     @GetMapping("/calendar/list")
     public String roomCalendar(@ModelAttribute PageRequestDTO pageRequestDTO, Model model) {

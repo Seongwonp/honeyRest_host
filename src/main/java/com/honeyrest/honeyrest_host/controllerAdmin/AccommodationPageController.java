@@ -45,7 +45,7 @@ import java.util.Map;
 
 
 @Log4j2
-@Controller
+@Controller("adminAccommodationPageController")
 @RequiredArgsConstructor
 @RequestMapping("/admin/accommodations")
 public class AccommodationPageController {

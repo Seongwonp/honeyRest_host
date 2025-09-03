@@ -2,12 +2,7 @@
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-<<<<<<<< HEAD:src/main/resources/templates/admin/dashboard/dashboard.html
-      layout:decorate="~{admin/layout/base}">
-========
       layout:decorate="~{owner/layout/base}">
->>>>>>>> origin/SHO:src/main/resources/templates/owner/dashboard/dashboard.html
-
 <head>
     <title>숙소 관리자 대시보드</title>
     <th:block layout:fragment="head">
@@ -35,14 +30,14 @@
                                     <i class="bi bi-house-door-fill"></i>
                                 </div>
                                 <div class="ms-3">
-<<<<<<<< HEAD:src/main/resources/templates/admin/dashboard/dashboard.html
+
                                     <!-- 등록 숙소 수 -->
                                     <h6 class="text-muted font-semibold">등록 숙소 수</h6>
                                     <h6 class="font-extrabold mb-0" th:text="${accCount}">0</h6>
-========
+
                                     <h6 class="text-muted font-semibold">등록 업체 수</h6>
                                     <h6 class="font-extrabold mb-0" th:text="${companyCount}">-</h6>
->>>>>>>> origin/SHO:src/main/resources/templates/owner/dashboard/dashboard.html
+
                                 </div>
                             </div>
                         </div>
@@ -58,13 +53,13 @@
                                     <i class="bi bi-calendar-check-fill"></i>
                                 </div>
                                 <div class="ms-3">
-<<<<<<<< HEAD:src/main/resources/templates/admin/dashboard/dashboard.html
+
                                     <h6 class="text-muted font-semibold">예약 건수</h6>
                                     <h6 class="font-extrabold mb-0" th:text="${resCount}">0</h6>
-========
+
                                     <h6 class="text-muted font-semibold">숙소 수</h6>
                                     <h6 class="font-extrabold mb-0" th:text="${accommodationCount}">0</h6>
->>>>>>>> origin/SHO:src/main/resources/templates/owner/dashboard/dashboard.html
+
                                 </div>
                             </div>
                         </div>

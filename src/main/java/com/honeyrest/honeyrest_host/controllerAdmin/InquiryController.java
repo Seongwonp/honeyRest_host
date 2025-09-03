@@ -14,7 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-@Controller
+@Controller("adminInquiryController")
 @RequiredArgsConstructor
 @Log4j2
 @RequestMapping("/admin/inquiries")

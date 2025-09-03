@@ -1,37 +1,32 @@
 package com.honeyrest.honeyrest_host.controllerOwner.dashboard;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.repository.AccommodationRepository;
-import com.honeyrest.honeyrest_host.repository.CompanyRepository;
-import com.honeyrest.honeyrest_host.repository.ReservationRepository;
-import com.honeyrest.honeyrest_host.repository.UserRepository;
-import com.honeyrest.honeyrest_host.service.*;
+import com.honeyrest.honeyrest_host.repository.OUserRepository;
+import com.honeyrest.honeyrest_host.serviceOwner.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
-@Controller
+@Controller("ownerDashboardController")
 @RequestMapping("/owner")
 @RequiredArgsConstructor
 public class DashboardController {
-    private final CompanyService companyService;
-    private final AccommodationService accommodationService;
-    private final RoomService roomService;
-    private final CouponService couponService;
-    private final ReservationService reservationService;
-    private final ReviewService reviewService;
-    private final UserRepository userRepository;
+    private final OCompanyService companyService;
+    private final OAccommodationService accommodationService;
+    private final ORoomService roomService;
+    private final OCouponService couponService;
+    private final OReservationService reservationService;
+    private final OReviewService reviewService;
+    private final OUserRepository userRepository;
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
         if (authentication == null) {
-            return "redirect:/owner/auth/login";
+            return "redirect:/auth/login";
         }
 
         String email = (authentication.getPrincipal() instanceof String s) ? s : authentication.getName();

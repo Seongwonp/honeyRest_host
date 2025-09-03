@@ -1,33 +1,30 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
-import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.service.*;
+import com.honeyrest.honeyrest_host.serviceOwner.*;
+import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-@Controller
+
+@Controller("ownerRoomController")
 @RequestMapping("/owner")
 @RequiredArgsConstructor
 @Log4j2
 public class RoomController {
-    private final RoomService roomService;
-    private final AccommodationService accommodationService;
-    private final CompanyService companyService;
-    private final PriceCalendarService priceCalendarService;
-    private final ReservationService reservationService;
+    private final ORoomService roomService;
+    private final OAccommodationService accommodationService;
+    private final OCompanyService companyService;
+    private final OPriceCalendarService priceCalendarService;
+    private final OReservationService reservationService;
     private final FileUploadUtil fileUploadUtil;
-    private final ReviewService reviewService;
+    private final OReviewService reviewService;
 
     @GetMapping({"/room/list", "/accommodation/{accommodationId}/rooms"})
     public String rooms(

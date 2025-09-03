@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
 import com.honeyrest.honeyrest_host.dto.*;
+import com.honeyrest.honeyrest_host.dto.reports.SalesStatDTO;
 import com.honeyrest.honeyrest_host.entity.PriceCalendar;
 import com.honeyrest.honeyrest_host.entity.Reservation;
 import com.honeyrest.honeyrest_host.entity.Room;

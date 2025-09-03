@@ -30,7 +30,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.*;
 
 @Log4j2
-@Controller
+@Controller("adminRoomController")
 @RequiredArgsConstructor
 @RequestMapping("/admin/rooms")
 public class RoomController {

@@ -27,7 +27,7 @@ import java.util.Map;
 
 
 @Log4j2
-@Controller
+@Controller("adminReservationController")
 @RequiredArgsConstructor
 @RequestMapping("/admin/reservations")
 

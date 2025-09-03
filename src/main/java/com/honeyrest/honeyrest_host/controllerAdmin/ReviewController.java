@@ -23,7 +23,7 @@ import java.util.*;
 
 
 //@Profile({"local", "dev"}) // 운영(prod)에서는 자동 비활성
-@Controller
+@Controller("adminReviewController")
 @RequiredArgsConstructor
 @Log4j2
 @RequestMapping("/admin/reviews")

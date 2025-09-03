@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 @Log4j2
-@Controller
+@Controller("adminPriceCalendarController")
 @RequestMapping("/admin/price")
 @RequiredArgsConstructor
 public class PriceCalendarController {

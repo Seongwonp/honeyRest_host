@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
-import com.honeyrest.honeyrest_host.config.FileUploadUtil;
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.service.*;
+import com.honeyrest.honeyrest_host.serviceOwner.*;
+import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
@@ -12,18 +12,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-@Controller
+@Controller("ownerAccommodationController")
 @RequiredArgsConstructor
 @RequestMapping("/owner")
 @Log4j2
 public class AccommodationController {
 
-    private final AccommodationService accommodationService;
-    private final CompanyService companyService;
-    private final AccommodationCategory accommodationCategory;
-    private final RegionService regionService;
+    private final OAccommodationService accommodationService;
+    private final OCompanyService companyService;
+    private final OAccommodationCategory accommodationCategory;
+    private final ORegionService regionService;
     private final FileUploadUtil fileUploadUtil;
-    private final RoomService roomService;
+    private final ORoomService roomService;
 
     @GetMapping({"/accommodation/list", "/company/{companyId}/accommodations"})
     public String accommodations(@PathVariable(required = false) Long companyId,

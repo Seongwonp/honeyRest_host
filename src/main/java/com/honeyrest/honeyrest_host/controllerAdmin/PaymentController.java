@@ -31,7 +31,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Log4j2
-@Controller
+@Controller("adminPaymentController")
 @RequestMapping("/admin/point")
 @RequiredArgsConstructor
 public class PaymentController {

@@ -4,10 +4,10 @@ import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.ReviewDTO;
-import com.honeyrest.honeyrest_host.service.AccommodationService;
-import com.honeyrest.honeyrest_host.service.CompanyService;
-import com.honeyrest.honeyrest_host.service.ReviewService;
-import com.honeyrest.honeyrest_host.service.RoomService;
+import com.honeyrest.honeyrest_host.serviceOwner.OAccommodationService;
+import com.honeyrest.honeyrest_host.serviceOwner.OCompanyService;
+import com.honeyrest.honeyrest_host.serviceOwner.OReviewService;
+import com.honeyrest.honeyrest_host.serviceOwner.ORoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,14 +15,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
+@Controller("ownerReviewController")
 @RequestMapping("/owner")
 @RequiredArgsConstructor
 public class ReviewController {
-    private final ReviewService reviewService;
-    private final AccommodationService accommodationService;
-    private final CompanyService companyService;
-    private final RoomService roomService;
+    private final OReviewService reviewService;
+    private final OAccommodationService accommodationService;
+    private final OCompanyService companyService;
+    private final ORoomService roomService;
 
 
     @GetMapping({"/review/list", "/review/accommodation/{accommodationId}"})

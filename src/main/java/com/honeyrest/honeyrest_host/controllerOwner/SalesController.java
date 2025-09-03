@@ -4,10 +4,10 @@ import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.DaySalesDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.MonthSalesDTO;
-import com.honeyrest.honeyrest_host.service.AccommodationService;
-import com.honeyrest.honeyrest_host.service.CompanyService;
-import com.honeyrest.honeyrest_host.service.ReservationService;
-import com.honeyrest.honeyrest_host.service.SalesService;
+import com.honeyrest.honeyrest_host.serviceOwner.OAccommodationService;
+import com.honeyrest.honeyrest_host.serviceOwner.OCompanyService;
+import com.honeyrest.honeyrest_host.serviceOwner.OReservationService;
+import com.honeyrest.honeyrest_host.serviceOwner.OSalesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,15 +21,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDate;
 import java.util.List;
 
-@Controller
+@Controller("ownerSalesController")
 @RequiredArgsConstructor
 @Log4j2
 @RequestMapping("/owner")
 public class SalesController {
-    private final ReservationService reservationService;
-    private final SalesService salesService;
-    private final CompanyService companyService;
-    private final AccommodationService accommodationService;
+    private final OReservationService reservationService;
+    private final OSalesService salesService;
+    private final OCompanyService companyService;
+    private final OAccommodationService accommodationService;
 
     @GetMapping("/sales/day")
     public String dailySales(

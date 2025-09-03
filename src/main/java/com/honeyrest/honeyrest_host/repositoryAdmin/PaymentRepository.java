@@ -1,12 +1,15 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin;
 
 import com.honeyrest.honeyrest_host.entity.Payment;
+import com.honeyrest.honeyrest_host.repositoryAdmin.projection.DailySalesProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -48,4 +51,84 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("q") String q,
             Pageable pageable
     );
+    @Query(value = """
+        SELECT 
+            DATE(p.payment_date)         AS bucket,
+            COALESCE(SUM(p.amount), 0)   AS totalSales,
+            COUNT(*)                     AS totalOrders,
+            COALESCE(AVG(p.amount), 0)   AS avgOrderPrice
+        FROM payment p
+        JOIN reservation r ON r.reservation_id = p.reservation_id
+        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+        WHERE a.company_id = :companyId
+          AND p.payment_status = 'SUCCESS'            -- 문자열 비교 (Enum X)
+          AND p.payment_date BETWEEN :from AND :to
+        GROUP BY DATE(p.payment_date)
+        ORDER BY DATE(p.payment_date)
+        """, nativeQuery = true)
+    List<DailySalesProjection> findDailySalesByCompany(
+            @Param("companyId") Long companyId,
+            @Param("from") java.time.LocalDate from,
+            @Param("to") java.time.LocalDate to
+    );
+
+    // 숙소별 시리즈가 필요하면 accommodation_id/name까지 group by
+    @Query(value = """
+        SELECT 
+            DATE(p.payment_date)         AS bucket,
+            COALESCE(SUM(p.amount), 0)   AS totalSales,
+            COUNT(*)                     AS totalOrders,
+            COALESCE(AVG(p.amount), 0)   AS avgOrderPrice,
+            a.accommodation_id           AS accommodationId,
+            a.name                       AS accommodationName
+        FROM payment p
+        JOIN reservation r ON r.reservation_id = p.reservation_id
+        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+        WHERE a.company_id = :companyId
+          AND p.payment_status = 'SUCCESS'
+          AND p.payment_date BETWEEN :from AND :to
+        GROUP BY DATE(p.payment_date), a.accommodation_id, a.name
+        ORDER BY DATE(p.payment_date), a.accommodation_id
+        """, nativeQuery = true)
+    List<DailySalesProjection> findDailySalesByCompanyAndAccommodation(
+            @Param("companyId") Long companyId,
+            @Param("from") java.time.LocalDate from,
+            @Param("to") java.time.LocalDate to
+    );
+
+    // 회사 기준 Top-N 숙소 (금액 합계 내림차순)
+    @Query(value = """
+        SELECT 
+            a.accommodation_id   AS accommodationId,
+            a.name               AS accommodationName,
+            COALESCE(SUM(p.amount), 0) AS totalSales
+        FROM payment p
+        JOIN reservation r ON r.reservation_id = p.reservation_id
+        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+        WHERE a.company_id = :companyId
+          AND p.payment_status = 'SUCCESS'
+          AND p.payment_date BETWEEN :from AND :to
+        GROUP BY a.accommodation_id, a.name
+        ORDER BY totalSales DESC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<Object[]> findTopAccommodations(@Param("companyId") Long companyId,
+                                         @Param("from") LocalDate from,
+                                         @Param("to") LocalDate to,
+                                         @Param("limit") int limit);
+
+    // 기간 승인매출 합계
+    @Query(value = """
+        SELECT COALESCE(SUM(p.amount), 0)
+        FROM payment p
+        JOIN reservation r ON r.reservation_id = p.reservation_id
+        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+        WHERE a.company_id = :companyId
+          AND p.payment_status = 'SUCCESS'
+          AND p.payment_date BETWEEN :from AND :to
+        """, nativeQuery = true)
+    BigDecimal sumSales(@Param("companyId") Long companyId,
+                        @Param("from") LocalDate from,
+                        @Param("to") LocalDate to);
+
 }
