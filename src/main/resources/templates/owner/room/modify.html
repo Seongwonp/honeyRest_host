@@ -13,7 +13,7 @@
 
     <div class="page-content">
         <form th:action="@{/owner/room/modify}" method="post" enctype="multipart/form-data"
-              class="needs-validation" novalidate>
+              class="needs-validation" >
             <input type="hidden" name="roomId" th:value="${room.roomId}" />
 
             <!-- 기본 정보 -->
@@ -30,19 +30,21 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">소속 숙소</label>
-                        <select name="accommodationId" class="form-select" required>
+                        <select name="accommodationId" id="accommodationId" class="form-select" required>
                             <option value="">숙소 선택</option>
                             <option th:each="a : ${accommodations}"
                                     th:value="${a.accommodationId}"
                                     th:text="${a.name}"
-                                    th:selected="${a.accommodationId == room.accommodationId}"></option>
+                                    th:selected="${a.accommodationId == room.accommodationId}"
+                                    th:attr="data-price=${a.minPrice}"></option>
+
                         </select>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">상태</label>
                         <select name="status" class="form-select" required>
-                            <option value="AVAILABLE" th:selected="${room.status == 'AVAILABLE'}">예약 가능</option>
-                            <option value="UNAVAILABLE" th:selected="${room.status == 'UNAVAILABLE'}">예약 불가</option>
+                            <option value="ACTIVE" th:selected="${room.status == 'ACTIVE'}">예약 가능</option>
+                            <option value="INACTIVE" th:selected="${room.status == 'INACTIVE'}">예약 불가</option>
                         </select>
                     </div>
                 </div>
@@ -54,12 +56,12 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">기준 인원</label>
-                        <input type="number" name="standardOccupancy" class="form-control"
+                        <input type="number" name="standardOccupancy" id="standardOccupancy" class="form-control"
                                th:value="${room.standardOccupancy}" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">최대 인원</label>
-                        <input type="number" name="maxOccupancy" class="form-control"
+                        <input type="number" name="maxOccupancy" id="maxOccupancy" class="form-control"
                                th:value="${room.maxOccupancy}" required>
                     </div>
                     <div class="col-md-6">
@@ -70,12 +72,12 @@
                     <div class="col-md-6">
                         <label class="form-label">추가 인원 요금</label>
                         <input type="number" name="extraPersonFee" class="form-control"
-                               th:value="${room.extraPersonFee}" step="0.01">
+                               th:value="${room.extraPersonFee}" step="100">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">가격</label>
-                        <input type="number" name="price" class="form-control"
-                               th:value="${room.price}" step="0.01" required>
+                        <input type="number" name="price" id="price" class="form-control"
+                               th:value="${room.price}" min="0" step="100" required>
                     </div>
                 </div>
 
@@ -96,6 +98,26 @@
                     <textarea name="bedInfo" class="form-control" rows="3"
                               th:text="${room.bedInfo}"></textarea>
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label">객실 메인 이미지</label>
+                    <input type="file" class="form-control" name="file">
+                    <div class="mt-2" th:if="${images != null}">
+                        <div th:each="image : ${images}">
+                            <img th:if="${image.sortOrder==0}" th:src="${image.imageUrl}" style="max-width: 300px;" alt="이미지">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">객실 추가 이미지</label>
+                    <input type="file" class="form-control" name="images" multiple>
+                    <div class="mt-2 d-flex flex-wrap gap-2" th:if="${images != null}">
+                        <div th:each="img : ${images}">
+                            <img th:src="${img.imageUrl}" style="height: 150px; border: 1px solid #ddd; padding: 3px;" alt="이미지"/>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- 저장 버튼 -->
@@ -109,3 +131,31 @@
 </th:block>
 </body>
 </html>
+<script th:inline="javascript">
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.querySelector("form");
+        const accommodationSelect = document.getElementById("accommodationId");
+        const priceInput = document.getElementById("price");
+
+
+        form.addEventListener("submit", function (e) {
+            const selectedOption = accommodationSelect.options[accommodationSelect.selectedIndex];
+            const accommodationPrice = parseFloat(selectedOption.getAttribute("data-price"));
+            const standardOccupancy = document.getElementById("standardOccupancy");
+            const maxOccupancy = document.getElementById("maxOccupancy");
+            const roomPrice = parseFloat(priceInput.value);
+
+            if (!isNaN(accommodationPrice) && roomPrice < accommodationPrice) {
+                e.preventDefault();
+                alert(`방의 가격은 숙소 가격(${accommodationPrice.toLocaleString()}원)보다 같거나 커야 합니다.`);
+                priceInput.focus();
+            }
+
+            if (parseInt(standardOccupancy.value) > parseInt(maxOccupancy.value)) {
+                e.preventDefault();
+                alert("기준 인원이 최대 인원보다 많습니다.");
+                standardOccupancy.focus();
+            }
+        });
+    });
+</script>

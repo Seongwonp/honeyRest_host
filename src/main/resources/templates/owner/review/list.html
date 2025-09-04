@@ -25,7 +25,7 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <h3 th:text="${accommodation != null} ? ${accommodation.name}">리뷰 목록</h3>
+        <h3 th:text="${accommodation != null} ? null">리뷰 목록</h3>
     </div>
     <div class="page-heading">
         <h3 th:text="${room != null} ? ${room.name} : '전체 객실 목록'">객실 목록</h3>

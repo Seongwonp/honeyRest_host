@@ -65,7 +65,7 @@ public class OSalesService {
     public List<MonthSalesDTO> getMonthSales(LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservations()
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()))
+                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);
@@ -105,7 +105,7 @@ public class OSalesService {
     public List<DaySalesDTO> getCompanyDaySales(Long companyId, LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByCompanyId(companyId)
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()))
+                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);
@@ -147,7 +147,7 @@ public class OSalesService {
     public List<MonthSalesDTO> getCompanyMonthSales(Long companyId,LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByCompanyId(companyId)
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()))
+                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);
@@ -187,7 +187,7 @@ public class OSalesService {
     public List<DaySalesDTO> getAccommodationDaySales(Long accommodationId, LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByAccommodationId(accommodationId)
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()))
+                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);
@@ -229,7 +229,7 @@ public class OSalesService {
     public List<MonthSalesDTO> getAccommodationMonthSales(Long accommodationId,LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByAccommodationId(accommodationId)
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()))
+                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);

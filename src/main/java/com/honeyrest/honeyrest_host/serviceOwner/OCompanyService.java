@@ -32,50 +32,20 @@ public class OCompanyService {
     private final ObjectMapper objectMapper;
     private final OAccommodationRepository accommodationRepository;
 
-    // OCompanyService.java (필드로 두면 재사용 가능)
-    private final ObjectMapper mapper = new ObjectMapper()
-            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-            .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
-
-    private List<String> parseBankInfoToList(String json) {
-        if (json == null || json.isBlank()) return List.of();
+    private List<String> parseBankInfoToList(String jsonInput) {
+        if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
 
         try {
-            JsonNode node = mapper.readTree(json);
-
-            if (node.isArray()) {
-                List<String> out = new ArrayList<>();
-                for (JsonNode n : node) out.add(n.asText());
-                return out;
-            }
-
-            if (node.isObject()) {
-                // 객체로 저장되어 온 경우 값들만 뽑아 문자열 리스트로 변환
-                List<String> out = new ArrayList<>();
-                node.fields().forEachRemaining(e -> {
-                    JsonNode v = e.getValue();
-                    out.add(v.isTextual() ? v.asText() : v.toString());
-                    // 필요하면 키 포함 형식으로: out.add(e.getKey() + ": " + (v.isTextual()? v.asText() : v.toString()));
-                });
-                return out;
-            }
-
-            if (node.isTextual()) {
-                return List.of(node.asText());
-            }
-
-            // 그 외 타입은 문자열화
-            return List.of(node.toString());
-
-        } catch (Exception ex) {
-            // 로그 남기고 빈 리스트 반환 (혹은 예외 다시 던지기)
-            // log.warn("Invalid bankInfo JSON: {}", json, ex);
-            return List.of();
+            // JSON 배열 문자열을 List<String>으로 역직렬화
+            return objectMapper.readValue(jsonInput, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return Collections.emptyList(); // 실패 시 빈 리스트 반환
         }
     }
-
-    private String parseBankInfoToString(String json) {
-        return String.join(", ", parseBankInfoToList(json));
+    private String parseBankInfoToString(String jsonInput) {
+        List<String> list = parseBankInfoToList(jsonInput);
+        return String.join(", ", list);
     }
 
 
@@ -94,13 +64,26 @@ public class OCompanyService {
                 .createdAt(company.getCreatedAt())
                 .build();
     }
+    private String parseBankInfoToJson(String input) {
+        if (input == null || input.isBlank()) return "[]";
+        try {
+            List<String> amenitiesList = Arrays.stream(input.split("[,\\s]+"))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
 
+            return objectMapper.writeValueAsString(amenitiesList);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "[]"; // 실패 시 빈 배열 반환
+        }
+    }
     private Company toEntity(CompanyDTO dto) {
         String BankInfoJson = "[]"; // 기본값
 
         try {
             if (dto.getBankInfo() != null && !dto.getBankInfo().isBlank()) {
-                BankInfoJson = parseBankInfoToString(dto.getBankInfo());
+                BankInfoJson = parseBankInfoToJson(dto.getBankInfo());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

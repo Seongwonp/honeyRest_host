@@ -84,7 +84,7 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <h3 th:text="${accommodation != null} ? ${accommodation.name} : '전체 방 리스트'">방 리스트</h3>
+        <h3 th:text="${accommodation != null} ? null : '전체 방 리스트'">방 리스트</h3>
         <!-- 숙소 상세 정보 카드 -->
         <div class="card shadow-lg border-0 mb-4" th:if="${accommodation != null}">
             <!-- 헤더 -->
@@ -99,10 +99,6 @@
             <div class="card-body p-4">
                 <!-- 숙소 기본 정보 -->
                 <div class="row g-4 mb-3">
-<!--                    <div class="col-md-6">-->
-<!--                        <label class="text-muted small fw-semibold">숙소 ID</label>-->
-<!--                        <div th:text="${accommodation.accommodationId}">1</div>-->
-<!--                    </div>-->
                     <div class="col-md-6">
                         <label class="text-muted small fw-semibold">숙소명</label>
                         <div class="fs-5 fw-bold" th:text="${accommodation.name}">한강 리조트</div>
@@ -120,11 +116,11 @@
 
                     <div class="col-md-6">
                         <label class="text-muted small fw-semibold">체크인 시간</label>
-                        <div th:text="${accommodation.checkInTime}">15:00</div>
+                        <div th:text="${#temporals.format(accommodation.checkInTime, 'HH:mm')}">11:00</div>
                     </div>
                     <div class="col-md-6">
                         <label class="text-muted small fw-semibold">체크아웃 시간</label>
-                        <div th:text="${accommodation.checkOutTime}">11:00</div>
+                        <div th:text="${#temporals.format(accommodation.checkOutTime, 'HH:mm')}">11:00</div>
                     </div>
 
                     <div class="col-md-6">
@@ -210,36 +206,63 @@
         </div>
         <!-- 객실 리스트 카드 -->
         <div class="mt-4">
-            <h6 class="fw-bold mb-3">객실 목록</h6>
+            <h6 class="fw-bold mb-3">숙소 목록</h6>
+
             <div class="row g-4">
-                <div class="col-md-6 col-lg-4" th:each="room : ${rooms}">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold">
-                                <a th:href="@{'/owner/room/' + ${room.roomId} + '/reviews'}"
-                                   th:text="${room.name}" class="text-decoration-none text-dark">객실명</a>
-                            </h5>
-                            <p class="mb-1"><strong>룸 ID:</strong> <span th:text="${room.roomId}">1</span></p>
-                            <p class="mb-1"><strong>객실 유형:</strong> <span th:text="${room.type}">스탠다드</span></p>
-                            <p class="mb-1"><strong>최대 인원:</strong> <span th:text="${room.maxOccupancy}">4</span></p>
-                            <p class="mb-1"><strong>표준 인원:</strong> <span th:text="${room.standardOccupancy}">2</span></p>
-                            <p class="mb-1"><strong>가격:</strong> <span th:text="${room.price + ' 원'}">120,000 원</span></p>
-                            <p class="mb-1"><strong>총 객실 수:</strong> <span th:text="${room.totalRooms}">10</span></p>
-                            <p class="mb-1"><strong>상태:</strong> <span th:text="${room.status}">예약 가능</span></p>
-                        </div>
-                        <div class="card-footer d-flex justify-content-end gap-2">
-                            <a th:href="@{'/owner/room/' + ${room.roomId} + '/modify'}" class="btn btn-primary btn-sm">수정</a>
-                            <form th:action="@{'/owner/room/' + ${room.roomId} + '/delete'}"
-                                  method="post" onsubmit="return confirm('정말 삭제하시겠습니까?');"
-                                  style="display:inline-block;">
-                                <button type="submit" class="btn btn-danger btn-sm">삭제</button>
-                            </form>
+                <!-- Room 카드 반복 -->
+                <div class="col-md-4" th:each="room : ${rooms}">
+                    <div class="card h-100 shadow-sm p-3">
+                        <div class="d-flex flex-column justify-content-between h-100">
+                            <div class="d-flex justify-content-between">
+
+                                <!-- 텍스트 영역 -->
+                                <div class="flex-grow-1 pe-3">
+                                    <h5 class="card-title fw-bold">
+                                        <a th:href="@{'/owner/room/' + ${room.roomId} + '/reviews'}"
+                                           class="text-decoration-none text-dark"
+                                           th:text="${room.name}">객실명</a>
+                                    </h5>
+
+                                    <p class="mb-1"><strong>룸 ID:</strong> <span th:text="${room.roomId}">1</span></p>
+                                    <p class="mb-1"><strong>객실 유형:</strong> <span th:text="${room.type}">스탠다드</span></p>
+                                    <p class="mb-1"><strong>최대 인원:</strong> <span th:text="${room.maxOccupancy}">4</span></p>
+                                    <p class="mb-1"><strong>표준 인원:</strong> <span th:text="${room.standardOccupancy}">2</span></p>
+                                    <p class="mb-1"><strong>가격:</strong> <span th:text="${room.price + ' 원'}">120,000 원</span></p>
+                                    <p class="mb-1"><strong>총 객실 수:</strong> <span th:text="${room.totalRooms}">10</span></p>
+                                    <p class="mb-1"><strong>상태:</strong> <span th:text="${room.status}">예약 가능</span></p>
+                                </div>
+
+                                <!-- 이미지 영역 -->
+                                <div class="ms-2">
+                                    <div th:each="image : ${subImages}">
+                                        <img th:if="${image.sortOrder == 0}"
+                                             th:src="${image.imageUrl}"
+                                             alt="숙소 이미지"
+                                             class="img-fluid rounded"
+                                             style="width: 150px; height: 150px; object-fit: cover;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 카드 하단: 수정/삭제 -->
+                            <div class="card-footer d-flex justify-content-end gap-2 mt-3">
+                                <a th:href="@{'/owner/room/' + ${room.roomId} + '/modify'}" class="btn btn-primary btn-sm">수정</a>
+
+                                <form th:action="@{'/owner/room/' + ${room.roomId} + '/delete'}"
+                                      method="post"
+                                      onsubmit="return confirm('정말 삭제하시겠습니까?');"
+                                      style="display:inline-block;">
+                                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!-- 반복 끝 -->
             </div>
         </div>
-    <div class="pagination mt-3">
+
+        <div class="pagination mt-3">
         <ul class="pagination">
             <li class="page-item" th:if="${pageResponse.prev}">
                 <a class="page-link"

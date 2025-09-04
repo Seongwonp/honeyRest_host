@@ -78,9 +78,9 @@ public class Accommodation {
     @Column(length = 20)
     private String status; // 운영 상태(active, inactive
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL)
     private List<Room> rooms = new ArrayList<>();
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL)
     private List<AccommodationTagMap> tagMaps = new ArrayList<>();
 }

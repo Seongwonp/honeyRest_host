@@ -13,7 +13,7 @@
 
     <div class="page-content">
 
-        <form th:action="@{/owner/room/create}" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        <form th:action="@{/owner/room/create}" method="post" enctype="multipart/form-data" class="needs-validation">
 
             <!-- 숙소 정보 -->
             <div class="card shadow-sm mb-4 p-4">
@@ -130,13 +130,13 @@
         const form = document.querySelector("form");
         const accommodationSelect = document.getElementById("accommodationId");
         const priceInput = document.getElementById("price");
-        const standardOccupancy = document.getElementById("standardOccupancy");
-        const maxOccupancy = document.getElementById("maxOccupancy");
 
         form.addEventListener("submit", function (e) {
             const selectedOption = accommodationSelect.options[accommodationSelect.selectedIndex];
             const accommodationPrice = parseFloat(selectedOption.getAttribute("data-price"));
             const roomPrice = parseFloat(priceInput.value);
+            const standardOccupancy = document.getElementById("standardOccupancy");
+            const maxOccupancy = document.getElementById("maxOccupancy");
 
             if (!isNaN(accommodationPrice) && roomPrice < accommodationPrice) {
                 e.preventDefault();

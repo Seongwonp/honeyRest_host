@@ -64,14 +64,26 @@ public class RoomController {
     @GetMapping("/room/create")
     public String createRoom(@RequestParam Long accommodationId, Model model) {
         model.addAttribute("accommodationId", accommodationId);
-        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
-        model.addAttribute("accommodations", accommodationService.getAccommodationsByCompanyId(companyId));
+        if (accommodationId != 0) {
+            Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+            model.addAttribute("accommodations", accommodationService.getAccommodationsByCompanyId(companyId));
+        } else {
+            model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+        }
         return "owner/room/create";
     }
 
     @PostMapping("/room/create")
     public String createRoom(@ModelAttribute RoomDTO roomDTO) throws Exception {
         Long roomId = roomService.registerRoom(roomDTO);
+
+        String mainImage = fileUploadUtil.upload(roomDTO.getFile(),"room");
+        RoomImageDTO roomImageDTO = RoomImageDTO.builder()
+                .roomId(roomId)
+                .imageUrl(mainImage)
+                .sortOrder(0)
+                .build();
+        roomService.updateRoomImage(roomImageDTO);
 
         List<MultipartFile> images = roomDTO.getImages();
         if (images != null && !images.isEmpty()) {
@@ -97,12 +109,16 @@ public class RoomController {
         model.addAttribute("roomId", roomId);
         model.addAttribute("room", roomService.getByRoomId(roomId));
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+        model.addAttribute("images", roomService.getImagesByRoomId(roomId));
         return "owner/room/modify";
     }
 
     @PostMapping("/room/modify")
-    public String modifyRoom(@ModelAttribute RoomDTO roomDTO) {
+    public String modifyRoom(@ModelAttribute RoomDTO roomDTO) throws Exception {
         roomService.modifyRoom(roomDTO);
+        Long roomId = roomDTO.getRoomId();
+        List<MultipartFile> images = roomDTO.getImages();
+        roomService.modifyRoomImage(roomId, images);
         return "redirect:/owner/room/list";
     }
 
