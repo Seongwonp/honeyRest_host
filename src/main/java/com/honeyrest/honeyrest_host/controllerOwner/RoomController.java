@@ -109,6 +109,7 @@ public class RoomController {
         model.addAttribute("roomId", roomId);
         model.addAttribute("room", roomService.getByRoomId(roomId));
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+        model.addAttribute("images", roomService.getImagesByRoomId(roomId));
         return "owner/room/modify";
     }
 

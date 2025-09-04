@@ -152,7 +152,7 @@
     </div>
 
     <!-- 검색 폼 -->
-    <form method="get" class="search-form" id="searchForm">
+    <form method="get" action="/owner/reservation/list" class="search-form" id="searchForm">
         <div>
             <label for="companySelect">회사</label>
             <select id="companySelect" name="companyId"></select>
@@ -306,16 +306,17 @@
     loadRoomOptions(selectedAccommodationId);
 
     document.getElementById('searchForm').addEventListener('submit', function (event) {
+
         const companyId = companySelect.value;
         const accommodationId = accommodationSelect.value;
         const roomId = roomSelect.value;
         let actionUrl = "/owner/reservation/list";
         if (roomId) {
-            actionUrl = `/owner/reservation/room/${roomId}`;
+            actionUrl = `/owner/reservation/room/${roomId}?companyId=${companyId}&accommodationId=${accommodationId}&roomId=${roomId}`;
         } else if (accommodationId) {
-            actionUrl = `/owner/reservation/accommodation/${accommodationId}`;
+            actionUrl = `/owner/reservation/accommodation/${accommodationId}?companyId=${companyId}&accommodationId=${accommodationId}&roomId=${roomId}`;
         } else if (companyId) {
-            actionUrl = `/owner/reservation/company/${companyId}`;
+            actionUrl = `/owner/reservation/company/${companyId}?companyId=${companyId}&accommodationId=${accommodationId}&roomId=${roomId}`;
         }
         this.action = actionUrl;
     });

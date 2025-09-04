@@ -226,7 +226,7 @@ public class ORoomServiceImpl implements ORoomService {
     @Override
     public void modifyRoomImage(Long roomId, List<MultipartFile> images) throws Exception {
         if (images == null || images.isEmpty()) return;
-        int sortOrder = 1; // MAIN 이미지 다음부터 시작
+        int sortOrder = 0; // MAIN 이미지 다음부터 시작
 
         for (MultipartFile image : images) {
             if (!image.isEmpty()) {

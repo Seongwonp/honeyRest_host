@@ -61,7 +61,7 @@ public class Room extends BaseEntity {
     private String status; // 운영 상태
 
 
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private List<RoomImage> images = new ArrayList<>();
 
 
