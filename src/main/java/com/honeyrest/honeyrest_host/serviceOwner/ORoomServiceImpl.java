@@ -4,10 +4,7 @@ import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.RoomDTO;
-import com.honeyrest.honeyrest_host.dtoOwner.RoomImageDTO;
+import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.entity.RoomImage;
@@ -15,6 +12,7 @@ import com.honeyrest.honeyrest_host.repository.OAccommodationRepository;
 import com.honeyrest.honeyrest_host.repository.OReviewRepository;
 import com.honeyrest.honeyrest_host.repository.ORoomImageRepository;
 import com.honeyrest.honeyrest_host.repository.ORoomRepository;
+import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,6 +34,7 @@ public class ORoomServiceImpl implements ORoomService {
     private final ObjectMapper objectMapper;
     private final ORoomImageRepository roomImageRepository;
     private final OReviewRepository reviewRepository;
+    private final FileUploadUtil fileUploadUtil;
 
     private String parseJson(String input) {
         if (input == null || input.isBlank()) return "[]";
@@ -120,6 +120,14 @@ public class ORoomServiceImpl implements ORoomService {
                 .imageUrl(d.getImageUrl())
                 .sortOrder(d.getSortOrder())
                 .room(roomRepository.getReferenceById(d.getRoomId()))
+                .build();
+    }
+    private RoomImageDTO toRoomImageDTO(RoomImage e) {
+        return RoomImageDTO.builder()
+                .imageId(e.getImageId())
+                .imageUrl(e.getImageUrl())
+                .sortOrder(e.getSortOrder())
+                .roomId(e.getRoom().getRoomId())
                 .build();
     }
 
@@ -208,5 +216,31 @@ public class ORoomServiceImpl implements ORoomService {
     @Override
     public RoomDTO getByAccommodationIdAndId(Long id, Long name) {
         return toDTO(roomRepository.findByAccommodation_AccommodationIdAndRoomId(id, name));
+    }
+
+    @Override
+    public List<RoomImageDTO> getImagesByRoomId(Long roomId){
+        return roomImageRepository.findByRoom_RoomId(roomId).stream().map(this::toRoomImageDTO).toList();
+    }
+
+    @Override
+    public void modifyRoomImage(Long roomId, List<MultipartFile> images) throws Exception {
+        if (images == null || images.isEmpty()) return;
+        int sortOrder = 1; // MAIN 이미지 다음부터 시작
+
+        for (MultipartFile image : images) {
+            if (!image.isEmpty()) {
+                String subImageUrl = fileUploadUtil.upload(image, "room");
+
+                RoomImageDTO imageDTO = RoomImageDTO.builder()
+                        .imageUrl(subImageUrl)
+                        .roomId(roomId)
+                        .sortOrder(sortOrder++)
+                        .build();
+
+                updateRoomImage(imageDTO);
+            }
+        }
+
     }
 }

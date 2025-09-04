@@ -12,7 +12,7 @@
     </div>
 
     <div class="page-content">
-        <form th:action="@{/owner/reservation/modify}" method="post" class="needs-validation" novalidate>
+        <form th:action="@{/owner/reservation/modify}" method="post" class="needs-validation" >
             <input type="hidden" name="reservationId" th:value="${reservation.reservationId}" />
 
             <!-- 예약 기본 정보 -->

@@ -28,5 +28,6 @@ public class RoomDTO {
     private String description;
     private Integer totalRooms;
     private String status; // ACTIVE / INACTIVE
+    private MultipartFile file;
     private List<MultipartFile> images;
 }

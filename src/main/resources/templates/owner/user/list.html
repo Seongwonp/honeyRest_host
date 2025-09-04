@@ -7,6 +7,78 @@
 <head>
     <title>사용자 목록</title>
     <th:block layout:fragment="head"></th:block>
+    <style>
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .table thead th {
+            background-color: #222;
+            color: #f5f5f5;
+            padding: 12px 18px;
+            font-weight: 600;
+            text-align: left;
+            border-bottom: 2px solid #444;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .table tbody td {
+            padding: 14px 18px;
+            color: #333;
+        }
+
+        .status-active {
+            color: #008000; /* 진한 초록 */
+            font-weight: 600;
+        }
+
+        .status-inactive {
+            color: #cc0000; /* 진한 빨강 */
+            font-weight: 600;
+        }
+
+        .status-pending {
+            color: #ff8800; /* 주황색 */
+            font-weight: 600;
+        }
+
+        .verified {
+            background-color: #008000;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .not-verified {
+            background-color: #cc0000;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .marketing-agree {
+            color: #008000;
+            font-weight: 600;
+        }
+
+        .marketing-disagree {
+            color: #888;
+            font-weight: 600;
+        }
+
+    </style>
 </head>
 
 <body>
@@ -61,26 +133,30 @@
                             <th>최근 로그인</th>
                         </tr>
                         </thead>
-                        <tbody>
-                        <tr th:each="user : ${users}">
-                            <td th:text="${user.userId}"></td>
-                            <td th:text="${user.name}"></td>
-                            <td th:text="${user.email}"></td>
-                            <td th:text="${user.phone}"></td>
-                            <td th:text="${user.gender}"></td>
-                            <td th:text="${user.birthDate}"></td>
-                            <td th:text="${#numbers.formatInteger(user.point, 3, 'COMMA')} + ' P'"></td>
-                            <td th:text="${user.role}"></td>
-                            <td th:text="${user.status}"></td>
-                            <td th:text="${user.marketingAgree ? '동의' : '거부'}"></td>
-                            <td th:text="${user.socialType != null ? user.socialType : '자체'}"></td>
-                            <td th:text="${user.verified ? '인증됨' : '미인증'}"></td>
-                            <td th:text="${user.lastLogin != null ? #temporals.format(user.lastLogin, 'yyyy-MM-dd HH:mm') : ''}"></td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(users)}">
-                            <td colspan="13" class="text-center">등록된 사용자가 없습니다.</td>
-                        </tr>
-                        </tbody>
+                                    <tbody>
+                                    <tr th:each="user : ${users}">
+                                        <td th:text="${user.userId}"></td>
+                                        <td th:text="${user.name}"></td>
+                                        <td th:text="${user.email}"></td>
+                                        <td th:text="${user.phone}"></td>
+                                        <td th:text="${user.gender}"></td>
+                                        <td th:text="${user.birthDate}"></td>
+                                        <td th:text="${#numbers.formatInteger(user.point, 3, 'COMMA')} + ' P'"></td>
+                                        <td th:text="${user.role}"></td>
+                                        <td th:text="${user.status}"
+                                            th:classappend="${user.status == '활성' ? 'status-active' : (user.status == '비활성' ? 'status-inactive' : 'status-pending')}"></td>
+                                        <td th:text="${user.marketingAgree ? '동의' : '거부'}"
+                                            th:classappend="${user.marketingAgree ? 'marketing-agree' : 'marketing-disagree'}"></td>
+                                        <td th:text="${user.socialType != null ? user.socialType : '자체'}"></td>
+                                        <td th:text="${user.verified ? '인증됨' : '미인증'}"
+                                            th:classappend="${user.verified ? 'verified' : 'not-verified'}"></td>
+                                        <td th:text="${user.lastLogin != null ? #temporals.format(user.lastLogin, 'yyyy-MM-dd HH:mm') : ''}"></td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(users)}">
+                                        <td colspan="13" class="text-center">등록된 사용자가 없습니다.</td>
+                                    </tr>
+                                    </tbody>
+
                                 </table>
                             </div>
                         </div>
