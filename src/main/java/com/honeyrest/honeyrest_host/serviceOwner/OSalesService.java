@@ -23,7 +23,7 @@ public class OSalesService {
     public List<DaySalesDTO> getDaySales(LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservations()
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()))
+                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return date.isAfter(startDate) && date.isBefore(endDate);

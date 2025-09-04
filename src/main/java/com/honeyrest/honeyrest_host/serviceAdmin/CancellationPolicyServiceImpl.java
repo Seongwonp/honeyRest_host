@@ -55,7 +55,7 @@ public class CancellationPolicyServiceImpl implements CancellationPolicyService 
     @Override
     public String getMultilineByAccommodationId(Long accommodationId) {
         return cancellationPolicyRepository
-                .findFirstByAccommodation_AccommodationId(accommodationId) // 또는 OrderByIdDesc
+                .findTop1ByAccommodation_AccommodationIdOrderByPolicyIdDesc(accommodationId) // 최신 1건
                 .map(cp -> String.join("\n", parseJsonArray(cp.getDetail())))
                 .orElse("");
     }
@@ -69,25 +69,30 @@ public class CancellationPolicyServiceImpl implements CancellationPolicyService 
             return;
         }
 
-        // 줄바꿈 -> 리스트 -> Json
+        // 멀티라인 -> 리스트 -> JSON
         List<String> items = Arrays.stream(multiline.split("\\r?\\n"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
-        String json;
-        try {
-            json = objectMapper.writeValueAsString(items);
-        } catch (Exception e) {
-            json = "[]";
-        }
-        List<CancellationPolicy> existingOpt = cancellationPolicyRepository.findByAccommodation_AccommodationId(accommodationId);
 
-        CancellationPolicy entity = CancellationPolicy.builder()
-                .accommodation(accommodationRepository.getReferenceById(accommodationId))
-                .policyName("기본 환불 정책")
-                .detail(json)
-                .build();
-        cancellationPolicyRepository.save(entity);
+        String json;
+        try { json = objectMapper.writeValueAsString(items); }
+        catch (Exception e) { json = "[]"; }
+
+        // 이미 있으면 UPDATE, 없으면 INSERT
+        var existing = cancellationPolicyRepository
+                .findTop1ByAccommodation_AccommodationIdOrderByPolicyIdDesc(accommodationId);
+
+        if (existing.isPresent()) {
+            cancellationPolicyRepository.updateDetailByAccId(accommodationId, json, "기본 환불 정책");
+        } else {
+            CancellationPolicy entity = CancellationPolicy.builder()
+                    .accommodation(accommodationRepository.getReferenceById(accommodationId))
+                    .policyName("기본 환불 정책")
+                    .detail(json)
+                    .build();
+            cancellationPolicyRepository.save(entity);
+        }
     }
 
     // ===== helper =====

@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -31,8 +32,8 @@ public class AccommodationDTO {
     private List<MultipartFile> images; // 여러 장의 숙소 이미지
     private String amenities; // JSON String
     private String description;
-    private LocalTime checkInTime;
-    private LocalTime  checkOutTime;
+    private LocalDateTime checkInTime;
+    private LocalDateTime  checkOutTime;
     private BigDecimal rating; // 평균 평점
     private BigDecimal minPrice; // 최저 가격
     private String status; // ACTIVE / INACTIVE

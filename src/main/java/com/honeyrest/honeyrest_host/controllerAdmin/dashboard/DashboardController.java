@@ -26,12 +26,12 @@ import java.util.Optional;
 @Log4j2
 public class DashboardController {
 
-    private final DashboardService dashboardService; // ✅ Service만 의존
+    private final DashboardService dashboardService; // Service만 의존
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
 
-        String email = authentication.getName(); // Authentication에서 email 추출
+        String email = authentication.getName(); // Authentication 에서 email 추출
 
         AdminLoginRequestDTO admin = dashboardService.getCurrentAdmin(email);
         if (admin == null) {

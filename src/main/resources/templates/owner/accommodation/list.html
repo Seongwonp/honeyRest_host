@@ -197,8 +197,14 @@
                                     </h5>
                                     <p class="mb-1"><strong>ID:</strong> <span th:text="${a.accommodationId}">1</span></p>
                                     <p class="mb-1"><strong>주소:</strong> <span th:text="${a.address}">주소</span></p>
-                                    <p class="mb-1"><strong>체크인:</strong> <span th:text="${a.checkInTime}">14:00</span></p>
-                                    <p class="mb-1"><strong>체크아웃:</strong> <span th:text="${a.checkOutTime}">11:00</span></p>
+                                    <p class="mb-1">
+                                        <strong>체크인:</strong>
+                                        <span th:text="${a.checkInTime != null ? #temporals.format(a.checkInTime, 'HH:mm') : '-'}">14:00</span>
+                                    </p>
+                                    <p class="mb-1">
+                                        <strong>체크아웃:</strong>
+                                        <span th:text="${a.checkOutTime != null ? #temporals.format(a.checkOutTime, 'HH:mm') : '-'}">11:00</span>
+                                    </p>
                                     <p class="mb-1"><strong>가격:</strong> <span th:text="${a.minPrice + ' 원'}">120,000 원</span></p>
                                     <p class="mb-1"><strong>상태:</strong> <span th:text="${a.status}">예약 가능</span></p>
                                 </div>

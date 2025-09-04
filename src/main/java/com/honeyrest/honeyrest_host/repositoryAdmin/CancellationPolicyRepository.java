@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CancellationPolicyRepository extends JpaRepository<CancellationPolicy, Long> {
-    Optional<CancellationPolicy> findFirstByAccommodation_AccommodationId(Long accommodationId);
+    Optional<CancellationPolicy> findTop1ByAccommodation_AccommodationIdOrderByPolicyIdDesc(Long accommodationId);
 
     List<CancellationPolicy> findByAccommodation_AccommodationId(Long accommodationId);
 
@@ -20,8 +20,9 @@ public interface CancellationPolicyRepository extends JpaRepository<Cancellation
 
     @Modifying
     @Transactional
-    @Query("update CancellationPolicy p set p.detail = :detail " +
+    @Query("update CancellationPolicy p set p.detail = :detail, p.policyName = :name " +
            "where p.accommodation.accommodationId = :accId")
-    int updateDetailByAccId(@Param("accId") Long accommodationId,
-                            @Param("detail") String detail);
+    int updateDetailByAccId(@Param("accId") Long accId,
+                            @Param("detail") String detail,
+                            @Param("name") String name);
 }

@@ -133,6 +133,25 @@
                                           th:text="${form.policyMultiline}"></textarea>
                                 </div>
 
+                                <!-- 태그(다중) -->
+                                <div class="col-12">
+                                    <label class="form-label">태그</label>
+                                    <!-- DTO: List<Long> tagIds 와 바인딩 -->
+                                    <select id="tagSelect" class="form-select" multiple size="10" th:field="*{tagIds}">
+                                        <!-- 컨트롤러에서 model.addAttribute("tagsByCategory", Map<String, List<TagDTO>>) 제공 -->
+                                        <optgroup th:each="e : ${tagsByCategory}" th:label="${e.key}">
+                                            <option th:each="t : ${e.value}"
+                                                    th:value="${t.tagId}"
+                                                    th:text="${t.name}">
+                                            </option>
+                                        </optgroup>
+                                    </select>
+                                    <div class="form-text">여러 개 선택 가능 (Ctrl/⌘)</div>
+
+                                    <!-- 선택 결과 미리보기 칩 -->
+                                    <div id="tagSelected" class="d-flex flex-wrap gap-2 mt-2"></div>
+                                </div>
+
 
                                 <!-- 썸네일 -->
                                 <div class="col-12">
@@ -378,6 +397,57 @@
                     const selected = subRegion.getAttribute('data-selected');
                     loadSubRegions(initialMain, selected);
                 }
+            }
+        });
+
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            /* -------- 태그 미리보기 칩 렌더 -------- */
+            const sel = document.getElementById('tagSelect');
+            const box = document.getElementById('tagSelected');
+
+            function renderSelected() {
+                if (!sel || !box) return;
+                box.innerHTML = '';
+
+                const selected = [...sel.selectedOptions].map(o => ({
+                    value: o.value,
+                    label: o.textContent.trim(),
+                    category: o.closest('optgroup') ? o.closest('optgroup').label : ''
+                }));
+
+                if (selected.length === 0) {
+                    box.innerHTML = '<span class="text-muted">선택된 태그가 없습니다.</span>';
+                    return;
+                }
+
+                selected.forEach(s => {
+                    const chip = document.createElement('span');
+                    chip.className = 'badge bg-primary-subtle text-primary border rounded-pill px-2 py-1 d-inline-flex align-items-center';
+                    chip.textContent = (s.category ? (s.category + ' - ') : '') + s.label;
+
+                    const close = document.createElement('button');
+                    close.type = 'button';
+                    close.className = 'btn-close btn-sm ms-2';
+                    close.setAttribute('aria-label', 'remove');
+                    close.addEventListener('click', () => {
+                        const opt = [...sel.options].find(o => o.value === s.value);
+                        if (opt) opt.selected = false;
+                        // change 이벤트를 트리거해 폼 바인딩/검증 흐름 유지
+                        sel.dispatchEvent(new Event('change', { bubbles: true }));
+                        renderSelected();
+                    });
+
+                    chip.appendChild(close);
+                    box.appendChild(chip);
+                });
+            }
+
+            if (sel) {
+                sel.addEventListener('change', renderSelected);
+                // 초기 값(tagIds)이 있으면 바로 칩 렌더
+                renderSelected();
             }
         });
     </script>

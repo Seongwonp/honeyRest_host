@@ -107,6 +107,9 @@ public class AccommodationPageController {
             AccommodationCreateRequestDTO saved = accommodationService.create(form);
             Long accId = saved.getAccommodationId();
 
+            List<Long> tagIds = (form.getTagIds() == null) ? Collections.emptyList() : form.getTagIds();
+            accommodationTagService.replaceMapping(accId, tagIds);
+
             // (4) 메인 썸네일 → image 테이블
             if (form.getThumbnail() != null && !form.getThumbnail().isBlank()) {
                 accommodationImageService.upsertMainThumbnail(
@@ -252,6 +255,15 @@ public class AccommodationPageController {
         List<String> policyList = AmenitiesParser.toList(acc.getCancellationPolicyDetail());
         String description = acc.getDescription();
 
+        if (acc.getTags() == null || acc.getTags().isEmpty()) {
+            List<AccommodationTagDTO> tags = accommodationTagService.findByAccommodationId(acc.getAccommodationId());
+            if (tags != null && !tags.isEmpty()) {
+                acc.setTags(tags);
+            } else if (acc.getTagIds() != null && !acc.getTagIds().isEmpty()) {
+                acc.setTags(accommodationTagService.findByIds(acc.getTagIds()));
+            }
+        }
+
 
         model.addAttribute("acc", acc);
         model.addAttribute("categoryName", categoryName);
@@ -261,6 +273,9 @@ public class AccommodationPageController {
         model.addAttribute("amenitiesList", amenitiesList);
         model.addAttribute("policyList", policyList);
         model.addAttribute("description", description);
+
+        model.addAttribute("tags", acc.getTags());
+
 
         return "admin/accommodations/detail";
     }
@@ -305,9 +320,6 @@ public class AccommodationPageController {
         // 기본 dto 조회
         AccommodationCreateRequestDTO dto = accommodationService.getById(id);
         model.addAttribute("dto", dto);
-
-        // dto cancellationPolicyDetail
-        String policyMultilineFromDto = AmenitiesParser.toMultiline(dto.getCancellationPolicyDetail());
 
 
         // dto amenities(json) -> list -> \n 문자열
@@ -450,8 +462,14 @@ public class AccommodationPageController {
                                     .sortOrder(sortSeed++)
                                     .build()
                     );
+
                 }
+
             }
+
+            List<Long> tagIds = (form.getTagIds() == null) ? Collections.emptyList() : form.getTagIds();
+            accommodationTagService.replaceMapping(id, tagIds);
+            // 환불 규정 저장
             cancellationPolicyService.saveOrUpdate(id, form.getPolicyMultiline());
 
             ra.addFlashAttribute("success", "수정이 완료되었습니다.");
@@ -479,41 +497,6 @@ public class AccommodationPageController {
             ra.addAttribute("error", "삭제 중 오류: " + e.getMessage());
         }
         return "redirect:/admin/accommodations/list";
-    }
 
-
-    //json 문자열을 List로 변환
-    private List<String> parseAmenitiesToList(String jsonInput) {
-        if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
-
-        try {
-            // JSON 배열 문자열을 List<String>으로 역직렬화
-            return objectMapper.readValue
-                    (jsonInput, new TypeReference<List<String>>() {
-                    });
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return Collections.emptyList(); // 실패 시 빈 리스트 반환
-        }
-    }
-
-    //List를 문자열로 변환(textarea)
-    private String amenitiesListToMultiline(List<String> list) {
-        return String.join("\n ", list);
-    }
-
-
-    // 줄바꿈/쉼표 섞인 입력 -> josn 문자열(저장용)
-    private String parseAmenitiesToJson(String input) {
-        if (input == null || input.isBlank()) return "[]";
-        List<String> amenitiesList = Arrays.stream(input.split("[,\\r?\\n]+"))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
-        try {
-            return objectMapper.writeValueAsString(amenitiesList);
-        } catch (JsonProcessingException e) {
-            return "[]"; // 실패 시 빈 배열 반환
-        }
     }
 }

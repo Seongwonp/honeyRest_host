@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,9 +65,9 @@ public class Accommodation {
     private String amenities; // 편의시설 정보(JSON 문자열 저장)
 
     @Column(name = "check_in_time")
-    private LocalTime checkInTime;
+    private LocalDateTime checkInTime;
     @Column(name = "check_out_time")
-    private LocalTime checkOutTime;
+    private LocalDateTime checkOutTime;
 
     @Column(precision = 2, scale = 1)
     private BigDecimal rating; // 평균 평점

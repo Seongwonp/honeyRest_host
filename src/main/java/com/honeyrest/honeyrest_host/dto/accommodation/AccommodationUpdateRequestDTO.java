@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -35,11 +36,11 @@ public class AccommodationUpdateRequestDTO {
 
     @DateTimeFormat(pattern = "HH:mm")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
-    private LocalTime checkInTime;
+    private LocalDateTime checkInTime;
 
     @DateTimeFormat(pattern = "HH:mm")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
-    private LocalTime checkOutTime;
+    private LocalDateTime checkOutTime;
 
     private String status;              // ACTIVE / INACTIVE
     private BigDecimal minPrice;

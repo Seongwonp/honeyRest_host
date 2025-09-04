@@ -9,6 +9,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -45,9 +46,9 @@ public class RoomDTO {
 
 
     @DateTimeFormat(pattern = "HH:mm")   // ★ 화면 바인딩용
-    private LocalTime displayCheckInTime;
+    private LocalDateTime displayCheckInTime;
     @DateTimeFormat(pattern = "HH:mm")   // ★ 화면 바인딩용
-    private LocalTime displayCheckOutTime;
+    private LocalDateTime displayCheckOutTime;
 
 
 

@@ -10,6 +10,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -62,12 +63,12 @@ public class AccommodationCreateRequestDTO {
 
     @DateTimeFormat(pattern = "HH:mm")   // ★ 폼 바인딩용
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
-    private LocalTime checkInTime;
+    private LocalDateTime checkInTime;
 
 
     @DateTimeFormat(pattern = "HH:mm")   // ★ 폼 바인딩용
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
-    private LocalTime checkOutTime;
+    private LocalDateTime checkOutTime;
 
     // 상태 (미지정 시 서비스에서 "ACTIVE" 기본처리 권장)
     private String status;

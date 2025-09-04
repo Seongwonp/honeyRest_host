@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
@@ -331,8 +332,8 @@ public class AccommodationServiceImpl implements AccommodationService {
             amenitiesJson = s.isEmpty() ? "[]" : s;
         }
 
-        LocalTime checkInTime  = req.getCheckInTime();
-        LocalTime checkOutTime = req.getCheckOutTime();
+        LocalDateTime checkInTime  = req.getCheckInTime();
+        LocalDateTime checkOutTime = req.getCheckOutTime();
         String status          = hasText(req.getStatus())  ? req.getStatus().trim()      : null;
         BigDecimal minPrice    = req.getMinPrice();
 
@@ -457,15 +458,16 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .description(acc.getDescription())
                 .build();
 
-        // 환불 정책 가져오기
-        CancellationPolicy policy = cancellationPolicyRepository
-                .findFirstByAccommodation_AccommodationId(accId)
-                .orElse(null);
-
-        if (policy != null) {
-            dto.setCancellationPolicyDetail(policy.getDetail());
-            dto.setCancellationPolicyItems(AmenitiesParser.toList(policy.getDetail()));
-        }
+        // ▼ 최신 환불정책 1건만 조회
+        cancellationPolicyRepository
+                .findTop1ByAccommodation_AccommodationIdOrderByPolicyIdDesc(accId)
+                .map(CancellationPolicy::getDetail)      // DB에 저장된 문자열(JSON/CSV/멀티라인 어떤 형식이든)
+                .ifPresent(raw -> {
+                    // 표준화: 리스트 + 멀티라인 둘 다 채움
+                    List<String> items = AmenitiesParser.toList(raw);
+                    dto.setCancellationPolicyItems(items);            // 화면에서 <li>로 돌릴 때 사용
+                    dto.setCancellationPolicyDetail(String.join("\n", items)); // textarea/단락 표시용
+                });
 
         return dto;
     }

@@ -17,6 +17,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -75,8 +76,8 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
             @Param("thumbnail") String thumbnail,
             @Param("description") String description,
             @Param("amenities") String amenities,
-            @Param("checkInTime") LocalTime checkInTime,
-            @Param("checkOutTime") LocalTime checkOutTime,
+            @Param("checkInTime") LocalDateTime checkInTime,
+            @Param("checkOutTime") LocalDateTime checkOutTime,
             @Param("status") String status,
             @Param("minPrice") BigDecimal minPrice
     );

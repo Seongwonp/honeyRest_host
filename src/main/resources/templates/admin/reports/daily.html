@@ -162,11 +162,13 @@
     <!-- Chart.js가 base에 없으면 CDN 로드 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // ===== 디자인용 JS (데이터 바인딩은 이후 서비스 연동 시 그대로 사용) =====
         const fmtCurrency = n => new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(n ?? 0);
         const fmtNumber   = n => new Intl.NumberFormat('ko-KR').format(n ?? 0);
         const pad = n => String(n).padStart(2,'0');
         const toIso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+        let groupBy = 'day';
+        let chart;
 
         function setDefaultDates(days=7){
             const to = new Date(), from = new Date(); from.setDate(to.getDate()-(days-1));
@@ -174,31 +176,38 @@
             document.getElementById('to').value   = toIso(to);
         }
 
-        // 현재 그룹 상태
-        let groupBy = 'day'; // day | week | month | weekday
-        let chart;
+        // 콘솔/알림 도우미
+        function showError(msg) {
+            console.error(msg);
+            alert(msg);
+        }
 
-        // 세그먼트 탭 UI
-        document.addEventListener('click', (e)=>{
-            if(e.target.closest('.seg button')){
-                const btn = e.target.closest('.seg button');
-                document.querySelectorAll('.seg button').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
-                btn.classList.add('active'); btn.setAttribute('aria-selected','true');
-                groupBy = btn.dataset.group;
-                document.getElementById('subtitleLabel').textContent =
-                    '단위: ' + (groupBy==='day'?'일':groupBy==='week'?'주':groupBy==='month'?'월':'요일');
-            }
-        });
-
-        // 데이터 요청 (일단 디자인: day는 기존 엔드포인트, 나머지는 groupBy 파라미터만 추가)
         async function fetchData(from, to){
             const base = '/admin/reports/daily-sales';
             const url  = groupBy==='day'
                 ? `${base}?from=${from}&to=${to}`
                 : `${base}?from=${from}&to=${to}&groupBy=${groupBy}`;
-            const res = await fetch(url, { headers:{'Accept':'application/json'} });
-            if(!res.ok) throw new Error('데이터 로드 실패');
-            return res.json();
+
+            const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
+
+            // 302→200(로그인 HTML) 같은 상황 방지: content-type 확인
+            const ct = res.headers.get('content-type') || '';
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+            }
+            if (!ct.includes('application/json')) {
+                const text = await res.text();
+                throw new Error('JSON이 아닌 응답을 받았어요. (로그인 필요/매핑 오류 가능)\n\n미리보기:\n' + text.slice(0,200));
+            }
+
+            const json = await res.json();
+
+            // 서버가 배열이 아니라 {rows:[...]} / {data:[...]} 로 줄 수도 있음
+            if (Array.isArray(json)) return json;
+            if (Array.isArray(json.rows)) return json.rows;
+            if (Array.isArray(json.data)) return json.data;
+
+            throw new Error('응답 JSON 형식이 예상과 달라요. 배열이 필요합니다.');
         }
 
         function renderKpis(rows){
@@ -211,9 +220,13 @@
         }
 
         function normalizeBucket(b){
-            // LocalDate 직렬화 문자열 or [yyyy, m, d] 배열 모두 처리
+            // LocalDate 직렬화가 ["yyyy","M","d"]로 오는 경우 처리
             if (Array.isArray(b)) return `${b[0]}-${pad(b[1])}-${pad(b[2])}`;
-            return b;
+            // {"year":2025,"month":9,"day":4} 같은 객체로 오는 경우도 방어
+            if (b && typeof b === 'object' && 'year' in b && 'month' in b && 'day' in b) {
+                return `${b.year}-${pad(b.month)}-${pad(b.day)}`;
+            }
+            return String(b);
         }
 
         function renderTable(rows){
@@ -221,11 +234,11 @@
             for(const r of rows){
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-          <td>${normalizeBucket(r.bucket)}</td>
-          <td class="text-end">${fmtCurrency(r.totalSales)}</td>
-          <td class="text-end">${fmtNumber(r.totalOrders)}</td>
-          <td class="text-end">${fmtCurrency(r.avgOrderPrice)}</td>
-        `;
+        <td>${normalizeBucket(r.bucket)}</td>
+        <td class="text-end">${fmtCurrency(r.totalSales)}</td>
+        <td class="text-end">${fmtNumber(r.totalOrders)}</td>
+        <td class="text-end">${fmtCurrency(r.avgOrderPrice)}</td>
+      `;
                 tb.appendChild(tr);
             }
         }
@@ -265,13 +278,28 @@
         }
 
         async function apply(){
-            const from = document.getElementById('from').value;
-            const to   = document.getElementById('to').value;
-            const rows = await fetchData(from, to);
-            renderKpis(rows);
-            renderChart(rows);
-            renderTable(rows);
+            try {
+                const from = document.getElementById('from').value;
+                const to   = document.getElementById('to').value;
+                const rows = await fetchData(from, to);
+                renderKpis(rows);
+                renderChart(rows);
+                renderTable(rows);
+            } catch (e) {
+                showError('차트 데이터를 불러오지 못했습니다.\n' + e.message);
+            }
         }
+
+        // 세그먼트 탭
+        document.addEventListener('click', (e)=>{
+            const btn = e.target.closest('.seg button');
+            if(!btn) return;
+            document.querySelectorAll('.seg button').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+            btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+            groupBy = btn.dataset.group;
+            document.getElementById('subtitleLabel').textContent =
+                '단위: ' + (groupBy==='day'?'일':groupBy==='week'?'주':groupBy==='month'?'월':'요일');
+        });
 
         document.addEventListener('DOMContentLoaded', ()=>{
             setDefaultDates(7);

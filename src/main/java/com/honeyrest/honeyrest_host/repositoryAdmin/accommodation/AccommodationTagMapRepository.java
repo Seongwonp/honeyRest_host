@@ -8,11 +8,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface AccommodationTagMapRepository extends JpaRepository<AccommodationTagMap, Long> {
-    // 조회
-    List<AccommodationTagMap> findByAccommodation_AccommodationId(Long accId);
 
-    // 삭제 (대량 삭제 시 성능/영속성 컨텍스트 동기화)
+    // 조회
+    List<AccommodationTagMap> findByAccommodation_AccommodationId(Long accommodationId);
+
+    // 삭제 (파생쿼리명은 서비스에서 그대로 호출)
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Transactional
-    void deleteByAccommodation_AccommodationId(Long accId);
+    void deleteByAccommodation_AccommodationId(Long accommodationId);
 }

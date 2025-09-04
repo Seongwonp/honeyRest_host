@@ -110,7 +110,7 @@ public class SecurityConfig {
                     );
                     SecurityContextHolder.getContext().setAuthentication(springAuth);
 
-                    // 2-5) 역할 분기 (✳️ if로 한 번만 리다이렉트!)
+                    // 2-5) 역할 분기 (if로 한 번만 리다이렉트!)
                     if ("COMPANY_ADMIN".equals(user.getRole())) {
                         res.sendRedirect("/admin/dashboard");
                     } else if ("SUPER_ADMIN".equals(user.getRole())) {
