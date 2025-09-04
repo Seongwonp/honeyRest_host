@@ -2,6 +2,7 @@ package com.honeyrest.honeyrest_host.repositoryAdmin;
 
 import com.honeyrest.honeyrest_host.entity.Payment;
 import com.honeyrest.honeyrest_host.repositoryAdmin.projection.DailySalesProjection;
+import com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection.SalesStatRow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +18,7 @@ import java.util.Optional;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     // 최신 결제 1건
     Optional<Payment> findTopByReservationReservationIdOrderByCreatedAtDesc(Long reservationId);
+
     /*
      * 결제 내역 검색 jpql
      * - 회사 Id, 숙소 id 로 필터링
@@ -51,45 +53,25 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("q") String q,
             Pageable pageable
     );
-    @Query(value = """
-        SELECT 
-            DATE(p.payment_date)         AS bucket,
-            COALESCE(SUM(p.amount), 0)   AS totalSales,
-            COUNT(*)                     AS totalOrders,
-            COALESCE(AVG(p.amount), 0)   AS avgOrderPrice
-        FROM payment p
-        JOIN reservation r ON r.reservation_id = p.reservation_id
-        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
-        WHERE a.company_id = :companyId
-          AND p.payment_status = 'SUCCESS'            -- 문자열 비교 (Enum X)
-          AND p.payment_date BETWEEN :from AND :to
-        GROUP BY DATE(p.payment_date)
-        ORDER BY DATE(p.payment_date)
-        """, nativeQuery = true)
-    List<DailySalesProjection> findDailySalesByCompany(
-            @Param("companyId") Long companyId,
-            @Param("from") java.time.LocalDate from,
-            @Param("to") java.time.LocalDate to
-    );
 
     // 숙소별 시리즈가 필요하면 accommodation_id/name까지 group by
     @Query(value = """
-        SELECT 
-            DATE(p.payment_date)         AS bucket,
-            COALESCE(SUM(p.amount), 0)   AS totalSales,
-            COUNT(*)                     AS totalOrders,
-            COALESCE(AVG(p.amount), 0)   AS avgOrderPrice,
-            a.accommodation_id           AS accommodationId,
-            a.name                       AS accommodationName
-        FROM payment p
-        JOIN reservation r ON r.reservation_id = p.reservation_id
-        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
-        WHERE a.company_id = :companyId
-          AND p.payment_status = 'SUCCESS'
-          AND p.payment_date BETWEEN :from AND :to
-        GROUP BY DATE(p.payment_date), a.accommodation_id, a.name
-        ORDER BY DATE(p.payment_date), a.accommodation_id
-        """, nativeQuery = true)
+            SELECT 
+                DATE(p.payment_date)         AS bucket,
+                COALESCE(SUM(p.amount), 0)   AS totalSales,
+                COUNT(*)                     AS totalOrders,
+                COALESCE(AVG(p.amount), 0)   AS avgOrderPrice,
+                a.accommodation_id           AS accommodationId,
+                a.name                       AS accommodationName
+            FROM payment p
+            JOIN reservation r ON r.reservation_id = p.reservation_id
+            JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+            WHERE a.company_id = :companyId
+              AND p.payment_status = 'DONE'
+              AND p.payment_date BETWEEN :from AND :to
+            GROUP BY DATE(p.payment_date), a.accommodation_id, a.name
+            ORDER BY DATE(p.payment_date), a.accommodation_id
+            """, nativeQuery = true)
     List<DailySalesProjection> findDailySalesByCompanyAndAccommodation(
             @Param("companyId") Long companyId,
             @Param("from") java.time.LocalDate from,
@@ -98,20 +80,20 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     // 회사 기준 Top-N 숙소 (금액 합계 내림차순)
     @Query(value = """
-        SELECT 
-            a.accommodation_id   AS accommodationId,
-            a.name               AS accommodationName,
-            COALESCE(SUM(p.amount), 0) AS totalSales
-        FROM payment p
-        JOIN reservation r ON r.reservation_id = p.reservation_id
-        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
-        WHERE a.company_id = :companyId
-          AND p.payment_status = 'SUCCESS'
-          AND p.payment_date BETWEEN :from AND :to
-        GROUP BY a.accommodation_id, a.name
-        ORDER BY totalSales DESC
-        LIMIT :limit
-        """, nativeQuery = true)
+            SELECT 
+                a.accommodation_id   AS accommodationId,
+                a.name               AS accommodationName,
+                COALESCE(SUM(p.amount), 0) AS totalSales
+            FROM payment p
+            JOIN reservation r ON r.reservation_id = p.reservation_id
+            JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+            WHERE a.company_id = :companyId
+              AND p.payment_status = 'DONE'
+              AND p.payment_date BETWEEN :from AND :to
+            GROUP BY a.accommodation_id, a.name
+            ORDER BY totalSales DESC
+            LIMIT :limit
+            """, nativeQuery = true)
     List<Object[]> findTopAccommodations(@Param("companyId") Long companyId,
                                          @Param("from") LocalDate from,
                                          @Param("to") LocalDate to,
@@ -119,16 +101,99 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     // 기간 승인매출 합계
     @Query(value = """
-        SELECT COALESCE(SUM(p.amount), 0)
-        FROM payment p
-        JOIN reservation r ON r.reservation_id = p.reservation_id
-        JOIN accommodation a ON a.accommodation_id = r.accommodation_id
-        WHERE a.company_id = :companyId
-          AND p.payment_status = 'SUCCESS'
-          AND p.payment_date BETWEEN :from AND :to
-        """, nativeQuery = true)
+            SELECT COALESCE(SUM(p.amount), 0)
+            FROM payment p
+            JOIN reservation r ON r.reservation_id = p.reservation_id
+            JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+            WHERE a.company_id = :companyId
+              AND p.payment_status = 'DONE'
+              AND p.payment_date BETWEEN :from AND :to
+            """, nativeQuery = true)
     BigDecimal sumSales(@Param("companyId") Long companyId,
                         @Param("from") LocalDate from,
                         @Param("to") LocalDate to);
 
-}
+
+    @Query(value = """
+                SELECT 
+                  DATE(p.payment_date)                              AS bucket,
+                  COALESCE(SUM(p.amount),0)                         AS totalSales,
+                  COUNT(DISTINCT p.payment_id)                      AS totalOrders,
+                  CASE WHEN COUNT(*)=0 THEN 0 
+                       ELSE COALESCE(SUM(p.amount),0)/COUNT(*) END  AS avgOrderPrice
+                FROM payment p
+                JOIN reservation r ON r.reservation_id = p.reservation_id
+                JOIN accommodation a ON a.accommodation_id = r.accommodation_id
+                WHERE
+                  p.payment_status = 'DONE'
+                  AND r.status IN ('CONFIRMED','COMPLETED')
+                  AND p.payment_date >= :from
+                  AND p.payment_date < DATE_ADD(:to, INTERVAL 1 DAY)
+                GROUP BY DATE(p.payment_date)
+                ORDER BY bucket
+            """, nativeQuery = true)
+    List<DailySalesProjection> findDailySalesByCompany(
+            @Param("companyId") Long companyId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to
+    );
+        // 일별
+        @Query(value = """
+        SELECT DATE(p.payment_date) AS bucket,
+               COALESCE(SUM(p.amount),0) AS totalSales,
+               COUNT(DISTINCT p.reservation_id) AS totalOrders,
+               CASE WHEN COUNT(*)=0 THEN 0 ELSE SUM(p.amount)/COUNT(*) END AS avgOrderPrice,
+               NULL AS dayOfWeek
+        FROM payment p
+        WHERE p.payment_status='DONE'
+          AND p.payment_date BETWEEN :from AND :to
+        GROUP BY DATE(p.payment_date)
+        ORDER BY bucket
+    """, nativeQuery = true)
+        List<SalesStatRow> findDailySales(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+        // 주별
+        @Query(value = """
+        SELECT DATE(DATE_SUB(p.payment_date, INTERVAL WEEKDAY(p.payment_date) DAY)) AS bucket,
+               COALESCE(SUM(p.amount),0) AS totalSales,
+               COUNT(DISTINCT p.reservation_id) AS totalOrders,
+               NULL AS avgOrderPrice,
+               NULL AS dayOfWeek
+        FROM payment p
+        WHERE p.payment_status='DONE'
+          AND p.payment_date BETWEEN :from AND :to
+        GROUP BY DATE(DATE_SUB(p.payment_date, INTERVAL WEEKDAY(p.payment_date) DAY))
+        ORDER BY bucket
+    """, nativeQuery = true)
+        List<SalesStatRow> findWeeklySales(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+        // 월별
+        @Query(value = """
+        SELECT DATE_FORMAT(p.payment_date,'%Y-%m-01') AS bucket,
+               COALESCE(SUM(p.amount),0) AS totalSales,
+               COUNT(DISTINCT p.reservation_id) AS totalOrders,
+               NULL AS avgOrderPrice,
+               NULL AS dayOfWeek
+        FROM payment p
+        WHERE p.payment_status='DONE'
+          AND p.payment_date BETWEEN :from AND :to
+        GROUP BY DATE_FORMAT(p.payment_date,'%Y-%m')
+        ORDER BY bucket
+    """, nativeQuery = true)
+        List<SalesStatRow> findMonthlySales(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+        // 요일별
+        @Query(value = """
+        SELECT DATE(p.payment_date) AS bucket,
+               COALESCE(SUM(p.amount),0) AS totalSales,
+               COUNT(DISTINCT p.reservation_id) AS totalOrders,
+               NULL AS avgOrderPrice,
+               (CASE WHEN DAYOFWEEK(p.payment_date)=1 THEN 7 ELSE DAYOFWEEK(p.payment_date)-1 END) AS dayOfWeek
+        FROM payment p
+        WHERE p.payment_status='DONE'
+          AND p.payment_date BETWEEN :from AND :to
+        GROUP BY dayOfWeek
+        ORDER BY dayOfWeek
+    """, nativeQuery = true)
+        List<SalesStatRow> findWeekdaySales(@Param("from") LocalDate from, @Param("to") LocalDate to);
+    }

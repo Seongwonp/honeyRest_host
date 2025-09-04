@@ -1,9 +1,11 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection;
 
+import org.joda.time.LocalDate;
+
 import java.math.BigDecimal;
 
 public interface DailySalesRow {
-    String getBucket();        // yyyy-MM-dd
+    LocalDate getBucket();        // yyyy-MM-dd
     BigDecimal getTotalSales();
     Integer getTotalOrders();
     BigDecimal getAvgOrderPrice();

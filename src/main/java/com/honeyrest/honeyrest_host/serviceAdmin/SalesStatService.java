@@ -6,11 +6,22 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface SalesStatService {
-    public abstract List<SalesStatDTO> getDailySales(Long companyId, LocalDate from, LocalDate to, boolean zeroFill);
-    List<TopAccommodationDTO> getTopAccommodations(Long companyId, LocalDate from, LocalDate to, int limit);
-    List<UpcomingCheckinDTO> getUpcomingCheckins(Long companyId, LocalDate date, int size);
-    CancelSummaryDTO getCancellationSummary(Long companyId, LocalDate from, LocalDate to);
-    OccupancyDTO getOccupancy(Long companyId, LocalDate from, LocalDate to);
 
+    // ========== Payment 기준 ==========
+    List<SalesStatDTO> getDailyPaymentSales(LocalDate from, LocalDate to);
 
+    List<SalesStatDTO> getWeeklyPaymentSales(LocalDate from, LocalDate to);
+
+    List<SalesStatDTO> getMonthlyPaymentSales(LocalDate from, LocalDate to);
+
+    List<SalesStatDTO> getWeekdayPaymentSales(LocalDate from, LocalDate to);
+
+    // ========== Reservation 기준 ==========
+    List<SalesStatDTO> getDailyReservationSales(LocalDate from, LocalDate to);
+
+    List<SalesStatDTO> getWeeklyReservationSales(LocalDate from, LocalDate to);
+
+    List<SalesStatDTO> getMonthlyReservationSales(LocalDate from, LocalDate to);
+
+    List<SalesStatDTO> getWeekdayReservationSales(LocalDate from, LocalDate to);
 }

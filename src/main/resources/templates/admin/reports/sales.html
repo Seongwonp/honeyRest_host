@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout/base}">
+<head>
+    <title>매출 통계</title>
+    <th:block layout:fragment="head">
+        <style>
+            :root{
+                --radius:16px; --shadow:0 8px 24px rgba(0,0,0,.06); --border:1px solid rgba(0,0,0,.06);
+                --ink:#111827; --muted:#6b7280; --bg-soft: var(--bs-body-bg, #fff);
+            }
+            .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+            .seg{display:inline-flex;border:var(--border);border-radius:999px;overflow:hidden;background:var(--bg-soft);box-shadow:var(--shadow)}
+            .seg button{border:0;background:transparent;padding:8px 14px;font-weight:600;color:var(--muted);cursor:pointer}
+            .seg button.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+            .chip{border:var(--border);border-radius:999px;padding:8px 12px;background:var(--bg-soft);cursor:pointer}
+            .kpi-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:14px}
+            @media (max-width:1199px){ .kpi-grid{grid-template-columns:repeat(6,1fr)} }
+            @media (max-width:767px) { .kpi-grid{grid-template-columns:repeat(2,1fr)} }
+            .kpi{grid-column:span 4;background:var(--bg-soft);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+            .kpi .title{margin:0;color:var(--muted);font-size:.95rem}
+            .kpi .value{margin:2px 0 0;font-weight:900;font-size:2rem;color:var(--ink)}
+            .card-soft{background:var(--bg-soft);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+            .card-soft .card-body{padding:20px}
+            .chart-wrap{position:relative;min-height:380px}
+            .table th{color:var(--muted);font-weight:600}
+            .text-end{text-align:right}
+        </style>
+    </th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+    <div class="page-heading">
+        <h3>매출 통계</h3>
+        <p class="text-subtitle text-muted">결제/예약 기준으로 일·주·월·요일별 추이를 확인하세요.</p>
+    </div>
+
+    <section class="section">
+
+        <!-- Toolbar -->
+        <div class="card-soft mb-3">
+            <div class="card-body">
+                <div class="toolbar">
+                    <div class="toolbar-left" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+
+                        <!-- 기준 선택: 결제/예약 -->
+                        <div class="seg" role="tablist" aria-label="집계 기준">
+                            <button type="button" class="active" data-source="payment" role="tab" aria-selected="true">결제 기준</button>
+                            <button type="button" data-source="reservation" role="tab" aria-selected="false">예약 기준</button>
+                        </div>
+
+                        <!-- 단위 선택: 일/주/월/요일 -->
+                        <div class="seg" role="tablist" aria-label="집계 단위">
+                            <button type="button" class="active" data-group="daily"   role="tab" aria-selected="true">일</button>
+                            <button type="button" data-group="weekly"  role="tab" aria-selected="false">주</button>
+                            <button type="button" data-group="monthly" role="tab" aria-selected="false">월</button>
+                            <button type="button" data-group="weekday" role="tab" aria-selected="false">요일</button>
+                        </div>
+
+                        <!-- 기간 -->
+                        <div class="chip">
+                            <label class="m-0" for="from" style="margin-right:6px;color:#6b7280">시작</label>
+                            <input id="from" type="date" class="border-0" style="outline:none">
+                        </div>
+                        <div class="chip">
+                            <label class="m-0" for="to" style="margin-right:6px;color:#6b7280">종료</label>
+                            <input id="to" type="date" class="border-0" style="outline:none">
+                        </div>
+                    </div>
+
+                    <div class="toolbar-right" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                        <button id="btnLast7"  class="chip" type="button">최근 7일</button>
+                        <button id="btnLast30" class="chip" type="button">최근 30일</button>
+                        <button id="btnApply"  class="btn btn-primary" type="button">적용</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI -->
+        <div class="kpi-grid">
+            <div class="kpi">
+                <p class="title">기간 총 매출</p>
+                <p class="value" id="kpiTotalSales">-</p>
+            </div>
+            <div class="kpi">
+                <p class="title">총 주문 수</p>
+                <p class="value" id="kpiTotalOrders">-</p>
+            </div>
+            <div class="kpi">
+                <p class="title">평균 주문 금액</p>
+                <p class="value" id="kpiAov">-</p>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card-soft mt-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="m-0" id="titleLabel">매출 추이</h5>
+                    <small class="text-muted" id="subtitleLabel">기준: 결제 · 단위: 일</small>
+                </div>
+                <div class="chart-wrap mt-2">
+                    <canvas id="salesChart" aria-label="매출 추이 차트" role="img"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card-soft mt-3 mb-5">
+            <div class="card-body table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>버킷</th>
+                        <th class="text-end">매출</th>
+                        <th class="text-end">주문 수</th>
+                        <th class="text-end">평균 주문 금액</th>
+                    </tr>
+                    </thead>
+                    <tbody id="rowsTbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </section>
+</th:block>
+
+<th:block layout:fragment="script">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ===== 설정 =====
+        let source = 'payment'; // 'payment' | 'reservation'
+        let groupBy = 'daily';  // 'daily' | 'weekly' | 'monthly' | 'weekday'
+        let chart;
+
+        const fmtCurrency = n => new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(n ?? 0);
+        const fmtNumber   = n => new Intl.NumberFormat('ko-KR').format(n ?? 0);
+        const pad = n => String(n).padStart(2,'0');
+        const toIso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+        function setDefaultDates(days=7){
+            const to = new Date(), from = new Date(); from.setDate(to.getDate()-(days-1));
+            document.getElementById('from').value = toIso(from);
+            document.getElementById('to').value   = toIso(to);
+        }
+
+        function labelFromState(){
+            const s = source === 'payment' ? '결제' : '예약';
+            const g = groupBy==='daily'?'일':groupBy==='weekly'?'주':groupBy==='monthly'?'월':'요일';
+            document.getElementById('subtitleLabel').textContent = `기준: ${s} · 단위: ${g}`;
+        }
+
+        function endpoint(from, to){
+            // /admin/reports/{payment|reservation}/{daily|weekly|monthly|weekday}?from=yyyy-MM-dd&to=yyyy-MM-dd
+            return `/admin/reports/${source}/${groupBy}?from=${from}&to=${to}`;
+        }
+
+        function normalizeBucket(b){
+            // LocalDate 직렬화 변형 방어
+            if (Array.isArray(b)) return `${b[0]}-${pad(b[1])}-${pad(b[2])}`;
+            if (b && typeof b === 'object' && 'year' in b && 'month' in b && 'day' in b) {
+                return `${b.year}-${pad(b.month)}-${pad(b.day)}`;
+            }
+            return String(b);
+        }
+
+        async function fetchRows(from, to){
+            const url = endpoint(from, to);
+            const res = await fetch(url, {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'include'  // ★ 추가
+            });
+            const ct  = res.headers.get('content-type')||'';
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!ct.includes('application/json')) {
+                const text = await res.text();
+                throw new Error('JSON이 아닌 응답\n' + text.slice(0,200));
+            }
+            const json = await res.json();
+            return Array.isArray(json) ? json : (Array.isArray(json.rows) ? json.rows : json.data || []);
+        }
+
+        function renderKpis(rows){
+            const totalSales  = rows.reduce((s,r)=> s + Number(r.totalSales ?? 0), 0);
+            const totalOrders = rows.reduce((s,r)=> s + Number(r.totalOrders ?? 0), 0);
+            const aov         = totalOrders ? totalSales/totalOrders : 0;
+            document.getElementById('kpiTotalSales').textContent  = fmtCurrency(totalSales);
+            document.getElementById('kpiTotalOrders').textContent = fmtNumber(totalOrders);
+            document.getElementById('kpiAov').textContent         = fmtCurrency(aov);
+        }
+
+        function renderTable(rows){
+            const tb = document.getElementById('rowsTbody'); tb.innerHTML='';
+            rows.forEach(r=>{
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+          <td>${normalizeBucket(r.bucket)}</td>
+          <td class="text-end">${fmtCurrency(r.totalSales)}</td>
+          <td class="text-end">${fmtNumber(r.totalOrders)}</td>
+          <td class="text-end">${fmtCurrency(r.avgOrderPrice)}</td>`;
+                tb.appendChild(tr);
+            });
+        }
+
+        function renderChart(rows){
+            const labels = rows.map(r => normalizeBucket(r.bucket));
+            const sales  = rows.map(r => Number(r.totalSales ?? 0));
+            const orders = rows.map(r => Number(r.totalOrders ?? 0));
+
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                data: {
+                    labels,
+                    datasets: [
+                        { type: 'bar',  label: '매출(원)', data: sales, yAxisID: 'y1' },
+                        { type: 'line', label: '주문 수',  data: orders, yAxisID: 'y2', tension:.35, pointRadius:3 }
+                    ]
+                },
+                options: {
+                    responsive:true,
+                    interaction:{ mode:'index', intersect:false },
+                    plugins:{
+                        legend:{ display:true },
+                        tooltip:{ callbacks:{
+                                label: (ctx) => ctx.dataset.label.includes('매출')
+                                    ? `${ctx.dataset.label}: ${fmtCurrency(ctx.raw)}`
+                                    : `${ctx.dataset.label}: ${fmtNumber(ctx.raw)}건`
+                            } }
+                    },
+                    scales:{
+                        y1:{ position:'left',  ticks:{ callback:v=>fmtNumber(v) } },
+                        y2:{ position:'right', grid:{ drawOnChartArea:false }, ticks:{ precision:0 } }
+                    }
+                }
+            });
+        }
+
+        async function apply(){
+            const from = document.getElementById('from').value;
+            const to   = document.getElementById('to').value;
+            try{
+                const rows = await fetchRows(from, to);
+                renderKpis(rows);
+                renderTable(rows);
+                renderChart(rows);
+            }catch(e){
+                console.error(e);
+                alert('데이터를 불러오지 못했습니다.\n' + e.message);
+            }
+        }
+
+        // 이벤트 바인딩
+        document.addEventListener('click', (e)=>{
+            const basisBtn = e.target.closest('.seg [data-source]');
+            if (basisBtn){
+                document.querySelectorAll('.seg [data-source]').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+                basisBtn.classList.add('active'); basisBtn.setAttribute('aria-selected','true');
+                source = basisBtn.dataset.source; labelFromState(); return;
+            }
+            const groupBtn = e.target.closest('.seg [data-group]');
+            if (groupBtn){
+                document.querySelectorAll('.seg [data-group]').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+                groupBtn.classList.add('active'); groupBtn.setAttribute('aria-selected','true');
+                groupBy = groupBtn.dataset.group; labelFromState(); return;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', ()=>{
+            setDefaultDates(7);
+            labelFromState();
+            document.getElementById('btnApply').addEventListener('click', apply);
+            document.getElementById('btnLast7').addEventListener('click',  ()=>{ setDefaultDates(7);  apply(); });
+            document.getElementById('btnLast30').addEventListener('click', ()=>{ setDefaultDates(30); apply(); });
+            apply();
+        });
+    </script>
+</th:block>
+</body>
+</html>

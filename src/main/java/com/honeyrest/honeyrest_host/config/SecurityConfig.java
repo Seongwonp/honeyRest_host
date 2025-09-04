@@ -70,6 +70,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/owner/**").hasRole("SUPER_ADMIN")
+                .requestMatchers("/admin/reports/**").hasRole("COMPANY_ADMIN")
                 .anyRequest().authenticated()
         );
 

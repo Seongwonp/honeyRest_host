@@ -2,6 +2,7 @@ package com.honeyrest.honeyrest_host.repositoryAdmin;
 
 
 import com.honeyrest.honeyrest_host.entity.Reservation;
+import com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection.SalesStatRow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -239,8 +240,69 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     Integer calcSoldNights(@Param("companyId") Long companyId,
                            @Param("from") LocalDate from,
                            @Param("to") LocalDate to);
-}
 
+
+
+// 일별
+@Query(value = """
+        SELECT DATE(r.check_in_date) AS bucket,
+               COALESCE(SUM(r.price),0) AS totalSales,
+               COUNT(*) AS totalOrders,
+               CASE WHEN COUNT(*)=0 THEN 0 ELSE SUM(r.price)/COUNT(*) END AS avgOrderPrice,
+               NULL AS dayOfWeek
+        FROM reservation r
+        WHERE r.status IN ('CONFIRMED','COMPLETED')
+          AND r.check_in_date BETWEEN :from AND :to
+        GROUP BY DATE(r.check_in_date)
+        ORDER BY bucket
+    """, nativeQuery = true)
+List<SalesStatRow> findDailyReservationSales(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+// 주별
+@Query(value = """
+        SELECT DATE(DATE_SUB(r.check_in_date, INTERVAL WEEKDAY(r.check_in_date) DAY)) AS bucket,
+               COALESCE(SUM(r.price),0) AS totalSales,
+               COUNT(*) AS totalOrders,
+               NULL AS avgOrderPrice,
+               NULL AS dayOfWeek
+        FROM reservation r
+        WHERE r.status IN ('CONFIRMED','COMPLETED')
+          AND r.check_in_date BETWEEN :from AND :to
+        GROUP BY DATE(DATE_SUB(r.check_in_date, INTERVAL WEEKDAY(r.check_in_date) DAY))
+        ORDER BY bucket
+    """, nativeQuery = true)
+List<SalesStatRow> findWeeklyReservationSales(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+// 월별
+@Query(value = """
+        SELECT DATE_FORMAT(r.check_in_date,'%Y-%m-01') AS bucket,
+               COALESCE(SUM(r.price),0) AS totalSales,
+               COUNT(*) AS totalOrders,
+               NULL AS avgOrderPrice,
+               NULL AS dayOfWeek
+        FROM reservation r
+        WHERE r.status IN ('CONFIRMED','COMPLETED')
+          AND r.check_in_date BETWEEN :from AND :to
+        GROUP BY DATE_FORMAT(r.check_in_date,'%Y-%m')
+        ORDER BY bucket
+    """, nativeQuery = true)
+List<SalesStatRow> findMonthlyReservationSales(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+// 요일별
+@Query(value = """
+        SELECT DATE(r.check_in_date) AS bucket,
+               COALESCE(SUM(r.price),0) AS totalSales,
+               COUNT(*) AS totalOrders,
+               NULL AS avgOrderPrice,
+               (CASE WHEN DAYOFWEEK(r.check_in_date)=1 THEN 7 ELSE DAYOFWEEK(r.check_in_date)-1 END) AS dayOfWeek
+        FROM reservation r
+        WHERE r.status IN ('CONFIRMED','COMPLETED')
+          AND r.check_in_date BETWEEN :from AND :to
+        GROUP BY dayOfWeek
+        ORDER BY dayOfWeek
+    """, nativeQuery = true)
+List<SalesStatRow> findWeekdayReservationSales(@Param("from") LocalDate from, @Param("to") LocalDate to);
+}
 
 
 

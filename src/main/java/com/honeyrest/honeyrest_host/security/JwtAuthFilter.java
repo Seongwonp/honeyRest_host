@@ -46,7 +46,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
         try {
-            String token = jwtTokenProvider.resolveToken(request);
+            String raw = resolveToken(request);
+            String token = normalizeToken(raw);
+
             log.debug("[JWT] {} token? {}", uri, token != null);
 
             if (token != null && jwtTokenProvider.validate(token)) {
@@ -69,6 +71,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             log.warn("[JWT] {} exception: {}", uri, e.toString());
         }
+
 
         filterChain.doFilter(request, response);
     }
