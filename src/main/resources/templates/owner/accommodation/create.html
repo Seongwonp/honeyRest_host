@@ -53,7 +53,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">주소</label>
-                        <input type="text" name="address" class="form-control" required>
+                        <input type="text" id="addressInput" name="address" class="form-control" required>
                     </div>
                     <div class="addr-wrap">
                         <label for="userAddr1">주소</label>
@@ -133,11 +133,27 @@
 
 </body>
 </html>
-
 <script th:inline="javascript">
     let regions = [[${regions}]];
     const mainSelect = document.getElementById("mainRegionId");
     const subSelect = document.getElementById("subRegionId");
+    const addressInput = document.getElementById("addressInput");
+
+    function updateAddress() {
+        const mainId = mainSelect.value;
+        const subId = subSelect.value;
+
+        if(mainId && subId) {
+            const mainRegion = regions.find(r => r.regionId == mainId);
+            const subRegion = regions.find(r => r.regionId == subId);
+
+            if(mainRegion && subRegion) {
+                addressInput.value = mainRegion.name + " " + subRegion.name;
+            }
+        } else {
+            addressInput.value = ""; // 선택 안되었으면 초기화
+        }
+    }
 
     mainSelect.addEventListener("change", function () {
         const selectedMainId = this.value;
@@ -149,8 +165,10 @@
                 option.textContent = sr.name;
                 subSelect.appendChild(option);
             });
+        updateAddress(); // 메인 선택 바뀔 때도 주소 업데이트
     });
 
+    subSelect.addEventListener("change", updateAddress);
 </script>
     <script src="https://code.jquery.com/jquery-3.6.0.js"
             integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossOrigin="anonymous"></script>

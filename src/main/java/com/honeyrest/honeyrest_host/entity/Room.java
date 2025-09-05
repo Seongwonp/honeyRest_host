@@ -23,7 +23,7 @@ public class Room extends BaseEntity {
     @Column(name = "room_id", nullable = false)
     private Long roomId;
 
-    @ManyToOne(fetch = FetchType.LAZY ,cascade = CascadeType.REMOVE)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accommodation_id", nullable = false)
     private Accommodation accommodation; // 숙소 ID
 
@@ -59,10 +59,6 @@ public class Room extends BaseEntity {
 
     @Column(name = "status" , length = 20)
     private String status; // 운영 상태
-
-
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
-    private List<RoomImage> images = new ArrayList<>();
 
 
 }

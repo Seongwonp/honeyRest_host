@@ -234,8 +234,8 @@
 
                                 <!-- 이미지 영역 -->
                                 <div class="ms-2">
-                                    <div th:each="image : ${subImages}">
-                                        <img th:if="${image.sortOrder == 0}"
+                                    <div th:each="image : ${images}">
+                                        <img th:if="${image.roomId == room.roomId and image.sortOrder == 0}"
                                              th:src="${image.imageUrl}"
                                              alt="숙소 이미지"
                                              class="img-fluid rounded"

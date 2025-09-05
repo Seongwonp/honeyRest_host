@@ -230,7 +230,7 @@ public class ORoomServiceImpl implements ORoomService {
 
         for (MultipartFile image : images) {
             if (!image.isEmpty()) {
-                String subImageUrl = fileUploadUtil.upload(image, "room");
+                String subImageUrl = fileUploadUtil.upload(image, "rooms");
 
                 RoomImageDTO imageDTO = RoomImageDTO.builder()
                         .imageUrl(subImageUrl)
@@ -242,5 +242,10 @@ public class ORoomServiceImpl implements ORoomService {
             }
         }
 
+    }
+
+    @Override
+    public List<RoomImageDTO> getAllImages(){
+        return roomImageRepository.findAll().stream().map(this::toRoomImageDTO).toList();
     }
 }

@@ -196,7 +196,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
         // 썸네일 이미지가 새로 업로드된 경우 처리
         MultipartFile newFile = dto.getFile();
         if (newFile != null && !newFile.isEmpty()) {
-            String newThumbnailUrl = fileUploadUtil.upload(newFile, "accommodation");
+            String newThumbnailUrl = fileUploadUtil.upload(newFile, "accommodations");
             dto.setThumbnailUrl(newThumbnailUrl); // 새로운 썸네일로 덮어쓰기
         } else {
             // 새로 업로드한 파일이 없으면 기존 썸네일 유지
@@ -303,7 +303,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
         for (MultipartFile image : images) {
             if (!image.isEmpty()) {
-                String subImageUrl = fileUploadUtil.upload(image, "accommodation");
+                String subImageUrl = fileUploadUtil.upload(image, "accommodations");
 
                 AccommodationImageDTO imageDTO = AccommodationImageDTO.builder()
                         .imageUrl(subImageUrl)

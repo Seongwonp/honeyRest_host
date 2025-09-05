@@ -34,4 +34,6 @@ public interface ORoomService {
     List<RoomImageDTO> getImagesByRoomId(Long roomId);
 
     void modifyRoomImage(Long roomId, List<MultipartFile> images) throws Exception;
+
+    List<RoomImageDTO> getAllImages();
 }

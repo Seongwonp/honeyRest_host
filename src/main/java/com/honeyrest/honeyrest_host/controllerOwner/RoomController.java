@@ -45,6 +45,8 @@ public class RoomController {
             model.addAttribute("accommodationId", 0);
         }
         List<AccommodationImageDTO> subImages = accommodationService.getImagesByAccommodationIdOnlySub(accommodationId);
+        List<RoomImageDTO> roomImageDTOS = roomService.getAllImages();
+        model.addAttribute("images", roomImageDTOS);
         model.addAttribute("subImages", subImages);
         model.addAttribute("accommodations", accommodations);
         model.addAttribute("rooms", roomPage.getDtoList());
@@ -77,7 +79,7 @@ public class RoomController {
     public String createRoom(@ModelAttribute RoomDTO roomDTO) throws Exception {
         Long roomId = roomService.registerRoom(roomDTO);
 
-        String mainImage = fileUploadUtil.upload(roomDTO.getFile(),"room");
+        String mainImage = fileUploadUtil.upload(roomDTO.getFile(),"rooms");
         RoomImageDTO roomImageDTO = RoomImageDTO.builder()
                 .roomId(roomId)
                 .imageUrl(mainImage)
@@ -90,7 +92,7 @@ public class RoomController {
             int sortOrder = 1; // MAIN 이미지 다음부터
             for (MultipartFile image : images) {
                 if (!image.isEmpty()) {
-                    String roomImageUrl = fileUploadUtil.upload(image,"room");
+                    String roomImageUrl = fileUploadUtil.upload(image,"rooms");
                     RoomImageDTO dto = RoomImageDTO.builder()
                             .roomId(roomId)
                             .imageUrl(roomImageUrl)

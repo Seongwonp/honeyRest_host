@@ -4,6 +4,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,9 +28,10 @@ public class FileUploadUtil {
      */
     public FileUploadUtil() throws Exception {
         GoogleCredentials credentials = GoogleCredentials
-                .fromStream(new FileInputStream("src/main/resources/honeyrest-7fb60-firebase-adminsdk-fbsvc-17f8ee9da5.json")) // 🔑 경로 확인
+                .fromStream(new ClassPathResource("honeyrest-7fb60-firebase-adminsdk-fbsvc-17f8ee9da5.json").getInputStream()) // 🔑 경로 확인
                 .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
-
+        //배포  new ClassPathResource("honeyrest-7fb60-firebase-adminsdk-fbsvc-17f8ee9da5.json").getInputStream()
+        //일반  new FileInputStream("src/main/resources/honeyrest-7fb60-firebase-adminsdk-fbsvc-17f8ee9da5.json")
         storage = StorageOptions.newBuilder()
                 .setCredentials(credentials)
                 .setProjectId("honeyrest-7fb60")

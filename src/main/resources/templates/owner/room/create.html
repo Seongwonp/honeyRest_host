@@ -133,22 +133,42 @@
 
         form.addEventListener("submit", function (e) {
             const selectedOption = accommodationSelect.options[accommodationSelect.selectedIndex];
-            const accommodationPrice = parseFloat(selectedOption.getAttribute("data-price"));
+            const accommodationPriceStr = selectedOption.getAttribute("data-price");
+            const accommodationPrice = parseFloat(accommodationPriceStr);
             const roomPrice = parseFloat(priceInput.value);
             const standardOccupancy = document.getElementById("standardOccupancy");
             const maxOccupancy = document.getElementById("maxOccupancy");
 
-            if (!isNaN(accommodationPrice) && roomPrice < accommodationPrice) {
+            console.log("숙소 최소 가격:", accommodationPrice, "방 가격:", roomPrice);
+
+            // 숫자인지 확인
+            if (isNaN(accommodationPrice)) {
+                alert("숙소 최소 가격 정보가 올바르지 않습니다.");
+                e.preventDefault();
+                return;
+            }
+
+            if (isNaN(roomPrice)) {
+                alert("방 가격을 올바르게 입력해주세요.");
+                e.preventDefault();
+                priceInput.focus();
+                return;
+            }
+
+            if (roomPrice < accommodationPrice) {
                 e.preventDefault();
                 alert(`방의 가격은 숙소 가격(${accommodationPrice.toLocaleString()}원)보다 같거나 커야 합니다.`);
                 priceInput.focus();
+                return;
             }
 
             if (parseInt(standardOccupancy.value) > parseInt(maxOccupancy.value)) {
                 e.preventDefault();
                 alert("기준 인원이 최대 인원보다 많습니다.");
                 standardOccupancy.focus();
+                return;
             }
         });
     });
+
 </script>
