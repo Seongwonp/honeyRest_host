@@ -1,8 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
-import com.honeyrest.honeyrest_host.dto.DashboardDTO;
-import com.honeyrest.honeyrest_host.entity.User;
+import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.DashboardDTO;
 import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomRepository;
@@ -10,9 +9,7 @@ import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationR
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 @Service
 @RequiredArgsConstructor

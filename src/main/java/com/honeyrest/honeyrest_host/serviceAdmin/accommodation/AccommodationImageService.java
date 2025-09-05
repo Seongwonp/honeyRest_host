@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationImageDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationImageDTO;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;

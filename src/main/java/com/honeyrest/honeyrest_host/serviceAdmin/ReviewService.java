@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
-import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
-import com.honeyrest.honeyrest_host.dto.ReviewDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;

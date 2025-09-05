@@ -3,7 +3,7 @@ package com.honeyrest.honeyrest_host.serviceOwner;
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.honeyrest.honeyrest_host.dtoOwner.EventDTO;
 import com.honeyrest.honeyrest_host.entity.Event;
-import com.honeyrest.honeyrest_host.repository.OEventRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OEventRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;

@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.config;
 
-import com.honeyrest.honeyrest_host.repository.OUserRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import com.honeyrest.honeyrest_host.security.JwtAuthFilter;
 import com.honeyrest.honeyrest_host.serviceOwner.OAdminUserDetailsService;
 import jakarta.servlet.http.Cookie;

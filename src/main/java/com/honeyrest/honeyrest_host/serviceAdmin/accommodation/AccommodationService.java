@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationListDTO;
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationUpdateRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationCreateRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationListDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationUpdateRequestDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

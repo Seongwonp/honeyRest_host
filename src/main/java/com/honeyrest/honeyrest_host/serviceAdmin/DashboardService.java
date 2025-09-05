@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
-import com.honeyrest.honeyrest_host.dto.DashboardDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.DashboardDTO;
 
 
 public interface DashboardService {

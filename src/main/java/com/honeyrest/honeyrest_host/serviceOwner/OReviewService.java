@@ -2,9 +2,9 @@ package com.honeyrest.honeyrest_host.serviceOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.entity.Review;
-import com.honeyrest.honeyrest_host.repository.OReservationRepository;
-import com.honeyrest.honeyrest_host.repository.OReviewRepository;
-import com.honeyrest.honeyrest_host.repository.OUserRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OReservationRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OReviewRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

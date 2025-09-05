@@ -77,7 +77,7 @@ public class AccommodationController {
         try {
             // Firebase 업로드
             MultipartFile file = accommodationDTO.getFile();
-            String imageUrl = fileUploadUtil.upload(file, "accommodation");
+            String imageUrl = fileUploadUtil.upload(file, "accommodations");
             accommodationDTO.setThumbnailUrl(imageUrl);
 
             Long accommodationId = accommodationService.registerAccommodation(accommodationDTO);

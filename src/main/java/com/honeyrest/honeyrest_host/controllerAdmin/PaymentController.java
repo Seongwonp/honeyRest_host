@@ -1,10 +1,10 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
-import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
-import com.honeyrest.honeyrest_host.dto.PaymentDTO;
-import com.honeyrest.honeyrest_host.dto.ReservationDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PaymentDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.User;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.PaymentService;

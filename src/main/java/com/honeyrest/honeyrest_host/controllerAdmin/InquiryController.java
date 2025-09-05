@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.InquiryDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.InquiryDTO;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.InquiryService;
 import lombok.RequiredArgsConstructor;

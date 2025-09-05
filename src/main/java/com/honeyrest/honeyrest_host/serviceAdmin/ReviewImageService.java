@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.ReviewImageDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.ReviewImageDTO;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 

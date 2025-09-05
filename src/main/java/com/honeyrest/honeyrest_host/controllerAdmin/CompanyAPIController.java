@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
-import com.honeyrest.honeyrest_host.dto.CompanyDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.CompanyDTO;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;

@@ -161,11 +161,25 @@
         function normalizeBucket(b){
             // LocalDate 직렬화 변형 방어
             if (Array.isArray(b)) return `${b[0]}-${pad(b[1])}-${pad(b[2])}`;
-            if (b && typeof b === 'object' && 'year' in b && 'month' in b && 'day' in b) {
+            if (b && typeof b === 'object' && 'year' in b && 'month' in b){
+                if (!('day' in b)) return `${b.year}-${pad(b.month)}`; // 월 집계
                 return `${b.year}-${pad(b.month)}-${pad(b.day)}`;
             }
             return String(b);
         }
+        function setDefaultDatesByGroup(){
+            if (groupBy === 'daily')   return setDefaultDates(7);   // 최근 7일
+            if (groupBy === 'weekly')  return setDefaultDates(70);  // 최근 10주 정도
+            if (groupBy === 'weekday') return setDefaultDates(28);  // 최근 4주 (요일 패턴 보기)
+            if (groupBy === 'monthly'){
+                // 최근 6개월: to=오늘, from=5개월 전 1일
+                const to = new Date();
+                const from = new Date(to.getFullYear(), to.getMonth() - 5, 1);
+                document.getElementById('from').value = toIso(from);
+                document.getElementById('to').value   = toIso(to);
+            }
+        }
+
 
         async function fetchRows(from, to){
             const url = endpoint(from, to);
@@ -263,14 +277,19 @@
             }
             const groupBtn = e.target.closest('.seg [data-group]');
             if (groupBtn){
-                document.querySelectorAll('.seg [data-group]').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+                document.querySelectorAll('.seg [data-group]').forEach(b=>{
+                    b.classList.remove('active'); b.setAttribute('aria-selected','false');
+                });
                 groupBtn.classList.add('active'); groupBtn.setAttribute('aria-selected','true');
-                groupBy = groupBtn.dataset.group; labelFromState(); return;
+                groupBy = groupBtn.dataset.group;
+                labelFromState();
+                setDefaultDatesByGroup(); // ★ 단위 바뀌면 기간도 맞춰줌
+                apply();                  // ★ 바로 재호출
             }
         });
 
         document.addEventListener('DOMContentLoaded', ()=>{
-            setDefaultDates(7);
+            setDefaultDatesByGroup();
             labelFromState();
             document.getElementById('btnApply').addEventListener('click', apply);
             document.getElementById('btnLast7').addEventListener('click',  ()=>{ setDefaultDates(7);  apply(); });

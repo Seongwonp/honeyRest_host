@@ -157,28 +157,30 @@
                                 <div class="col-12">
                                     <label class="form-label">썸네일(메인)</label>
 
+                                    <!-- 삭제 플래그 -->
+
                                     <!-- 항상 프리뷰 컨테이너를 렌더링: 이미지 유무에 따라 show/hide -->
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="img-wrap" id="thumbWrap">
                                             <img id="thumbPreview"
-                                                 th:if="${acc != null and #strings.length(acc.thumbnail) > 0}"
+                                                 th:if="${acc != null and acc.thumbnail != null and !#strings.isEmpty(acc.thumbnail)}"
                                                  th:src="${acc.thumbnail}"
                                                  alt="thumbnail">
                                             <img id="thumbPreviewEmpty"
-                                                 th:if="${acc == null or #strings.length(acc.thumbnail) == 0}"
+                                                 th:if="${acc == null or acc.thumbnail == null or #strings.isEmpty(acc.thumbnail)}"
                                                  src=""
                                                  alt="thumbnail"
                                                  style="display:none;">
-                                            <button type="button" class="remove-btn" id="removeThumb" th:if="${acc != null and #strings.length(acc.thumbnail) > 0}">×</button>
+                                            <button type="button" class="remove-btn" id="removeThumb" th:if="${acc != null and acc.thumbnail != null and !#strings.isEmpty(acc.thumbnail)}">×</button>
                                         </div>
                                         <span class="text-muted" id="thumbEmptyText"
-                                              th:if="${acc == null or #strings.length(acc.thumbnail) == 0}">
+                                              th:if="${acc == null or acc.thumbnail == null or #strings.isEmpty(acc.thumbnail)}">
                                           이미지 없음
                                         </span>
                                     </div>
 
                                     <!-- 서버 반영용 히든 -->
-                                    <input type="hidden" th:field="*{thumbnail}">
+
                                     <input type="hidden" name="deleteThumbnail" id="deleteThumbnail" value="false">
 
                                     <div class="mt-2" style="max-width:360px">
@@ -220,132 +222,115 @@
 
 <th:block layout:fragment="script">
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            /* ===============================
-             * 1) 썸네일 미리보기 (파일 선택 시)
-             * =============================== */
-            const thumbFile = document.getElementById('thumbFile');
-            const thumbWrap = document.getElementById('thumbWrap');
-            const thumbPreview = document.getElementById('thumbPreview');       // 기존 썸네일 있을 때
-            const thumbPreviewEmpty = document.getElementById('thumbPreviewEmpty'); // 기존 썸네일 없을 때 사용할 img
-            const thumbEmptyText = document.getElementById('thumbEmptyText');
-            const removeThumbBtn = document.getElementById('removeThumb');
-            const deleteThumbHidden = document.getElementById('deleteThumbnail');
 
-            if (thumbFile) {
-                thumbFile.addEventListener('change', () => {
-                    const f = thumbFile.files && thumbFile.files[0];
-                    if (!f) return;
+            // ===============================
+            // 1) 썸네일(대표 이미지)
+            // ===============================
+            (() => {
+                const thumbFile      = document.getElementById('thumbFile');
+                const thumbWrap      = document.getElementById('thumbWrap');
+                const deleteFlag     = document.getElementById('deleteThumbnail');
+                const emptyTextEl    = document.getElementById('thumbEmptyText');
 
-                    const url = URL.createObjectURL(f);
+                let removeBtn        = document.getElementById('removeThumb');          // 있을 수도
+                let previewImg       = document.getElementById('thumbPreview');         // 있을 수도
+                let emptyPreviewImg  = document.getElementById('thumbPreviewEmpty');    // 있을 수도
+                let lastObjectUrl    = null;
 
-                    // 기존 프리뷰가 있으면 그걸 쓰고, 없으면 empty img를 사용
-                    let targetImg = thumbPreview || thumbPreviewEmpty;
-                    targetImg.src = url;
-                    targetImg.style.display = 'block';
+                const setDelete = (v) => { if (deleteFlag) deleteFlag.value = String(v); };
+                const showEmptyText = (show) => { if (emptyTextEl) emptyTextEl.style.display = show ? 'inline' : 'none'; };
 
-                    // "이미지 없음" 텍스트 숨기기
-                    if (thumbEmptyText) thumbEmptyText.style.display = 'none';
-
-                    // 삭제 플래그는 해제 (새 파일 선택이므로)
-                    if (deleteThumbHidden) deleteThumbHidden.value = 'false';
-
-                    // 삭제 버튼이 없으면 생성(파일 선택으로 프리뷰가 생겼으니)
-                    if (!removeThumbBtn) {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.id = 'removeThumb';
-                        btn.className = 'remove-btn';
-                        btn.textContent = '×';
-                        btn.addEventListener('click', () => {
-                            // 삭제 표시 + 프리뷰 숨김
-                            if (deleteThumbHidden) deleteThumbHidden.value = 'true';
-                            targetImg.style.display = 'none';
-                            if (thumbEmptyText) thumbEmptyText.style.display = 'inline';
-
-                            // 파일 입력 초기화
-                            thumbFile.value = '';
-                            btn.remove();
-                        });
-                        thumbWrap.appendChild(btn);
+                // 빈/깨진 URL로 렌더된 img 방어
+                const normalizeInitialPreview = () => {
+                    if (previewImg && !previewImg.getAttribute('src')) {
+                        previewImg.remove(); previewImg = null;
                     }
-                });
-            }
+                };
 
-            // 기존 썸네일 삭제 버튼 동작(초기 렌더에만 존재)
-            if (removeThumbBtn) {
-                removeThumbBtn.addEventListener('click', () => {
-                    if (deleteThumbHidden) deleteThumbHidden.value = 'true';
-                    if (thumbPreview) thumbPreview.style.display = 'none';
-                    if (thumbEmptyText) thumbEmptyText.style.display = 'inline';
-                    // 파일 입력도 초기화
+                const ensurePreviewImg = () => {
+                    if (previewImg) return previewImg;
+                    if (!emptyPreviewImg) {
+                        emptyPreviewImg = document.createElement('img');
+                        emptyPreviewImg.id = 'thumbPreviewEmpty';
+                        emptyPreviewImg.alt = 'thumbnail';
+                        emptyPreviewImg.style.display = 'none';
+                        thumbWrap && thumbWrap.prepend(emptyPreviewImg);
+                    }
+                    return emptyPreviewImg;
+                };
+
+                const ensureRemoveBtn = () => {
+                    if (removeBtn) return removeBtn;
+                    removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.id = 'removeThumb';
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.textContent = '×';
+                    removeBtn.addEventListener('click', clearPreview);
+                    thumbWrap && thumbWrap.appendChild(removeBtn);
+                    return removeBtn;
+                };
+
+                const revokeLastUrl = () => {
+                    if (lastObjectUrl) { URL.revokeObjectURL(lastObjectUrl); lastObjectUrl = null; }
+                };
+
+                const showPreview = (url) => {
+                    const img = ensurePreviewImg();
+                    img.src = url;
+                    img.style.display = 'block';
+                    showEmptyText(false);
+                    setDelete(false);
+                    ensureRemoveBtn();
+                };
+
+                function clearPreview() {
+                    revokeLastUrl();
+                    const img = previewImg || emptyPreviewImg;
+                    if (img) { img.src = ''; img.style.display = 'none'; }
+                    showEmptyText(true);
+                    setDelete(true);
                     if (thumbFile) thumbFile.value = '';
-                    removeThumbBtn.remove();
-                });
-            }
+                    if (removeBtn) { removeBtn.remove(); removeBtn = null; }
+                }
 
-            /* ==================================
-             * 2) 서브 이미지(기존) 삭제 버튼
-             *    → hidden name=deleteSubImageIds 추가
-             * ================================== */
-            document.querySelectorAll('.remove-sub').forEach(b => {
-                b.addEventListener('click', () => {
-                    const id = b.getAttribute('data-id');
-                    if (id) {
-                        const hidden = document.createElement('input');
-                        hidden.type = 'hidden';
-                        hidden.name = 'deleteSubImageIds';
-                        hidden.value = id;
-                        b.closest('form').appendChild(hidden);
-                    }
-                    b.parentElement.remove();
-                });
-            });
+                // 초기 상태 정리 및 X버튼 리스너
+                normalizeInitialPreview();
+                if (removeBtn) removeBtn.addEventListener('click', clearPreview);
 
-            /* ==================================
-             * 3) 새 서브 이미지 미리보기 + X 제거
-             *    (파일 input 목록에서도 제거)
-             * ================================== */
-            const subInput = document.getElementById('subImages');
-            const subBox   = document.getElementById('subPreview');
-            if (subInput && subBox) {
-                subInput.addEventListener('change', () => {
-                    subBox.innerHTML = '';
-                    const files = Array.from(subInput.files || []);
-
-                    files.forEach((f, idx) => {
-                        if (!f.type.startsWith('image/')) return;
-                        const url = URL.createObjectURL(f);
-
-                        const wrap = document.createElement('div');
-                        wrap.className = 'img-wrap';
-
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.alt = f.name;
-
-                        const x = document.createElement('button');
-                        x.type = 'button';
-                        x.className = 'remove-btn';
-                        x.textContent = '×';
-                        x.title = '이 파일 제거';
-
-                        x.addEventListener('click', () => {
-                            // DataTransfer로 해당 index 파일 제거
-                            const dt = new DataTransfer();
-                            Array.from(subInput.files).forEach((file, i) => {
-                                if (i !== idx) dt.items.add(file);
-                            });
-                            subInput.files = dt.files;
-                            subInput.dispatchEvent(new Event('change'));
-                        });
-
-                        wrap.appendChild(img);
-                        wrap.appendChild(x);
-                        subBox.appendChild(wrap);
+                // 파일 선택 → 미리보기
+                if (thumbFile) {
+                    thumbFile.addEventListener('change', () => {
+                        const f = thumbFile.files && thumbFile.files[0];
+                        if (!f || !f.type.startsWith('image/')) return;
+                        revokeLastUrl();
+                        lastObjectUrl = URL.createObjectURL(f);
+                        showPreview(lastObjectUrl);
                     });
-                });
+                }
+            })();
+
+                // 서브 이미지(기존) 삭제: 클릭 시 삭제ID 히든 추가 + 미리보기 카드 제거
+                document.addEventListener('click', (e) => {
+                const btn = e.target.closest('.remove-sub');
+                if (!btn) return;
+
+                e.preventDefault();
+
+                const id = btn.dataset.id; // th:attr="data-id=${img.imageId}"
+                const form = btn.closest('form');
+
+                if (id && form) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'deleteSubImageIds'; // 컨트롤러와 동일한 이름
+                hidden.value = id;
+                form.appendChild(hidden);
             }
+
+                const card = btn.closest('.img-wrap');
+                if (card) card.remove();
+            });
 
             /* ==================================
              * 4) 지역(대) → 지역(소) 동적 로드
@@ -364,7 +349,7 @@
                     subRegion.innerHTML = '<option value="">불러오는 중...</option>';
                     try {
                         const res = await fetch(`${dataUrl}?parentId=${encodeURIComponent(parentId)}`, {
-                            headers: { 'Accept': 'application/json' }
+                            headers: {'Accept': 'application/json'}
                         });
                         if (!res.ok) throw new Error(res.status);
                         const list = await res.json(); // [{id, name}, ...]
@@ -398,8 +383,6 @@
                     loadSubRegions(initialMain, selected);
                 }
             }
-        });
-
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {

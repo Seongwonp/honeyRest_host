@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.reports.*;
+import com.honeyrest.honeyrest_host.dtoAdmin.reports.*;
 
 import java.time.LocalDate;
 import java.util.List;

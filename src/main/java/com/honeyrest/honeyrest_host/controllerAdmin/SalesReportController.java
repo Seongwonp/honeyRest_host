@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
-import com.honeyrest.honeyrest_host.dto.reports.*;
+import com.honeyrest.honeyrest_host.dtoAdmin.reports.*;
 
 import com.honeyrest.honeyrest_host.serviceAdmin.SalesStatService;
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,9 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
-import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
-import com.honeyrest.honeyrest_host.dto.PaymentDTO;
-import com.honeyrest.honeyrest_host.dto.ReservationDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PaymentDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.*;
 import com.honeyrest.honeyrest_host.repositoryAdmin.PaymentRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -387,7 +386,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public ReservationDTO approveCancelRequest(Long reservationId, String reason) {
         int updated = reservationRepository.approveCancelRequest(
-                reservationId, reason, LocalDateTime.now());
+                reservationId, reason, LocalDate.now());
 
         if (updated == 0) {
             throw new IllegalStateException("취소요청 상태의 예약만 승인할 수 있습니다. id=" + reservationId);
@@ -399,7 +398,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public void rejectCancelRequest(Long reservationId, String reason) {
         int updated = reservationRepository.rejectCancelRequest(
-                reservationId, reason, LocalDateTime.now());
+                reservationId, reason, LocalDate.now());
 
         if (updated == 0) {
             throw new IllegalStateException("취소요청 상태의 예약만 거부할 수 있습니다. id=" + reservationId);
@@ -409,7 +408,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public void markCompleted(Long reservationId) {
-        int updated = reservationRepository.markCompleted(reservationId, LocalDateTime.now());
+        int updated = reservationRepository.markCompleted(reservationId, LocalDate.now());
 
         if (updated == 0) {
             throw new IllegalStateException("CONFIRMED 상태의 예약만 COMPLETED로 변경 가능합니다. id=" + reservationId);
@@ -419,7 +418,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public void markNoShow(Long reservationId) {
-        int updated = reservationRepository.markNoShow(reservationId, LocalDateTime.now());
+        int updated = reservationRepository.markNoShow(reservationId, LocalDate.now());
 
         if (updated == 0) {
             throw new IllegalStateException("PENDING/CONFIRMED 상태만 NO_SHOW 처리 가능합니다. id=" + reservationId);

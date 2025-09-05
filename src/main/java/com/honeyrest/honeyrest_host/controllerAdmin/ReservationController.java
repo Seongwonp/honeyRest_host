@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.*;
+import com.honeyrest.honeyrest_host.dtoAdmin.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
 import jakarta.validation.Valid;

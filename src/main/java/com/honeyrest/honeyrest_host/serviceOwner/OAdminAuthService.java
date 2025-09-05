@@ -5,7 +5,7 @@ import com.honeyrest.honeyrest_host.dtoOwner.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.AdminSignupRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.TokenResponseDTO;
 import com.honeyrest.honeyrest_host.entity.User;
-import com.honeyrest.honeyrest_host.repository.OUserRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

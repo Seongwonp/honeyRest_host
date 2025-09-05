@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.*;
+import com.honeyrest.honeyrest_host.dtoAdmin.*;
 import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;

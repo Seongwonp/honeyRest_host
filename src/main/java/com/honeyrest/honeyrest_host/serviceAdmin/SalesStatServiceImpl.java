@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.reports.*;
+import com.honeyrest.honeyrest_host.dtoAdmin.reports.*;
 import com.honeyrest.honeyrest_host.repositoryAdmin.PaymentRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection.SalesStatRow;
@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;

@@ -1,10 +1,11 @@
 package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
 
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationTagDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationTagDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationTag;
 import com.honeyrest.honeyrest_host.entity.AccommodationTagMap;
+import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationTagMapRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationTagRepository;
 import jakarta.persistence.EntityManager;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -27,9 +29,9 @@ import java.util.stream.Collectors;
 public class AccommodationTagServiceImpl implements AccommodationTagService {
 
     private final AccommodationTagRepository tagRepo;
-    private final AccommodationTagMapRepository mapRepo;
-    private final ModelMapper modelMapper;
-    private final EntityManager em;
+    private final AccommodationTagRepository accommodationTagRepository;
+    private final AccommodationTagMapRepository tagMapRepository;
+    private final AccommodationRepository accommodationRepository;
 
 
     @Override
@@ -73,23 +75,29 @@ public class AccommodationTagServiceImpl implements AccommodationTagService {
 
     @Override
     public void replaceMapping(Long accommodationId, List<Long> tagIds) {
-        // 1) 기존 매핑 삭제 — 메서드명 정확히 일치
-        mapRepo.deleteByAccommodation_AccommodationId(accommodationId);
+        // 모두 삭제 후 다시 저장
+        tagMapRepository.deleteByAccommodation_AccommodationId(accommodationId);
 
-        // 2) 신규 매핑 저장
         if (tagIds == null || tagIds.isEmpty()) return;
 
-        // 프록시 참조(쿼리 추가 발생 없이 FK만 세팅)
-        Accommodation accRef = em.getReference(Accommodation.class, accommodationId);
-
-        List<AccommodationTagMap> maps = tagIds.stream()
+        // null / 중복 제거
+        List<Long> cleanIds = tagIds.stream()
+                .filter(Objects::nonNull)
                 .distinct()
-                .map(tid -> AccommodationTagMap.builder()
-                        .accommodation(accRef)
-                        .tag(em.getReference(AccommodationTag.class, tid))
-                        .build())
                 .toList();
+        if (cleanIds.isEmpty()) return;
 
-        mapRepo.saveAll(maps);
+        // 존재하는 태그만 조회
+        List<AccommodationTag> tags = accommodationTagRepository.findAllById(cleanIds);
+        if (tags.isEmpty()) return;
+
+        Accommodation acc = accommodationRepository.getReferenceById(accommodationId);
+        for (AccommodationTag t : tags) {
+            AccommodationTagMap map = AccommodationTagMap.builder()
+                    .accommodation(acc)
+                    .tag(t)
+                    .build();
+            tagMapRepository.save(map);
+        }
     }
 }

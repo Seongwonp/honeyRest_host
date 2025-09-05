@@ -1,14 +1,9 @@
 package com.honeyrest.honeyrest_host.controllerAdmin.dashboard;
 
 
-import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
-import com.honeyrest.honeyrest_host.dto.DashboardDTO;
-import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
-import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
-import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
-import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
+import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.DashboardDTO;
 import com.honeyrest.honeyrest_host.serviceAdmin.DashboardService;
-import com.honeyrest.honeyrest_host.serviceAdmin.UserService;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.log4j.Log4j2;
@@ -17,8 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import java.util.Optional;
 
 @Controller("adminDashboardController")
 @RequestMapping("/admin")

@@ -1,10 +1,10 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.dto.DailyOverviewDTO;
-import com.honeyrest.honeyrest_host.dto.GridCellDTO;
-import com.honeyrest.honeyrest_host.dto.PriceCalendarDTO;
-import com.honeyrest.honeyrest_host.dto.RoomDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.DailyOverviewDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.GridCellDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PriceCalendarDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.RoomDTO;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.PriceCalendarService;
 import com.honeyrest.honeyrest_host.serviceAdmin.RoomService;
@@ -21,7 +21,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,9 +72,16 @@ public class PriceCalendarController {
         // 1) 파라미터 해석
         Long resolvedRoomId = (roomId == null || roomId.isBlank() || "null".equalsIgnoreCase(roomId) ? null : Long.valueOf(roomId));
 
-        YearMonth yearMonth = (ym == null || ym.isBlank() || "null".equalsIgnoreCase(ym)) ? YearMonth.now() : YearMonth.parse(ym);
-        YearMonth preYm = yearMonth.minusMonths(1);   // 이전달
-        YearMonth nextYm = yearMonth.plusMonths(1);   // 다음달은 plus
+
+        YearMonth yearMonth;
+        try {
+            yearMonth = (ym == null || ym.isBlank()) ? YearMonth.now() : YearMonth.parse(ym);
+        } catch (DateTimeParseException e) {
+            yearMonth = YearMonth.now();
+        }
+
+        YearMonth preYm = yearMonth.minusMonths(1);
+        YearMonth nextYm = yearMonth.plusMonths(1);
 
         // 2) 숙소 드롭다운(회사 소속 숙소들)
         model.addAttribute("accommodations", accommodationService.getAllById(companyId));
@@ -104,9 +113,8 @@ public class PriceCalendarController {
     public String upsert(@RequestParam Long companyId,
                          @RequestParam(required = false) Long accommodationId,
                          @RequestParam Long roomId,
-                         @RequestParam String ym,
-                         @RequestParam LocalDate date,
-                         @RequestParam Long roomIdParam, // 실제 저장 데이터
+                         @RequestParam String yearMonth,
+                         @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
                          @RequestParam(required = false) BigDecimal price,
                          @RequestParam(required = false, defaultValue = "calendar") String mode,
                          @RequestParam(required = false) Integer available,
@@ -114,13 +122,13 @@ public class PriceCalendarController {
 
                          RedirectAttributes ra) {
 
-        boolean created = priceCalendarService.upsert(roomIdParam, date, price, available);
+        boolean created = priceCalendarService.upsert(roomId, date, price, available);
         ra.addFlashAttribute("toast", created ? "신규 생성 완료" : "수정 완료");
 
         // PRG 패턴: 기존 쿼리스트링(회사/숙소/월/필터) 유지 리다이렉트
         StringBuilder redirect = new StringBuilder("redirect:/admin/price/page")
                 .append("?companyId=").append(companyId)
-                .append("&ym=").append(ym)
+                .append("&ym=").append(yearMonth.toString())
                 .append("&mode=").append(mode);
         if (accommodationId != null) redirect.append("&accommodationId=").append(accommodationId);
         if (roomId != null) redirect.append("&roomId=").append(roomId);
@@ -160,7 +168,7 @@ public class PriceCalendarController {
         return redirect.toString();
     }
 
-    @GetMapping("/{accommodationId}")
+    @GetMapping("/calendar/{accommodationId}")
     public String roomCalendar(@PathVariable Long accommodationId,
                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
@@ -229,6 +237,25 @@ public class PriceCalendarController {
                                           @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
                                           @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
         return priceCalendarService.getGridCells(companyId, accommodationId, start, end);
+    }
+
+    @GetMapping("/daily-revenue")
+    @ResponseBody
+    public Map<LocalDate, BigDecimal> getDailyRevenue(@RequestParam Long companyId,
+                                                      @RequestParam(required = false) Long accommodationId,
+                                                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
+                                                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
+        return priceCalendarService.getDailyRevenueByCheckin(companyId, accommodationId, start, end);
+    }
+    @GetMapping("/daily-revenue/checkin")
+    @ResponseBody
+    public Map<LocalDate, BigDecimal> getDailyRevenueByCheckin(
+            @RequestParam Long companyId,
+            @RequestParam(required = false) Long accommodationId,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end
+    ) {
+        return priceCalendarService.getDailyRevenueByCheckin(companyId, accommodationId, start, end);
     }
 
 

@@ -1,8 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
 import com.amazonaws.services.kms.model.NotFoundException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,8 +9,8 @@ import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Company;
-import com.honeyrest.honeyrest_host.repository.OAccommodationRepository;
-import com.honeyrest.honeyrest_host.repository.OCompanyRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OAccommodationRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OCompanyRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

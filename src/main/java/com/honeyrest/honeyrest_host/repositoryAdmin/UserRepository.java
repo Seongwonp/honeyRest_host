@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin;
 
-import com.honeyrest.honeyrest_host.dto.UserListDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.UserListDTO;
 import com.honeyrest.honeyrest_host.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +18,7 @@ public interface UserRepository extends  JpaRepository<User, Long> {
     Optional<String> findNameById(@Param("id") Long id);
 
     @Query("""
-    select new com.honeyrest.honeyrest_host.dto.UserListDTO(
+    select new com.honeyrest.honeyrest_host.dtoAdmin.UserListDTO(
         u.userId, u.name, u.email, u.phone,
         cast(u.point as integer),
         null, null, null, null, null, null,

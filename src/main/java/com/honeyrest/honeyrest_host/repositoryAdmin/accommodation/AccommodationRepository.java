@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin.accommodation;
 
 
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationListDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationListDTO;
 import com.honeyrest.honeyrest_host.entity.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +48,11 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Accommodation a set a.subRegion = :subRegion where a.accommodationId = :id")
     int updateSubRegion(@Param("id") Long id, @Param("subRegion") Region subRegion);
+
+    @Modifying
+    @Query("update Accommodation a set a.thumbnail = :thumbnail where a.accommodationId = :id")
+    int updateThumbnail(@Param("id") Long id, @Param("thumbnail") String thumbnail);
+
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
@@ -83,7 +87,7 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
     );
 
     @Query(value = """
-            select new com.honeyrest.honeyrest_host.dto.accommodation.AccommodationListDTO(
+            select new com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationListDTO(
                 a.accommodationId,
                 a.name,
                 c.name,
@@ -106,6 +110,8 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
 
     @Query("select a.name from Accommodation a where a.accommodationId = :id")
     Optional<String> findNameById(@Param("id") Long accommodationId);
+
+
 }
 
 
@@ -126,7 +132,7 @@ class AccommodationQueryImpl implements AccommodationQuery {
         if (mainRegionId != null) where += " and mr.regionId = :mainRegionId ";
 
         String select = """
-                select new com.honeyrest.honeyrest_host.dto.accommodation.AccommodationListDTO(
+                select new com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationListDTO(
                 a.accommodationId,
                 a.name,
                 c.name,
@@ -170,6 +176,9 @@ class AccommodationQueryImpl implements AccommodationQuery {
         long total = countQ.getSingleResult();
 
         return new PageImpl<>(content, pageable, total);
+
+
     }
+
     
 }

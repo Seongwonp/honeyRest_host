@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCreateRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationCreateRequestDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;

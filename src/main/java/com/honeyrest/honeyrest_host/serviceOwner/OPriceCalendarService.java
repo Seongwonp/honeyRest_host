@@ -2,9 +2,9 @@ package com.honeyrest.honeyrest_host.serviceOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.entity.PriceCalendar;
-import com.honeyrest.honeyrest_host.repository.OPriceCalendarRepository;
-import com.honeyrest.honeyrest_host.repository.OReservationRepository;
-import com.honeyrest.honeyrest_host.repository.ORoomRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OPriceCalendarRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OReservationRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.ORoomRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.ReviewImageDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.ReviewImageDTO;
 import com.honeyrest.honeyrest_host.entity.ReviewImage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +27,7 @@ public interface ReviewImageRepository extends CrudRepository<ReviewImage, Long>
 
     // dto 투영
     @Query("""
-            select new com.honeyrest.honeyrest_host.dto.ReviewImageDTO(i.imageId, i.review.reviewId, i.imageUrl)
+            select new com.honeyrest.honeyrest_host.dtoAdmin.ReviewImageDTO(i.imageId, i.review.reviewId, i.imageUrl)
             from ReviewImage i
             where i.review.reviewId = :reviewId
             order by i.imageId asc
@@ -35,7 +35,7 @@ public interface ReviewImageRepository extends CrudRepository<ReviewImage, Long>
     List<ReviewImageDTO> findDtosByReviewId(@Param("reviewId") Long reviewId);
 
     @Query("""
-            select new com.honeyrest.honeyrest_host.dto.ReviewImageDTO(i.imageId, i.review.reviewId, i.imageUrl)
+            select new com.honeyrest.honeyrest_host.dtoAdmin.ReviewImageDTO(i.imageId, i.review.reviewId, i.imageUrl)
             from ReviewImage i
             where i.review.reviewId in :reviewIds
             order by i.review.reviewId asc, i.imageId asc
@@ -45,7 +45,7 @@ public interface ReviewImageRepository extends CrudRepository<ReviewImage, Long>
 
     // DTO 투영 버전
     @Query("""
-            select new com.honeyrest.honeyrest_host.dto.ReviewImageDTO(i.imageId, i.review.reviewId, i.imageUrl)
+            select new com.honeyrest.honeyrest_host.dtoAdmin.ReviewImageDTO(i.imageId, i.review.reviewId, i.imageUrl)
             from ReviewImage i
             where i.review.reviewId = :reviewId
             order by i.imageId asc
