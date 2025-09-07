@@ -13,6 +13,7 @@ import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repository.OAccommodationRepository;
 import com.honeyrest.honeyrest_host.repository.OCompanyRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -107,7 +108,13 @@ public class OCompanyService {
     }
 
     public void removeCompany(Long id) {
-        companyRepository.deleteById(id);
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+
+        CompanyDTO dto = toDTO(company);
+        dto.setStatus("INACTIVE");  // 상태를 변경
+
+        companyRepository.save(toEntity(dto)); // 업데이트
     }
 
     public void modifyCompany(CompanyDTO dto) {

@@ -73,11 +73,11 @@ public class JwtTokenProvider {
         Date exp = new Date(now.getTime() + ttl.toMillis());
 
         return Jwts.builder()
-                .setIssuer(issuer)
-                .setSubject(subject)           // userId
-                .addClaims(claims)             // role/email/typ
-                .setIssuedAt(now)
-                .setExpiration(exp)
+                .issuer(issuer)
+                .subject(subject)           // userId
+                .claims(claims)             // role/email/typ
+                .issuedAt(now)
+                .expiration(exp)
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }

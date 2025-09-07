@@ -66,7 +66,9 @@ public class SecurityConfig {
                         "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico",
                         "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**",
                         "/.well-known/**",
-                        "/auth/login", "/auth/logout"  // 로그인/회원가입/로그아웃 페이지 등 허용
+                        "/auth/**",
+                        "/error/**"
+                        // 로그인/회원가입/로그아웃 페이지 등 허용
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/owner/**").hasRole("SUPER_ADMIN")

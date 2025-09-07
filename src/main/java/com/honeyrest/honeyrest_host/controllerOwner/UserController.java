@@ -7,9 +7,9 @@ import com.honeyrest.honeyrest_host.serviceOwner.OUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller("ownerUserController")
 @RequiredArgsConstructor
@@ -27,5 +27,11 @@ public class UserController {
         model.addAttribute("users", pageResponseDTO.getDtoList());
         model.addAttribute("pageResponseDTO" , pageResponseDTO);
         return "/owner/user/list";
+    }
+
+    @GetMapping("/user/search")
+    @ResponseBody
+    public List<UserDTO> userSearch(@RequestParam String keyword) {
+        return userService.searchByNameContaining(keyword);
     }
 }

@@ -21,7 +21,7 @@ public class CouponDTO {
     private String discountType; // 할인 유형
     private BigDecimal discountValue; // 할인 값
     private BigDecimal minOrderAmount; // 최소 주문 금액
-    private BigDecimal maxOrderAmount; // 최대 주문 금액
+    private BigDecimal maxDiscountAmount; // 최대 주문 금액
     private String targetType; // 적용대상
     private Long targetId; // 특정 숙소, 카테고리 ID(null 가능)
     private boolean isActive; // 활성 여부

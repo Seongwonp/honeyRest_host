@@ -92,77 +92,79 @@
                 <h5 class="mb-0 fw-bold">
                     <i class="bi bi-house-door me-2"></i> 숙소 상세 정보
                 </h5>
-                <span class="badge bg-light text-primary px-3 py-2" th:classappend="${accommodation.status == 'ACTIVE'} ? ' bg-success' : ' bg-secondary'" th:text="${accommodation.status == 'ACTIVE'} ? '활성' : '비활성'">활성</span>
+                <span class="badge bg-light text-primary px-3 py-2"
+                      th:classappend="${accommodation.status == 'ACTIVE'} ? ' bg-success' : ' bg-secondary'"
+                      th:text="${accommodation.status == 'ACTIVE'} ? '활성' : '비활성'">활성</span>
             </div>
 
             <!-- 본문 -->
             <div class="card-body p-4">
-                <!-- 숙소 기본 정보 -->
-                <div class="row g-4 mb-3">
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">숙소명</label>
-                        <div class="fs-5 fw-bold" th:text="${accommodation.name}">한강 리조트</div>
-                    </div>
+                <div class="row">
+                    <!-- 왼쪽: 숙소 정보 -->
+                    <div class="col-md-7">
+                        <!-- 숙소 기본 정보 -->
+                        <div class="row g-4 mb-3">
+                            <div class="col-md-12">
+                                <label class="text-muted small fw-semibold">숙소명</label>
+                                <div class="fs-5 fw-bold" th:text="${accommodation.name}">한강 리조트</div>
+                            </div>
 
-                    <div class="col-12">
-                        <label class="text-muted small fw-semibold">주소</label>
-                        <div th:text="${accommodation.address}">서울 강남구 ...</div>
-                    </div>
+                            <div class="col-md-12">
+                                <label class="text-muted small fw-semibold">주소</label>
+                                <div th:text="${accommodation.address}">서울 강남구 ...</div>
+                            </div>
 
-                    <div class="col-12">
-                        <label class="text-muted small fw-semibold">설명</label>
-                        <div th:text="${accommodation.description}">아늑한 숙소입니다...</div>
-                    </div>
+                            <div class="col-md-12">
+                                <label class="text-muted small fw-semibold">설명</label>
+                                <div th:text="${accommodation.description}">아늑한 숙소입니다...</div>
+                            </div>
 
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">체크인 시간</label>
-                        <div th:text="${#temporals.format(accommodation.checkInTime, 'HH:mm')}">11:00</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">체크아웃 시간</label>
-                        <div th:text="${#temporals.format(accommodation.checkOutTime, 'HH:mm')}">11:00</div>
-                    </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small fw-semibold">체크인 시간</label>
+                                <div th:text="${#temporals.format(accommodation.checkInTime, 'HH:mm')}">11:00</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small fw-semibold">체크아웃 시간</label>
+                                <div th:text="${#temporals.format(accommodation.checkOutTime, 'HH:mm')}">11:00</div>
+                            </div>
 
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">최저가</label>
-                        <div th:text="${accommodation.minPrice + ' 원'}">100,000 원</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">평점</label>
-                        <div th:text="${accommodation.rating}">4.5</div>
-                    </div>
-                </div>
-
-                <!-- 썸네일 이미지 -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="text-muted small fw-semibold">대표 이미지</label>
-                        <div class="mt-2">
-                            <img th:src="${accommodation.thumbnailUrl}" alt="숙소 썸네일" class="img-thumbnail" style="height: 300px;">
+                            <div class="col-md-6">
+                                <label class="text-muted small fw-semibold">최저가</label>
+                                <div th:text="${accommodation.minPrice + ' 원'}">100,000 원</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small fw-semibold">평점</label>
+                                <div th:text="${accommodation.rating}">4.5</div>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- 서브 이미지 영역 -->
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <label class="text-muted small fw-semibold">서브 이미지</label>
-                        <div class="mt-2 d-flex flex-wrap gap-2">
-                            <div th:each="subImage : ${subImages}">
-                                <img th:src="${subImage.imageUrl}" alt="서브 이미지" class="img-thumbnail" style="height : 200px;">
+                        <!-- 편의 시설 -->
+                        <div class="mt-4 p-3 border-top">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-list-ul me-2"></i> 편의 시설
+                            </h6>
+                            <div class="row">
+                                <div class="fs-6 ps-2 border-start border-3 border-primary">
+                                    <div th:text="${accommodation.amenities}"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- 편의 시설 -->
-                <div class="mt-4 p-3 border-top">
-                    <h6 class="fw-bold mb-3">
-                        <i class="bi bi-list-ul me-2"></i> 편의 시설
-                    </h6>
-                    <div class="row">
-                        <div class="fs-6 ps-2 border-start border-3 border-primary">
-                            <div th:text="${accommodation.amenities}"></div>
+                    <!-- 오른쪽: 이미지 -->
+                    <div class="col-md-5">
+                        <!-- 대표 이미지 -->
+                        <label class="text-muted small fw-semibold">대표 이미지</label>
+                        <div class="mt-2 mb-4">
+                            <img th:src="${accommodation.thumbnailUrl}" alt="숙소 썸네일" class="img-thumbnail w-100" style="height: 300px; object-fit: cover;">
+                        </div>
+
+                        <!-- 서브 이미지 -->
+                        <label class="text-muted small fw-semibold">서브 이미지</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div th:each="subImage : ${subImages}">
+                                <img th:src="${subImage.imageUrl}" alt="서브 이미지" class="img-thumbnail" style="height: 100px; width: 100px; object-fit: cover;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -187,6 +189,7 @@
                 </div>
             </div>
         </div>
+
         <div class="card p-4 mb-4 shadow-sm">
             <form id="searchForm" class="row g-3 align-items-end">
                 <div class="col-md-4 col-sm-8 position-relative">
@@ -206,7 +209,7 @@
         </div>
         <!-- 객실 리스트 카드 -->
         <div class="mt-4">
-            <h6 class="fw-bold mb-3">숙소 목록</h6>
+            <h6 class="fw-bold mb-3">객실 목록</h6>
 
             <div class="row g-4">
                 <!-- Room 카드 반복 -->

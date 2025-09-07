@@ -22,12 +22,6 @@
                      style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
                 <input type="hidden" name="companyId" id="companyIdInput">
             </div>
-            <!--            <div class="col-md-4 col-sm-8">-->
-            <!--                <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>-->
-            <!--                <select name="accommodationId" class="form-select" id="accommodationSelect">-->
-            <!--                    <option value="">전체</option>-->
-            <!--                </select>-->
-            <!--            </div>-->
             <div class="col-auto">
                 <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
             </div>
@@ -116,7 +110,6 @@
         const companySearchInput = document.getElementById("companySearchInput");
         const companySearchResult = document.getElementById("companySearchResult");
         const companyIdInput = document.getElementById("companyIdInput");
-        const accommodationSelect = document.getElementById("accommodationSelect");
 
         // 회사명 검색 (비동기)
         companySearchInput.addEventListener("input", function () {
@@ -152,21 +145,6 @@
                     companySearchResult.style.display = "block";
                 });
         });
-
-        // // 숙소 목록 불러오기 (선택한 회사 기준)
-        // function loadAccommodations(companyId) {
-        //     fetch(`/owner/company/${companyId}/accommodations/json`)
-        //         .then(res => res.json())
-        //         .then(data => {
-        //             accommodationSelect.innerHTML = '<option value="">전체</option>';
-        //             data.forEach(a => {
-        //                 const opt = document.createElement("option");
-        //                 opt.value = a.accommodationId;
-        //                 opt.textContent = a.name;
-        //                 accommodationSelect.appendChild(opt);
-        //             });
-        //         });
-        // }
 
         // 검색폼 전송 시 URL 설정
         document.getElementById('searchForm').addEventListener('submit', function (event) {

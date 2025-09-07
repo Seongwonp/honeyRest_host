@@ -1,45 +1,100 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{owner/layout/base}">
+<head>
+
+    <title>쿠폰 목록</title>
+<th:block layout:fragment="head"></th:block>
+
+<style>
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .table thead th {
+        background-color: #222;
+        color: #f5f5f5;
+        padding: 12px 18px;
+        font-weight: 600;
+        text-align: left;
+        border-bottom: 2px solid #444;
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+        transition: background-color 0.3s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f0f0f0;
+    }
+
+    .table tbody td {
+        padding: 14px 18px;
+        color: #333;
+    }
+</style>
+</head>
 <body>
+
 <th:block layout:fragment="content">
-    <div class="page-heading"><h3>쿠폰 리스트</h3>
-        <p class="text-subtitle text-muted">쿠폰 현황</p>
+    <div class="page-heading">
+        <h3>쿠폰 리스트</h3>
+        <p class="text-subtitle text-muted">등록된 쿠폰 현황</p>
     </div>
 
     <div class="page-content">
         <section class="section">
             <div class="row">
                 <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title mb-4">쿠폰 목록</h5>
-                            <div class="d-flex justify-content-end mb-3">
-                                <a th:href="@{/owner/coupon/create}" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-1"></i> 쿠폰 등록
-                                </a>
-                            </div>
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">쿠폰 목록</h5>
+                            <a th:href="@{/owner/coupon/create}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i> 쿠폰 등록
+                            </a>
+                        </div>
+                        <div class="card-body p-0">
                             <div class="table-responsive">
-
-                                <table class="table table-striped align-middle text-center">
-                        <thead>
-                        <tr>
-                            <th>쿠폰 ID</th>
-                            <th>쿠폰 이름</th>
-                            <th>할인 값</th>
-                            <th>적용 대상</th>
-                            <th>활성 여부</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="c : ${coupons}">
-                            <td th:text="${c.couponId}"></td>
-                            <td th:text="${c.name}"></td>
-                            <td th:text="${c.discountValue}"></td>
-                            <td th:text="${c.targetType}"></td>
-                            <td th:text="${c.isActive()}"></td>
-                        </tr>
-                        </tbody>
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light text-center">
+                                    <tr>
+                                        <th>쿠폰 ID</th>
+                                        <th>쿠폰 이름</th>
+                                        <th>쿠폰 코드</th>
+                                        <th>할인</th>
+                                        <th>최대 할인</th>
+                                        <th>최소 주문</th>
+                                        <th>적용 대상</th>
+                                        <th>사용 기간</th>
+                                        <th>상태</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="c : ${coupons}" class="text-center">
+                                        <td th:text="${c.couponId}"></td>
+                                        <td th:text="${c.name}"></td>
+                                        <td th:text="${c.code}"></td>
+                                        <td>
+                                        <span th:text="${c.discountType == 'PERCENT' ? c.discountValue + '%'
+                                                       : #numbers.formatDecimal(c.discountValue, 1, 'COMMA', 2, 'POINT') + '원'}"></span>
+                                        </td>
+                                        <td th:text="${c.maxDiscountAmount != null ? #numbers.formatDecimal(c.maxDiscountAmount, 1, 'COMMA', 0, 'POINT') + '원' : '-'}"></td>
+                                        <td th:text="${c.minOrderAmount != null ? #numbers.formatDecimal(c.minOrderAmount, 1, 'COMMA', 0, 'POINT') + '원' : '-'}"></td>
+                                        <td th:text="${c.targetType}"></td>
+                                        <td>
+                                            <span th:text="${#temporals.format(c.startDate, 'yyyy-MM-dd')}"></span> ~
+                                            <span th:text="${#temporals.format(c.endDate, 'yyyy-MM-dd')}"></span>
+                                        </td>
+                                        <td th:text="${c.isActive() ? '활성' : '비활성'}"
+                                            th:classappend="${c.isActive() ? 'status-active' : 'status-inactive'}"></td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(coupons)}">
+                                        <td colspan="9" class="text-center">등록된 쿠폰이 없습니다.</td>
+                                    </tr>
+                                    </tbody>
                                 </table>
                             </div> <!-- /.table-responsive -->
                         </div> <!-- /.card-body -->
@@ -48,6 +103,7 @@
             </div>
         </section>
     </div>
+
 </th:block>
 </body>
 </html>

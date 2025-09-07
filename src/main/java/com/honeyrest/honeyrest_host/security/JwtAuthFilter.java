@@ -34,7 +34,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico",
             "/swagger-ui/**", "/v3/api-docs/**",
             "/.well-known/**",
-            "/admin/auth/**"   // 로그인/로그아웃/페이지
+            "/auth/**"   // 로그인/로그아웃/페이지
     };
 
     @Override
@@ -46,9 +46,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
         try {
-            String raw = resolveToken(request);
-            String token = normalizeToken(raw);
-
+            String token = jwtTokenProvider.resolveToken(request);
             log.debug("[JWT] {} token? {}", uri, token != null);
 
             if (token != null && jwtTokenProvider.validate(token)) {
