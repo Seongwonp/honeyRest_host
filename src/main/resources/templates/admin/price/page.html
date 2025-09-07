@@ -10,120 +10,142 @@
 
     <th:block layout:fragment="head">
         <style>
-            :root {
-                --line: #EEF0F2;
-                --muted: #6B7280;
-                --bg: #F8FAFC;
-                --ok-bg: #E8F7EE;
-                --ok: #1E7F3A;
-                --low-bg: #FFF4E5;
-                --low: #A15C00;
-                --zero-bg: #FDE8E8;
-                --zero: #B42318;
+            /* ===== Pastel Violet / Pink Theme ===== */
+            :root{
+                --ink:#2f1b41;             /* 본문 글자 */
+                --muted:#7c6f86;           /* 보조 글자 */
+                --bg:#faf7ff;              /* 아주 연한 보라 배경 */
+                --panel:#ffffff;           /* 카드/타일 배경 */
+                --line:#efe7ff;            /* 경계선 */
+                --shadow:0 8px 24px rgba(160,120,255,.08);
+
+                --violet:#a78bfa;          /* 메인 포인트 */
+                --violet-dark:#8b5cf6;
+                --pink:#f472b6;            /* 서브 포인트 */
+                --pink-dark:#ec4899;
+                --yellow:#fde68a;          /* 노란 포인트 (배지에 사용) */
+
+                /* 상태 색 (알약) */
+                --ok-bg:#d1fae5;   --ok:#047857;
+                --low-bg:#ffedd5;  --low:#b45309;
+                --zero-bg:#ffe4e6; --zero:#be123c;
+
+                /* 달력 데이 셀 */
+                --weekend:#fff9ff;
+                --today:#d946ef;   /* 오늘 하이라이트 */
+                --dow-bg:#f6f1ff;  /* 요일 헤더 배경 */
             }
 
-            .toolbar {
-                display: flex;
-                gap: .75rem;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 16px
+            /* 페이지 기본 */
+            body{ background:var(--bg); }
+            .page-heading h3{ margin:0; font-weight:800; font-size:2rem; color:var(--ink); }
+            .text-subtitle.text-muted{ color:var(--muted)!important; }
+
+            /* 카드/컨테이너 */
+            .card-soft{ background:var(--panel); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); }
+            .card-soft .card-body{ padding:20px; }
+
+            /* 툴바 */
+            .toolbar{ display:flex; gap:.75rem; align-items:center; justify-content:space-between; margin-bottom:16px; }
+            .controls{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+            .form-label{ color:var(--muted); }
+
+            /* 셀렉트/인풋 */
+            .form-select,.form-control{
+                border:1px solid var(--line);
+                border-radius:12px;
+                background:var(--panel);
+                box-shadow:none;
+            }
+            .form-select:focus,.form-control:focus{
+                border-color:var(--violet);
+                box-shadow:0 0 0 .2rem rgba(167,139,250,.15);
             }
 
-            .controls {
-                display: flex;
-                gap: .5rem;
-                align-items: center;
-                flex-wrap: wrap
+            /* 버튼 */
+            .btn{ border-radius:12px; }
+            .btn-primary{
+                background:linear-gradient(135deg,var(--violet),var(--pink));
+                border:0;
+            }
+            .btn-primary:hover{ filter:brightness(.95); }
+            .btn-outline-secondary{
+                color:var(--violet-dark);
+                border:1px solid var(--violet);
+                background:#fff;
+            }
+            .btn-outline-secondary:hover{
+                background:var(--violet);
+                color:#fff;
+            }
+            .btn-light{ background:#fff; border:1px solid var(--line); }
+
+            /* 월 표시 뱃지(오른쪽) */
+            .btn-light.fw-semibold{
+                border-radius:10px;
+                background:linear-gradient(135deg,#fff 0%, #fff 60%, #fff6ff 100%);
+                border:1px solid var(--line);
+                box-shadow:var(--shadow);
             }
 
-            .month-grid {
-                display: grid;
-                grid-template-columns:repeat(7, 1fr);
-                gap: 8px
+            /* 달력 그리드 */
+            .month-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+            .dow{
+                font-weight:700; text-align:center; padding:8px 0;
+                background:var(--dow-bg); color:var(--violet-dark);
+                border-radius:10px; border:1px solid var(--line);
             }
+            .day{
+                min-height:130px; display:flex; flex-direction:column;
+                gap:6px; padding:10px;
+                background:var(--panel);
+                border:1px solid var(--line); border-radius:12px;
+                box-shadow:0 4px 14px rgba(0,0,0,.03);
+            }
+            .day.weekend{ background:var(--weekend); }
+            .day.today{ box-shadow:0 0 0 2px var(--today) inset; }
 
-            .dow {
-                font-weight: 700;
-                text-align: center;
-                padding: 6px 0;
-                background: #f4f6f9;
-                border-radius: 8px
-            }
+            .date{ font-weight:800; color:var(--ink); }
+            .meta{ font-size:.85rem; color:var(--muted); }
+            .price{ margin-top:2px; font-weight:800; color:var(--violet-dark); }
 
-            .day {
-                min-height: 130px;
-                border: 1px solid var(--line);
-                border-radius: 10px;
-                padding: 8px;
-                display: flex;
-                flex-direction: column
-            }
+            /* 액션 버튼 영역 */
+            .actions{ margin-top:auto; display:flex; gap:.35rem; }
 
-            .day.weekend {
-                background: #fcfcff
+            /* 상태 Pill */
+            .pill{
+                display:inline-flex; align-items:center; gap:.35rem;
+                border-radius:999px; padding:0 10px; height:24px; font-size:.75rem;
+                border:1px solid rgba(0,0,0,.04);
             }
+            .pill.ok{   background:var(--ok-bg);   color:var(--ok);   }
+            .pill.low{  background:var(--low-bg);  color:var(--low);  }
+            .pill.zero{ background:var(--zero-bg); color:var(--zero); }
+            .pill.muted{ background:#f6f6fb; color:#7c8491; }
 
-            .day.today {
-                box-shadow: 0 0 0 2px #1f6feb inset
-            }
+            /* 모달 */
+            .modal-content{ border-radius:14px; border:1px solid var(--line); }
+            .modal-header{ border-bottom-color:var(--line); }
+            .modal-footer{ border-top-color:var(--line); }
 
-            .date {
-                font-weight: 700
-            }
-
-            .meta {
-                margin-top: 4px;
-                font-size: .85rem;
-                color: var(--muted)
-            }
-
-            .price {
-                margin-top: 6px;
-                font-weight: 800
-            }
-
-            .actions {
-                margin-top: auto;
-                display: flex;
-                gap: .35rem
-            }
-
-            .pill {
-                display: inline-flex;
-                gap: .35rem;
-                align-items: center;
-                border-radius: 999px;
-                padding: 0 8px;
-                font-size: .75rem;
-                height: 22px
-            }
-
-            .pill.ok {
-                background: var(--ok-bg);
-                color: var(--ok)
-            }
-
-            .pill.low {
-                background: var(--low-bg);
-                color: var(--low)
-            }
-
-            .pill.zero {
-                background: var(--zero-bg);
-                color: var(--zero)
-            }
-
-            .pill.muted {
-                background: #f2f4f7;
-                color: #59636e
-            }
+            /* 작은 디테일 */
+            .btn-close{ filter: hue-rotate(-20deg) saturate(120%); }
+            .date + .meta{ margin-top:0; }
         </style>
     </th:block>
 </head>
 
 <body>
 <th:block layout:fragment="content">
+    <!-- 페이지 타이틀 영역 -->
+    <div class="page-heading d-flex align-items-center justify-content-between" style="margin-bottom:16px;">
+        <div>
+            <h3 style="margin:0; font-weight:800; font-size:2rem; color:#0f172a;">가격/재고 캘린더</h3>
+            <p class="text-subtitle text-muted" style="margin:4px 0 0;">
+                숙소별 재고와 가격을 한눈에 설정/확인하세요.
+            </p>
+        </div>
+    </div>
 
     <!-- 상단 컨트롤: 숙소/객실 선택 + 월 이동 -->
     <div class="toolbar">
