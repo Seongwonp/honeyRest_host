@@ -42,4 +42,7 @@ public interface AccommodationService {
     String getNameById(Long accommodationId);
 
     AccommodationCreateRequestDTO getDetail(Long accId);
+
+    // 관리자 이메일을 가지고 숙소 id 를 가져오기 위함
+    List<Long> getAccommodationIdsByAdminEmail(String email);
 }

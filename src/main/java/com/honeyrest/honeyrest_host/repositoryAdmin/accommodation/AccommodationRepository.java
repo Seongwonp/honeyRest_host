@@ -111,8 +111,16 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
     @Query("select a.name from Accommodation a where a.accommodationId = :id")
     Optional<String> findNameById(@Param("id") Long accommodationId);
 
-
+    // Accommodation → Company (연관관계 매핑 가정: a.company)
+    @Query("""
+        SELECT a.accommodationId
+        FROM Accommodation a
+        JOIN a.company c
+        WHERE c.email = :email
+    """)
+    List<Long> findAccommodationIdsByAdminEmail(@Param("email") String email);
 }
+
 
 
 interface AccommodationQuery {
@@ -178,7 +186,8 @@ class AccommodationQueryImpl implements AccommodationQuery {
         return new PageImpl<>(content, pageable, total);
 
 
+
+
     }
 
-    
 }

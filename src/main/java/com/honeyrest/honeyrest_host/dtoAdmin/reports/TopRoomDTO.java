@@ -1,23 +1,23 @@
 package com.honeyrest.honeyrest_host.dtoAdmin.reports;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
+import java.math.BigDecimal;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UpcomingCheckinDTO {
-    // 체크인 예정 리스트(유지)
-    private Long reservationId;
-    private String guestName;
+public class TopRoomDTO {
+    private Long accommodationId;
     private String accommodationName;
+    private Long roomId;
     private String roomName;
-    private LocalDate checkIn;
-    private Integer nights;
+    private BigDecimal totalSales;
+    private Integer totalOrders;
+
 }

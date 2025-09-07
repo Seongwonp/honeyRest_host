@@ -4,6 +4,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{admin/layout/base}">
 <head>
+    <meta charset="UTF-8" />
     <title>매출 통계</title>
     <th:block layout:fragment="head">
         <style>
@@ -62,18 +63,18 @@
                         <!-- 기간 -->
                         <div class="chip">
                             <label class="m-0" for="from" style="margin-right:6px;color:#6b7280">시작</label>
-                            <input id="from" type="date" class="border-0" style="outline:none">
+                            <input id="from" type="date" class="border-0" style="outline:none" autocomplete="off">
                         </div>
                         <div class="chip">
                             <label class="m-0" for="to" style="margin-right:6px;color:#6b7280">종료</label>
-                            <input id="to" type="date" class="border-0" style="outline:none">
+                            <input id="to" type="date" class="border-0" style="outline:none" autocomplete="off">
                         </div>
                     </div>
 
                     <div class="toolbar-right" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                        <button id="btnLast7"  class="chip" type="button">최근 7일</button>
-                        <button id="btnLast30" class="chip" type="button">최근 30일</button>
-                        <button id="btnApply"  class="btn btn-primary" type="button">적용</button>
+                        <button type="button" class="chip" id="btnLast7">최근 7일</button>
+                        <button type="button" class="chip" id="btnLast30">최근 30일</button>
+                        <button type="button" class="btn btn-primary" id="btnApply">적용</button>
                     </div>
                 </div>
             </div>
@@ -128,174 +129,222 @@
     </section>
 </th:block>
 
+<!-- admin/reports/sales.html 일부 (script 영역) -->
 <th:block layout:fragment="script">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // ===== 설정 =====
-        let source = 'payment'; // 'payment' | 'reservation'
-        let groupBy = 'daily';  // 'daily' | 'weekly' | 'monthly' | 'weekday'
-        let chart;
+    <script th:inline="javascript">
+        (() => {
+            // ===== 유틸 =====
+            const fmtCurrency = n => new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(Number(n||0));
+            const fmtNumber   = n => new Intl.NumberFormat('ko-KR').format(Number(n||0));
+            const pad2 = n => String(n).padStart(2,'0');
+            const toIso = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+            const parseIso = s => { const [y,m,d] = (s||'').split('-').map(Number); return new Date(y,(m||1)-1,d||1); };
 
-        const fmtCurrency = n => new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(n ?? 0);
-        const fmtNumber   = n => new Intl.NumberFormat('ko-KR').format(n ?? 0);
-        const pad = n => String(n).padStart(2,'0');
-        const toIso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+            // 상태
+            let source = 'payment'; // 'payment' | 'reservation'
+            let groupBy = 'daily';  // 'daily' | 'weekly' | 'monthly' | 'weekday'
+            let chart;
 
-        function setDefaultDates(days=7){
-            const to = new Date(), from = new Date(); from.setDate(to.getDate()-(days-1));
-            document.getElementById('from').value = toIso(from);
-            document.getElementById('to').value   = toIso(to);
-        }
-
-        function labelFromState(){
-            const s = source === 'payment' ? '결제' : '예약';
-            const g = groupBy==='daily'?'일':groupBy==='weekly'?'주':groupBy==='monthly'?'월':'요일';
-            document.getElementById('subtitleLabel').textContent = `기준: ${s} · 단위: ${g}`;
-        }
-
-        function endpoint(from, to){
-            // /admin/reports/{payment|reservation}/{daily|weekly|monthly|weekday}?from=yyyy-MM-dd&to=yyyy-MM-dd
-            return `/admin/reports/${source}/${groupBy}?from=${from}&to=${to}`;
-        }
-
-        function normalizeBucket(b){
-            // LocalDate 직렬화 변형 방어
-            if (Array.isArray(b)) return `${b[0]}-${pad(b[1])}-${pad(b[2])}`;
-            if (b && typeof b === 'object' && 'year' in b && 'month' in b){
-                if (!('day' in b)) return `${b.year}-${pad(b.month)}`; // 월 집계
-                return `${b.year}-${pad(b.month)}-${pad(b.day)}`;
+            // 요소 캐시 (없으면 에러 로그)
+            function must(id){
+                const el = document.getElementById(id);
+                if(!el){ console.error(`[sales] element #${id} not found`); }
+                return el;
             }
-            return String(b);
-        }
-        function setDefaultDatesByGroup(){
-            if (groupBy === 'daily')   return setDefaultDates(7);   // 최근 7일
-            if (groupBy === 'weekly')  return setDefaultDates(70);  // 최근 10주 정도
-            if (groupBy === 'weekday') return setDefaultDates(28);  // 최근 4주 (요일 패턴 보기)
-            if (groupBy === 'monthly'){
-                // 최근 6개월: to=오늘, from=5개월 전 1일
-                const to = new Date();
-                const from = new Date(to.getFullYear(), to.getMonth() - 5, 1);
-                document.getElementById('from').value = toIso(from);
-                document.getElementById('to').value   = toIso(to);
-            }
-        }
 
+            // KPI 엘리먼트
+            const elTotal   = must('kpiTotalSales');
+            const elOrders  = must('kpiTotalOrders');
+            const elAov     = must('kpiAov');
 
-        async function fetchRows(from, to){
-            const url = endpoint(from, to);
-            const res = await fetch(url, {
-                headers: { 'Accept': 'application/json' },
-                credentials: 'include'  // ★ 추가
-            });
-            const ct  = res.headers.get('content-type')||'';
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            if (!ct.includes('application/json')) {
-                const text = await res.text();
-                throw new Error('JSON이 아닌 응답\n' + text.slice(0,200));
-            }
-            const json = await res.json();
-            return Array.isArray(json) ? json : (Array.isArray(json.rows) ? json.rows : json.data || []);
-        }
+            // 날짜 입력/버튼
+            const elFrom    = must('from');
+            const elTo      = must('to');
+            const btnApply  = must('btnApply');
+            const btn7      = must('btnLast7');
+            const btn30     = must('btnLast30');
 
-        function renderKpis(rows){
-            const totalSales  = rows.reduce((s,r)=> s + Number(r.totalSales ?? 0), 0);
-            const totalOrders = rows.reduce((s,r)=> s + Number(r.totalOrders ?? 0), 0);
-            const aov         = totalOrders ? totalSales/totalOrders : 0;
-            document.getElementById('kpiTotalSales').textContent  = fmtCurrency(totalSales);
-            document.getElementById('kpiTotalOrders').textContent = fmtNumber(totalOrders);
-            document.getElementById('kpiAov').textContent         = fmtCurrency(aov);
-        }
+            // 기준 버튼들(결제/예약)
+            const btnBasisPayment = document.querySelector('[data-source="payment"]');
+            const btnBasisResv    = document.querySelector('[data-source="reservation"]');
 
-        function renderTable(rows){
-            const tb = document.getElementById('rowsTbody'); tb.innerHTML='';
-            rows.forEach(r=>{
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-          <td>${normalizeBucket(r.bucket)}</td>
-          <td class="text-end">${fmtCurrency(r.totalSales)}</td>
-          <td class="text-end">${fmtNumber(r.totalOrders)}</td>
-          <td class="text-end">${fmtCurrency(r.avgOrderPrice)}</td>`;
-                tb.appendChild(tr);
-            });
-        }
+            // 단위 버튼들(일/주/월/요일)
+            const btnDaily   = document.querySelector('[data-group="daily"]');
+            const btnWeekly  = document.querySelector('[data-group="weekly"]');
+            const btnMonthly = document.querySelector('[data-group="monthly"]');
+            const btnWeekday = document.querySelector('[data-group="weekday"]');
 
-        function renderChart(rows){
-            const labels = rows.map(r => normalizeBucket(r.bucket));
-            const sales  = rows.map(r => Number(r.totalSales ?? 0));
-            const orders = rows.map(r => Number(r.totalOrders ?? 0));
+            // 보조 라벨
+            const subLabel = must('subtitleLabel');
 
-            const ctx = document.getElementById('salesChart').getContext('2d');
-            if (chart) chart.destroy();
-            chart = new Chart(ctx, {
-                data: {
-                    labels,
-                    datasets: [
-                        { type: 'bar',  label: '매출(원)', data: sales, yAxisID: 'y1' },
-                        { type: 'line', label: '주문 수',  data: orders, yAxisID: 'y2', tension:.35, pointRadius:3 }
-                    ]
-                },
-                options: {
-                    responsive:true,
-                    interaction:{ mode:'index', intersect:false },
-                    plugins:{
-                        legend:{ display:true },
-                        tooltip:{ callbacks:{
-                                label: (ctx) => ctx.dataset.label.includes('매출')
-                                    ? `${ctx.dataset.label}: ${fmtCurrency(ctx.raw)}`
-                                    : `${ctx.dataset.label}: ${fmtNumber(ctx.raw)}건`
-                            } }
+            // 차트
+            function renderChart(rows){
+                const labels = rows.map(r => r.label ?? r.bucket ?? r.date ?? '');
+                const sales  = rows.map(r => Number(r.totalSales ?? r.total ?? 0));
+                const orders = rows.map(r => Number(r.totalOrders ?? 0));
+
+                const ctx = must('salesChart')?.getContext('2d');
+                if(!ctx) return;
+
+                if(chart) chart.destroy();
+                chart = new Chart(ctx, {
+                    data:{
+                        labels,
+                        datasets:[
+                            {
+                                type:'bar',
+                                label:'매출(원)',
+                                data:sales,
+                                yAxisID:'y1',
+                                backgroundColor:'rgba(255, 206, 86, 0.8)',  // 노란색
+                                borderColor:'rgba(255, 206, 86, 1)',
+                                borderWidth:1,
+                                barPercentage:0.5,
+                                categoryPercentage:0.6
+                            },
+                            {
+                                type:'line',
+                                label:'주문 수',
+                                data:orders,
+                                yAxisID:'y2',
+                                tension:.35,
+                                pointRadius:3,
+                                borderColor:'#ec4899',   // 핑크
+                                backgroundColor:'#ec4899',
+                                borderWidth:2
+                            }
+                        ]
                     },
-                    scales:{
-                        y1:{ position:'left',  ticks:{ callback:v=>fmtNumber(v) } },
-                        y2:{ position:'right', grid:{ drawOnChartArea:false }, ticks:{ precision:0 } }
+                    options:{
+                        responsive:true,
+                        interaction:{ mode:'index', intersect:false },
+                        plugins:{
+                            legend:{ display:true },
+                            tooltip:{ callbacks:{
+                                    label:(c)=>
+                                        c.dataset.label.includes('매출')
+                                            ? `${c.dataset.label}: ${fmtCurrency(c.raw)}`
+                                            : `${c.dataset.label}: ${fmtNumber(c.raw)}건`
+                                } }
+                        },
+                        scales:{
+                            y1:{
+                                position:'left',
+                                ticks:{ callback:v=>fmtNumber(v) }
+                            },
+                            y2:{
+                                position:'right',
+                                grid:{ drawOnChartArea:false },
+                                ticks:{ precision:0 }
+                            }
+                        }
                     }
+                });
+            }
+
+            // KPI
+            function renderKpis(rows){
+                const totalSales = rows.reduce((s,r)=> s + Number(r.totalSales ?? r.total ?? 0), 0);
+                const totalOrders= rows.reduce((s,r)=> s + Number(r.totalOrders ?? 0), 0);
+                const aov = totalOrders ? totalSales / totalOrders : 0;
+                if(elTotal)  elTotal.textContent = fmtCurrency(totalSales);
+                if(elOrders) elOrders.textContent= fmtNumber(totalOrders);
+                if(elAov)    elAov.textContent  = fmtCurrency(aov);
+            }
+
+            // 라벨
+            function refreshSubtitle(){
+                const s = (source==='payment'?'결제':'예약');
+                const g = (groupBy==='daily'?'일':groupBy==='weekly'?'주':groupBy==='monthly'?'월':'요일');
+                if (subLabel) subLabel.textContent = `기준: ${s} · 단위: ${g}`;
+            }
+
+            // 날짜 디폴트
+            function setDefaultDates(days=7){
+                const to = new Date();
+                const from = new Date(to.getFullYear(), to.getMonth(), to.getDate()- (days-1));
+                if(elFrom) elFrom.value = toIso(from);
+                if(elTo)   elTo.value   = toIso(to);
+            }
+
+            function setDefaultDatesByGroup(){
+                if (groupBy==='daily')   return setDefaultDates(7);
+                if (groupBy==='weekly')  return setDefaultDates(70);
+                if (groupBy==='weekday') return setDefaultDates(28);
+                if (groupBy==='monthly'){
+                    const to = new Date();
+                    const from = new Date(to.getFullYear(), to.getMonth()-5, 1);
+                    if(elFrom) elFrom.value = toIso(from);
+                    if(elTo)   elTo.value   = toIso(to);
+                }
+            }
+
+            // 서버 호출 (로그인 리다이렉트도 잡음)
+            async function fetchRows(){
+                const from = document.getElementById('from').value;
+                const to   = document.getElementById('to').value;
+
+                // groupBy = 'daily' | 'weekly' | 'monthly' | 'weekday'
+                // source(결제/예약 기준)를 추가로 쓰고 싶다면 &source=payment 같은 파라미터를 확장하세요.
+                const url = `/admin/reports/chart?mode=${groupBy}&from=${from}&to=${to}`;
+
+                const res = await fetch(url, { headers:{ 'Accept':'application/json' }, credentials:'include' });
+                const ct = res.headers.get('content-type') || '';
+                if (!res.ok || !ct.includes('application/json')) {
+                    const text = await res.text();
+                    console.error('[chart] not JSON (maybe login redirect?)', text.slice(0,200));
+                    throw new Error('데이터를 불러오지 못했습니다.');
+                }
+                return await res.json(); // List<SalesChartPointDTO>
+            }
+
+            // 적용
+            async function apply(){
+                try{
+                    refreshSubtitle();
+                    const rows = await fetchRows();
+                    renderKpis(rows);
+                    renderChart(rows);
+                }catch(e){
+                    alert(e.message);
+                }
+            }
+
+            // ===== 바인딩 =====
+            document.addEventListener('DOMContentLoaded', () => {
+                try{
+                    // 기준
+                    btnBasisPayment?.addEventListener('click', () => { source='payment'; btnBasisPayment.classList.add('active'); btnBasisResv?.classList.remove('active'); apply(); });
+                    btnBasisResv   ?.addEventListener('click', () => { source='reservation'; btnBasisResv.classList.add('active'); btnBasisPayment?.classList.remove('active'); apply(); });
+
+                    // 단위
+                    btnDaily  ?.addEventListener('click', () => { groupBy='daily';   setDefaultDatesByGroup(); apply(); toggleActive(btnDaily); });
+                    btnWeekly ?.addEventListener('click', () => { groupBy='weekly';  setDefaultDatesByGroup(); apply(); toggleActive(btnWeekly); });
+                    btnMonthly?.addEventListener('click', () => { groupBy='monthly'; setDefaultDatesByGroup(); apply(); toggleActive(btnMonthly); });
+                    btnWeekday?.addEventListener('click', () => { groupBy='weekday'; setDefaultDatesByGroup(); apply(); toggleActive(btnWeekday); });
+
+                    // 기간 버튼
+                    btnApply?.addEventListener('click', () => apply());
+                    btn7    ?.addEventListener('click', () => { setDefaultDates(7);  apply(); });
+                    btn30   ?.addEventListener('click', () => { setDefaultDates(30); apply(); });
+
+                    // 최초 진입 디폴트
+                    setDefaultDatesByGroup();
+                    refreshSubtitle();
+                    apply();
+                }catch(err){
+                    console.error('[sales] init failed', err);
+                    alert('스크립트 초기화 중 오류가 발생했습니다. 콘솔을 확인하세요.');
                 }
             });
-        }
 
-        async function apply(){
-            const from = document.getElementById('from').value;
-            const to   = document.getElementById('to').value;
-            try{
-                const rows = await fetchRows(from, to);
-                renderKpis(rows);
-                renderTable(rows);
-                renderChart(rows);
-            }catch(e){
-                console.error(e);
-                alert('데이터를 불러오지 못했습니다.\n' + e.message);
+            function toggleActive(targetBtn){
+                // 같은 그룹의 버튼 스타일 정리 (선택)
+                [btnDaily, btnWeekly, btnMonthly, btnWeekday].forEach(b => b?.classList.remove('active'));
+                targetBtn?.classList.add('active');
             }
-        }
-
-        // 이벤트 바인딩
-        document.addEventListener('click', (e)=>{
-            const basisBtn = e.target.closest('.seg [data-source]');
-            if (basisBtn){
-                document.querySelectorAll('.seg [data-source]').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
-                basisBtn.classList.add('active'); basisBtn.setAttribute('aria-selected','true');
-                source = basisBtn.dataset.source; labelFromState(); return;
-            }
-            const groupBtn = e.target.closest('.seg [data-group]');
-            if (groupBtn){
-                document.querySelectorAll('.seg [data-group]').forEach(b=>{
-                    b.classList.remove('active'); b.setAttribute('aria-selected','false');
-                });
-                groupBtn.classList.add('active'); groupBtn.setAttribute('aria-selected','true');
-                groupBy = groupBtn.dataset.group;
-                labelFromState();
-                setDefaultDatesByGroup(); // ★ 단위 바뀌면 기간도 맞춰줌
-                apply();                  // ★ 바로 재호출
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', ()=>{
-            setDefaultDatesByGroup();
-            labelFromState();
-            document.getElementById('btnApply').addEventListener('click', apply);
-            document.getElementById('btnLast7').addEventListener('click',  ()=>{ setDefaultDates(7);  apply(); });
-            document.getElementById('btnLast30').addEventListener('click', ()=>{ setDefaultDates(30); apply(); });
-            apply();
-        });
+        })();
     </script>
 </th:block>
 </body>

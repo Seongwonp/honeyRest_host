@@ -8,57 +8,32 @@
     <th:block layout:fragment="head">
         <style>
             :root{
-                --card-radius:16px;
-                --shadow:0 6px 18px rgba(0,0,0,.05);
-                --border:1px solid rgba(0,0,0,.06);
-                --muted:#6b7280;
-                --ink:#0f172a;
-                --accent1:#6d5ef6;
-                --accent2:#22c55e;
-                --accent3:#3b82f6;
+                --card-radius:16px; --shadow:0 6px 18px rgba(0,0,0,.05); --border:1px solid rgba(0,0,0,.06);
+                --muted:#6b7280; --ink:#0f172a; --accent1:#6d5ef6; --accent2:#22c55e; --accent3:#3b82f6;
             }
+            .grid{display:grid;gap:16px}
+            .grid-12{grid-template-columns:repeat(12,1fr)}
+            @media (max-width:1199px){.grid-12{grid-template-columns:repeat(6,1fr)}}
+            @media (max-width:767px){.grid-12{grid-template-columns:repeat(2,1fr)}}
 
-            /* GRID */
-            .grid{ display:grid; gap:16px; }
-            .grid-12{ grid-template-columns: repeat(12,1fr); }
-            @media (max-width:1199px){ .grid-12{ grid-template-columns:repeat(6,1fr);} }
-            @media (max-width:767px){  .grid-12{ grid-template-columns:repeat(2,1fr);} }
+            .kpi,.card-soft{background:#fff!important;border-radius:16px;border:1px solid rgba(0,0,0,.15);box-shadow:0 2px 6px rgba(0,0,0,.04)}
+            .kpi{grid-column:span 4 / span 4; padding:20px; min-height:140px; display:flex; flex-direction:column; justify-content:space-between}
+            .kpi:hover{transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.08)}
+            .icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+            .icon svg{width:24px;height:24px;stroke:#fff}
+            .icon.p1{background:#a5b4fc} .icon.p2{background:#6ee7b7} .icon.p3{background:#93c5fd} .icon.p4{background:#fbcfe8}
+            .card-soft .card-body{padding:20px}
 
-            /* KPI */
-            .kpi{ grid-column: span 4 / span 4; background:var(--bs-body-bg,#fff); border-radius:var(--card-radius);
-                border:var(--border); box-shadow:var(--shadow); padding:16px; transition:transform .15s ease, box-shadow .15s ease; }
-            .kpi:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(0,0,0,.08); }
-            .kpi-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-            .kpi-title{ margin:0; color:var(--muted); font-size:.95rem; letter-spacing:.2px; }
-            .kpi-value{ margin:0; color:var(--ink); font-weight:800; font-size:2rem; line-height:1.1; }
-            .pill{ font-size:.78rem; padding:4px 10px; border-radius:999px; background:rgba(16,185,129,.12); color:#059669;}
-            .pill.down{ background:rgba(239,68,68,.12); color:#dc2626; }
-
-            /* ICON */
-            .icon{
-                width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center;
-                background:rgba(0,0,0,.04);
-            }
-            .icon svg{ width:22px; height:22px; stroke:#fff; }
-            .icon.p1{ background: linear-gradient(135deg,#7c5cff,#9a7cff); }
-            .icon.p2{ background: linear-gradient(135deg,#10b981,#34d399); }
-            .icon.p3{ background: linear-gradient(135deg,#3b82f6,#60a5fa); }
-            .icon.p4{ background: linear-gradient(135deg,#8b5cf6,#a78bfa); }
-
-            /* CARDS */
-            .card-soft{ background:var(--bs-body-bg,#fff); border-radius:var(--card-radius); border:var(--border); box-shadow:var(--shadow); }
-            .card-soft .card-body{ padding:20px; }
-
-            /* TABLE */
-            .table td, .table th{ vertical-align:middle; }
-            .text-end{ text-align:end; }
-            .muted{ color:var(--muted); }
-
-            .chart-wrap{ position:relative; min-height:320px; }
+            .table{border:1px solid rgba(0,0,0,.15); border-radius:8px; overflow:hidden}
+            .quick-link{font-size:.875rem;color:#3b82f6;text-decoration:none}
+            .quick-link:hover{text-decoration:underline}
+            .muted{color:var(--muted)}
+            .kpi-title{margin:8px 0 0; color:var(--muted)}
+            .kpi-value{margin:0; font-weight:800; font-size:2rem; color:var(--ink)}
+            .chart-wrap{position:relative; min-height:320px}
         </style>
     </th:block>
 </head>
-
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
@@ -69,52 +44,46 @@
     <div class="page-content">
         <section class="section">
 
-            <!-- ===== KPI 3종 + 프로필 카드 (상단) ===== -->
+            <!-- ===== KPI 3종 + 프로필 ===== -->
             <div class="grid grid-12">
                 <!-- 등록 숙소 수 -->
                 <div class="kpi">
                     <div class="kpi-head">
                         <div class="icon p1" aria-hidden="true">
-                            <!-- house -->
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
-                                <path d="M3 10.5 12 3l9 7.5" stroke="currentColor" />
+                                <path d="M3 10.5 12 3l9 7.5" stroke="currentColor"/>
                                 <path d="M5 10v10h14V10" stroke="currentColor"/>
                                 <path d="M9 20v-6h6v6" stroke="currentColor"/>
                             </svg>
                         </div>
-                        <!-- 변화율이 있으면 pill 표시 (선택) -->
-                        <span class="pill" th:if="${accChange != null}" th:text="${accChange}">+0%</span>
                     </div>
                     <p class="kpi-title">등록 숙소 수</p>
                     <p class="kpi-value" th:text="${#numbers.formatInteger(accCount, 0)}">0</p>
                     <p class="muted m-0">회사 소유 전체 숙소</p>
+                    <a class="quick-link" th:href="@{/admin/accommodations/list}">바로가기 →</a>
                 </div>
 
                 <!-- 예약 건수 -->
                 <div class="kpi">
                     <div class="kpi-head">
                         <div class="icon p2" aria-hidden="true">
-                            <!-- calendar-check -->
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
                                 <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor"/>
                                 <path d="M16 2v4M8 2v4M3 9h18" stroke="currentColor"/>
                                 <path d="m9 14 2.5 2.5L15.5 12" stroke="currentColor"/>
                             </svg>
                         </div>
-                        <span class="pill" th:if="${resChange != null}"
-                              th:classappend="${resChangeLt0} ? ' down' : ''"
-                              th:text="${resChange}">+0%</span>
                     </div>
                     <p class="kpi-title">예약 건수</p>
                     <p class="kpi-value" th:text="${#numbers.formatInteger(resCount, 0)}">0</p>
                     <p class="muted m-0">취소 제외</p>
+                    <a class="quick-link" th:href="@{/admin/reservations/my}">바로가기 →</a>
                 </div>
 
                 <!-- 총 객실 수 -->
                 <div class="kpi">
                     <div class="kpi-head">
                         <div class="icon p3" aria-hidden="true">
-                            <!-- bed -->
                             <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
                                 <path d="M3 12V6" stroke="currentColor"/>
                                 <path d="M3 13h18v5H3z" stroke="currentColor"/>
@@ -125,17 +94,24 @@
                     <p class="kpi-title">총 객실 수</p>
                     <p class="kpi-value"><span th:text="${#numbers.formatInteger(roomCount, 0)}">0</span></p>
                     <p class="muted m-0">운영 중인 모든 객실</p>
+                    <a class="quick-link" th:href="@{/admin/rooms/list}">바로가기 →</a>
                 </div>
 
                 <!-- 관리자 프로필 -->
                 <div class="card-soft" style="grid-column: span 12;">
                     <div class="card-body d-flex align-items-center">
-                        <div class="icon p4 me-3" aria-hidden="true">
-                            <!-- user -->
-                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
-                                <circle cx="12" cy="8" r="4" stroke="currentColor"/>
-                                <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor"/>
-                            </svg>
+                        <div class="me-3">
+                            <img th:if="${currentAdmin != null and currentAdmin.profileImage != null}"
+                                 th:src="@{${currentAdmin.profileImage}}"
+                                 alt="프로필 사진"
+                                 style="width:44px;height:44px;border-radius:50%;object-fit:cover;">
+                            <div th:if="${currentAdmin == null or currentAdmin.profileImage == null}"
+                                 class="icon p4" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                    <circle cx="12" cy="8" r="4" stroke="currentColor"/>
+                                    <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor"/>
+                                </svg>
+                            </div>
                         </div>
                         <div>
                             <h5 class="mb-1" th:text="${currentAdmin != null ? currentAdmin.name : '관리자'}">관리자</h5>
@@ -148,38 +124,65 @@
 
             <!-- ===== 매출/예약 위젯 ===== -->
             <div class="grid grid-12" style="margin-top:16px;">
-                <!-- 일별 매출 차트 -->
+
+                <!-- (1) 매출 차트 -->
                 <div class="card-soft" style="grid-column: span 8;">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">일별 매출 추이</h5>
-                            <div>
-                                <input id="from" type="date" class="form-control d-inline-block" style="width:150px;">
+                        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                            <h5 class="mb-0">매출 추이</h5>
+
+                            <!-- 보기 모드: 일별 / 월별 -->
+                            <div class="btn-group me-2" role="group" aria-label="view-mode">
+                                <button id="btnViewDaily" class="btn btn-outline-primary btn-sm active">일별</button>
+                                <button id="btnViewMonthly" class="btn btn-outline-secondary btn-sm">월별</button>
+                            </div>
+
+                            <!-- 일별 전용 기간 선택 -->
+                            <div id="dailyRangeControls" class="d-flex align-items-center gap-1">
+                                <input id="from" type="date" autocomplete="off"/>
                                 <span> ~ </span>
-                                <input id="to" type="date" class="form-control d-inline-block" style="width:150px;">
-                                <button id="btnApply" class="btn btn-primary ms-2">적용</button>
-                                <button id="btnLast7" class="btn btn-light ms-1">최근 7일</button>
-                                <button id="btnLast30" class="btn btn-light ms-1">최근 30일</button>
+                                <input id="to" type="date" autocomplete="off"/>
+                                <button id="btnApply"  class="btn btn-primary btn-sm ms-2">적용</button>
+                                <button id="btnToday"  class="btn btn-light btn-sm ms-1">오늘</button>
+                                <button id="btnLast7"  class="btn btn-light btn-sm ms-1">최근 7일</button>
+                                <button id="btnLast30" class="btn btn-light btn-sm ms-1">최근 30일</button>
                             </div>
                         </div>
+
                         <div class="chart-wrap mt-3">
-                            <canvas id="dailySalesChart" aria-label="일별 매출 차트" role="img"></canvas>
+                            <canvas id="dailySalesChart" aria-label="매출 차트" role="img"></canvas>
+                        </div>
+
+                        <div class="mt-2 d-flex justify-content-end">
+                            <a class="quick-link text-primary small" th:href="@{/admin/reports/sales}">
+                                매출 정산 바로가기 →
+                            </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- Top-매출 숙소 -->
+                <!-- (2) Top 매출 방 -->
                 <div class="card-soft" style="grid-column: span 4;">
                     <div class="card-body">
-                        <h5>Top 매출 숙소</h5>
-                        <table class="table table-striped">
-                            <thead><tr><th>숙소명</th><th class="text-end">매출</th></tr></thead>
-                            <tbody id="topAccTbody"></tbody>
-                        </table>
+                        <h5>Top 매출 방 (최근 30일)</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>숙소</th>
+                                    <th>방</th>
+                                    <th class="text-end">주문 수</th>
+                                    <th class="text-end">매출</th>
+                                </tr>
+                                </thead>
+                                <tbody id="topRoomTbody"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 점유/ADR/RevPAR/취소율 KPI (하단 요약) -->
+                <!-- (3) 운영 지표 -->
                 <div class="card-soft" style="grid-column: span 8;">
                     <div class="card-body">
                         <h5 class="mb-3">운영 지표</h5>
@@ -204,7 +207,7 @@
                     </div>
                 </div>
 
-                <!-- 오늘 체크인 예정 -->
+                <!-- (4) 오늘 체크인 예정 -->
                 <div class="card-soft" style="grid-column: span 4;">
                     <div class="card-body">
                         <h5>오늘 체크인 예정</h5>
@@ -212,6 +215,7 @@
                     </div>
                 </div>
             </div>
+            <!-- ===== /매출/예약 위젯 ===== -->
 
         </section>
     </div>
@@ -219,88 +223,212 @@
 
 <th:block layout:fragment="script">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // 포맷
-        const fmtCurrency = n => new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(n ?? 0);
-        const fmtNumber   = n => new Intl.NumberFormat('ko-KR').format(n ?? 0);
-        const fmtPercent  = n => (Number(n||0)*100).toFixed(1)+'%';
+    <script th:inline="javascript">
+        (() => {
+            // ===== 서버 모델 데이터 =====
+            // 컨트롤러에서 model.addAttribute로 주입:
+            // salesDaily30 (DailySalesDTO[]), salesMonthly12 (MonthlySalesDTO[]), topRooms (TopRoomDTO[]),
+            // occ (OccupancyDTO), upcomingList (UpcomingCheckinDTO[])
+            const daily30   = /*[[${salesDaily30}]]*/ [];
+            const monthly12 = /*[[${salesMonthly12}]]*/ [];
+            const topRooms  = /*[[${topRooms}]]*/ [];
+            const occ       = /*[[${occ}]]*/ null;
+            const upcoming  = /*[[${upcomingList}]]*/ [];
 
-        // 날짜 유틸
-        const toIso = d => { const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; };
-        function setDefaultDates(days=7){
-            const to = new Date(), from = new Date(); from.setDate(to.getDate()-(days-1));
-            document.getElementById('from').value = toIso(from);
-            document.getElementById('to').value   = toIso(to);
-        }
+            // ===== 유틸 =====
+            const fmtCurrency = n => new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(Number(n||0));
+            const fmtNumber   = n => new Intl.NumberFormat('ko-KR').format(Number(n||0));
+            const z2          = n => String(n).padStart(2,'0');
+            const toIso       = d => `${d.getFullYear()}-${z2(d.getMonth()+1)}-${z2(d.getDate())}`;
+            const parseIso    = s => { const [y,m,d] = (s||'').split('-').map(Number); return new Date(y,(m||1)-1,d||1); };
 
-        let salesChart;
+            // ===== 요소 =====
+            const elFrom  = document.getElementById('from');
+            const elTo    = document.getElementById('to');
+            const btnApply   = document.getElementById('btnApply');
+            const btnToday   = document.getElementById('btnToday');
+            const btnLast7   = document.getElementById('btnLast7');
+            const btnLast30  = document.getElementById('btnLast30');
+            const btnViewDaily   = document.getElementById('btnViewDaily');
+            const btnViewMonthly = document.getElementById('btnViewMonthly');
+            const rangeDiv       = document.getElementById('dailyRangeControls');
 
-        async function loadKpis(){
-            const [occ, cancel] = await Promise.all([
-                fetch('/admin/reports/occupancy').then(r=>r.json()),
-                fetch('/admin/reports/cancellations/summary').then(r=>r.json())
-            ]);
-            document.getElementById('kpiOccupancy').textContent = fmtPercent(occ.occupancyRate ?? 0);
-            document.getElementById('kpiAdr').textContent       = fmtCurrency(occ.adr ?? 0);
-            document.getElementById('kpiRevpar').textContent    = fmtCurrency(occ.revpar ?? 0);
-            document.getElementById('kpiCancel').textContent    = fmtPercent(cancel.cancelRate ?? 0);
-        }
+            const tbTop   = document.getElementById('topRoomTbody');
+            const elOcc   = document.getElementById('kpiOccupancy');
+            const elAdr   = document.getElementById('kpiAdr');
+            const elRev   = document.getElementById('kpiRevpar');
+            const elCancel= document.getElementById('kpiCancel');
+            const ulUpcoming = document.getElementById('upcomingList');
 
-        async function loadDailySales(from, to){
-            const rows = await fetch(`/admin/reports/daily-sales?from=${from}&to=${to}`).then(r=>r.json());
-            const labels = rows.map(r => r.bucket);
-            const data   = rows.map(r => Number(r.totalSales ?? 0));
-            const ctx = document.getElementById('dailySalesChart').getContext('2d');
-            if (salesChart) salesChart.destroy();
-            salesChart = new Chart(ctx,{
-                type:'line',
-                data:{ labels, datasets:[{ label:'매출(원)', data, tension:.35, pointRadius:3, fill:false }] },
-                options:{
-                    responsive:true,
-                    plugins:{ legend:{ display:false }, tooltip:{ callbacks:{
-                                label:ctx=> `매출: ${fmtCurrency(ctx.parsed.y)}`
-                            }}},
-                    scales:{ y:{ ticks:{ callback:v=>fmtNumber(v) } } }
+            // ===== 차트 =====
+            let chart;
+            function renderLineChart(labels, data, label='매출(원)'){
+                const canvas = document.getElementById('dailySalesChart');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (chart) chart.destroy();
+                chart = new Chart(ctx, {
+                    type:'line',
+                    data:{
+                        labels,
+                        datasets:[{
+                            label,
+                            data,
+                            tension:.35,
+                            pointRadius:3,
+                            borderColor:'#a855f7',      // 보라색 라인
+                            backgroundColor:'#a855f7',
+                            borderWidth:2,
+                            fill:false
+                        }]
+                    },
+                    options:{
+                        responsive:true,
+                        plugins:{
+                            legend:{ display:false },
+                            tooltip:{ callbacks:{ label:c=>`매출: ${fmtCurrency(c.parsed.y)}` } }
+                        },
+                        scales:{ y:{ ticks:{ callback:v=>fmtNumber(v) } } }
+                    }
+                });
+            }
+
+            // ===== 렌더러 =====
+            function renderTopRooms(){
+                if (!tbTop) return;
+                tbTop.innerHTML='';
+                topRooms.forEach((r,i)=>{
+                    tbTop.insertAdjacentHTML('beforeend', `
+          <tr>
+            <td>${i+1}</td>
+            <td>${r.accommodationName??''}</td>
+            <td>${r.roomName??''}</td>
+            <td class="text-end">${fmtNumber(r.totalOrders||0)}</td>
+            <td class="text-end">${fmtCurrency(r.totalSales||0)}</td>
+          </tr>
+        `);
+                });
+                if(topRooms.length===0){
+                    tbTop.innerHTML = `<tr><td colspan="5" class="text-center text-muted">데이터가 없습니다.</td></tr>`;
                 }
+            }
+
+            function renderOpsKpis(){
+                if (!occ) return;
+                if (elOcc)    elOcc.textContent    = `${Math.round((occ.occupancyRate||0)*100)}%`;
+                if (elAdr)    elAdr.textContent    = fmtCurrency(occ.adr||0);
+                if (elRev)    elRev.textContent    = fmtCurrency(occ.revpar||0);
+                if (elCancel) elCancel.textContent = `${Math.round((occ.cancelRate||0)*100)}%`;
+            }
+
+            function renderUpcoming(){
+                if (!ulUpcoming) return;
+                ulUpcoming.innerHTML = '';
+                if (!Array.isArray(upcoming) || upcoming.length===0){
+                    ulUpcoming.innerHTML = `<li class="list-group-item text-muted">오늘 체크인 예정이 없습니다.</li>`;
+                    return;
+                }
+                upcoming.forEach(u=>{
+                    const dateStr =
+                        (typeof u.checkIn === 'string') ? u.checkIn
+                            : (u.checkIn?.year ? `${u.checkIn.year}-${z2(u.checkIn.monthValue||u.checkIn.month)}-${z2(u.checkIn.dayOfMonth||u.checkIn.day||1)}` : '-');
+                    ulUpcoming.insertAdjacentHTML('beforeend', `
+          <li class="list-group-item d-flex justify-content-between">
+            <div>
+              <div class="fw-semibold">${u.guestName ?? '-'}</div>
+              <small class="text-muted">${u.accommodationName ?? ''} · ${u.roomName ?? ''}</small>
+            </div>
+            <div class="text-end">
+              <div>${dateStr}</div>
+              <small class="text-muted">${u.nights ?? 0}박</small>
+            </div>
+          </li>
+        `);
+                });
+            }
+
+            // ===== 일/월 데이터 그리기 =====
+            function drawDailyByRange(fromStr, toStr){
+                const from = parseIso(fromStr);
+                const to   = parseIso(toStr);
+                const rows = daily30.filter(r=>{
+                    const d =
+                        (typeof r.date === 'string') ? parseIso(r.date)
+                            : (r.date?.year ? new Date(r.date.year, (r.date.monthValue||r.date.month)-1, r.date.dayOfMonth||r.date.day||1) : null);
+                    return d && d >= from && d <= to;
+                });
+                const labels = rows.map(r =>
+                    (typeof r.date === 'string')
+                        ? r.date
+                        : `${r.date.year}-${z2(r.date.monthValue||r.date.month)}-${z2(r.date.dayOfMonth||r.date.day||1)}`
+                );
+                const data   = rows.map(r => Number(r.totalSales||0));
+                renderLineChart(labels, data, '일별 매출(원)');
+            }
+
+            function drawMonthly(){
+                const labels = monthly12.map(r => {
+                    if (typeof r.ym === 'string') return r.ym; // "yyyy-MM"
+                    if (r.ym?.year) return `${r.ym.year}-${z2(r.ym.monthValue||r.ym.month)}`;
+                    return '';
+                });
+                const data = monthly12.map(r => Number(r.total||0));
+                renderLineChart(labels, data, '월별 매출(원)');
+            }
+
+            // ===== 날짜 프리셋 =====
+            function setToday(){
+                const t = new Date();
+                const d0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+                elFrom.value = toIso(d0);
+                elTo.value   = toIso(d0);
+            }
+            function setRange(days){
+                const t = new Date();
+                const to = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+                const from = new Date(to); from.setDate(to.getDate()-(days-1));
+                elFrom.value = toIso(from);
+                elTo.value   = toIso(to);
+            }
+
+            // ===== 이벤트 바인딩 =====
+            document.addEventListener('DOMContentLoaded', () => {
+                renderTopRooms();
+                renderOpsKpis();
+                renderUpcoming();
+
+                // 초기: 일별 + 오늘
+                setToday();
+                drawDailyByRange(elFrom.value, elTo.value);
+
+                // bfcache 복귀 시 오늘로 리셋
+                window.addEventListener('pageshow', () => setToday());
+
+                // 버튼
+                btnApply ?.addEventListener('click', () => drawDailyByRange(elFrom.value, elTo.value));
+                btnToday ?.addEventListener('click', () => { setToday();  drawDailyByRange(elFrom.value, elTo.value); });
+                btnLast7 ?.addEventListener('click', () => { setRange(7); drawDailyByRange(elFrom.value, elTo.value); });
+                btnLast30?.addEventListener('click', () => { setRange(30);drawDailyByRange(elFrom.value, elTo.value); });
+
+                // 토글 (일/월)
+                btnViewDaily?.addEventListener('click', () => {
+                    btnViewDaily.classList.replace('btn-outline-secondary','btn-outline-primary');
+                    btnViewMonthly.classList.replace('btn-outline-primary','btn-outline-secondary');
+                    btnViewDaily.classList.add('active'); btnViewMonthly.classList.remove('active');
+                    rangeDiv.style.display = '';
+                    if (!elFrom.value || !elTo.value) setToday();
+                    drawDailyByRange(elFrom.value, elTo.value);
+                });
+
+                btnViewMonthly?.addEventListener('click', () => {
+                    btnViewMonthly.classList.replace('btn-outline-secondary','btn-outline-primary');
+                    btnViewDaily.classList.replace('btn-outline-primary','btn-outline-secondary');
+                    btnViewMonthly.classList.add('active'); btnViewDaily.classList.remove('active');
+                    rangeDiv.style.display = 'none';
+                    drawMonthly();
+                });
             });
-        }
-
-        async function loadTopAccommodations(from, to){
-            const rows = await fetch(`/admin/reports/top-accommodations?from=${from}&to=${to}&limit=5`).then(r=>r.json());
-            const tb = document.getElementById('topAccTbody');
-            tb.innerHTML='';
-            for(const r of rows){
-                tb.innerHTML += `<tr><td>${r.accommodationName}</td><td class="text-end">${fmtCurrency(r.totalSales)}</td></tr>`;
-            }
-        }
-
-        async function loadUpcoming(){
-            const rows = await fetch('/admin/reports/upcoming-checkins').then(r=>r.json());
-            const ul = document.getElementById('upcomingList');
-            ul.innerHTML='';
-            for(const r of rows){
-                ul.innerHTML += `<li class="list-group-item">
-          <strong>${r.guestName}</strong> · ${r.accommodationName}${r.roomName ? ' ('+r.roomName+')' : ''} · 체크인 ${r.checkIn}
-        </li>`;
-            }
-        }
-
-        async function applyRange(){
-            const from = document.getElementById('from').value;
-            const to   = document.getElementById('to').value;
-            await Promise.all([ loadDailySales(from,to), loadTopAccommodations(from,to) ]);
-        }
-
-        document.addEventListener('DOMContentLoaded', async ()=>{
-            setDefaultDates(7);
-            await loadKpis();
-            await applyRange();
-            await loadUpcoming();
-
-            document.getElementById('btnApply').addEventListener('click', applyRange);
-            document.getElementById('btnLast7').addEventListener('click', async ()=>{ setDefaultDates(7); await applyRange(); });
-            document.getElementById('btnLast30').addEventListener('click', async ()=>{ setDefaultDates(30); await applyRange(); });
-        });
+        })();
     </script>
 </th:block>
 </body>

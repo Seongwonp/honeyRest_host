@@ -21,5 +21,8 @@ public interface AccommodationTagService {
     List<AccommodationTagDTO> findByIds(List<Long> tagIds);
 
     void replaceMapping(Long accommodationId, List<Long> tagIds);
+
+
+
 }
 

@@ -21,4 +21,7 @@ public class DailySalesDTO {
 
     private Long accommodationId;   // 선택: 숙소별 구분이 필요하다면
     private String accommodationName; // 선택: 그래프 범례에 표시할 이름
+    private Long roomId;
+    private String roomName;
+    private Integer dayOfWeek;     // 요일 집계(1=월 … 7=일)용 라벨
 }

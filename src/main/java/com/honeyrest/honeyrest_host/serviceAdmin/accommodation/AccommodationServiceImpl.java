@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -530,6 +529,19 @@ public class AccommodationServiceImpl implements AccommodationService {
                 });
 
         return dto;
+    }
+    @Override
+    public List<Long> getAccommodationIdsByAdminEmail(String email) {
+        // JPQL(문자열 매칭) 우선
+        List<Long> ids = accommodationRepository.findAccommodationIdsByAdminEmail(email);
+        if (ids != null && !ids.isEmpty()) return ids;
+
+        // 연관 매핑이 없거나 위 메서드가 없다면 네이티브로Fallback
+        try {
+            return accommodationRepository.findAccommodationIdsByAdminEmail(email);
+        } catch (Exception ignore) {
+            return List.of();
+        }
     }
 }
 

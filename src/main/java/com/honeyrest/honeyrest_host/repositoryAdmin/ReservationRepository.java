@@ -98,22 +98,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                                          @Param("endDate") LocalDate endDate);
 
 
-    @Query("""
-            select r from Reservation r
-            join r.accommodation a
-            join a.company c
-            where c.companyId = :companyId
-              and r.status = 'CANCEL_REQUEST'
-              and (:q is null or :q = '' or
-                   r.reservationNumber like concat('%',:q,'%')
-                   or r.guestName like concat('%',:q,'%')
-                   or r.guestPhone like concat('%',:q,'%'))
-            """)
-    Page<Reservation> findCancelRequestsByCompanyViaAcc(
-            @Param("companyId") Long companyId,
-            @Param("q") String q,
-            Pageable pageable);
-
 
     @Query("""
                 SELECT r
@@ -185,124 +169,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             """)
     int markNoShow(@Param("id") Long id, @Param("now") LocalDate now);
 
-    // 회사 기준 체크인 예정 (예: CONFIRMED/PAID)
-    @Query(value = """
-            SELECT 
-                r.reservation_id,
-                r.guest_name,
-                a.name AS accommodation_name,
-                rm.name AS room_name,
-                r.check_in_date,
-                DATEDIFF(r.check_out_date, r.check_in_date) AS nights
-            FROM reservation r
-            JOIN accommodation a ON a.accommodation_id = r.accommodation_id
-            LEFT JOIN room rm ON rm.room_id = r.room_id
-            WHERE a.company_id = :companyId
-              AND r.status IN ('CONFIRMED','PAID')
-              AND DATE(r.check_in_date) = :date
-            ORDER BY r.check_in_date ASC
-            LIMIT :size
-            """, nativeQuery = true)
-    List<Object[]> findUpcomingCheckins(@Param("companyId") Long companyId,
-                                        @Param("date") LocalDate date,
-                                        @Param("size") int size);
-
-    // 전체/취소 건수 요약
-    @Query(value = """
-            SELECT 
-                SUM(CASE WHEN r.status IN ('CANCELED','REFUNDED') THEN 1 ELSE 0 END) AS canceled,
-                COUNT(*) AS total
-            FROM reservation r
-            JOIN accommodation a ON a.accommodation_id = r.accommodation_id
-            WHERE a.company_id = :companyId
-              AND DATE(r.created_at) BETWEEN :from AND :to
-            """, nativeQuery = true)
-    Object[] findCancelSummary(@Param("companyId") Long companyId,
-                               @Param("from") LocalDate from,
-                               @Param("to") LocalDate to);
-
-    // 기간과 겹치는 판매박수(상태 기준은 정책에 맞게 조정)
-    @Query(value = """
-            SELECT COALESCE(SUM(
-                     GREATEST(0,
-                       DATEDIFF(
-                         LEAST(r.check_out_date, DATE_ADD(:to, INTERVAL 1 DAY)),
-                         GREATEST(r.check_in_date, :from)
-                       )
-                     )
-                   ), 0) AS soldNights
-            FROM reservation r
-            JOIN accommodation a ON a.accommodation_id = r.accommodation_id
-            WHERE a.company_id = :companyId
-              AND r.status IN ('CONFIRMED','PAID','CHECKED_IN','CHECKED_OUT')
-              AND r.check_in_date < DATE_ADD(:to, INTERVAL 1 DAY)
-              AND r.check_out_date > :from
-            """, nativeQuery = true)
-    Integer calcSoldNights(@Param("companyId") Long companyId,
-                           @Param("from") LocalDate from,
-                           @Param("to") LocalDate to);
-
-
-    // 일별
-    @Query(value = """
-                SELECT DATE(r.check_in_date) AS bucket,
-                       COALESCE(SUM(r.price),0) AS totalSales,
-                       COUNT(*) AS totalOrders,
-                       CASE WHEN COUNT(*)=0 THEN 0 ELSE SUM(r.price)/COUNT(*) END AS avgOrderPrice,
-                       NULL AS dayOfWeek
-                FROM reservation r
-                WHERE r.status IN ('CONFIRMED','COMPLETED')
-                  AND r.check_in_date BETWEEN :from AND :to
-                GROUP BY DATE(r.check_in_date)
-                ORDER BY bucket
-            """, nativeQuery = true)
-    List<SalesStatRow> findDailyReservationSales(@Param("from") LocalDate from, @Param("to") LocalDate to);
-
-    // 주별
-    @Query(value = """
-                SELECT DATE(DATE_SUB(r.check_in_date, INTERVAL WEEKDAY(r.check_in_date) DAY)) AS bucket,
-                       COALESCE(SUM(r.price),0) AS totalSales,
-                       COUNT(*) AS totalOrders,
-                       NULL AS avgOrderPrice,
-                       NULL AS dayOfWeek
-                FROM reservation r
-                WHERE r.status IN ('CONFIRMED','COMPLETED')
-                  AND r.check_in_date BETWEEN :from AND :to
-                GROUP BY DATE(DATE_SUB(r.check_in_date, INTERVAL WEEKDAY(r.check_in_date) DAY))
-                ORDER BY bucket
-            """, nativeQuery = true)
-    List<SalesStatRow> findWeeklyReservationSales(@Param("from") LocalDate from, @Param("to") LocalDate to);
-
-    // 월별
-    @Query(value = """
-                SELECT DATE_FORMAT(r.check_in_date,'%Y-%m-01') AS bucket,
-                       COALESCE(SUM(r.price),0) AS totalSales,
-                       COUNT(*) AS totalOrders,
-                       NULL AS avgOrderPrice,
-                       NULL AS dayOfWeek
-                FROM reservation r
-                WHERE r.status IN ('CONFIRMED','COMPLETED')
-                  AND r.check_in_date BETWEEN :from AND :to
-                GROUP BY DATE_FORMAT(r.check_in_date,'%Y-%m')
-                ORDER BY bucket
-            """, nativeQuery = true)
-    List<SalesStatRow> findMonthlyReservationSales(@Param("from") LocalDate from, @Param("to") LocalDate to);
-
-    // 요일별
-    @Query(value = """
-                SELECT DATE(r.check_in_date) AS bucket,
-                       COALESCE(SUM(r.price),0) AS totalSales,
-                       COUNT(*) AS totalOrders,
-                       NULL AS avgOrderPrice,
-                       (CASE WHEN DAYOFWEEK(r.check_in_date)=1 THEN 7 ELSE DAYOFWEEK(r.check_in_date)-1 END) AS dayOfWeek
-                FROM reservation r
-                WHERE r.status IN ('CONFIRMED','COMPLETED')
-                  AND r.check_in_date BETWEEN :from AND :to
-                GROUP BY dayOfWeek
-                ORDER BY dayOfWeek
-            """, nativeQuery = true)
-    List<SalesStatRow> findWeekdayReservationSales(@Param("from") LocalDate from, @Param("to") LocalDate to);
-
     @Modifying(clearAutomatically = true, flushAutomatically = true)
 
 
@@ -323,26 +189,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                            @Param("roomId") Long roomId,
                                            @Param("startDate") LocalDate startDate,
                                            @Param("endDate") LocalDate endDate);
-
-
-
-    // 숙소/회사 일별 매출 합계만 바로 뽑는 버전(그룹바이)
-    @Query(value = """
-    SELECT DATE(r.check_in_date) AS bucket,
-           COALESCE(SUM(r.price),0) AS totalSales
-      FROM reservation r
-      JOIN accommodation a ON a.accommodation_id = r.accommodation_id
-     WHERE a.company_id = :companyId
-       AND (:accommodationId IS NULL OR a.accommodation_id = :accommodationId)
-       AND r.status IN ('CONFIRMED','PAID','CHECKED_IN','CHECKED_OUT','COMPLETED')
-       AND DATE(r.check_in_date) BETWEEN :start AND :end
-     GROUP BY DATE(r.check_in_date)
-     ORDER BY bucket
-""", nativeQuery = true)
-    List<Object[]> sumDailyRevenueByCheckin(@Param("companyId") Long companyId,
-                                            @Param("accommodationId") Long accommodationId,
-                                            @Param("start") LocalDate start,
-                                            @Param("end") LocalDate end);
 
 
 

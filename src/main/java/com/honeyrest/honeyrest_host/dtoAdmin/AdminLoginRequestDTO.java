@@ -17,4 +17,6 @@ public class AdminLoginRequestDTO {
     private String password;
     private String role; // 화면 표시용 (COMPANY_ADMIN, SUPER_ADMIN 등)
     private String name;
+
+    private String profileImage; //db의 profile_image 칼럼과 매핑
 }

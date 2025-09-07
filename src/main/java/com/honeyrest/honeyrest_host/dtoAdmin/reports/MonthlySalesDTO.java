@@ -6,15 +6,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-
+import java.time.YearMonth;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class TopAccommodationDTO {
-    private Long accommodationId;
-    private String accommodationName;
-    private BigDecimal totalSales;
-    private BigDecimal totalOrdered;
+public class MonthlySalesDTO {
+    private YearMonth ym;
+    private BigDecimal total; // 월 합계
 }
