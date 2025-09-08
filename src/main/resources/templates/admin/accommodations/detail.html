@@ -37,6 +37,25 @@
         margin:.2rem;font-size:.8rem;background:#fff}
       .tag .dot{width:.45rem;height:.45rem;border-radius:999px;display:inline-block;margin-right:.35rem;
         background:#a78bfa}
+
+
+      /* 확인사항/취소규정 전용 접기 상자 */
+      .clamp-box{
+        position:relative;
+        max-height:9.6rem;            /* 약 6~7줄 */
+        overflow:hidden;
+      }
+      .clamp-box::after{
+        content:"";
+        position:absolute; left:0; right:0; bottom:0;
+        height:2.2rem;
+        background:linear-gradient(to bottom, rgba(255,255,255,0), #fff);
+      }
+      .clamp-box.expanded{ max-height:none; }
+      .clamp-box.expanded::after{ display:none; }
+
+      /* 상단 우측 링크형 버튼(기존 숙소 소개 버튼과 톤 맞춤) */
+      .btn-link-like{ border:none;background:none;padding:0;font-size:.9rem;color:#0a58ca;cursor:pointer; }
     </style>
   </th:block>
 </head>
@@ -135,36 +154,47 @@
           <div class="row g-3">
             <div class="col-md-6">
               <div class="card-lite h-100">
-                <div class="section-title">확인사항 및 기타</div>
-                <ul th:if="${amenitiesList != null and !#lists.isEmpty(amenitiesList)}" class="list-plain">
-                  <li th:each="a : ${amenitiesList}" th:text="${a}"></li>
-                </ul>
-                <div th:if="${(amenitiesList == null or #lists.isEmpty(amenitiesList)) and (acc.amenities != null and !#strings.isEmpty(acc.amenities))}"
-                     class="desc" th:text="${acc.amenities}"></div>
-                <div th:if="${(amenitiesList == null or #lists.isEmpty(amenitiesList)) and (acc.amenities == null or #strings.isEmpty(acc.amenities))}"
-                     class="text-muted">등록된 확인사항이 없습니다.</div>
+                <div class="section-title d-flex justify-content-between align-items-center">
+                  <span>확인사항 및 기타</span>
+                  <button id="amenToggle" type="button" class="btn-link-like">더보기</button>
+                </div>
+
+                <!-- ✅ 토글 대상 -->
+                <div id="amenBox" class="clamp-box">
+                  <ul th:if="${amenitiesList != null and !#lists.isEmpty(amenitiesList)}" class="list-plain mb-0">
+                    <li th:each="a : ${amenitiesList}" th:text="${a}"></li>
+                  </ul>
+
+                  <div th:if="${(amenitiesList == null or #lists.isEmpty(amenitiesList)) and (acc.amenities != null and !#strings.isEmpty(acc.amenities))}"
+                       class="desc mb-0" th:text="${acc.amenities}"></div>
+
+                  <div th:if="${(amenitiesList == null or #lists.isEmpty(amenitiesList)) and (acc.amenities == null or #strings.isEmpty(acc.amenities))}"
+                       class="text-muted mb-0">등록된 확인사항이 없습니다.</div>
+                </div>
               </div>
             </div>
 
             <div class="col-md-6">
-              <!-- 취소규정 상세 -->
               <div class="card-lite h-100">
-                <div class="section-title">취소/환불 규정</div>
+                <div class="section-title d-flex justify-content-between align-items-center">
+                  <span>취소/환불 규정</span>
+                  <button id="cancelToggle" type="button" class="btn-link-like">더보기</button>
+                </div>
 
-                <!-- 1) policyList(List<String>) 우선 -->
-                <ul th:if="${policyList != null and !#lists.isEmpty(policyList)}" class="list-plain">
-                  <li th:each="p : ${policyList}" th:text="${p}"></li>
-                </ul>
+                <!-- ✅ 토글 대상 -->
+                <div id="cancelBox" class="clamp-box">
+                  <ul th:if="${policyList != null and !#lists.isEmpty(policyList)}" class="list-plain mb-0">
+                    <li th:each="p : ${policyList}" th:text="${p}"></li>
+                  </ul>
 
-                <!-- 2) policyList가 비었고, acc.cancellationPolicyDetail 문자열이 있으면 원문 표시 -->
-                <div th:if="${(policyList == null or #lists.isEmpty(policyList))
-               and (acc.cancellationPolicyDetail != null and !#strings.isEmpty(acc.cancellationPolicyDetail))}"
-                     class="desc" th:text="${acc.cancellationPolicyDetail}"></div>
+                  <div th:if="${(policyList == null or #lists.isEmpty(policyList))
+                   and (acc.cancellationPolicyDetail != null and !#strings.isEmpty(acc.cancellationPolicyDetail))}"
+                       class="desc mb-0" th:text="${acc.cancellationPolicyDetail}"></div>
 
-                <!-- 3) 둘 다 없으면 안내 -->
-                <div th:if="${(policyList == null or #lists.isEmpty(policyList))
-               and (acc.cancellationPolicyDetail == null or #strings.isEmpty(acc.cancellationPolicyDetail))}"
-                     class="text-muted">등록된 환불 규정이 없습니다.</div>
+                  <div th:if="${(policyList == null or #lists.isEmpty(policyList))
+                   and (acc.cancellationPolicyDetail == null or #strings.isEmpty(acc.cancellationPolicyDetail))}"
+                       class="text-muted mb-0">등록된 환불 규정이 없습니다.</div>
+                </div>
               </div>
             </div>
           </div>
@@ -242,6 +272,30 @@
       };
       btn.addEventListener('click', () => { expanded = !expanded; update(); });
       update();
+    })();
+  </script>
+  <script>
+    (function(){
+      function wireToggle(boxId, btnId){
+        const box = document.getElementById(boxId);
+        const btn = document.getElementById(btnId);
+        if(!box || !btn) return;
+
+        // 처음 로딩 때 내용이 짧으면 버튼 숨김
+        const needClamp = box.scrollHeight > box.clientHeight + 4;
+        if (!needClamp){ btn.style.display = 'none'; return; }
+
+        let expanded = false;
+        const update = () => {
+          box.classList.toggle('expanded', expanded);
+          btn.textContent = expanded ? '접기' : '더보기';
+        };
+        btn.addEventListener('click', () => { expanded = !expanded; update(); });
+        update();
+      }
+
+      wireToggle('amenBox','amenToggle');     // 확인사항 및 기타
+      wireToggle('cancelBox','cancelToggle'); // 취소/환불 규정
     })();
   </script>
 

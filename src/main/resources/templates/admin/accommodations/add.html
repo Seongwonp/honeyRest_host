@@ -186,10 +186,32 @@
                              th:errors="*{checkOutTime}">에러
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">최저가(원)</label>
-                        <input type="number" step="0.01" min="0" class="form-control" th:field="*{minPrice}"
-                               placeholder="예) 80000">
+                    <!-- 최저가 -->
+                    <div class="kv-item">
+                        <div class="kv-label">최저가(원)</div>
+                        <div class="kv-body">
+                            <div class="input-group" style="max-width: 320px">
+                                <button class="btn btn-outline-secondary" type="button" data-price-step="-10000">-1만</button>
+                                <button class="btn btn-outline-secondary" type="button" data-price-step="-1000">-1천</button>
+                                <input type="number"
+                                       class="form-control text-end"
+                                       th:field="*{minPrice}"
+                                       name="minPrice"
+                                       min="0" step="1"
+                                       placeholder="예) 80000">
+                                <button class="btn btn-outline-secondary" type="button" data-price-step="1000">+1천</button>
+                                <button class="btn btn-outline-secondary" type="button" data-price-step="10000">+1만</button>
+                            </div>
+
+                            <!-- 원화 포맷 미리보기 -->
+                            <span class="badge bg-light border text-body ms-2" id="minPricePreview">₩ 0</span>
+
+                            <!-- 검증 피드백(Thymeleaf) -->
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('minPrice')}"
+                                 th:errors="*{minPrice}">에러</div>
+
+                            <div class="kv-help">0원 이상, 원 단위. (단가 조정은 버튼으로 빠르게 변경 가능)</div>
+                        </div>
                     </div>
 
                     <!-- 태그(다중) -->
@@ -390,6 +412,44 @@
                 renderSelected();
             }
         });
+    </script>
+    <script>
+        // 최저가 증감/표시/검증
+        (function () {
+            const input = document.querySelector('input[name="minPrice"]');
+            const badge = document.getElementById('minPricePreview');
+            const nf = new Intl.NumberFormat('ko-KR');
+
+            function clamp(n) {
+                n = isFinite(n) ? n : 0;
+                return Math.max(0, Math.round(n)); // 음수 방지 + 원단위 반올림
+            }
+            function render() {
+                if (!input || !badge) return;
+                const val = clamp(Number(input.value));
+                badge.textContent = '₩ ' + nf.format(val);
+            }
+
+            // 입력 변화 시 포맷 미리보기 업데이트
+            input && input.addEventListener('input', render);
+            input && input.addEventListener('change', () => {
+                input.value = clamp(Number(input.value));
+                render();
+            });
+
+            // 증감 버튼
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-price-step]');
+                if (!btn || !input) return;
+                const step = Number(btn.getAttribute('data-price-step') || 0);
+                const next = clamp(Number(input.value || 0) + step);
+                input.value = next;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            // 최초 표시
+            render();
+        })();
     </script>
 </th:block>
 </body>

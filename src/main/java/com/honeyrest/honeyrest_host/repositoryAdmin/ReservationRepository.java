@@ -190,7 +190,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                            @Param("startDate") LocalDate startDate,
                                            @Param("endDate") LocalDate endDate);
 
-
+    boolean existsByRoom_Accommodation_AccommodationId(Long accommodationId);
 
 }
 

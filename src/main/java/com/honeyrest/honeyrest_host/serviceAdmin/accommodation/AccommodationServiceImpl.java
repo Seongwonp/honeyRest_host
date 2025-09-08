@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.*;
 import com.honeyrest.honeyrest_host.entity.*;
-import com.honeyrest.honeyrest_host.repositoryAdmin.CancellationPolicyRepository;
-import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
-import com.honeyrest.honeyrest_host.repositoryAdmin.RegionRepository;
+import com.honeyrest.honeyrest_host.repositoryAdmin.*;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.CancellationPolicyService;
 import com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser;
@@ -36,10 +34,13 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationTagMapRepository accommodationTagMapRepository;
     private final AccommodationImageService accommodationImageService;
     private final CancellationPolicyRepository cancellationPolicyRepository;
+    private final ReservationRepository reservationRepository;
+
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final CancellationPolicyService cancellationPolicyService;
     private final AccommodationTagService accommodationTagService;
+    private final RoomRepository roomRepository;
 
     /* ---------------------- JSON 헬퍼 ---------------------- */
     private String normalizeJsonList(String raw) {
@@ -411,11 +412,22 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Override
     @Transactional // 삭제 메서드가 업데이트,삭제 쿼리를 실행하므로 트랜잭션이 필요함
     public void delete(Long id) {
-        // 연관 데이터 먼저 삭제
+        Accommodation acc = accommodationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("숙소가 존재하지 않습니다. id=" + id));
+
+        // 예약 존재 여부 확인
+        if (reservationRepository.existsByRoom_Accommodation_AccommodationId(id)) {
+            throw new IllegalStateException("예약 이력이 있어 삭제할 수 없습니다.");
+        }
+
+        // 순차 삭제 (FK 제약 주의)
         accommodationImageRepository.deleteByAccommodation_AccommodationId(id);
         accommodationTagMapRepository.deleteByAccommodation_AccommodationId(id);
-        // 마지막에 본체 삭제
-        accommodationRepository.deleteById(id);
+        cancellationPolicyRepository.deleteByAccommodation_AccommodationId(id);
+        roomRepository.deleteByAccommodation_AccommodationId(id);
+
+        // 마지막에 숙소 삭제
+        accommodationRepository.delete(acc);
     }
 
     @Override

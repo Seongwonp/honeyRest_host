@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.RegionDTO;
@@ -52,7 +52,6 @@ public class AccommodationController {
     private final FileUploadUtil fileUploadUtil;
     private final UserService userService;
     private final AccommodationTagService accommodationTagService;
-    private final ObjectMapper objectMapper;
     private final CancellationPolicyService cancellationPolicyService;
 
 
@@ -167,7 +166,7 @@ public class AccommodationController {
     public String list(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String status,
             Model model
     ) {

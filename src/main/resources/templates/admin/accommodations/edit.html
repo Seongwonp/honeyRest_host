@@ -97,6 +97,7 @@
                                     </select>
                                 </div>
 
+
                                 <div class="col-md-4">
                                     <label class="form-label required">지역(소)</label>
                                     <select id="subRegion" class="form-select"
@@ -108,6 +109,84 @@
                                                 th:selected="${r.regionId == form.subRegionId}"></option>
                                     </select>
                                 </div>
+                                <!-- 최저가 -->
+                                <div class="kv-item">
+                                    <div class="kv-label">최저가(원)</div>
+                                    <div class="kv-body">
+                                        <div class="input-group" style="max-width: 320px">
+                                            <button class="btn btn-outline-secondary" type="button" data-price-step="-10000">-1만</button>
+                                            <button class="btn btn-outline-secondary" type="button" data-price-step="-1000">-1천</button>
+                                            <input type="number"
+                                                   class="form-control text-end"
+                                                   th:field="*{minPrice}"
+                                                   name="minPrice"
+                                                   min="0" step="1"
+                                                   placeholder="예) 80000">
+                                            <button class="btn btn-outline-secondary" type="button" data-price-step="1000">+1천</button>
+                                            <button class="btn btn-outline-secondary" type="button" data-price-step="10000">+1만</button>
+                                        </div>
+
+                                        <!-- 원화 포맷 미리보기 -->
+                                        <span class="badge bg-light border text-body ms-2" id="minPricePreview">₩ 0</span>
+
+                                        <!-- 검증 피드백(Thymeleaf) -->
+                                        <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('minPrice')}"
+                                             th:errors="*{minPrice}">에러</div>
+
+                                        <div class="kv-help">0원 이상, 원 단위. (단가 조정은 버튼으로 빠르게 변경 가능)</div>
+                                    </div>
+                                </div>
+
+                                <!-- 운영/상태 빠른수정 (목록형) -->
+                                <div class="col-12">
+                                    <label class="form-label d-block mb-2">운영/상태 빠른수정</label>
+
+                                    <div class="kv-list">
+                                        <!-- 체크인 -->
+                                        <div class="kv-item">
+                                            <div class="kv-label">체크인</div>
+                                            <div class="kv-body">
+                                                <input type="datetime-local"
+                                                       class="form-control"
+                                                       th:field="*{checkInTime}"
+                                                       th:classappend="${#fields.hasErrors('checkInTime')}? ' is-invalid'">
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('checkInTime')}"
+                                                     th:errors="*{checkInTime}">에러</div>
+                                                <div class="kv-help">예) 2025-09-14T15:00</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 체크아웃 -->
+                                        <div class="kv-item">
+                                            <div class="kv-label">체크아웃</div>
+                                            <div class="kv-body">
+                                                <input type="datetime-local"
+                                                       class="form-control"
+                                                       th:field="*{checkOutTime}"
+                                                       th:classappend="${#fields.hasErrors('checkOutTime')}? ' is-invalid'">
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('checkOutTime')}"
+                                                     th:errors="*{checkOutTime}">에러</div>
+                                                <div class="kv-help">예) 2025-09-15T11:00</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 상태 -->
+                                        <div class="kv-item">
+                                            <div class="kv-label">상태</div>
+                                            <div class="kv-body">
+                                                <select class="form-select" style="max-width:240px"
+                                                        th:field="*{status}">
+                                                    <option value="">선택</option>
+                                                    <option value="PENDING">PENDING</option>
+                                                    <option value="ACTIVE">ACTIVE</option>
+                                                    <option value="DISABLED">DISABLED</option>
+                                                </select>
+                                                <span class="kv-help">승인대기/운영중/중지</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
 
                                 <!-- 소개 -->
                                 <div class="col-12">
@@ -433,6 +512,70 @@
                 renderSelected();
             }
         });
+    </script>
+    <script>
+        // 체크아웃은 체크인 이후여야 함 (프론트 가드)
+        (function(){
+            const cin  = document.querySelector('input[name="checkInTime"]');
+            const cout = document.querySelector('input[name="checkOutTime"]');
+
+            function toDate(v){ return v ? new Date(v) : null; }
+
+            function validate(){
+                const a = toDate(cin?.value);
+                const b = toDate(cout?.value);
+                if (a && b && b < a) {
+                    // 단순 경고 + 체크아웃 비우기
+                    alert('체크아웃 시간은 체크인 이후여야 합니다.');
+                    cout.value = '';
+                    cout.focus();
+                }
+                // 체크아웃의 min을 체크인으로 설정해 UX 보조
+                if (cout && cin && cin.value) cout.min = cin.value;
+            }
+
+            cin && cin.addEventListener('change', validate);
+            cout && cout.addEventListener('change', validate);
+            validate();
+        })();
+    </script>
+    <script>
+        // 최저가 증감/표시/검증
+        (function () {
+            const input = document.querySelector('input[name="minPrice"]');
+            const badge = document.getElementById('minPricePreview');
+            const nf = new Intl.NumberFormat('ko-KR');
+
+            function clamp(n) {
+                n = isFinite(n) ? n : 0;
+                return Math.max(0, Math.round(n)); // 음수 방지 + 원단위 반올림
+            }
+            function render() {
+                if (!input || !badge) return;
+                const val = clamp(Number(input.value));
+                badge.textContent = '₩ ' + nf.format(val);
+            }
+
+            // 입력 변화 시 포맷 미리보기 업데이트
+            input && input.addEventListener('input', render);
+            input && input.addEventListener('change', () => {
+                input.value = clamp(Number(input.value));
+                render();
+            });
+
+            // 증감 버튼
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-price-step]');
+                if (!btn || !input) return;
+                const step = Number(btn.getAttribute('data-price-step') || 0);
+                const next = clamp(Number(input.value || 0) + step);
+                input.value = next;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            // 최초 표시
+            render();
+        })();
     </script>
 </th:block>
 </body>
