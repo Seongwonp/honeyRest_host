@@ -379,7 +379,7 @@ public class AccommodationController {
         // 2) 화면 폼용으로 기존 DTO 재활용
         AccommodationUpdateRequestDTO form = AccommodationUpdateRequestDTO.builder()
                 .companyId(dto.getCompanyId())
-                .categoryId(dto.getCategoryId())
+                .categoryId(Math.toIntExact(dto.getCategoryId()))
                 .mainRegionId(dto.getMainRegionId())
                 .subRegionId(dto.getSubRegionId())
                 .name(dto.getName())

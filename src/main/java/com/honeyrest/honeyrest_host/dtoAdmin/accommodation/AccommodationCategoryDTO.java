@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccommodationCategoryDTO {
-    private Long categoryId;
+    private Integer categoryId;
     private String name;
     private String iconUrl;
     private Integer sortOrder;

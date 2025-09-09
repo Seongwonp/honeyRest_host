@@ -75,7 +75,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
         return AccommodationDTO.builder()
                 .AccommodationId(e.getAccommodationId())
                 .companyId(e.getCompany().getCompanyId())
-                .categoryId(e.getCategory().getCategoryId())
+                .categoryId(Long.valueOf(e.getCategory().getCategoryId()))
                 .mainRegionId(e.getMainRegion().getRegionId())
                 .subRegionId(e.getSubRegion().getRegionId())
                 .name(e.getName())
