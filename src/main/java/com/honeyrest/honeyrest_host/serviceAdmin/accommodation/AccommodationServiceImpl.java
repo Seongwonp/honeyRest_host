@@ -65,7 +65,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .companyId(a.getCompany().getCompanyId())
                 .mainRegionId(a.getMainRegion().getRegionId())
                 .subRegionId(a.getSubRegion().getRegionId())
-                .categoryId(a.getCategory().getCategoryId())
+                .categoryId(Long.valueOf(a.getCategory().getCategoryId()))
                 .address(a.getAddress())
                 .description(a.getDescription())
                 .amenities(a.getAmenities())
@@ -85,7 +85,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         return AccommodationCreateRequestDTO.builder()
                 .accommodationId(e.getAccommodationId())
                 .companyId(e.getCompany() != null ? e.getCompany().getCompanyId() : null)
-                .categoryId(e.getCategory() != null ? e.getCategory().getCategoryId() : null)
+                .categoryId(Long.valueOf(e.getCategory() != null ? e.getCategory().getCategoryId() : null))
                 .mainRegionId(e.getMainRegion() != null ? e.getMainRegion().getRegionId() : null)
                 .subRegionId(e.getSubRegion() != null ? e.getSubRegion().getRegionId() : null)
                 .name(e.getName())
@@ -135,7 +135,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         return AccommodationCreateRequestDTO.builder()
                 .accommodationId(e.getAccommodationId())
                 .companyId(e.getCompany() != null ? e.getCompany().getCompanyId() : null)
-                .categoryId(e.getCategory() != null ? e.getCategory().getCategoryId() : null)
+                .categoryId(Long.valueOf(e.getCategory() != null ? e.getCategory().getCategoryId() : null))
                 .mainRegionId(e.getMainRegion() != null ? e.getMainRegion().getRegionId() : null)
                 .subRegionId(e.getSubRegion() != null ? e.getSubRegion().getRegionId() : null)
                 .name(e.getName())
@@ -227,7 +227,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         // --- Region/Category/Company 등 ID 안전 추출 ---
         Long companyId   = Optional.ofNullable(a.getCompany()).map(Company::getCompanyId).orElse(null);
-        Long categoryId  = Optional.ofNullable(a.getCategory()).map(AccommodationCategory::getCategoryId).orElse(null);
+        Long categoryId  = Long.valueOf(Optional.ofNullable(a.getCategory()).map(AccommodationCategory::getCategoryId).orElse(null));
         Long mainRegionId= Optional.ofNullable(a.getMainRegion()).map(Region::getRegionId).orElse(null);
 
         // 프로젝트마다 필드명이 다를 수 있어요.
