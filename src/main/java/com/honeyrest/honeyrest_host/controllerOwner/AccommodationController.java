@@ -39,7 +39,7 @@ public class AccommodationController {
 
         model.addAttribute("companyId", companyId != null ? companyId : 0);
         model.addAttribute("companies", companyService.getAllCompanies());
-        model.addAttribute("company", companyId != null ? companyService.getCompany(companyId) : null);
+        model.addAttribute("company", (companyId != null && companyId > 0) ? companyService.getCompany(companyId) : null);
         model.addAttribute("responseDTO", responseDTO);
         model.addAttribute("accommodations", responseDTO.getDtoList());
 
@@ -77,7 +77,7 @@ public class AccommodationController {
         try {
             // Firebase 업로드
             MultipartFile file = accommodationDTO.getFile();
-            String imageUrl = fileUploadUtil.upload(file, "accommodations");
+            String imageUrl = fileUploadUtil.upload(file, "accommodations/"+accommodationDTO.getAccommodationId());
             accommodationDTO.setThumbnailUrl(imageUrl);
 
             Long accommodationId = accommodationService.registerAccommodation(accommodationDTO);

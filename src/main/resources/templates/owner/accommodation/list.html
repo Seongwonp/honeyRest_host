@@ -238,20 +238,20 @@
         <ul class="pagination">
             <li class="page-item" th:if="${responseDTO.prev}">
                 <a class="page-link"
-                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}">이전</a>
+                   th:href="@{/owner/company/{companyId}/accommodations(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}">이전</a>
             </li>
 
             <li class="page-item"
                 th:each="num : ${responseDTO.pageNumList}"
                 th:classappend="${num == responseDTO.current} ? 'active'">
                 <a class="page-link"
-                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${num}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}"
+                   th:href="@{/owner/company/{companyId}/accommodations(page=${num}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}"
                    th:text="${num}"></a>
             </li>
 
             <li class="page-item" th:if="${responseDTO.next}">
                 <a class="page-link"
-                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}">다음</a>
+                   th:href="@{/owner/company/{companyId}/accommodations(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size}, companyId=${companyId})}">다음</a>
             </li>
         </ul>
     </div>

@@ -229,7 +229,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
         Page<Accommodation> page;
 
-        if (companyId != null && companyId > 0) {
+        if (companyId != null && companyId >= 1) {
             page = accommodationRepository.findByCompany_CompanyId(companyId, pageable); // 쿼리 메서드 필요
         } else {
             page = accommodationRepository.findAll(pageable);
@@ -303,7 +303,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
         for (MultipartFile image : images) {
             if (!image.isEmpty()) {
-                String subImageUrl = fileUploadUtil.upload(image, "accommodations");
+                String subImageUrl = fileUploadUtil.upload(image, "accommodations/" + accommodationId + "/images");
 
                 AccommodationImageDTO imageDTO = AccommodationImageDTO.builder()
                         .imageUrl(subImageUrl)

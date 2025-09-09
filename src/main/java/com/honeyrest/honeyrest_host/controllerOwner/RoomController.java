@@ -79,7 +79,7 @@ public class RoomController {
     public String createRoom(@ModelAttribute RoomDTO roomDTO) throws Exception {
         Long roomId = roomService.registerRoom(roomDTO);
 
-        String mainImage = fileUploadUtil.upload(roomDTO.getFile(),"rooms");
+        String mainImage = fileUploadUtil.upload(roomDTO.getFile(),"rooms/"+ roomId);
         RoomImageDTO roomImageDTO = RoomImageDTO.builder()
                 .roomId(roomId)
                 .imageUrl(mainImage)
@@ -92,7 +92,7 @@ public class RoomController {
             int sortOrder = 1; // MAIN 이미지 다음부터
             for (MultipartFile image : images) {
                 if (!image.isEmpty()) {
-                    String roomImageUrl = fileUploadUtil.upload(image,"rooms");
+                    String roomImageUrl = fileUploadUtil.upload(image,"rooms/" + roomId + "/images");
                     RoomImageDTO dto = RoomImageDTO.builder()
                             .roomId(roomId)
                             .imageUrl(roomImageUrl)
