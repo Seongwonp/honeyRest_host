@@ -95,6 +95,12 @@ public class CancellationPolicyServiceImpl implements CancellationPolicyService 
         }
     }
 
+    @Override
+    public void deleteIfExists(Long accommodationId) {
+        cancellationPolicyRepository.deleteByAccommodation_AccommodationId(accommodationId);
+
+    }
+
     // ===== helper =====
     private List<String> parseJsonArray(String raw) {
         if (raw == null || raw.isBlank()) return List.of();

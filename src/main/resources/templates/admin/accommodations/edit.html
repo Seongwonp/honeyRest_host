@@ -97,6 +97,7 @@
                                     </select>
                                 </div>
 
+
                                 <div class="col-md-4">
                                     <label class="form-label required">지역(소)</label>
                                     <select id="subRegion" class="form-select"
@@ -108,6 +109,84 @@
                                                 th:selected="${r.regionId == form.subRegionId}"></option>
                                     </select>
                                 </div>
+                                <!-- 최저가 -->
+                                <div class="kv-item">
+                                    <div class="kv-label">최저가(원)</div>
+                                    <div class="kv-body">
+                                        <div class="input-group" style="max-width: 320px">
+                                            <button class="btn btn-outline-secondary" type="button" data-price-step="-10000">-1만</button>
+                                            <button class="btn btn-outline-secondary" type="button" data-price-step="-1000">-1천</button>
+                                            <input type="number"
+                                                   class="form-control text-end"
+                                                   th:field="*{minPrice}"
+                                                   name="minPrice"
+                                                   min="0" step="1"
+                                                   placeholder="예) 80000">
+                                            <button class="btn btn-outline-secondary" type="button" data-price-step="1000">+1천</button>
+                                            <button class="btn btn-outline-secondary" type="button" data-price-step="10000">+1만</button>
+                                        </div>
+
+                                        <!-- 원화 포맷 미리보기 -->
+                                        <span class="badge bg-light border text-body ms-2" id="minPricePreview">₩ 0</span>
+
+                                        <!-- 검증 피드백(Thymeleaf) -->
+                                        <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('minPrice')}"
+                                             th:errors="*{minPrice}">에러</div>
+
+                                        <div class="kv-help">0원 이상, 원 단위. (단가 조정은 버튼으로 빠르게 변경 가능)</div>
+                                    </div>
+                                </div>
+
+                                <!-- 운영/상태 빠른수정 (목록형) -->
+                                <div class="col-12">
+                                    <label class="form-label d-block mb-2">운영/상태 빠른수정</label>
+
+                                    <div class="kv-list">
+                                        <!-- 체크인 -->
+                                        <div class="kv-item">
+                                            <div class="kv-label">체크인</div>
+                                            <div class="kv-body">
+                                                <input type="datetime-local"
+                                                       class="form-control"
+                                                       th:field="*{checkInTime}"
+                                                       th:classappend="${#fields.hasErrors('checkInTime')}? ' is-invalid'">
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('checkInTime')}"
+                                                     th:errors="*{checkInTime}">에러</div>
+                                                <div class="kv-help">예) 2025-09-14T15:00</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 체크아웃 -->
+                                        <div class="kv-item">
+                                            <div class="kv-label">체크아웃</div>
+                                            <div class="kv-body">
+                                                <input type="datetime-local"
+                                                       class="form-control"
+                                                       th:field="*{checkOutTime}"
+                                                       th:classappend="${#fields.hasErrors('checkOutTime')}? ' is-invalid'">
+                                                <div class="invalid-feedback" th:if="${#fields.hasErrors('checkOutTime')}"
+                                                     th:errors="*{checkOutTime}">에러</div>
+                                                <div class="kv-help">예) 2025-09-15T11:00</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 상태 -->
+                                        <div class="kv-item">
+                                            <div class="kv-label">상태</div>
+                                            <div class="kv-body">
+                                                <select class="form-select" style="max-width:240px"
+                                                        th:field="*{status}">
+                                                    <option value="">선택</option>
+                                                    <option value="PENDING">PENDING</option>
+                                                    <option value="ACTIVE">ACTIVE</option>
+                                                    <option value="DISABLED">DISABLED</option>
+                                                </select>
+                                                <span class="kv-help">승인대기/운영중/중지</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
 
                                 <!-- 소개 -->
                                 <div class="col-12">
@@ -157,28 +236,30 @@
                                 <div class="col-12">
                                     <label class="form-label">썸네일(메인)</label>
 
+                                    <!-- 삭제 플래그 -->
+
                                     <!-- 항상 프리뷰 컨테이너를 렌더링: 이미지 유무에 따라 show/hide -->
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="img-wrap" id="thumbWrap">
                                             <img id="thumbPreview"
-                                                 th:if="${acc != null and #strings.length(acc.thumbnail) > 0}"
+                                                 th:if="${acc != null and acc.thumbnail != null and !#strings.isEmpty(acc.thumbnail)}"
                                                  th:src="${acc.thumbnail}"
                                                  alt="thumbnail">
                                             <img id="thumbPreviewEmpty"
-                                                 th:if="${acc == null or #strings.length(acc.thumbnail) == 0}"
+                                                 th:if="${acc == null or acc.thumbnail == null or #strings.isEmpty(acc.thumbnail)}"
                                                  src=""
                                                  alt="thumbnail"
                                                  style="display:none;">
-                                            <button type="button" class="remove-btn" id="removeThumb" th:if="${acc != null and #strings.length(acc.thumbnail) > 0}">×</button>
+                                            <button type="button" class="remove-btn" id="removeThumb" th:if="${acc != null and acc.thumbnail != null and !#strings.isEmpty(acc.thumbnail)}">×</button>
                                         </div>
                                         <span class="text-muted" id="thumbEmptyText"
-                                              th:if="${acc == null or #strings.length(acc.thumbnail) == 0}">
+                                              th:if="${acc == null or acc.thumbnail == null or #strings.isEmpty(acc.thumbnail)}">
                                           이미지 없음
                                         </span>
                                     </div>
 
                                     <!-- 서버 반영용 히든 -->
-                                    <input type="hidden" th:field="*{thumbnail}">
+
                                     <input type="hidden" name="deleteThumbnail" id="deleteThumbnail" value="false">
 
                                     <div class="mt-2" style="max-width:360px">
@@ -220,132 +301,115 @@
 
 <th:block layout:fragment="script">
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            /* ===============================
-             * 1) 썸네일 미리보기 (파일 선택 시)
-             * =============================== */
-            const thumbFile = document.getElementById('thumbFile');
-            const thumbWrap = document.getElementById('thumbWrap');
-            const thumbPreview = document.getElementById('thumbPreview');       // 기존 썸네일 있을 때
-            const thumbPreviewEmpty = document.getElementById('thumbPreviewEmpty'); // 기존 썸네일 없을 때 사용할 img
-            const thumbEmptyText = document.getElementById('thumbEmptyText');
-            const removeThumbBtn = document.getElementById('removeThumb');
-            const deleteThumbHidden = document.getElementById('deleteThumbnail');
 
-            if (thumbFile) {
-                thumbFile.addEventListener('change', () => {
-                    const f = thumbFile.files && thumbFile.files[0];
-                    if (!f) return;
+            // ===============================
+            // 1) 썸네일(대표 이미지)
+            // ===============================
+            (() => {
+                const thumbFile      = document.getElementById('thumbFile');
+                const thumbWrap      = document.getElementById('thumbWrap');
+                const deleteFlag     = document.getElementById('deleteThumbnail');
+                const emptyTextEl    = document.getElementById('thumbEmptyText');
 
-                    const url = URL.createObjectURL(f);
+                let removeBtn        = document.getElementById('removeThumb');          // 있을 수도
+                let previewImg       = document.getElementById('thumbPreview');         // 있을 수도
+                let emptyPreviewImg  = document.getElementById('thumbPreviewEmpty');    // 있을 수도
+                let lastObjectUrl    = null;
 
-                    // 기존 프리뷰가 있으면 그걸 쓰고, 없으면 empty img를 사용
-                    let targetImg = thumbPreview || thumbPreviewEmpty;
-                    targetImg.src = url;
-                    targetImg.style.display = 'block';
+                const setDelete = (v) => { if (deleteFlag) deleteFlag.value = String(v); };
+                const showEmptyText = (show) => { if (emptyTextEl) emptyTextEl.style.display = show ? 'inline' : 'none'; };
 
-                    // "이미지 없음" 텍스트 숨기기
-                    if (thumbEmptyText) thumbEmptyText.style.display = 'none';
-
-                    // 삭제 플래그는 해제 (새 파일 선택이므로)
-                    if (deleteThumbHidden) deleteThumbHidden.value = 'false';
-
-                    // 삭제 버튼이 없으면 생성(파일 선택으로 프리뷰가 생겼으니)
-                    if (!removeThumbBtn) {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.id = 'removeThumb';
-                        btn.className = 'remove-btn';
-                        btn.textContent = '×';
-                        btn.addEventListener('click', () => {
-                            // 삭제 표시 + 프리뷰 숨김
-                            if (deleteThumbHidden) deleteThumbHidden.value = 'true';
-                            targetImg.style.display = 'none';
-                            if (thumbEmptyText) thumbEmptyText.style.display = 'inline';
-
-                            // 파일 입력 초기화
-                            thumbFile.value = '';
-                            btn.remove();
-                        });
-                        thumbWrap.appendChild(btn);
+                // 빈/깨진 URL로 렌더된 img 방어
+                const normalizeInitialPreview = () => {
+                    if (previewImg && !previewImg.getAttribute('src')) {
+                        previewImg.remove(); previewImg = null;
                     }
-                });
-            }
+                };
 
-            // 기존 썸네일 삭제 버튼 동작(초기 렌더에만 존재)
-            if (removeThumbBtn) {
-                removeThumbBtn.addEventListener('click', () => {
-                    if (deleteThumbHidden) deleteThumbHidden.value = 'true';
-                    if (thumbPreview) thumbPreview.style.display = 'none';
-                    if (thumbEmptyText) thumbEmptyText.style.display = 'inline';
-                    // 파일 입력도 초기화
+                const ensurePreviewImg = () => {
+                    if (previewImg) return previewImg;
+                    if (!emptyPreviewImg) {
+                        emptyPreviewImg = document.createElement('img');
+                        emptyPreviewImg.id = 'thumbPreviewEmpty';
+                        emptyPreviewImg.alt = 'thumbnail';
+                        emptyPreviewImg.style.display = 'none';
+                        thumbWrap && thumbWrap.prepend(emptyPreviewImg);
+                    }
+                    return emptyPreviewImg;
+                };
+
+                const ensureRemoveBtn = () => {
+                    if (removeBtn) return removeBtn;
+                    removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.id = 'removeThumb';
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.textContent = '×';
+                    removeBtn.addEventListener('click', clearPreview);
+                    thumbWrap && thumbWrap.appendChild(removeBtn);
+                    return removeBtn;
+                };
+
+                const revokeLastUrl = () => {
+                    if (lastObjectUrl) { URL.revokeObjectURL(lastObjectUrl); lastObjectUrl = null; }
+                };
+
+                const showPreview = (url) => {
+                    const img = ensurePreviewImg();
+                    img.src = url;
+                    img.style.display = 'block';
+                    showEmptyText(false);
+                    setDelete(false);
+                    ensureRemoveBtn();
+                };
+
+                function clearPreview() {
+                    revokeLastUrl();
+                    const img = previewImg || emptyPreviewImg;
+                    if (img) { img.src = ''; img.style.display = 'none'; }
+                    showEmptyText(true);
+                    setDelete(true);
                     if (thumbFile) thumbFile.value = '';
-                    removeThumbBtn.remove();
-                });
-            }
+                    if (removeBtn) { removeBtn.remove(); removeBtn = null; }
+                }
 
-            /* ==================================
-             * 2) 서브 이미지(기존) 삭제 버튼
-             *    → hidden name=deleteSubImageIds 추가
-             * ================================== */
-            document.querySelectorAll('.remove-sub').forEach(b => {
-                b.addEventListener('click', () => {
-                    const id = b.getAttribute('data-id');
-                    if (id) {
-                        const hidden = document.createElement('input');
-                        hidden.type = 'hidden';
-                        hidden.name = 'deleteSubImageIds';
-                        hidden.value = id;
-                        b.closest('form').appendChild(hidden);
-                    }
-                    b.parentElement.remove();
-                });
-            });
+                // 초기 상태 정리 및 X버튼 리스너
+                normalizeInitialPreview();
+                if (removeBtn) removeBtn.addEventListener('click', clearPreview);
 
-            /* ==================================
-             * 3) 새 서브 이미지 미리보기 + X 제거
-             *    (파일 input 목록에서도 제거)
-             * ================================== */
-            const subInput = document.getElementById('subImages');
-            const subBox   = document.getElementById('subPreview');
-            if (subInput && subBox) {
-                subInput.addEventListener('change', () => {
-                    subBox.innerHTML = '';
-                    const files = Array.from(subInput.files || []);
-
-                    files.forEach((f, idx) => {
-                        if (!f.type.startsWith('image/')) return;
-                        const url = URL.createObjectURL(f);
-
-                        const wrap = document.createElement('div');
-                        wrap.className = 'img-wrap';
-
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.alt = f.name;
-
-                        const x = document.createElement('button');
-                        x.type = 'button';
-                        x.className = 'remove-btn';
-                        x.textContent = '×';
-                        x.title = '이 파일 제거';
-
-                        x.addEventListener('click', () => {
-                            // DataTransfer로 해당 index 파일 제거
-                            const dt = new DataTransfer();
-                            Array.from(subInput.files).forEach((file, i) => {
-                                if (i !== idx) dt.items.add(file);
-                            });
-                            subInput.files = dt.files;
-                            subInput.dispatchEvent(new Event('change'));
-                        });
-
-                        wrap.appendChild(img);
-                        wrap.appendChild(x);
-                        subBox.appendChild(wrap);
+                // 파일 선택 → 미리보기
+                if (thumbFile) {
+                    thumbFile.addEventListener('change', () => {
+                        const f = thumbFile.files && thumbFile.files[0];
+                        if (!f || !f.type.startsWith('image/')) return;
+                        revokeLastUrl();
+                        lastObjectUrl = URL.createObjectURL(f);
+                        showPreview(lastObjectUrl);
                     });
-                });
+                }
+            })();
+
+                // 서브 이미지(기존) 삭제: 클릭 시 삭제ID 히든 추가 + 미리보기 카드 제거
+                document.addEventListener('click', (e) => {
+                const btn = e.target.closest('.remove-sub');
+                if (!btn) return;
+
+                e.preventDefault();
+
+                const id = btn.dataset.id; // th:attr="data-id=${img.imageId}"
+                const form = btn.closest('form');
+
+                if (id && form) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'deleteSubImageIds'; // 컨트롤러와 동일한 이름
+                hidden.value = id;
+                form.appendChild(hidden);
             }
+
+                const card = btn.closest('.img-wrap');
+                if (card) card.remove();
+            });
 
             /* ==================================
              * 4) 지역(대) → 지역(소) 동적 로드
@@ -364,7 +428,7 @@
                     subRegion.innerHTML = '<option value="">불러오는 중...</option>';
                     try {
                         const res = await fetch(`${dataUrl}?parentId=${encodeURIComponent(parentId)}`, {
-                            headers: { 'Accept': 'application/json' }
+                            headers: {'Accept': 'application/json'}
                         });
                         if (!res.ok) throw new Error(res.status);
                         const list = await res.json(); // [{id, name}, ...]
@@ -398,8 +462,6 @@
                     loadSubRegions(initialMain, selected);
                 }
             }
-        });
-
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -450,6 +512,70 @@
                 renderSelected();
             }
         });
+    </script>
+    <script>
+        // 체크아웃은 체크인 이후여야 함 (프론트 가드)
+        (function(){
+            const cin  = document.querySelector('input[name="checkInTime"]');
+            const cout = document.querySelector('input[name="checkOutTime"]');
+
+            function toDate(v){ return v ? new Date(v) : null; }
+
+            function validate(){
+                const a = toDate(cin?.value);
+                const b = toDate(cout?.value);
+                if (a && b && b < a) {
+                    // 단순 경고 + 체크아웃 비우기
+                    alert('체크아웃 시간은 체크인 이후여야 합니다.');
+                    cout.value = '';
+                    cout.focus();
+                }
+                // 체크아웃의 min을 체크인으로 설정해 UX 보조
+                if (cout && cin && cin.value) cout.min = cin.value;
+            }
+
+            cin && cin.addEventListener('change', validate);
+            cout && cout.addEventListener('change', validate);
+            validate();
+        })();
+    </script>
+    <script>
+        // 최저가 증감/표시/검증
+        (function () {
+            const input = document.querySelector('input[name="minPrice"]');
+            const badge = document.getElementById('minPricePreview');
+            const nf = new Intl.NumberFormat('ko-KR');
+
+            function clamp(n) {
+                n = isFinite(n) ? n : 0;
+                return Math.max(0, Math.round(n)); // 음수 방지 + 원단위 반올림
+            }
+            function render() {
+                if (!input || !badge) return;
+                const val = clamp(Number(input.value));
+                badge.textContent = '₩ ' + nf.format(val);
+            }
+
+            // 입력 변화 시 포맷 미리보기 업데이트
+            input && input.addEventListener('input', render);
+            input && input.addEventListener('change', () => {
+                input.value = clamp(Number(input.value));
+                render();
+            });
+
+            // 증감 버튼
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-price-step]');
+                if (!btn || !input) return;
+                const step = Number(btn.getAttribute('data-price-step') || 0);
+                const next = clamp(Number(input.value || 0) + step);
+                input.value = next;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            // 최초 표시
+            render();
+        })();
     </script>
 </th:block>
 </body>

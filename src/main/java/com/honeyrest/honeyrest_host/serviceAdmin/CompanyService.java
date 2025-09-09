@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.CompanyDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.CompanyDTO;
 
 import java.util.List;
 

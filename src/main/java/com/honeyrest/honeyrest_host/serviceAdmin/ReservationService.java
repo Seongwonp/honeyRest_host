@@ -1,9 +1,9 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.PageRequestDTO;
-import com.honeyrest.honeyrest_host.dto.PageResponseDTO;
-import com.honeyrest.honeyrest_host.dto.ReservationDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.ReservationDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;

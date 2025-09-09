@@ -1,10 +1,10 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.DailyOverviewDTO;
-import com.honeyrest.honeyrest_host.dto.GridCellDTO;
-import com.honeyrest.honeyrest_host.dto.PriceCalendarDTO;
-import com.honeyrest.honeyrest_host.dto.reports.SalesStatDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.DailyOverviewDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.GridCellDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PriceCalendarDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.reports.SalesStatDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -38,6 +38,12 @@ public interface PriceCalendarService {
     List<DailyOverviewDTO>  getDailyOverview(Long companyId, Long accommodationId, LocalDate start, LocalDate end);
 
     List<GridCellDTO> getGridCells(Long companyId, Long accommodationId, LocalDate start, LocalDate end);
+
+    //체크인 매출 기준
+    Map<LocalDate, BigDecimal> getDailyRevenueByCheckin(Long companyId,
+                                                        Long accommodationId,
+                                                        LocalDate start,
+                                                        LocalDate end);
 
     @Data
     @NoArgsConstructor

@@ -84,7 +84,7 @@ public class OCompanyService {
 
         try {
             if (dto.getBankInfo() != null && !dto.getBankInfo().isBlank()) {
-                BankInfoJson = parseBankInfoToJson(dto.getBankInfo());
+                BankInfoJson = parseBankInfoToString(dto.getBankInfo());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

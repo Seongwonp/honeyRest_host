@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerOwner.dashboard;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.repository.OUserRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import com.honeyrest.honeyrest_host.serviceOwner.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

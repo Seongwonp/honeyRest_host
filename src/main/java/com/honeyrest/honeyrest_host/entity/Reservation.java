@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.entity;
 
 
-import com.honeyrest.honeyrest_host.dto.ReservationDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.ReservationDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

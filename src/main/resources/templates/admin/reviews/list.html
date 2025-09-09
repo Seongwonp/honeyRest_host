@@ -107,6 +107,51 @@
             .pagination .page-link{ border:none; border-radius:10px; color:#475569; font-weight:700; }
             .pagination .page-item.active .page-link{ background:var(--lilac); color:var(--lilac-deep); font-weight:800; }
             .pagination .page-item:not(.active) .page-link:hover{ background:var(--mint); color:#0F766E; }
+
+
+            /* ===== Reply bubble (운영자 답글 말풍선) - 강화 버전 ===== */
+            .reply-wrap{
+                margin-top:.6rem;
+                display:flex; align-items:flex-start; gap:.6rem;
+            }
+            .reply-avatar{
+                --s:32px;
+                width:var(--s); height:var(--s);
+                border-radius:50%;
+                background:linear-gradient(180deg,#F0EAFF,#FFF);
+                border:1px solid #DDD6FE;
+                display:flex; align-items:center; justify-content:center;
+                font-size:.82rem; color:#5B21B6; font-weight:900;
+                flex:0 0 var(--s);
+            }
+            .reply-bubble{
+                position:relative;
+                background:#F8F7FF; border:1px solid #E5E0FF; color:#3F1D96;
+                padding:.70rem .9rem; border-radius:14px;
+                box-shadow:0 3px 12px rgba(93,63,211,.08);
+                font-size:.92rem; line-height:1.6; font-weight:700;
+                max-width:560px;   /* 리스트에서 더 시원하게 보이도록 넓힘 */
+                z-index:1;         /* 꼬리가 다른 요소에 가려지지 않도록 */
+            }
+            .reply-bubble:before{
+                content:""; position:absolute; left:-9px; top:14px; width:0; height:0;
+                border-top:9px solid transparent; border-bottom:9px solid transparent;
+                border-right:9px solid #E5E0FF;   /* 외곽 꼬리 */
+            }
+            .reply-bubble:after{
+                content:""; position:absolute; left:-8px; top:15px; width:0; height:0;
+                border-top:8px solid transparent; border-bottom:8px solid transparent;
+                border-right:8px solid #F8F7FF;   /* 내부 꼬리 */
+            }
+            .reply-meta{ margin-top:.35rem; font-size:.78rem; color:#7C3AED; font-weight:800; }
+            .reply-text{
+                display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical;
+                overflow:hidden; word-break:keep-all;
+            }
+
+            /* 리스트에서 내용 컬럼이 너무 좁으면 말풍선이 찌그러질 수 있어 폭 보정 */
+            .table col:nth-child(6){ width: 360px; }  /* "내용" 컬럼 */
+            .card .reply-bubble{ max-width:100%; }
         </style>
     </th:block>
 </head>
@@ -244,6 +289,19 @@
                                 <span class="dot"></span> 운영자 댓글 (1건)
                             </span>
                         </div>
+
+                        <!-- 운영자 답글 말풍선 -->
+                        <div class="reply-wrap"
+                             th:if="${review.reply != null and !#strings.isEmpty(review.reply)}">
+                            <div class="reply-avatar">OP</div>
+                            <div class="reply-bubble">
+                                <div class="reply-text" th:text="${review.reply}">답글 내용</div>
+                                <div class="reply-meta"
+                                     th:text="${review.updatedAt != null ? '운영자 · ' + #temporals.format(review.updatedAt,'yyyy-MM-dd HH:mm') : '운영자'}">
+                                    운영자 · 2025-09-07 12:00
+                                </div>
+                            </div>
+                        </div>
                     </td>
 
                     <!-- 상태 -->
@@ -318,6 +376,19 @@
                               th:if="${review.reply != null and !#strings.isEmpty(review.reply)}">
         <span class="dot"></span> 운영자 댓글 (1건)
       </span>
+
+                        <!-- 운영자 답글 말풍선 -->
+                        <div class="reply-wrap"
+                             th:if="${review.reply != null and !#strings.isEmpty(review.reply)}">
+                            <div class="reply-avatar">OP</div>
+                            <div class="reply-bubble">
+                                <div class="reply-text" th:text="${review.reply}">답글 내용</div>
+                                <div class="reply-meta"
+                                     th:text="${review.updatedAt != null ? '운영자 · ' + #temporals.format(review.updatedAt,'yyyy-MM-dd HH:mm') : '운영자'}">
+                                    운영자 · 2025-09-07 12:00
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="card-body">
@@ -364,7 +435,7 @@
                                 <i class="bi bi-search"></i> 상세
                             </a>
                             <form th:action="@{/admin/reviews/{id}/toggle(id=${review.reviewId})}" method="post"
-                                  onsubmit="this.querySelector('button[type=submit)].disabled=true;">
+                                  onsubmit="this.querySelector('button[type=submit]').disabled=true;">
                                 <input type="hidden" th:if="${_csrf != null}"
                                        th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                 <input type="hidden" name="view"   th:value="${view}">

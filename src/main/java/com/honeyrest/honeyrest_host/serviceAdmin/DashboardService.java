@@ -1,18 +1,30 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
-import com.honeyrest.honeyrest_host.dto.DashboardDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.DashboardDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.reports.DailySalesDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.reports.MonthlySalesDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.reports.TopRoomDTO;
+
+
+import java.time.LocalDate;
+import java.util.List;
 
 
 public interface DashboardService {
-    /*
-     * 로그인 사용자 이메일로 집계 + 현재 관리자 반환 준비
-     */
-    DashboardDTO getCountsFor(String adminEmail);
 
-    /*
-     * 현재 관리자(User) 객체 조회(컨트롤러에서 model에 넣기 용)
-     */
     AdminLoginRequestDTO getCurrentAdmin(String adminEmail);
 
+
+    List<TopRoomDTO> getTopRooms(List<Long> accommodationIds, LocalDate from, LocalDate to, int limit);
+
+    // 최근 7일(일별), 여러 숙소 합산
+    DashboardDTO getCountsFor(String adminEmail);
+
+    List<DailySalesDTO> getRecentDailyForAccommodations(List<Long> accIds, int days);
+
+
+    // 최근 12개월(월별) 여러 숙소 합산
+    List<MonthlySalesDTO> getRecentMonthly12ForAccommodations(List<Long> accommodationIds);
 }
+

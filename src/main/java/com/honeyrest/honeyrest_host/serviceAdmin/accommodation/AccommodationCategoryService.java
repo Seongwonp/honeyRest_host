@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationCategoryDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationCategoryDTO;
 
 import java.util.List;
 

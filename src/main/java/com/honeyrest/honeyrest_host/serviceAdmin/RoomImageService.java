@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.RoomImageDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.RoomImageDTO;
 
 import java.util.List;
 

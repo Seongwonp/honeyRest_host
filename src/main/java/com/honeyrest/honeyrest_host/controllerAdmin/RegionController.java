@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
-import com.honeyrest.honeyrest_host.dto.RegionDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.RegionDTO;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RegionRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationCategoryDTO;
-import com.honeyrest.honeyrest_host.repository.OAccommodationCategoryRepository;
+import com.honeyrest.honeyrest_host.repositoryOwner.OAccommodationCategoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;

@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
-import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
-import com.honeyrest.honeyrest_host.dto.AdminSignupRequestDTO;
-import com.honeyrest.honeyrest_host.dto.TokenResponseDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.AdminSignupRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.TokenResponseDTO;
 import com.honeyrest.honeyrest_host.serviceAdmin.AdminAuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;

@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.config;
 
-import com.honeyrest.honeyrest_host.dto.InquiryDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.InquiryDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Inquiry;
 import com.honeyrest.honeyrest_host.entity.User;

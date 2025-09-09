@@ -2,9 +2,9 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 
 
 import com.honeyrest.honeyrest_host.config.JwtTokenProvider;
-import com.honeyrest.honeyrest_host.dto.AdminLoginRequestDTO;
-import com.honeyrest.honeyrest_host.dto.AdminSignupRequestDTO;
-import com.honeyrest.honeyrest_host.dto.TokenResponseDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.AdminSignupRequestDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.TokenResponseDTO;
 import com.honeyrest.honeyrest_host.entity.User;
 import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
 import lombok.RequiredArgsConstructor;

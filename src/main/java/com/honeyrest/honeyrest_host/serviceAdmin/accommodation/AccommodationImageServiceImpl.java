@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
-import com.honeyrest.honeyrest_host.dto.accommodation.AccommodationImageDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationImageDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationImageRepository;
@@ -158,26 +158,8 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
 
     @Transactional
     public void updateThumbnailUrl(Long accommodationId, String thumbnailUrl) {
-        Accommodation acc = accommodationRepository.findById(accommodationId)
-                .orElseThrow(() -> new IllegalArgumentException("숙소를 찾을 수 없습니다: " + accommodationId));
+        int n = accommodationRepository.updateThumbnail(accommodationId, thumbnailUrl);
+        if (n == 0) throw new IllegalArgumentException("숙소를 찾을 수 없습니다: " + accommodationId);
 
-        Accommodation updated = Accommodation.builder()
-                .accommodationId(acc.getAccommodationId())
-                .company(acc.getCompany())
-                .category(acc.getCategory())
-                .mainRegion(acc.getMainRegion())
-                .subRegion(acc.getSubRegion())
-                .name(acc.getName())
-                .address(acc.getAddress())
-                .thumbnail(thumbnailUrl)
-                .description(acc.getDescription())
-                .status(acc.getStatus())
-                .checkInTime(acc.getCheckInTime())
-                .checkOutTime(acc.getCheckOutTime())
-                .rating(acc.getRating())
-                .minPrice(acc.getMinPrice())
-                .build();
-
-        accommodationRepository.save(updated);
     }
 }

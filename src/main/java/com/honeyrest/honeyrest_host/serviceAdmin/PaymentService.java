@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.PaymentDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PaymentDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

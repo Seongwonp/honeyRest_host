@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.RoomImageDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.RoomImageDTO;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.entity.RoomImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomImageRepository;

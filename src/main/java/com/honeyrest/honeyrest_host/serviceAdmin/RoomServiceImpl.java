@@ -2,11 +2,11 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.dto.RoomImageDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.RoomImageDTO;
 import com.honeyrest.honeyrest_host.entity.RoomImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomImageRepository;
 import jakarta.persistence.EntityNotFoundException;
-import com.honeyrest.honeyrest_host.dto.RoomDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.RoomDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
@@ -244,6 +244,7 @@ public class RoomServiceImpl implements RoomService {
                 .type(r.getType())
                 .price(r.getPrice())
                 .maxOccupancy(r.getMaxOccupancy())
+                .extraPersonFee(r.getExtraPersonFee())
                 .standardOccupancy(r.getStandardOccupancy())
                 .bedInfo(r.getBedInfo())
                 .amenities(r.getAmenities())

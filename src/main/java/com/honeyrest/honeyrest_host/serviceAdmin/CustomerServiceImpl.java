@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.UserDetailDTO;
-import com.honeyrest.honeyrest_host.dto.UserListDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.UserDetailDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.UserListDTO;
 import com.honeyrest.honeyrest_host.entity.User;
 import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
 import lombok.RequiredArgsConstructor;

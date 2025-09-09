@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
-import com.honeyrest.honeyrest_host.dto.CompanyDTO;
-import com.honeyrest.honeyrest_host.dto.PaymentDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.CompanyDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.PaymentDTO;
 import com.honeyrest.honeyrest_host.entity.Payment;
 import com.honeyrest.honeyrest_host.repositoryAdmin.PaymentRepository;
 import lombok.RequiredArgsConstructor;

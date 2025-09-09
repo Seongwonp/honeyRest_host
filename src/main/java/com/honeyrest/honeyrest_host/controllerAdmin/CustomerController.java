@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.UserDetailDTO;
-import com.honeyrest.honeyrest_host.dto.UserListDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.UserDetailDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.UserListDTO;
 import com.honeyrest.honeyrest_host.serviceAdmin.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

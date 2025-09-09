@@ -2,12 +2,11 @@ package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.dto.accommodation.*;
+import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.*;
 import com.honeyrest.honeyrest_host.entity.*;
-import com.honeyrest.honeyrest_host.repositoryAdmin.CancellationPolicyRepository;
-import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
-import com.honeyrest.honeyrest_host.repositoryAdmin.RegionRepository;
+import com.honeyrest.honeyrest_host.repositoryAdmin.*;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.*;
+import com.honeyrest.honeyrest_host.serviceAdmin.CancellationPolicyService;
 import com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -19,9 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -37,22 +34,17 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationTagMapRepository accommodationTagMapRepository;
     private final AccommodationImageService accommodationImageService;
     private final CancellationPolicyRepository cancellationPolicyRepository;
+    private final ReservationRepository reservationRepository;
+
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-
+    private final CancellationPolicyService cancellationPolicyService;
+    private final AccommodationTagService accommodationTagService;
+    private final RoomRepository roomRepository;
 
     /* ---------------------- JSON 헬퍼 ---------------------- */
-    private JsonNode stringToJsonNode(String json) {
-        try {
-            if (json == null || json.isBlank()) return objectMapper.readTree("[]");
-            return objectMapper.readTree(json);
-        } catch (Exception e) {
-            try {
-                return objectMapper.readTree("[]");
-            } catch (Exception ignored) {
-                return null;
-            }
-        }
+    private String normalizeJsonList(String raw) {
+        return AmenitiesParser.normalizeToJson(raw);
     }
 
     private String jsonNodeToString(JsonNode node) {
@@ -205,8 +197,67 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Override
     public AccommodationCreateRequestDTO getById(Long id) {
-        Accommodation e = getEntityOrThrow(id);
-        return toResponse(e, findImages(id), findTagMaps(id));
+        Accommodation a = accommodationRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("숙소가 없습니다. id=" + id));
+
+        // --- 태그 로드 (널 세이프) ---
+        List<AccommodationTagDTO> tagDTOs =
+                Optional.ofNullable(accommodationTagService.findByAccommodationId(id))
+                        .orElseGet(Collections::emptyList);
+
+        List<Long> tagIds = tagDTOs.stream()
+                .map(AccommodationTagDTO::getTagId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        // --- 이미지 로드 (메인/서브) + 정렬 (sortOrder 오름차순, null은 마지막) ---
+        List<AccommodationImageDTO> imageDTOs =
+                Optional.ofNullable(accommodationImageService.getImages(id))
+                        .orElseGet(Collections::emptyList);
+
+        List<AccommodationImageDTO> sortedImages = new ArrayList<>(imageDTOs);
+        sortedImages.sort(Comparator.comparing(
+                AccommodationImageDTO::getSortOrder,
+                Comparator.nullsLast(Integer::compareTo)
+        ));
+        // 주의: List에는 setImages 같은 메서드가 없습니다. 정렬 결과는 빌더의 images(...)로 넘깁니다.
+
+        // --- 취소/환불 규정 (멀티라인 문자열) ---
+        String cancelJson = cancellationPolicyService.getMultilineByAccommodationId(id);
+
+        // --- Region/Category/Company 등 ID 안전 추출 ---
+        Long companyId   = Optional.ofNullable(a.getCompany()).map(Company::getCompanyId).orElse(null);
+        Long categoryId  = Optional.ofNullable(a.getCategory()).map(AccommodationCategory::getCategoryId).orElse(null);
+        Long mainRegionId= Optional.ofNullable(a.getMainRegion()).map(Region::getRegionId).orElse(null);
+
+        // 프로젝트마다 필드명이 다를 수 있어요.
+        // 엔티티가 getSubRegion() (Region) 을 쓰면 아래처럼:
+        Long subRegionId = Optional.ofNullable(a.getSubRegion()).map(Region::getRegionId).orElse(null);
+        // 만약 엔티티가 getSubRegionId() (Region) 라면 윗줄 대신 이렇게:
+        // Long subRegionId = Optional.ofNullable(a.getSubRegionId()).map(Region::getRegionId).orElse(null);
+
+        return AccommodationCreateRequestDTO.builder()
+                .accommodationId(a.getAccommodationId())
+                .companyId(companyId)
+                .categoryId(categoryId)
+                .mainRegionId(mainRegionId)
+                .subRegionId(subRegionId)
+                .name(a.getName())
+                .address(a.getAddress())
+                .latitude(a.getLatitude())
+                .longitude(a.getLongitude())
+                .thumbnail(a.getThumbnail())
+                .description(a.getDescription())
+                .amenities(a.getAmenities())               // DTO 필드 타입(String/JSON 또는 List)에 맞춰 필요시 변환
+                .cancellationPolicyDetail(cancelJson)      // 뷰에서 List로 변환해 사용 예정이면 주석 유지 OK
+                .checkInTime(a.getCheckInTime())
+                .checkOutTime(a.getCheckOutTime())
+                .status(a.getStatus())
+                .minPrice(a.getMinPrice())
+                .tagIds(tagIds)
+                .tags(tagDTOs)
+                .images(sortedImages)
+                .build();
     }
 
     @Override
@@ -217,6 +268,10 @@ public class AccommodationServiceImpl implements AccommodationService {
             req.getName() == null || req.getAddress() == null) {
             throw new IllegalArgumentException("companyId, categoryId, mainRegionId, subRegionId, name, address 는 필수 입니다.");
         }
+
+        // 문자역 -> json 정규화
+        String amenitiesJson = normalizeJsonList(req.getAmenities());
+        String cancelPolicyJson = normalizeJsonList(req.getCancellationPolicyDetail());
 
         // 엔티티 생성
         Accommodation entity = Accommodation.builder()
@@ -230,7 +285,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .longitude(req.getLongitude())
                 .thumbnail(req.getThumbnail())
                 .description(req.getDescription())
-                .amenities(req.getAmenities())
+                .amenities(amenitiesJson)
                 .checkInTime(req.getCheckInTime())
                 .checkOutTime(req.getCheckOutTime())
                 .status(req.getStatus() == null ? "PENDING" : req.getStatus())
@@ -243,6 +298,14 @@ public class AccommodationServiceImpl implements AccommodationService {
            - req.getFile() 에 파일이 오면 메인으로 업로드
            - 아니면 req.getthumbnail() 만 두고 넘어가도 됨
         */
+
+        // 환불 취소 규정, 저장 (별도 서비스/ 테이블이라면 여기서 저장)
+        if (req.getCancellationPolicyDetail() != null && !req.getCancellationPolicyDetail().isBlank()) {
+            cancellationPolicyService.saveOrUpdate(
+                    saved.getAccommodationId(),
+                    req.getCancellationPolicyDetail()
+            );
+        }
         if (req.getFile() != null && !req.getFile().isEmpty()) {
             accommodationImageService.upsertMainThumbnail(
                     saved.getAccommodationId(),
@@ -271,14 +334,8 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         // 태그 매핑 (그대로)
         if (req.getTagIds() != null && !req.getTagIds().isEmpty()) {
-            for (Long tagId : req.getTagIds()) {
-                accommodationTagMapRepository.save(
-                        AccommodationTagMap.builder()
-                                .accommodation(saved)
-                                .tag(accommodationTagRepository.getReferenceById(tagId))
-                                .build()
-                );
-            }
+            accommodationTagService.replaceMapping(saved.getAccommodationId(), req.getTagIds());
+
         }
 
         return getById(saved.getAccommodationId());
@@ -316,13 +373,13 @@ public class AccommodationServiceImpl implements AccommodationService {
             accommodationRepository.updateSubRegion(id, regionRepository.getReferenceById(req.getSubRegionId()));
         }
 
-        String name        = hasText(req.getName())        ? req.getName().trim()        : null;
-        String address     = hasText(req.getAddress())     ? req.getAddress().trim()     : null;
-        BigDecimal latitude  = req.getLatitude();
+        String name = hasText(req.getName()) ? req.getName().trim() : null;
+        String address = hasText(req.getAddress()) ? req.getAddress().trim() : null;
+        BigDecimal latitude = req.getLatitude();
         BigDecimal longitude = req.getLongitude();
 
         // DTO가 thumbnail(또는 thumbnailUrl)인지에 맞춰 변수 이름 맞추기
-        String thumbnail   = hasText(req.getThumbnail())   ? req.getThumbnail().trim()   : null;
+        String thumbnail = hasText(req.getThumbnail()) ? req.getThumbnail().trim() : null;
 
         String description = hasText(req.getDescription()) ? req.getDescription().trim() : null;
 
@@ -332,10 +389,10 @@ public class AccommodationServiceImpl implements AccommodationService {
             amenitiesJson = s.isEmpty() ? "[]" : s;
         }
 
-        LocalDateTime checkInTime  = req.getCheckInTime();
+        LocalDateTime checkInTime = req.getCheckInTime();
         LocalDateTime checkOutTime = req.getCheckOutTime();
-        String status          = hasText(req.getStatus())  ? req.getStatus().trim()      : null;
-        BigDecimal minPrice    = req.getMinPrice();
+        String status = hasText(req.getStatus()) ? req.getStatus().trim() : null;
+        BigDecimal minPrice = req.getMinPrice();
 
         int affected = accommodationRepository.patchUpdateScalars(
                 id, name, address, latitude, longitude,
@@ -348,16 +405,29 @@ public class AccommodationServiceImpl implements AccommodationService {
         return getById(id);
     }
 
-    private static boolean hasText(String s) { return s != null && !s.trim().isEmpty(); }
+    private static boolean hasText(String s) {
+        return s != null && !s.trim().isEmpty();
+    }
 
     @Override
     @Transactional // 삭제 메서드가 업데이트,삭제 쿼리를 실행하므로 트랜잭션이 필요함
     public void delete(Long id) {
-        // 연관 데이터 먼저 삭제
+        Accommodation acc = accommodationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("숙소가 존재하지 않습니다. id=" + id));
+
+        // 예약 존재 여부 확인
+        if (reservationRepository.existsByRoom_Accommodation_AccommodationId(id)) {
+            throw new IllegalStateException("예약 이력이 있어 삭제할 수 없습니다.");
+        }
+
+        // 순차 삭제 (FK 제약 주의)
         accommodationImageRepository.deleteByAccommodation_AccommodationId(id);
         accommodationTagMapRepository.deleteByAccommodation_AccommodationId(id);
-        // 마지막에 본체 삭제
-        accommodationRepository.deleteById(id);
+        cancellationPolicyRepository.deleteByAccommodation_AccommodationId(id);
+        roomRepository.deleteByAccommodation_AccommodationId(id);
+
+        // 마지막에 숙소 삭제
+        accommodationRepository.delete(acc);
     }
 
     @Override
@@ -445,6 +515,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         return accommodationRepository.findById(accommodationId).map(Accommodation::getName).orElse("알수없음");
 
     }
+
     @Override
     public AccommodationCreateRequestDTO getDetail(Long accId) {
         Accommodation acc = accommodationRepository.findById(accId)
@@ -470,6 +541,19 @@ public class AccommodationServiceImpl implements AccommodationService {
                 });
 
         return dto;
+    }
+    @Override
+    public List<Long> getAccommodationIdsByAdminEmail(String email) {
+        // JPQL(문자열 매칭) 우선
+        List<Long> ids = accommodationRepository.findAccommodationIdsByAdminEmail(email);
+        if (ids != null && !ids.isEmpty()) return ids;
+
+        // 연관 매핑이 없거나 위 메서드가 없다면 네이티브로Fallback
+        try {
+            return accommodationRepository.findAccommodationIdsByAdminEmail(email);
+        } catch (Exception ignore) {
+            return List.of();
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.honeyrest.honeyrest_host.dto.*;
+import com.honeyrest.honeyrest_host.dtoAdmin.*;
 import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
@@ -49,7 +49,7 @@ public class RoomController {
      * 전체 객실 목록 (사이드바 진입)
      */
     @GetMapping("/list_all")
-    public String listAll(@PageableDefault(size = 10, sort = "roomId", direction = Sort.Direction.DESC) Pageable pageable,
+    public String listAll(@PageableDefault(size = 12, sort = "roomId", direction = Sort.Direction.DESC) Pageable pageable,
                           Authentication authentication, Model model) {
 
         // 로그인 사용자 이메일 가져오기
