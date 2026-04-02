@@ -11,6 +11,8 @@
 
 > 🎬 클릭하면 전체 광고 영상을 볼 수 있습니다.
 
+> - [👤 User API (Spring Boot + React) 바로가기](https://github.com/Seongwonp/honeyRest_user)
+
 ---
 
 ## 📖 목차
@@ -19,7 +21,6 @@
 - [🧑‍💻 주요 기능](#-주요-기능)
   - [🏨 업체 관리자 (Company Admin)](#-업체-관리자-company-admin)
   - [🛡️ 총 관리자 (Super Admin)](#️-총-관리자-super-admin)
-- [🗂️ 프로젝트 구조](#️-프로젝트-구조)
 - [🏗️ 시스템 아키텍처](#️-시스템-아키텍처)
 - [🗃️ 데이터베이스 설계 (ERD)](#️-데이터베이스-설계-erd)
 - [📋 주요 테이블 요약](#-주요-테이블-요약)
@@ -104,25 +105,6 @@
 #### 🎟️ 쿠폰 / 이벤트 관리
 - 쿠폰 발행 및 목록 관리
 - 업체별 쿠폰 적용 허용 여부 설정
-
----
-
-## 🗂️ 프로젝트 구조
-
-```plaintext
-HoneyRest/
-├── frontend/               # 사용자 프론트엔드 (React)
-│
-├── user-api-backend/       # 사용자 API 백엔드 (Spring Boot)
-│
-├── admin/                  # 관리자 시스템 (Thymeleaf 기반)
-│   ├── company/            # 업체 관리자 (Company Admin)
-│   └── super/              # 총 관리자 (Super Admin)
-│
-└── README.md               # 전체 프로젝트 설명
-```
-
-- [👤 User API (Spring Boot + React) 바로가기](https://github.com/Seongwonp/honeyRest_user)
 
 ---
 
