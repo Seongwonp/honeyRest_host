@@ -11,7 +11,7 @@
 
 > 🎬 클릭하면 전체 광고 영상을 볼 수 있습니다.
 
-> - [👤 User API (Spring Boot + React) 바로가기](https://github.com/Seongwonp/honeyRest_user)
+> - [👤 사용자(User) 페이지 바로가기](https://github.com/Seongwonp/honeyRest_user)
 
 ---
 
