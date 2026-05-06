@@ -31,6 +31,7 @@
 - [📝 프로젝트 발표 자료](#-프로젝트-발표-자료)
 - [💭 프로젝트 회고](#-프로젝트-회고)
 - [🙋 개발자 정보](#-개발자-정보)
+- [🔧 프로젝트 완료 후 리팩토링 및 개선](#-프로젝트-완료-후-리팩토링-및-개선-박성원)
 
 ---
 
@@ -396,3 +397,55 @@ HoneyRest 관리자 시스템의 전체 기능을 실제 화면 기반으로 시
 
 > 💛 User API 및 전체 프로젝트 총괄은 **박성원**이 담당했습니다.  
 > 👉 [User API 레포지토리 바로가기](https://github.com/Seongwonp/honeyRest_user)
+
+---
+
+### 👤 박성원 (Seongwon Park) – 팀장 / 전체 총괄
+
+- 전체 DB 설계 및 ERD 작성
+- 사용자(User) 페이지 개발 총괄
+- 관리자 시스템 기술 방향 결정 및 전체 코드 리뷰
+- 광고 영상 제작
+
+---
+
+## 🔧 프로젝트 완료 후 리팩토링 및 개선 (박성원)
+
+> 프로젝트 제출 이후 코드 품질, 성능, 보안을 전반적으로 개선한 작업입니다.
+
+### ⚡ 백엔드 성능 최적화 (N+1 쿼리 제거)
+
+- `ReservationRepository` 전체 쿼리에 `JOIN FETCH` 적용 → 예약 목록 조회 시 N+1 쿼리 제거
+- `Page<Entity>` 쿼리를 `value` + `countQuery` 분리 구조로 변경 → Hibernate 메모리 페이징 경고 해소
+- `OAccommodationRepository`에 `@EntityGraph` 적용 → 연관 엔티티 일괄 로딩
+- `AccommodationQueryImpl.search()` 생성자 인수 누락 버그 수정 (`regionName` 누락)
+- `AccommodationRepository.findCompanyIdByAccommodationId()` 파생 쿼리 오류 → `@Query`로 교체
+- `ReservationServiceImpl.toDto()` 이중 lazy load 제거 (`r.getRoom().getAccommodation()` → `r.getAccommodation()`)
+
+### 🔒 보안 강화
+
+- JWT 시크릿 키를 `application.properties`에서 분리 → `application-secret.properties` (`.gitignore` 적용)
+- JWT 쿠키 `Secure` 플래그를 `false` 하드코딩 → HTTPS 환경 자동 감지로 변경
+- Swagger UI (`/swagger-ui/**`, `/v3/api-docs/**`) 접근을 `SUPER_ADMIN` 전용으로 제한
+- `show-sql=false`, Hibernate `BasicBinder=warn` → SQL 파라미터 값(비밀번호 등) 로그 노출 차단
+- Spring Security·Web 로그 레벨 `debug → warn` → 인증 흐름 상세 정보 노출 차단
+- JWT 필터에서 요청마다 이메일/role이 로그에 찍히던 문제 제거 (PII 노출 방지)
+- 디버그 쓰레기 로그 (`aaaa...`, `bbbb...` 등) 전체 제거
+
+### 🗑️ 불필요 파일 정리
+
+- 사용하지 않는 템플릿 80개 이상 삭제 (`application/`, `component/`, `extra-component/`, `ui/`, `form/`, `table/`, `chart/`, 미사용 레이아웃 파일 등)
+- 전체 템플릿 파일 수: 약 150개 → **72개**로 축소
+
+### 🎨 Owner 페이지 디자인 통일
+
+- Owner 페이지 48개 전체에 HoneyRest 브랜드 테마(`honey-theme.css`) 적용
+- 인라인 `<style>` 블록 일괄 제거 후 CSS 변수(`--honey`, `--honey-soft` 등)로 통일
+- 다크모드 토글, 로그아웃 버튼 등 공통 UI 정비
+
+### 🔔 알림 시스템 구현
+
+- `NotificationInterceptor` (HandlerInterceptor) 구현 → 모든 admin/owner 페이지에 취소요청 건수 자동 주입
+- 사이드바 예약 취소 메뉴에 뱃지(badge) 표시 → 미처리 취소요청 수 실시간 확인
+- 기존 `alert()` 5개 → Bootstrap Toast 알림으로 교체 (성공: 초록, 정보: 파랑, 오류: 빨강, 3.5초 자동 닫힘)
+- `admin/layout/base.html`, `owner/layout/base.html` 공통 적용 → 개별 페이지 수정 불필요
