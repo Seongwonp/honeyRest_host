@@ -65,7 +65,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .companyId(a.getCompany().getCompanyId())
                 .mainRegionId(a.getMainRegion().getRegionId())
                 .subRegionId(a.getSubRegion().getRegionId())
-                .categoryId(Long.valueOf(a.getCategory().getCategoryId()))
+                .categoryId(a.getCategory().getCategoryId())
                 .address(a.getAddress())
                 .description(a.getDescription())
                 .amenities(a.getAmenities())
@@ -85,7 +85,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         return AccommodationCreateRequestDTO.builder()
                 .accommodationId(e.getAccommodationId())
                 .companyId(e.getCompany() != null ? e.getCompany().getCompanyId() : null)
-                .categoryId(Long.valueOf(e.getCategory() != null ? e.getCategory().getCategoryId() : null))
+                .categoryId(e.getCategory() != null ? e.getCategory().getCategoryId() : null)
                 .mainRegionId(e.getMainRegion() != null ? e.getMainRegion().getRegionId() : null)
                 .subRegionId(e.getSubRegion() != null ? e.getSubRegion().getRegionId() : null)
                 .name(e.getName())
@@ -135,7 +135,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         return AccommodationCreateRequestDTO.builder()
                 .accommodationId(e.getAccommodationId())
                 .companyId(e.getCompany() != null ? e.getCompany().getCompanyId() : null)
-                .categoryId(Long.valueOf(e.getCategory() != null ? e.getCategory().getCategoryId() : null))
+                .categoryId(e.getCategory() != null ? e.getCategory().getCategoryId() : null)
                 .mainRegionId(e.getMainRegion() != null ? e.getMainRegion().getRegionId() : null)
                 .subRegionId(e.getSubRegion() != null ? e.getSubRegion().getRegionId() : null)
                 .name(e.getName())
@@ -227,7 +227,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         // --- Region/Category/Company 등 ID 안전 추출 ---
         Long companyId   = Optional.ofNullable(a.getCompany()).map(Company::getCompanyId).orElse(null);
-        Long categoryId  = Long.valueOf(Optional.ofNullable(a.getCategory()).map(AccommodationCategory::getCategoryId).orElse(null));
+        Long categoryId  = Optional.ofNullable(a.getCategory()).map(AccommodationCategory::getCategoryId).orElse(null);
         Long mainRegionId= Optional.ofNullable(a.getMainRegion()).map(Region::getRegionId).orElse(null);
 
         // 프로젝트마다 필드명이 다를 수 있어요.
@@ -437,31 +437,9 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Override
     public void changeStatus(Long id, String status) {
-        var e = accommodationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다. id=" + id));
-
-        // 빌더 패턴이라 세터가 없으니, 동일 PK로 새로 빌드해서 상태만 바꿔 저장
-        var updated = Accommodation.builder()
-                .accommodationId(e.getAccommodationId())
-                .company(e.getCompany())
-                .category(e.getCategory())
-                .mainRegion(e.getMainRegion())
-                .subRegion(e.getSubRegion())
-                .name(e.getName())
-                .address(e.getAddress())
-                .latitude(e.getLatitude())
-                .longitude(e.getLongitude())
-                .thumbnail(e.getThumbnail())
-                .description(e.getDescription())
-                .amenities(e.getAmenities())
-                .checkInTime(e.getCheckInTime())
-                .checkOutTime(e.getCheckOutTime())
-                .status(status)               // ← 여기만 변경
-                .rating(e.getRating())
-                .minPrice(e.getMinPrice())
-                .build();
-
-        accommodationRepository.save(updated);
+        int affected = accommodationRepository.patchUpdateScalars(
+                id, null, null, null, null, null, null, null, null, null, status, null);
+        if (affected == 0) throw new EntityNotFoundException("숙소가 존재하지 않습니다. id=" + id);
     }
 
     public long count() {
@@ -512,8 +490,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Override
     public String getNameById(Long accommodationId) {
         if (accommodationId == null) return null;
-        return accommodationRepository.findById(accommodationId).map(Accommodation::getName).orElse("알수없음");
-
+        return accommodationRepository.findNameById(accommodationId).orElse("알수없음");
     }
 
     @Override
@@ -544,16 +521,8 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
     @Override
     public List<Long> getAccommodationIdsByAdminEmail(String email) {
-        // JPQL(문자열 매칭) 우선
         List<Long> ids = accommodationRepository.findAccommodationIdsByAdminEmail(email);
-        if (ids != null && !ids.isEmpty()) return ids;
-
-        // 연관 매핑이 없거나 위 메서드가 없다면 네이티브로Fallback
-        try {
-            return accommodationRepository.findAccommodationIdsByAdminEmail(email);
-        } catch (Exception ignore) {
-            return List.of();
-        }
+        return ids != null ? ids : List.of();
     }
 }
 

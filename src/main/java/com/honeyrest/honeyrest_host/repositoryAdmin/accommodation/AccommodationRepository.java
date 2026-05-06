@@ -30,7 +30,8 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
 
     List<Accommodation> findAllByCompany_CompanyId(Long companyId);
 
-    Long findCompanyIdByAccommodationId(Long accommodationId);
+    @Query("select a.company.companyId from Accommodation a where a.accommodationId = :id")
+    Long findCompanyIdByAccommodationId(@Param("id") Long accommodationId);
 
     // --- 연관관계: 개별 업데이트 (COALESCE/CASE 없이 대입만) ---
     @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -144,11 +145,11 @@ class AccommodationQueryImpl implements AccommodationQuery {
                 a.accommodationId,
                 a.name,
                 c.name,
+                mr.name,
                 a.minPrice,
                 a.status,
-                null 
+                null
                 )
-               
                 from Accommodation a
                 join a.category c
                 join a.mainRegion mr

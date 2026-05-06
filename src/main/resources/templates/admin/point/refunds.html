@@ -9,7 +9,7 @@
     <th:block layout:fragment="head">
         <style>
             :root{
-                --pri:#4F46E5; --pri-soft:#EEF2FF; --pri-deep:#4338CA;
+                --pri:var(--honey-deeper); --pri-soft:var(--honey-soft); --pri-deep:var(--honey-dark);
                 --danger:#EF4444; --danger-soft:#FEE2E2;
                 --ink:#0F172A; --muted:#64748B; --line:#E5E7EB;
             }
@@ -48,7 +48,7 @@
             /* 상태 칩 */
             .chip{ border-radius:9999px; font-weight:800; font-size:.8rem; padding:.35rem .7rem; border:1px solid transparent; }
             .chip-cancel{ background:var(--danger-soft); color:var(--danger); border-color:#FCA5A5; }
-            .chip-refunded{ background:var(--pri-soft); color:var(--pri); border-color:#C7D2FE; }
+            .chip-refunded{ background:var(--honey-soft); color:var(--pri); border-color:#C7D2FE; }
 
             /* 상세 버튼: 알약형 외곽선 */
             .btn-pill-outline{
@@ -56,7 +56,7 @@
                 background:#fff; border-radius:9999px; padding:.32rem .8rem; font-weight:700;
                 line-height:1; display:inline-flex; align-items:center; gap:.35rem;
             }
-            .btn-pill-outline:hover{ background:var(--pri-soft); color:var(--pri-deep); border-color:var(--pri-deep); }
+            .btn-pill-outline:hover{ background:var(--honey-soft); color:var(--pri-deep); border-color:var(--pri-deep); }
 
             /* pagination */
             .pagination{ gap:6px; }
@@ -64,7 +64,7 @@
                 width:34px; height:34px; display:flex; justify-content:center; align-items:center;
                 border-radius:50%; font-weight:700; border:none; color:#475569; background:#F3F4F6;
             }
-            .pagination .page-item.active .page-link{ background:var(--pri-soft); color:var(--pri); }
+            .pagination .page-item.active .page-link{ background:var(--honey-soft); color:var(--pri); }
             .pagination .page-item.disabled .page-link{ background:transparent; color:#94A3B8; cursor:not-allowed; }
 
             /* ===== 영수증 모달 (기존 스타일 유지) ===== */

@@ -23,13 +23,13 @@
         }
         .day:hover {
             transform: scale(1.02);
-            background: #fafafa;
+            background: var(--honey-soft);
         }
         .header {
             font-weight: bold;
             text-align: center;
             padding: 10px 0;
-            background: #f1f3f5;
+            background: var(--honey-soft);
             border-radius: 6px;
         }
         .day-number {
@@ -126,7 +126,7 @@
             <div class="header">수</div>
             <div class="header">목</div>
             <div class="header">금</div>
-            <div class="header text-primary">토</div>
+            <div class="header" style="color:var(--honey-deeper)">토</div>
 
             <!-- 날짜 셀 출력 -->
             <th:block th:each="i : ${#numbers.sequence(0, totalCells - 1)}">

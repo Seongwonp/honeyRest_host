@@ -38,7 +38,6 @@ public class CalendarController {
 
         model.addAttribute("responseDTO", responseDTO);
         model.addAttribute("companies", responseDTO.getDtoList());
-        log.info("responseDTO.getDtoList() = " + responseDTO.getDtoList());
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         return "owner/calendar/list";
     }

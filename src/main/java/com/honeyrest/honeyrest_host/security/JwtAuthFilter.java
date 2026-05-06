@@ -47,7 +47,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         try {
             String token = jwtTokenProvider.resolveToken(request);
-            log.debug("[JWT] {} token? {}", uri, token != null);
 
             if (token != null && jwtTokenProvider.validate(token)) {
                 Jws<Claims> jws = jwtTokenProvider.parseClaims(token);
@@ -56,18 +55,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String email = (String) claims.get("email");
                 String roleStr = (String) claims.get("role");
 
-                log.debug("[JWT] {} email={}, role={}", uri, email, roleStr);
-
                 if (email != null && roleStr != null) {
                     var auth = new UsernamePasswordAuthenticationToken(
                             email, null, List.of(new SimpleGrantedAuthority("ROLE_" + roleStr)));
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
-            } else {
-                log.debug("[JWT] {} token missing or invalid", uri);
             }
         } catch (Exception e) {
-            log.warn("[JWT] {} exception: {}", uri, e.toString());
+            log.warn("[JWT] {} token validation failed: {}", uri, e.getClass().getSimpleName());
         }
 
 

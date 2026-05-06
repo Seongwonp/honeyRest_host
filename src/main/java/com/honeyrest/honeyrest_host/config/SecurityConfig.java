@@ -64,12 +64,11 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                         "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico",
-                        "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**",
                         "/.well-known/**",
                         "/auth/**",
                         "/error/**"
-                        // 로그인/회원가입/로그아웃 페이지 등 허용
                 ).permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/owner/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/reports/**").hasRole("COMPANY_ADMIN")
@@ -104,7 +103,7 @@ public class SecurityConfig {
                     Cookie c = new Cookie("ACCESS_TOKEN", token);
                     c.setHttpOnly(true);
                     c.setPath("/");
-                    c.setSecure(false); // HTTPS면 true 권장
+                    c.setSecure("https".equalsIgnoreCase(req.getScheme()));
                     res.addCookie(c);
 
                     // 2-4) SecurityContext 갱신 (STATELESS라도 이후 필터에서 참조 가능)

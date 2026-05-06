@@ -40,3 +40,5 @@ out/
 application_secret.properties
 firebase-service-key.json
 .env
+# 시크릿 설정 파일 - 절대 커밋 금지
+src/main/resources/application-secret.properties

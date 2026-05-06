@@ -113,7 +113,6 @@ public class ReservationController {
         model.addAttribute("accommodations", accommodations);
         model.addAttribute("rooms", roomService.getAllRooms());
 
-        log.info("aaaaaaaaaaaaaaaaaaaaaaaaaa,{}", reservationPage);
         model.addAttribute("reservations", reservationPage.getDtoList());
         model.addAttribute("companies", companies);
         model.addAttribute("reservationPage", reservationPage);
@@ -167,9 +166,7 @@ public class ReservationController {
     @PostMapping("/reservation/create")
     public String createReservation(@ModelAttribute ReservationDTO form) {
         UserDTO user = userService.getUserByNameAndPhone(form.getGuestName(), form.getGuestPhone());
-        log.info("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: {}", form.getAccommodationName());
         AccommodationDTO accommodation = accommodationService.getByName(form.getAccommodationName());
-        log.info("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: {}, {}", accommodation.getAccommodationId(), form.getRoomName());
 
         RoomDTO room = roomService.getByAccommodationIdAndId(accommodation.getAccommodationId(), Long.valueOf(form.getRoomName()));
 

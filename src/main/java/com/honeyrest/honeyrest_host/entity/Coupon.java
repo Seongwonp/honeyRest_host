@@ -39,7 +39,7 @@ public class Coupon extends BaseEntity {
     private BigDecimal minOrderAmount; // 최소 주문 금액
 
     @Column(name = "max_discount_amount", precision = 10, scale = 2)
-    private BigDecimal maxOrderAmount; // 최대 주문 금액
+    private BigDecimal maxDiscountAmount; // 최대 할인 금액
 
 
     @Column(name = "target_type", nullable = false, length = 20)

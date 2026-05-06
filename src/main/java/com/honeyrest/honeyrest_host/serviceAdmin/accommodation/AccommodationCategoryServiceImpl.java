@@ -21,7 +21,7 @@ public class AccommodationCategoryServiceImpl implements AccommodationCategorySe
 
     private AccommodationCategoryDTO toDTO(AccommodationCategory e) {
         return AccommodationCategoryDTO.builder()
-                .categoryId(Long.valueOf(e.getCategoryId()))
+                .categoryId(e.getCategoryId())
                 .name(e.getName())
                 .iconUrl(e.getName())
                 .sortOrder(e.getSortOrder())

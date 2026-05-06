@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -301,12 +302,15 @@ public class ReservationServiceImpl implements ReservationService {
 
 
     private ReservationDTO toDto(Reservation r) {
+        Accommodation acc = r.getAccommodation();
+        Room room = r.getRoom();
         ReservationDTO dto = ReservationDTO.builder()
-                .accommodationId(r.getRoom().getAccommodation().getAccommodationId())
-                .accommodationName(r.getRoom().getAccommodation().getName())
+                .accommodationId(acc != null ? acc.getAccommodationId() : null)
+                .accommodationName(acc != null ? acc.getName() : r.getAccommodationName())
                 .reservationNumber(r.getReservationNumber())
                 .reservationId(r.getReservationId())
-                .roomName(r.getRoom().getName())
+                .roomId(room != null ? room.getRoomId() : null)
+                .roomName(room != null ? room.getName() : r.getRoomName())
                 .discountAmount(r.getDiscountAmount())
                 .price(r.getPrice())
                 .originalPrice(r.getOriginalPrice())
@@ -316,7 +320,6 @@ public class ReservationServiceImpl implements ReservationService {
                 .guestName(r.getGuestName())
                 .guestPhone(r.getGuestPhone())
                 .guestCount(r.getGuestCount())
-                .price(r.getPrice())
                 .specialRequest(r.getSpecialRequest())
                 .status(r.getStatus())
                 .createdAt(r.getCreatedAt())
@@ -386,7 +389,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public ReservationDTO approveCancelRequest(Long reservationId, String reason) {
         int updated = reservationRepository.approveCancelRequest(
-                reservationId, reason, LocalDate.now());
+                reservationId, reason, LocalDateTime.now());
 
         if (updated == 0) {
             throw new IllegalStateException("취소요청 상태의 예약만 승인할 수 있습니다. id=" + reservationId);
@@ -398,7 +401,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public void rejectCancelRequest(Long reservationId, String reason) {
         int updated = reservationRepository.rejectCancelRequest(
-                reservationId, reason, LocalDate.now());
+                reservationId, reason, LocalDateTime.now());
 
         if (updated == 0) {
             throw new IllegalStateException("취소요청 상태의 예약만 거부할 수 있습니다. id=" + reservationId);
@@ -408,7 +411,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public void markCompleted(Long reservationId) {
-        int updated = reservationRepository.markCompleted(reservationId, LocalDate.now());
+        int updated = reservationRepository.markCompleted(reservationId, LocalDateTime.now());
 
         if (updated == 0) {
             throw new IllegalStateException("CONFIRMED 상태의 예약만 COMPLETED로 변경 가능합니다. id=" + reservationId);
@@ -418,7 +421,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public void markNoShow(Long reservationId) {
-        int updated = reservationRepository.markNoShow(reservationId, LocalDate.now());
+        int updated = reservationRepository.markNoShow(reservationId, LocalDateTime.now());
 
         if (updated == 0) {
             throw new IllegalStateException("PENDING/CONFIRMED 상태만 NO_SHOW 처리 가능합니다. id=" + reservationId);

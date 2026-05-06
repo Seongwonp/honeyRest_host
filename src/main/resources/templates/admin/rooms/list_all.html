@@ -8,8 +8,8 @@
     <th:block layout:fragment="head">
         <style>
             :root{
-                --lilac:#EDE9FE;
-                --lilac-deep:#6D28D9;
+                --lilac:var(--honey-soft);
+                --lilac-deep:var(--honey-deeper);
                 --lilac-deeper:#5B21B6;
                 --soft:#F7F9FC;
                 --line:#eef2f7;
@@ -65,7 +65,7 @@
             /* 수정: 라벤더 아웃라인 */
             .btn-edit{ background:#fff; color:var(--lilac-deeper); border:1.5px solid var(--lilac-deep);
                 border-radius:9999px; padding:.45rem 1rem; }
-            .btn-edit:hover{ background:var(--lilac); }
+            .btn-edit:hover{ background:var(--honey-soft); }
 
             /* 케밥 버튼 */
             .btn-more{ background:#fff; color:#111; border:1px solid #e5e7eb;
@@ -79,8 +79,8 @@
 
             /* 페이지네이션 라벤더 */
             .pagination .page-link{ border:none; border-radius:10px; color:#475569; }
-            .pagination .page-item.active .page-link{ background:var(--lilac); color:var(--lilac-deeper); font-weight:800; }
-            .pagination .page-item:not(.active) .page-link:hover{ background:var(--lilac); color:var(--lilac-deeper); }
+            .pagination .page-item.active .page-link{ background:var(--honey-soft); color:var(--lilac-deeper); font-weight:800; }
+            .pagination .page-item:not(.active) .page-link:hover{ background:var(--honey-soft); color:var(--lilac-deeper); }
 
             /* 상태 배지 */
             .badge-status{ display:inline-flex; align-items:center; gap:.45rem; padding:.35rem .7rem;
@@ -222,10 +222,6 @@
 
 </th:block>
 
-<th:block layout:fragment="script">
-    <script th:inline="javascript" th:if="${success}">
-        alert([[${success}]]);
-    </script>
-</th:block>
+<th:block layout:fragment="script"></th:block>
 </body>
 </html>

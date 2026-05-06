@@ -8,114 +8,54 @@
     <title>숙소 목록</title>
     <th:block layout:fragment="head">
         <style>
-            :root{
-                --mint:#D9F7F1;      /* 파스텔 민트 */
-                --mint-deep:#0F766E;
-                --lilac:#EDE9FE;     /* 파스텔 라일락 */
-                --lilac-deep:#6a2fc8;/* 톤다운 보라 */
-                --soft-gray:#F8FAFC;
-                --ink:#0F172A;
-                --line:#eef0f4;
-            }
-
-            body { background:#f7f9fc; }
-
-            /* 공통 카드 */
-            .card{ border:none; border-radius:16px; box-shadow:0 8px 24px rgba(2,6,23,.06); }
-
-            /* 헤더/툴바 */
+            /* 글로벌 honey-theme.css 기반 로컬 유틸 */
             .toolbar{
                 display:flex; gap:1rem; align-items:center; justify-content:space-between;
-                margin-bottom:1.25rem; /* 간격 ↑ */
+                margin-bottom:1.25rem;
             }
-            .toolbar h3{ font-weight:700; letter-spacing:.2px; } /* 800 → 700 */
+            .toolbar h3{ font-weight:800; }
             .count-badge{
-                background: var(--lilac); color: var(--lilac-deep);
-                border-radius: 9999px; padding:.32rem .6rem;
+                background:var(--honey-soft); color:var(--honey-deeper);
+                border-radius:var(--pill); padding:.3rem .65rem;
                 font-weight:700; font-size:.78rem; margin-left:.5rem;
+                border:1px solid var(--honey-mid);
             }
             .search-wrap{
-                display:flex; gap:.5rem; align-items:center; background:var(--soft-gray);
-                border-radius:12px; padding:.38rem .5rem;
+                display:flex; gap:.5rem; align-items:center; background:#F8FAFC;
+                border-radius:var(--r); padding:.38rem .6rem;
+                border:1px solid var(--border);
             }
-            .search-wrap input{
-                border:none; background:transparent; box-shadow:none; min-width:220px;
-                font-weight:500;
-            }
+            .search-wrap input{ border:none; background:transparent; box-shadow:none; min-width:200px; font-weight:500; }
             .search-wrap input:focus{ outline:none; box-shadow:none; }
 
-            /* 표 */
-            .table thead{ background:linear-gradient(0deg,#fff,#fff); }
-            .table thead th{
-                border-bottom:1px solid var(--line)!important; color:#475569;
-                font-weight:600; font-size:.9rem; /* 700 → 600 */
-                padding-top:1rem; padding-bottom:1rem; /* 헤더 호흡 ↑ */
-            }
-            .table tbody td{
-                vertical-align:middle; border-color:#f1f5f9;
-                padding-top:.9rem; padding-bottom:.9rem; /* 행간 ↑ */
-                font-weight:500; color:#334155;         /* 600 → 500 */
-            }
-            .table-hover tbody tr:hover{ background:#FBFEFF; }
-
-            /* 썸네일 */
-            .thumb{ width:56px; height:56px; object-fit:cover; border-radius:12px; border:1px solid #e5e7eb; background:#f6f8fb; }
+            .thumb{ width:56px; height:56px; object-fit:cover; border-radius:var(--r); border:1px solid var(--border); }
             .thumb-empty{
-                width:56px; height:56px; border-radius:12px; border:1px dashed #cbd5e1; color:#94a3b8; font-size:.75rem;
-                display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fff,#fbfdff);
+                width:56px; height:56px; border-radius:var(--r); border:1px dashed #CBD5E1;
+                color:var(--subtle); font-size:.75rem;
+                display:flex; align-items:center; justify-content:center; background:#F8FAFC;
             }
-
-            /* 칩/배지 */
-            .badge-chip{font-weight:700; padding:.3rem .6rem; border-radius:999px; font-size:.78rem; border:1px solid transparent; letter-spacing:.2px;} /* 800→700, 패딩↓ */
-            .badge-active  { background:var(--mint);   color:var(--mint-deep);   border-color:rgba(15,118,110,.15); }
-            .badge-pending { background:#FFFBEB;       color:#92400e;           border-color:#FDE68A; }
-            .badge-inactive{ background:#F1F5F9;       color:#334155;           border-color:#E2E8F0; }
-            .badge-rejected{ background:#FEE2E2;       color:#991B1B;           border-color:#FECACA; }
 
             .pill{
-                border-radius:9999px; padding:.22rem .5rem; font-weight:600; font-size:.74rem; /* 굵기↓, 부피↓ */
-                border:1px solid #e2e8f0; background:#f8fafc; color:#334155;
+                border-radius:var(--pill); padding:.2rem .5rem; font-weight:600; font-size:.74rem;
+                border:1px solid var(--border); background:#F8FAFC; color:#334155;
             }
 
-            /* 버튼 (부피↓, 굵기↓) */
-            .btn-chip{ border-radius:999px; padding:.3rem .6rem; font-weight:700; font-size:.84rem; }
-            .btn-outline-primary, .btn-outline-secondary{ border-radius:10px; }
-            .btn-outline-primary:hover{ background:var(--mint); border-color:var(--mint-deep); color:var(--mint-deep); }
-            .btn-outline-secondary:hover{ background:var(--lilac); border-color:var(--lilac-deep); color:var(--lilac-deep); }
-            .btn-ghost{ background:#fff; border:1.2px solid #2563eb; color:#1d4ed8; } /* 1.5px→1.2px */
-            .btn-ghost:hover{ background:#eff6ff; }
-            .btn-soft{ background:#f8fafc; border:1px solid #e5e7eb; color:#334155; }
-            .btn-soft:hover{ background:#eef2f7; }
-            .btn-danger-soft{ background:#fff; border:1.2px solid #ef4444; color:#b91c1c; }
-            .btn-danger-soft:hover{ background:#fff1f2; color:#991b1b; }
+            .btn-chip   { border-radius:var(--pill); padding:.3rem .65rem; font-weight:700; font-size:.84rem; }
+            .btn-ghost  { background:#fff; border:1px solid var(--honey); color:var(--honey-deeper); border-radius:var(--r-sm)!important; }
+            .btn-ghost:hover { background:var(--honey-soft); }
+            .btn-soft   { background:#F8FAFC; border:1px solid var(--border); color:#334155; border-radius:var(--r-sm)!important; }
+            .btn-soft:hover { background:#EEF2F7; }
+            .btn-danger-soft { background:#fff; border:1px solid #EF4444; color:#B91C1C; border-radius:var(--r-sm)!important; }
+            .btn-danger-soft:hover { background:#FFF1F2; }
 
-            /* 뷰 토글 (톤다운/부피↓) */
-            .view-toggle .btn{
-                border-radius:999px; padding:.3rem .6rem; font-weight:700;
-            }
-            .view-toggle .btn-primary{
-                background:var(--lilac); border-color:var(--lilac-deep); color:var(--lilac-deep);
-            }
-            .view-toggle .btn-outline-primary:hover{
-                background:var(--mint); border-color:var(--mint-deep); color:var(--mint-deep);
-            }
+            .view-toggle .btn{ border-radius:var(--r-sm)!important; font-weight:700; }
 
-            /* 카드 그리드 */
-            .acc-card{ border-radius:16px; overflow:hidden; }
-            .acc-cover{ width:100%; height:160px; object-fit:cover; background:#f6f8fb; }
-            .acc-meta{ font-size:.88rem; color:#64748b; }
-            .price{ font-weight:700; } /* 800 → 700 */
+            .acc-card { border-radius:var(--r-lg); overflow:hidden; }
+            .acc-cover { width:100%; height:160px; object-fit:cover; background:#F6F8FB; }
+            .acc-meta  { font-size:.88rem; color:var(--muted); }
+            .price     { font-weight:700; }
 
-            /* 액션칸 간격 조금 더 */
-            td .d-inline-flex.gap-1{ gap:.6rem !important; }
-
-            /* 페이지네이션 (톤 유지/굵기↓) */
-            .pagination .page-link{ border:none; border-radius:10px; color:#475569; font-weight:600; }
-            .pagination .page-item.active .page-link{ background:var(--lilac); color:var(--lilac-deep); font-weight:700; }
-            .pagination .page-item:not(.active) .page-link:hover{ background:var(--mint); color:var(--mint-deep); }
-
-            /* Empty state */
-            .empty-state{ text-align:center; padding:3rem 1rem; color:#64748B; }
+            .empty-state{ text-align:center; padding:3rem 1rem; color:var(--muted); }
             .empty-state .emoji{ font-size:1.8rem; display:block; margin-bottom:.4rem; }
         </style>
     </th:block>

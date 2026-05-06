@@ -422,10 +422,6 @@ public class AccommodationController {
         model.addAttribute("mainRegions", mainRegions);
         model.addAttribute("subRegions", subRegions);
         model.addAttribute("tagsByCategory", tagsByCategory);
-        log.info("checkin {} : ", form.getCheckInTime());
-        log.info("checkout {} : ", form.getCheckOutTime());
-
-
         return "admin/accommodations/edit"; // edit.html
     }
 

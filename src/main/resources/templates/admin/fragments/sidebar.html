@@ -88,10 +88,22 @@
                         <a href="#" class="sidebar-link">
                             <i class="bi bi-journal-bookmark"></i>
                             <span>예약 관리</span>
+                            <span th:if="${_notifyCancelCount != null and _notifyCancelCount > 0}"
+                                  class="badge ms-auto"
+                                  style="background:var(--danger);color:#fff;font-size:.7rem;border-radius:9999px;padding:.2rem .45rem;"
+                                  th:text="${_notifyCancelCount}">0</span>
                         </a>
                         <ul class="submenu">
                             <li class="submenu-item"><a href="/admin/reservations/my">나의 예약 현황</a></li>
-                            <li class="submenu-item"><a href="/admin/reservations/cancel-requests">예약 취소 목록</a></li>
+                            <li class="submenu-item">
+                                <a href="/admin/reservations/cancel-requests">
+                                    예약 취소 목록
+                                    <span th:if="${_notifyCancelCount != null and _notifyCancelCount > 0}"
+                                          class="badge ms-1"
+                                          style="background:var(--danger);color:#fff;font-size:.68rem;border-radius:9999px;padding:.15rem .4rem;"
+                                          th:text="${_notifyCancelCount}">0</span>
+                                </a>
+                            </li>
                             <li class="submenu-item"><a href="/admin/point/refunds">환불/취소 관리</a></li>
                         </ul>
                     </li>
@@ -146,6 +158,15 @@
                         <!-- 필요 시 submenu 추가 -->
                     </li>
                 </ul>
+            </div>
+
+            <!-- 로그아웃 -->
+            <div class="mt-auto pb-2">
+                <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none"></form>
+                <button type="button" class="sidebar-logout-btn"
+                        onclick="document.getElementById('logoutForm').submit();">
+                    <i class="bi bi-box-arrow-right me-2"></i>로그아웃
+                </button>
             </div>
         </div>
     </div>

@@ -7,19 +7,6 @@
 <head>
     <title>숙소 관리자 대시보드 - 리뷰 목록</title>
     <th:block layout:fragment="head"></th:block>
-    <style>
-        .card { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .btn { border-radius: 4px; }
-        .btn-sm { padding: 4px 10px; font-size: 0.875rem; }
-        .custom-hover-dark:hover { background-color: #343a40 !important; color: white !important; }
-        .table img { border-radius: 4px; }
-        .table th, .table td { vertical-align: middle; text-align: center; }
-        .table tr:hover { background-color: #f1f1f1; }
-        .pagination .page-link { color: #0d6efd; }
-        .pagination .active .page-link { background-color: #0d6efd; border-color: #0d6efd; color: white; }
-        .page-heading h3 { margin-bottom: 1rem; }
-        .text-subtitle { font-size: 0.95rem; color: #6c757d; }
-    </style>
 </head>
 
 <body>
@@ -35,11 +22,11 @@
             <!-- 객실 상세 카드 -->
             <div class="card shadow-lg border-0 mb-4" th:if="${accommodation != null}">
                 <!-- 헤더 -->
-                <div class="card-header bg-gradient-primary text-white py-3 d-flex justify-content-between align-items-center rounded-top">
+                <div class="card-header  py-3 d-flex justify-content-between align-items-center rounded-top">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-house-door me-2"></i> 객실 상세 정보
                     </h5>
-                    <span class="badge bg-light text-primary px-3 py-2"
+                    <span class="badge px-3 py-2"
                           th:text="${accommodation.status == 'ACTIVE'} ? '활성' : '비활성'">활성</span>
                 </div>
 

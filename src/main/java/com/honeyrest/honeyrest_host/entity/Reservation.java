@@ -25,7 +25,7 @@ public class Reservation extends BaseEntity{
     public Long reservationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -60,7 +60,7 @@ public class Reservation extends BaseEntity{
     @Column(name = "guest_phone", nullable = false, length = 20)
     private String guestPhone;
 
-    @Column(name = "price", nullable = false, length = 20)
+    @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price; // 최종 결제 금액
 
     @Column(name = "original_price",precision = 10, scale = 2)

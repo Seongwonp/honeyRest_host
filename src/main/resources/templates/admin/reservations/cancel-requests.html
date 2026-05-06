@@ -9,7 +9,7 @@
         <style>
             :root{
                 --thead:#F8FAFC; --line:#E5E7EB; --ink:#0F172A; --muted:#64748B;
-                --lav:#7C3AED; --lav-soft:#F3E8FF;
+                
             }
             body{ background:#f7f9fc; }
 
@@ -52,8 +52,8 @@
             .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,"Cascadia Mono","Segoe UI Mono","Roboto Mono",monospace}
 
             /* 버튼 톤 그대로 */
-            .btn-lavender{background:var(--lav-soft);color:var(--lav);border:1px solid #E9D5FF}
-            .btn-lavender:hover{background:#E9D5FF;color:#5B21B6}
+            .btn-honey{background:var(--honey-soft);color:var(--honey-deeper);border:1px solid var(--honey-mid)}
+            .btn-honey:hover{background:var(--honey-mid);color:var(--honey-text)}
             .btn-ghost{background:#fff;border:1px solid var(--line);color:#334155}
 
             /* 배지 */
@@ -99,7 +99,7 @@
                 width:34px; height:34px; display:flex; justify-content:center; align-items:center;
                 border-radius:50%; font-weight:700; border:none; color:#475569; background:#F3F4F6;
             }
-            .pagination .page-item.active .page-link{ background:#EEF2FF; color:#4F46E5; }
+            .pagination .page-item.active .page-link{ background:var(--honey); color:var(--honey-text); }
             .pagination .page-item.disabled .page-link{ background:transparent; color:#94A3B8; cursor:not-allowed; }
         </style>
     </th:block>
@@ -135,7 +135,7 @@
                     </select>
                 </div>
                 <div class="col-md-6 text-end">
-                    <button class="btn btn-lavender btn-sm" type="submit">조회</button>
+                    <button class="btn btn-honey btn-sm" type="submit">조회</button>
                     <a class="btn btn-ghost btn-sm" th:href="@{/admin/reservations/cancel-request}">검색 초기화</a>
                 </div>
             </form>
@@ -227,7 +227,7 @@
                                     상세
                                 </button>
                                 <!-- 승인 -->
-                                <button type="button" class="btn btn-lavender js-approve"
+                                <button type="button" class="btn btn-honey js-approve"
                                         th:attr="data-id=${r.reservationId}">
                                     승인
                                 </button>
@@ -297,7 +297,7 @@
                 <div class="modal-footer">
                     <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                     <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">취소</button>
-                    <button type="submit" class="btn btn-lavender" id="reasonSubmitBtn">확인</button>
+                    <button type="submit" class="btn btn-honey" id="reasonSubmitBtn">확인</button>
                 </div>
             </form>
         </div>

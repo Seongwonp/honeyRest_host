@@ -7,30 +7,26 @@
     <title>숙소 관리자 대시보드</title>
     <th:block layout:fragment="head">
         <style>
-            :root{
-                --card-radius:16px; --shadow:0 6px 18px rgba(0,0,0,.05); --border:1px solid rgba(0,0,0,.06);
-                --muted:#6b7280; --ink:#0f172a; --accent1:#6d5ef6; --accent2:#22c55e; --accent3:#3b82f6;
-            }
             .grid{display:grid;gap:16px}
             .grid-12{grid-template-columns:repeat(12,1fr)}
-            @media (max-width:1199px){.grid-12{grid-template-columns:repeat(6,1fr)}}
-            @media (max-width:767px){.grid-12{grid-template-columns:repeat(2,1fr)}}
+            @media(max-width:1199px){.grid-12{grid-template-columns:repeat(6,1fr)}}
+            @media(max-width:767px){.grid-12{grid-template-columns:repeat(2,1fr)}}
 
-            .kpi,.card-soft{background:#fff!important;border-radius:16px;border:1px solid rgba(0,0,0,.15);box-shadow:0 2px 6px rgba(0,0,0,.04)}
-            .kpi{grid-column:span 4 / span 4; padding:20px; min-height:140px; display:flex; flex-direction:column; justify-content:space-between}
-            .kpi:hover{transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.08)}
+            .kpi,.card-soft{background:#fff!important;border-radius:16px;border:1px solid var(--border);box-shadow:var(--sh-sm)}
+            .kpi{grid-column:span 4/span 4;padding:20px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between}
+            .kpi:hover{transform:translateY(-2px);box-shadow:var(--sh)}
             .icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center}
-            .icon svg{width:24px;height:24px;stroke:#fff}
-            .icon.p1{background:#a5b4fc} .icon.p2{background:#6ee7b7} .icon.p3{background:#93c5fd} .icon.p4{background:#fbcfe8}
+            .icon svg{width:24px;height:24px}
+            .icon.p1{background:var(--honey-soft);color:var(--honey-deeper)}
+            .icon.p2{background:var(--success-soft);color:var(--success)}
+            .icon.p3{background:var(--info-soft);color:var(--info)}
+            .icon.p4{background:#F3E8FF;color:#7C3AED}
             .card-soft .card-body{padding:20px}
-
-            .table{border:1px solid rgba(0,0,0,.15); border-radius:8px; overflow:hidden}
-            .quick-link{font-size:.875rem;color:#3b82f6;text-decoration:none}
+            .quick-link{font-size:.875rem;color:var(--honey-deeper);text-decoration:none;font-weight:600}
             .quick-link:hover{text-decoration:underline}
-            .muted{color:var(--muted)}
-            .kpi-title{margin:8px 0 0; color:var(--muted)}
-            .kpi-value{margin:0; font-weight:800; font-size:2rem; color:var(--ink)}
-            .chart-wrap{position:relative; min-height:320px}
+            .kpi-title{margin:8px 0 0;color:var(--muted)}
+            .kpi-value{margin:0;font-weight:800;font-size:2rem;color:var(--ink)}
+            .chart-wrap{position:relative;min-height:320px}
         </style>
     </th:block>
 </head>
@@ -275,11 +271,13 @@
                             label,
                             data,
                             tension:.35,
-                            pointRadius:3,
-                            borderColor:'#a855f7',      // 보라색 라인
-                            backgroundColor:'#a855f7',
-                            borderWidth:2,
-                            fill:false
+                            pointRadius:4,
+                            borderColor:'#F9A825',
+                            backgroundColor:'rgba(255,213,79,.15)',
+                            pointBackgroundColor:'#FFD54F',
+                            pointBorderColor:'#F9A825',
+                            borderWidth:2.5,
+                            fill:true
                         }]
                     },
                     options:{

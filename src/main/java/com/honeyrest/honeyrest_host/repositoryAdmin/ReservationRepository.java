@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,11 +25,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     // 예약 상태에 따라 예약 목록 페이징
     Page<Reservation> findByStatus(String status, Pageable pageable);
 
-    // 기간과 "겹치는" 예약들 조회 (체크인 < ednDate and 체크아웃 > startDate) -> 구간 겹침)
+    // 기간과 "겹치는" 예약들 조회 (체크인 < endDate and 체크아웃 > startDate) -> 구간 겹침)
     @Query("""
                 select r
                   from Reservation r
-                 where r.room.roomId = :roomId
+                  join fetch r.room rm
+                  join fetch r.accommodation
+                 where rm.roomId = :roomId
                    and r.checkInDate < :endDate
                    and r.checkOutDate > :startDate
             """)
@@ -38,8 +41,22 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
 
     // 회사별 예약 목록 (검색/상태 필터) ->예약 목록 페이지(검색창 + 상태 필터)
-    @Query("""
+    @Query(value = """
             select r
+            from Reservation r
+            join fetch r.room rm
+            join fetch rm.accommodation acc
+            where acc.company.companyId = :companyId
+              and (:status is null or r.status = :status)
+              and (
+                 :q is null or :q = '' or
+                 r.reservationNumber like concat('%', :q, '%') or
+                 r.guestName like concat('%', :q, '%') or
+                 r.guestPhone like concat('%', :q, '%')
+              )
+            """,
+            countQuery = """
+            select count(r)
             from Reservation r
             join r.room rm
             join rm.accommodation acc
@@ -82,8 +99,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     @Query("""
                 select r
                 from Reservation r
-                join r.room rm
-                join rm.accommodation a
+                join fetch r.room rm
+                join fetch rm.accommodation a
                 where a.company.companyId = :companyId
                   and (:accommodationId is null or a.accommodationId = :accommodationId)
                   and r.status <> 'CANCELLED'
@@ -99,8 +116,24 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
 
 
-    @Query("""
+    @Query(value = """
                 SELECT r
+                FROM Reservation r
+                JOIN FETCH r.room rm
+                JOIN FETCH rm.accommodation a
+                JOIN a.company c
+                WHERE c.companyId = :companyId
+                  AND (:status IS NULL OR :status = 'ALL' OR UPPER(r.status) = UPPER(:status))
+                  AND (:accId IS NULL OR a.accommodationId = :accId)
+                  AND (
+                       :q IS NULL OR :q = '' OR
+                       r.reservationNumber LIKE CONCAT('%', :q, '%') OR
+                       r.guestName        LIKE CONCAT('%', :q, '%') OR
+                       r.roomName         LIKE CONCAT('%', :q, '%')
+                  )
+            """,
+            countQuery = """
+                SELECT count(r)
                 FROM Reservation r
                 JOIN r.room rm
                 JOIN rm.accommodation a
@@ -133,7 +166,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                  where r.reservationId = :id
                    and r.status = 'CANCEL_REQUEST'
             """)
-    int approveCancelRequest(@Param("id") Long id, @Param("reason") String reason, @Param("now") LocalDate now);
+    int approveCancelRequest(@Param("id") Long id, @Param("reason") String reason, @Param("now") LocalDateTime now);
 
     // 취소 거부(확정으로 복귀)
     @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -145,7 +178,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                  where r.reservationId = :id
                    and r.status = 'CANCEL_REQUEST'
             """)
-    int rejectCancelRequest(@Param("id") Long id, @Param("reason") String reason, @Param("now") LocalDate now);
+    int rejectCancelRequest(@Param("id") Long id, @Param("reason") String reason, @Param("now") LocalDateTime now);
 
     // 체크아웃 완료 -> COMPLETED
     @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -156,7 +189,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                  where r.reservationId = :id
                    and r.status = 'CONFIRMED'
             """)
-    int markCompleted(@Param("id") Long id, @Param("now") LocalDate now);
+    int markCompleted(@Param("id") Long id, @Param("now") LocalDateTime now);
 
     // 노쇼 처리 -> NO_SHOW
     @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -167,21 +200,18 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                  where r.reservationId = :id
                    and r.status in ('PENDING','CONFIRMED')
             """)
-    int markNoShow(@Param("id") Long id, @Param("now") LocalDate now);
-
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-
+    int markNoShow(@Param("id") Long id, @Param("now") LocalDateTime now);
 
     // 체크인일 기준, 회사(+선택 숙소/객실) 필터
     @Query("""
     select r
       from Reservation r
-      join r.room rm
-      join rm.accommodation a
+      join fetch r.room rm
+      join fetch rm.accommodation a
      where a.company.companyId = :companyId
        and (:accommodationId is null or a.accommodationId = :accommodationId)
        and (:roomId is null or rm.roomId = :roomId)
-       and r.status in ('CONFIRMED','PENDING','CENCEL_REQUEST','NO_SHOW','COMPLETED')
+       and r.status in ('CONFIRMED','PENDING','CANCEL_REQUEST','NO_SHOW','COMPLETED')
        and r.checkInDate between :startDate and :endDate
 """)
     List<Reservation> findCheckinsForRange(@Param("companyId") Long companyId,
@@ -191,6 +221,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                            @Param("endDate") LocalDate endDate);
 
     boolean existsByRoom_Accommodation_AccommodationId(Long accommodationId);
+
+    @Query("""
+        select count(r) from Reservation r
+        join r.accommodation a
+        where a.accommodationId in :accIds
+          and r.status = 'CANCEL_REQUEST'
+    """)
+    long countCancelRequestByAccommodationIds(@Param("accIds") java.util.List<Long> accIds);
 
 }
 

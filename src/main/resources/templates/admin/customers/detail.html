@@ -9,9 +9,9 @@
     <th:block layout:fragment="head">
         <style>
             :root{
-                --mint:#D9F7F1;      /* 파스텔 민트 */
-                --mint-deep:#0F766E;
-                --lilac:#EDE9FE;     /* 파스텔 라일락 */
+                --mint:var(--success-soft);      /* 파스텔 민트 */
+                --mint-deep:var(--success);
+                --lilac:var(--honey-soft);     /* 파스텔 라일락 */
                 --lilac-deep:#5B21B6;
                 --soft-gray:#F8FAFC;
                 --ink:#0F172A;
@@ -80,7 +80,7 @@
                 color:#475569; font-weight:700; border-radius:0;
             }
             .nav-tabs .nav-link.active{
-                color:var(--lilac-deep); border-color:var(--lilac-deep);
+                color:var(--honey-deeper); border-color:var(--honey-deeper);
                 background:linear-gradient(0deg,#fff,#fff);
             }
             .tab-pane .muted{color:#64748B}

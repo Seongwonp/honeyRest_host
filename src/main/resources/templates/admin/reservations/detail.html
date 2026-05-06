@@ -8,8 +8,8 @@
     <th:block layout:fragment="head">
         <style>
             :root{
-                --lilac:#EDE9FE;
-                --lilac-deep:#6D28D9;
+                --lilac:var(--honey-soft);
+                --lilac-deep:var(--honey-deeper);
                 --lilac-deeper:#5B21B6;
                 --soft:#F7F9FC;
                 --line:#E9EDF5;
@@ -38,7 +38,7 @@
                 border:1.5px solid var(--lilac-deep);
                 color:var(--lilac-deeper);
             }
-            .btn-outline-lilac:hover{ background:var(--lilac); }
+            .btn-outline-lilac:hover{ background:var(--honey-soft); }
 
             /* key–value 줄맞춤 */
             .kv{ display:flex; gap:.75rem; }
@@ -233,9 +233,6 @@
                     </div>
                 </div>
 
-                <div th:if="${msg}">
-                    <script th:inline="javascript"> alert([[${msg}]]); </script>
-                </div>
             </div>
         </section>
     </div>

@@ -8,11 +8,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title layout:title-pattern="$CONTENT_TITLE :: HoneyRest Host">HoneyRest Host</title>
 
+    <!-- 폰트 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- 공통 스타일 -->
     <link rel="shortcut icon" th:href="@{/assets/compiled/svg/favicon.svg}" type="image/x-icon">
     <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}" />
     <link rel="stylesheet" th:href="@{/assets/compiled/css/app-dark.css}" />
     <link rel="stylesheet" th:href="@{/assets/compiled/css/iconly.css}" />
+    <!-- HoneyRest 브랜드 테마 -->
+    <link rel="stylesheet" th:href="@{/assets/css/honey-theme.css}" />
 
     <!-- 페이지별 추가 head -->
     <th:block layout:fragment="head"></th:block>
@@ -24,18 +31,7 @@
 <div id="app">
     <div id="main">
 
-
-        <div class="sidebar-item">
-            <a href="#" class="btn btn-link"
-               onclick="document.getElementById('logoutForm').submit(); return false;">
-                <i class="bi bi-box-arrow-right"></i> 로그아웃
-            </a>
-            <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none"></form>
-        </div>
-
-        <div th:replace="owner/fragments/sidebar :: sidebar"></div>
-
-
+        <div th:replace="~{owner/fragments/sidebar :: sidebar}"></div>
 
         <header class="mb-3">
             <a href="#" class="burger-btn d-block d-xl-none">
@@ -43,15 +39,12 @@
             </a>
         </header>
 
-
         <main layout:fragment="content">
             <div class="page-heading" style="display: none;"></div>
             <div class="page-content" style="display: none;"></div>
-
         </main>
 
-
-        <footer th:replace="owner/fragments/footer :: footer"></footer>
+        <footer th:replace="~{owner/fragments/footer :: footer}"></footer>
 
     </div>
 </div>
@@ -62,10 +55,39 @@
 <script th:src="@{/assets/compiled/js/app.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<!-- Toast 알림 컨테이너 -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999">
+    <div id="pageToast" class="toast align-items-center border-0" role="alert" aria-live="assertive">
+        <div class="d-flex">
+            <div class="toast-body fw-semibold" id="pageToastBody"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+<span id="__toast_msg"     th:text="${msg}"     style="display:none" th:if="${msg}"></span>
+<span id="__toast_success" th:text="${success}" style="display:none" th:if="${success}"></span>
+<span id="__toast_error"   th:text="${error}"   style="display:none" th:if="${error}"></span>
+<script>
+(function () {
+    function showToast(msg, type) {
+        var el = document.getElementById('pageToast');
+        var body = document.getElementById('pageToastBody');
+        body.textContent = msg;
+        el.className = 'toast align-items-center border-0 text-bg-' + type;
+        new bootstrap.Toast(el, {delay: 3500}).show();
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        var s = document.getElementById('__toast_success');
+        var m = document.getElementById('__toast_msg');
+        var e = document.getElementById('__toast_error');
+        if (s && s.textContent.trim()) showToast(s.textContent.trim(), 'success');
+        else if (m && m.textContent.trim()) showToast(m.textContent.trim(), 'primary');
+        else if (e && e.textContent.trim()) showToast(e.textContent.trim(), 'danger');
+    });
+})();
+</script>
 
 <!-- 페이지별 추가 스크립트 -->
-<th:block layout:fragment="script">
-
-</th:block>
+<th:block layout:fragment="script"></th:block>
 </body>
 </html>

@@ -9,9 +9,9 @@
   <th:block layout:fragment="head">
     <style>
       :root{
-        --mint:#D9F7F1;      /* 파스텔 민트 */
-        --mint-deep:#0F766E; /* 진한 민트 텍스트 */
-        --lilac:#EDE9FE;     /* 파스텔 라일락 */
+        --mint:var(--success-soft);      /* 파스텔 민트 */
+        --mint-deep:var(--success); /* 진한 민트 텍스트 */
+        --lilac:var(--honey-soft);     /* 파스텔 라일락 */
         --lilac-deep:#5B21B6;
         --soft-gray:#F8FAFC;
         --ink:#0F172A;
@@ -91,7 +91,7 @@
         color:#5B21B6;
       }
       .btn-pill-primary:hover{
-        background:var(--lilac);
+        background:var(--honey-soft);
         border-color:#6d28d9;
         color:#4c1d95;
       }

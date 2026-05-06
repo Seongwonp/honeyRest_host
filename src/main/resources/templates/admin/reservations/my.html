@@ -7,99 +7,31 @@
     <title>내 예약 현황</title>
     <th:block layout:fragment="head">
         <style>
-            :root{
-                --bg:#F8FAFC;          /* 배경 */
-                --line:#E5EAF2;        /* 구분선 */
-                --ink:#1F2937;         /* 본문 텍스트 */
-                --muted:#94A3B8;       /* 보조 텍스트 */
+            /* 로컬 유틸 - 글로벌 honey-theme.css 기반 */
+            .btn-pill{ border-radius:var(--pill); padding:.4rem .85rem; font-weight:700; }
+            .btn-xs  { padding:.28rem .6rem; font-size:.82rem; border-radius:var(--pill); }
 
-                /* 포인트 컬러 2개만 */
-                --pri:#8B5CF6;         /* 라일락 */
-                --pri-soft:#F1EDFF;
-                --sec:#14B8A6;         /* 민트 */
-                --sec-soft:#E5FBF7;
+            .btn-ghost    { background:#fff; border:1px solid var(--border); color:#334155; border-radius:var(--r-sm)!important; }
+            .btn-ghost:hover { background:#F8FAFC; border-color:#CBD5E1; }
+            .btn-pri      { background:var(--honey)!important; border:1px solid var(--honey-dark)!important; color:var(--honey-text)!important; font-weight:700; }
+            .btn-pri:hover { background:var(--honey-dark)!important; }
+            .btn-sec-outline { background:#fff; border:1px solid var(--honey); color:var(--honey-deeper); border-radius:var(--r-sm)!important; font-weight:600; }
+            .btn-sec-outline:hover { background:var(--honey-soft); border-color:var(--honey-dark); }
 
-                --card-radius:14px;
-                --chip-radius:9999px;
-                --shadow:0 6px 18px rgba(2,6,23,.05);
+            .td-ellipsis { max-width:230px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+            .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+            .price { font-weight:800; letter-spacing:.02em; }
+
+            .group-row th {
+                background:var(--honey-soft)!important;
+                border-top:1px solid var(--honey-mid)!important;
+                border-bottom:1px solid var(--honey-mid)!important;
+                font-weight:700; color:#7B5E00;
+                padding:.75rem 1rem!important;
             }
+            .group-meta { color:var(--muted); font-weight:500; font-size:.85rem; }
 
-            body{ background:var(--bg); color:var(--ink); }
-
-            /* 헤더 */
-            .page-heading h3{ font-weight:800; letter-spacing:.2px; }
-            .subtext{ color:var(--muted); }
-
-            /* 버튼: 더 작고 둥글게 */
-            .btn-pill{ border-radius:9999px; padding:.4rem .8rem; font-weight:700; letter-spacing:.1px; }
-            .btn-xs{ padding:.28rem .6rem; font-size:.82rem; border-radius:9999px; }
-
-            .btn-ghost{ background:#fff; border:1px solid var(--line); color:#334155; }
-            .btn-ghost:hover{ background:#fff; border-color:#CBD5E1; }
-
-            .btn-pri{ background:var(--pri); border:1px solid var(--pri); color:#fff; }
-            .btn-pri:hover{ filter:brightness(1.04); }
-            .btn-sec-outline{ background:#fff; border:1px solid var(--sec); color:var(--sec); }
-            .btn-sec-outline:hover{ background:var(--sec-soft); }
-
-            /* 카드/필터바 */
-            .card{ border:1px solid var(--line); border-radius:var(--card-radius); box-shadow:var(--shadow); overflow:hidden; }
-            .filter-bar{ background:#fff; border-bottom:1px solid var(--line); padding:.7rem 1rem; }
-            .filter-bar .form-select, .filter-bar .form-control{ border-radius:12px; }
-
-            /* 테이블 */
-            .table thead th{
-                background:var(--pri-soft);
-                border-bottom:1px solid #E7E3FF!important;
-                color:#3C366B;
-                font-weight:800; vertical-align:middle; font-size:.9rem;
-            }
-            .table tbody td{ vertical-align:middle; border-color:#EEF2F7; color:#334155; }
-            .table-hover tbody tr:hover{ background:#FAFBFF; }
-
-            .td-ellipsis{ max-width:230px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-            .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-            .price{ font-weight:800; letter-spacing:.2px; }
-
-            /* 그룹 헤더 */
-            .group-row th{
-                background:#fff !important;
-                border-top:1px solid var(--line) !important;
-                border-bottom:1px solid var(--line) !important;
-                font-weight:900; color:#111827;
-                padding:.8rem 1rem !important;
-            }
-            .group-meta{ color:var(--muted); font-weight:600; }
-
-            /* 상태 칩 */
-            .chip{
-                border-radius:var(--chip-radius);
-                padding:.28rem .6rem;
-                font-size:.78rem; font-weight:800;
-                border:1px solid transparent;
-                display:inline-flex; align-items:center; gap:.35rem;
-                letter-spacing:.1px;
-            }
-            .chip-ok      { background:var(--sec-soft); color:var(--sec); border-color:rgba(20,184,166,.25);}
-            .chip-wait    { background:#FFF6E2; color:#B45309; border-color:#FBD38D;}
-            .chip-done    { background:#EEFDF8; color:#0F766E; border-color:#B6F3E6;}
-            .chip-cancel  { background:#F3F4F6; color:#475569; border-color:#E2E8F0;}
-            .chip-noshow  { background:#FDECEC; color:#991B1B; border-color:#FCA5A5;}
-            .chip-unk     { background:#EEE; color:#475569; border-color:#E5E7EB;}
-
-            /* 페이지네이션: 더 가볍게 */
-            .pagination .page-link{ border:none; border-radius:10px; color:#475569; font-weight:700; }
-            .pagination .page-item.active .page-link{ background:var(--pri-soft); color:var(--pri); font-weight:900; }
-            .pagination .page-item:not(.active) .page-link:hover{ background:var(--pri-soft); color:var(--pri); }
-
-            /* 상단 버튼 간격 조정 */
-            .top-actions .btn-pill{ padding:.36rem .7rem; font-weight:700; }
-            .top-actions .btn-pri{ background:var(--pri); border-color:var(--pri); }
-            .top-actions .btn-ghost{ color:#475569; }
-
-            /* 반응형 */
-            @media (max-width: 1200px){ .td-ellipsis{ max-width:180px; } }
-            @media (max-width: 992px){ .hide-md{ display:none!important; } }
+            @media(max-width:1200px){ .td-ellipsis{ max-width:180px; } }
         </style>
     </th:block>
 </head>
@@ -292,11 +224,6 @@
                 </ul>
             </nav>
         </div>
-    </div>
-
-    <!-- 알림 -->
-    <div th:if="${msg}">
-        <script th:inline="javascript"> alert([[${msg}]]); </script>
     </div>
 
     <!-- 예약 취소 모달 (작게) -->

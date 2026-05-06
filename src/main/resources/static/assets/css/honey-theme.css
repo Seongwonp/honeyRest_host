@@ -1,0 +1,336 @@
+/* ============================================================
+   HoneyRest Admin Theme  |  Primary: #FFD54F (꿀 노랑)
+   ============================================================ */
+
+/* ----- Variables ----- */
+:root {
+  --honey:         #FFD54F;
+  --honey-dark:    #F9A825;
+  --honey-deeper:  #E65100;
+  --honey-soft:    #FFF8E1;
+  --honey-mid:     #FFE082;
+  --honey-text:    #1A1200;   /* text on honey bg */
+
+  --bg:            #F5F7FA;
+  --surface:       #FFFFFF;
+  --border:        #E5EAF2;
+  --ink:           #0F172A;
+  --muted:         #64748B;
+  --subtle:        #94A3B8;
+
+  --success:       #16A34A;
+  --success-soft:  #DCFCE7;
+  --warning:       #D97706;
+  --warning-soft:  #FEF3C7;
+  --danger:        #DC2626;
+  --danger-soft:   #FEE2E2;
+  --info:          #2563EB;
+  --info-soft:     #DBEAFE;
+
+  --sidebar-bg:    #18191C;
+  --sidebar-text:  #C2C9D6;
+
+  --font:          'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont,
+                   'Segoe UI', sans-serif;
+  --r-sm:  8px;
+  --r:    12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --pill: 9999px;
+  --sh-sm: 0 2px 8px rgba(0,0,0,.05);
+  --sh:    0 4px 16px rgba(0,0,0,.08);
+  --sh-lg: 0 8px 32px rgba(0,0,0,.12);
+}
+
+/* ----- Base ----- */
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ----- Bootstrap Primary Override ----- */
+.btn-primary {
+  background: var(--honey) !important;
+  border-color: var(--honey-dark) !important;
+  color: var(--honey-text) !important;
+  font-weight: 700;
+  border-radius: var(--r-sm) !important;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background: var(--honey-dark) !important;
+  border-color: var(--honey-dark) !important;
+  color: var(--honey-text) !important;
+  filter: none !important;
+}
+.btn-outline-primary {
+  border-color: var(--honey) !important;
+  color: var(--honey-deeper) !important;
+  font-weight: 600;
+  border-radius: var(--r-sm) !important;
+}
+.btn-outline-primary:hover {
+  background: var(--honey-soft) !important;
+  border-color: var(--honey-dark) !important;
+  color: var(--honey-deeper) !important;
+}
+.btn-outline-secondary {
+  border-radius: var(--r-sm) !important;
+}
+
+/* ----- Buttons: general ----- */
+.btn {
+  font-family: var(--font);
+  letter-spacing: .01em;
+  transition: background .15s, box-shadow .15s, transform .1s;
+}
+.btn:active { transform: scale(.97); }
+
+/* ----- Card ----- */
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--sh-sm);
+  background: var(--surface);
+}
+.card-footer {
+  background: transparent;
+  border-top: 1px solid var(--border);
+}
+
+/* ----- Table ----- */
+.table thead th {
+  background: var(--honey-soft) !important;
+  border-bottom: 2px solid var(--honey-mid) !important;
+  color: #7B5E00 !important;
+  font-weight: 700 !important;
+  font-size: .875rem !important;
+  vertical-align: middle !important;
+}
+.table tbody td {
+  vertical-align: middle;
+  border-color: #F1F5F9;
+  color: #334155;
+}
+.table-hover tbody tr:hover {
+  background: var(--honey-soft) !important;
+}
+
+/* ----- Pagination ----- */
+.pagination .page-item.active .page-link {
+  background: var(--honey) !important;
+  border-color: var(--honey-dark) !important;
+  color: var(--honey-text) !important;
+  font-weight: 700;
+}
+.pagination .page-link {
+  color: var(--muted);
+  border-radius: var(--r-sm) !important;
+  border: none !important;
+  font-weight: 600;
+}
+.pagination .page-item:not(.active) .page-link:hover {
+  background: var(--honey-soft);
+  color: var(--honey-deeper);
+}
+
+/* ----- Form focus ----- */
+.form-control:focus, .form-select:focus {
+  border-color: var(--honey) !important;
+  box-shadow: 0 0 0 .2rem rgba(255,213,79,.25) !important;
+}
+
+/* ----- Badge override ----- */
+.badge.bg-primary { background: var(--honey) !important; color: var(--honey-text) !important; }
+.text-primary      { color: var(--honey-deeper) !important; }
+a.text-primary     { color: var(--honey-deeper) !important; }
+
+/* ----- Sidebar: Dark + Honey accent ----- */
+#sidebar,
+#sidebar .sidebar-wrapper {
+  background: var(--sidebar-bg) !important;
+}
+#sidebar .sidebar-header {
+  background: var(--sidebar-bg) !important;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  padding: 1rem 1.25rem;
+}
+#sidebar .sidebar-header .logo span {
+  color: var(--honey) !important;
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+#sidebar .sidebar-title {
+  color: rgba(255,255,255,.3) !important;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 1.2rem 1.25rem .4rem;
+}
+#sidebar .sidebar-menu .menu > .sidebar-item > .sidebar-link {
+  color: var(--sidebar-text);
+  font-weight: 500;
+  border-radius: var(--r-sm);
+  margin: 1px .5rem;
+  transition: background .15s, color .15s;
+}
+#sidebar .sidebar-menu .menu > .sidebar-item > .sidebar-link:hover,
+#sidebar .sidebar-menu .menu > .sidebar-item.active > .sidebar-link {
+  background: rgba(255,213,79,.12) !important;
+  color: var(--honey) !important;
+}
+#sidebar .sidebar-menu .menu > .sidebar-item.active > .sidebar-link {
+  font-weight: 600;
+}
+#sidebar .sidebar-menu .menu > .sidebar-item > .sidebar-link i {
+  color: var(--subtle);
+  transition: color .15s;
+}
+#sidebar .sidebar-menu .menu > .sidebar-item > .sidebar-link:hover i,
+#sidebar .sidebar-menu .menu > .sidebar-item.active > .sidebar-link i {
+  color: var(--honey);
+}
+#sidebar .submenu {
+  background: rgba(0,0,0,.2);
+  border-radius: var(--r-sm);
+  margin: 0 .5rem .25rem;
+  overflow: hidden;
+}
+#sidebar .submenu .submenu-item a {
+  color: rgba(194,201,214,.65);
+  font-size: .865rem;
+  padding: .45rem 1rem .45rem 1.6rem;
+  display: block;
+  transition: color .15s, background .15s;
+  border-radius: var(--r-sm);
+}
+#sidebar .submenu .submenu-item a:hover {
+  color: var(--honey);
+  background: rgba(255,213,79,.08);
+  text-decoration: none;
+}
+
+/* Logout 버튼 사이드바 내 스타일 */
+.sidebar-logout-btn {
+  margin: .5rem 1rem 1rem;
+  width: calc(100% - 2rem);
+  border-radius: var(--r-sm) !important;
+  background: rgba(220,38,38,.1) !important;
+  border: 1px solid rgba(220,38,38,.25) !important;
+  color: #FCA5A5 !important;
+  font-size: .875rem;
+  font-weight: 600;
+  padding: .5rem 1rem;
+  text-align: left;
+  transition: background .15s;
+}
+.sidebar-logout-btn:hover {
+  background: rgba(220,38,38,.2) !important;
+  color: #FECACA !important;
+}
+
+/* ----- Dark mode toggle: tone down ----- */
+#sidebar .theme-toggle { opacity: .7; }
+
+/* ----- Page heading ----- */
+.page-heading {
+  margin-bottom: 1.5rem;
+}
+.page-heading h3 {
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: .25rem;
+}
+.page-heading .text-subtitle,
+.page-heading .subtext {
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+/* ----- Status chip / badge (공통) ----- */
+.chip, .badge-chip {
+  border-radius: var(--pill);
+  padding: .28rem .65rem;
+  font-size: .77rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+.chip-ok, .badge-active {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: rgba(22,163,74,.2);
+}
+.chip-wait, .badge-pending {
+  background: #FFFBEB;
+  color: #92400E;
+  border-color: #FDE68A;
+}
+.chip-done {
+  background: #ECFDF5;
+  color: #065F46;
+  border-color: #A7F3D0;
+}
+.chip-cancel, .badge-inactive {
+  background: #F1F5F9;
+  color: #475569;
+  border-color: #E2E8F0;
+}
+.chip-noshow, .badge-rejected {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: rgba(220,38,38,.2);
+}
+.chip-unk { background: #EEE; color: #475569; border-color: #E5E7EB; }
+
+/* ----- Quick actions row ----- */
+.top-actions { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+
+/* ----- Scrollbar (subtle) ----- */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+
+/* ----- KPI cards (대시보드) ----- */
+.kpi-card {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--sh-sm);
+  padding: 1.25rem;
+  transition: transform .2s, box-shadow .2s;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--sh); }
+.kpi-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center;
+}
+.kpi-icon.honey  { background: var(--honey-soft); color: var(--honey-deeper); }
+.kpi-icon.green  { background: var(--success-soft); color: var(--success); }
+.kpi-icon.blue   { background: var(--info-soft); color: var(--info); }
+.kpi-icon.red    { background: var(--danger-soft); color: var(--danger); }
+
+/* ----- Filter bar ----- */
+.filter-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 1rem;
+}
+.filter-bar .form-select,
+.filter-bar .form-control {
+  border-radius: var(--r-sm) !important;
+}
+
+/* ----- Responsive util ----- */
+@media (max-width: 992px) { .hide-md { display: none !important; } }
+@media (max-width: 576px) { .hide-sm { display: none !important; } }
