@@ -188,7 +188,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     public boolean upsert(Long roomId, LocalDate date, BigDecimal price, Integer available) {
         int updated = priceCalendarRepository.updateValues(roomId, date, price, available);
         if (updated > 0) return false; // updated
-        priceCalendarRepository.upsertMaria(roomId, date, price, available);
+        priceCalendarRepository.upsert(roomId, date, price, available);
         return true; // created
     }
 
@@ -196,7 +196,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     @Transactional
     public void bulkUpsert(List<BulkItem> items) {
         for (BulkItem it : items) {
-            priceCalendarRepository.upsertMaria(it.getRoomId(), it.getDate(), it.getPrice(), it.getAvailable());
+            priceCalendarRepository.upsert(it.getRoomId(), it.getDate(), it.getPrice(), it.getAvailable());
         }
     }
 

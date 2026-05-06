@@ -76,10 +76,10 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools' // 자동 리스타트, 캐시 무효화 등
 
     // DB 드라이버
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client' // MariaDB JDBC 드라이버
+    runtimeOnly 'com.mysql:mysql-connector-j' // MySQL JDBC 드라이버
 
     // 테스트
-    testImplementation 'org.springframework.boot:spring-boot-starter-test' // JUnit, Mockito 등 포함
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // 테스트 런처
 
     // 테스트 환경에서도 Lombok 사용

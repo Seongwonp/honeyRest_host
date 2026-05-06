@@ -36,9 +36,49 @@ out/
 ### VS Code ###
 .vscode/
 
-# 민감 정보 파일 (보안 필수)
-application_secret.properties
-firebase-service-key.json
-.env
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+
+### 민감 정보 파일 (보안 필수) ###
 # 시크릿 설정 파일 - 절대 커밋 금지
 src/main/resources/application-secret.properties
+src/main/resources/application-prod.properties
+src/main/resources/application-dev.properties
+application_security.properties
+firebase-service-key.json
+.env
+.env.local
+.env.*.local
+
+# AWS 크레덴셜
+~/.aws/credentials
+~/.aws/config
+
+# 임시 파일
+*.log
+*.tmp
+*.temp
+target/
+
+# Node modules (프론트엔드가 있을 경우)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# 데이터베이스 파일
+*.db
+*.sqlite
+*.sqlite3
+
+# OS 파일
+Thumbs.db
+
+# 테스트 임시 파일
+test-output/
+coverage/
+*.lcov

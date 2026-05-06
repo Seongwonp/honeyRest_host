@@ -34,7 +34,7 @@ public interface PriceCalendarRepository extends JpaRepository<PriceCalendar, Lo
                      @Param("price") BigDecimal price,
                      @Param("available") Integer available);
 
-    // MariaDB ON DUPLICATE KEY: (room_id, date) 유니크 인덱스 필요
+    // MySQL ON DUPLICATE KEY: (room_id, date) 유니크 인덱스 필요
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
                 INSERT INTO price_calendar (room_id, date, price, available_room, created_at, updated_at)
@@ -44,10 +44,10 @@ public interface PriceCalendarRepository extends JpaRepository<PriceCalendar, Lo
                   available_room = COALESCE(VALUES(available_room), available_room),
                   updated_at = NOW()
             """, nativeQuery = true)
-    int upsertMaria(@Param("roomId") Long roomId,
-                    @Param("date") LocalDate date,
-                    @Param("price") BigDecimal price,
-                    @Param("available") Integer available);
+    int upsert(@Param("roomId") Long roomId,
+               @Param("date") LocalDate date,
+               @Param("price") BigDecimal price,
+               @Param("available") Integer available);
 
     interface DailyAggProjection {
         java.sql.Date getDate();
