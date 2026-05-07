@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
-import com.amazonaws.services.kms.model.NotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
@@ -89,7 +89,7 @@ public class OReservationService {
 
     public ReservationDTO getReservation(Long id) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(()-> new NotFoundException("해당하는 쿠폰이 존재하지 않습니다"));
+                .orElseThrow(()-> new EntityNotFoundException("해당 예약이 존재하지 않습니다. id=" + id));
         return toDTO(reservation);
     }
 

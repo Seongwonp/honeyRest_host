@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
-import com.amazonaws.services.kms.model.NotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -146,14 +146,14 @@ public class ORoomServiceImpl implements ORoomService {
     @Override
     public RoomDTO getByRoomId(Long id) {
         Room room = roomRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("객실이 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
         return toDTO(room);
     }
 
     @Override
     public Long registerRoom(RoomDTO dto) {
         Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
-                .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
         dto.setAccommodationId(acc.getAccommodationId());
         return roomRepository.save(toEntity(dto)).getRoomId();
 
@@ -162,14 +162,14 @@ public class ORoomServiceImpl implements ORoomService {
     @Override
     public void modifyRoom(RoomDTO dto) {
         Room room = roomRepository.findById(dto.getRoomId())
-                .orElseThrow(() -> new NotFoundException("객실이 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
         roomRepository.save(toEntity(dto));
     }
 
     @Override
     public void removeRoom(Long id) {
         Room room = roomRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("객실이 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
         roomRepository.delete(room); // RoomImage는 orphanRemoval=true로 함께 삭제
     }
 
@@ -211,12 +211,16 @@ public class ORoomServiceImpl implements ORoomService {
 
     @Override
     public Long getRoomIdByReviewId(Long reviewId){
-        return reviewRepository.findByReviewId(reviewId).getRoomId();
+        var review = reviewRepository.findByReviewId(reviewId);
+        if (review == null) throw new EntityNotFoundException("리뷰를 찾을 수 없습니다. reviewId=" + reviewId);
+        return review.getRoomId();
     }
 
     @Override
     public RoomDTO getByAccommodationIdAndId(Long id, Long name) {
-        return toDTO(roomRepository.findByAccommodation_AccommodationIdAndRoomId(id, name));
+        Room room = roomRepository.findByAccommodation_AccommodationIdAndRoomId(id, name);
+        if (room == null) throw new EntityNotFoundException("객실을 찾을 수 없습니다.");
+        return toDTO(room);
     }
 
     @Override

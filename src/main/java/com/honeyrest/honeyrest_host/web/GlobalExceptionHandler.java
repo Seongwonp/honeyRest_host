@@ -1,6 +1,9 @@
 package com.honeyrest.honeyrest_host.web;
 
+import com.honeyrest.honeyrest_host.serviceAdmin.ErrorLogService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -12,8 +15,11 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @ControllerAdvice
+@RequiredArgsConstructor
 @Log4j2
 public class GlobalExceptionHandler {
+
+    private final ErrorLogService errorLogService;
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
@@ -39,16 +45,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleBadRequest(IllegalArgumentException e, Model model) {
+    public String handleBadRequest(IllegalArgumentException e, Model model, HttpServletRequest request) {
         log.warn("BadRequest: {}", e.getMessage());
+        errorLogService.saveAsync(e, request.getRequestURI(), request.getMethod());
         model.addAttribute("message", "잘못된 요청입니다: " + e.getMessage());
         return "error/500";
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String handleGeneral(Exception e, Model model) {
-        log.error("Unhandled exception", e);
+    public String handleGeneral(Exception e, Model model, HttpServletRequest request) {
+        log.error("Unhandled exception [{}] {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage(), e);
+        errorLogService.saveAsync(e, request.getRequestURI(), request.getMethod());
         model.addAttribute("message", "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
         return "error/500";
     }

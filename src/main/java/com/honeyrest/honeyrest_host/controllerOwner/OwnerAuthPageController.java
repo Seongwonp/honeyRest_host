@@ -11,12 +11,12 @@ public class OwnerAuthPageController {
 
     @GetMapping("/login")
     public String loginPage() {
-        return "owner/auth/login";
+        return "redirect:/auth/login";
     }
     @GetMapping("/logout")
     public String logoutSuccess(RedirectAttributes ra) {
         ra.addFlashAttribute("logoutMessage", "로그아웃되었습니다.");
-        return "redirect:/owner/auth/login";
+        return "redirect:/auth/login";
     }
 
 }

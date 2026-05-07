@@ -220,10 +220,8 @@ public class ReviewController {
      * 수정 폼
      */
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
-        ReviewDTO dto = reviewService.getOne(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        model.addAttribute("form", dto);
-        return "admin/reviews/edit";
+    public String editForm(@PathVariable Long id) {
+        return "redirect:/admin/reviews/detail/" + id;
     }
 
 //    /** 수정 저장(전체 갱신) */

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +9,8 @@
         body { background: #F5F7FA; font-family: 'Noto Sans KR', sans-serif; }
         .error-code { font-size: 6rem; font-weight: 900; background: linear-gradient(135deg,#FFD54F,#F9A825); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1; }
         .error-title { font-size:1.5rem; font-weight:700; color:#0F172A; }
-        .error-desc { color:#64748B; }
-        .btn-honey { background:linear-gradient(135deg,#FFD54F,#F9A825); color:#1A1200; font-weight:700; border:none; border-radius:10px; padding:.7rem 2rem; }
+        .error-desc { color:#64748B; max-width:460px; margin:0 auto; }
+        .btn-honey { background:linear-gradient(135deg,#FFD54F,#F9A825); color:#1A1200; font-weight:700; border:none; border-radius:10px; padding:.7rem 2rem; text-decoration:none; display:inline-block; }
         .btn-honey:hover { box-shadow:0 4px 12px rgba(249,168,37,.4); color:#1A1200; }
     </style>
 </head>
@@ -21,8 +21,8 @@
         <div class="error-code">404</div>
         <div class="error-title mt-2">페이지를 찾을 수 없습니다</div>
         <p class="error-desc mt-2 mb-4" th:text="${message} ?: '요청하신 페이지가 존재하지 않거나 이동되었습니다.'">요청하신 페이지가 존재하지 않거나 이동되었습니다.</p>
-        <a href="/admin/dashboard" class="btn btn-honey me-2">대시보드로</a>
-        <a href="javascript:history.back()" class="btn btn-outline-secondary">뒤로가기</a>
+        <a href="javascript:history.back()" class="btn-honey me-2">뒤로가기</a>
+        <a href="/auth/login" class="btn btn-outline-secondary">홈으로</a>
     </div>
 </div>
 </body>

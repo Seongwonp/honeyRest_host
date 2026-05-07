@@ -1,6 +1,5 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
-import com.amazonaws.services.kms.model.NotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -129,7 +128,7 @@ public class OCompanyService {
 
     public CompanyDTO getCompany(Integer companyId) {
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
         return toDTO(company);
     }
 

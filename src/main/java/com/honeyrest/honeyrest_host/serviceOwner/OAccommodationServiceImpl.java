@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
-import com.amazonaws.services.kms.model.NotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -174,7 +174,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     @Override
     public AccommodationDTO getByAccommodationId(Long accommodationId) {
         Accommodation acc = accommodationRepository.findById(accommodationId)
-                .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
 
         return toDTO(acc);
     }
@@ -190,7 +190,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     @Override
     public void modifyAccommodation(AccommodationDTO dto) throws Exception {
         Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
-                .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
 
         // 썸네일 이미지가 새로 업로드된 경우 처리
         MultipartFile newFile = dto.getFile();
@@ -211,7 +211,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     @Override
     public void removeAccommodation(Long id) {
         Accommodation acc = accommodationRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
 
         accommodationRepository.deleteById(id);
     }
@@ -332,11 +332,14 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     @Override
     public Long getAccommodationIdByRoomId(Long roomId) {
         Room room = roomRepository.findByRoomId(roomId);
+        if (room == null) throw new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + roomId);
         return room.getAccommodation().getAccommodationId();
     }
 
     @Override
     public AccommodationDTO getByName(String accommodationName){
-        return toDTO(accommodationRepository.findByName(accommodationName));
+        Accommodation acc = accommodationRepository.findByName(accommodationName);
+        if (acc == null) throw new EntityNotFoundException("숙소를 찾을 수 없습니다. name=" + accommodationName);
+        return toDTO(acc);
     }
 }

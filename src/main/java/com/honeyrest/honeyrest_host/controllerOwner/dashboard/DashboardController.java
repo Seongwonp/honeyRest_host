@@ -32,7 +32,7 @@ public class DashboardController {
         String email = (authentication.getPrincipal() instanceof String s) ? s : authentication.getName();
 
         var owner = userRepository.findByEmail(email);
-        if (owner == null) return "redirect:/owner/auth/login";
+        if (owner == null) return "redirect:/auth/login";
 
         long companyCount;
         long accommodationCount;

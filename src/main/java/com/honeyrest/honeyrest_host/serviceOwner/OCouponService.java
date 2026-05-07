@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
-import com.amazonaws.services.kms.model.NotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import com.honeyrest.honeyrest_host.dtoOwner.CouponDTO;
 import com.honeyrest.honeyrest_host.entity.Coupon;
 import com.honeyrest.honeyrest_host.repositoryOwner.OCouponRepository;
@@ -20,7 +20,7 @@ public class OCouponService {
 
     public CouponDTO getCoupon(Long id) {
         Coupon coupon = couponRepository.findById(id)
-                .orElseThrow(()-> new NotFoundException("해당하는 쿠폰이 존재하지 않습니다"));
+                .orElseThrow(()-> new EntityNotFoundException("해당하는 쿠폰이 존재하지 않습니다"));
         return modelMapper.map(coupon, CouponDTO.class);
     }
 

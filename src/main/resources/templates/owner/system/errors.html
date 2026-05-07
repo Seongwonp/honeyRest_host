@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{owner/layout/base}">
+
+<head>
+    <title>에러 로그</title>
+    <th:block layout:fragment="head">
+        <style>
+            .badge-unresolved { background-color: #ef4444; }
+            .badge-resolved   { background-color: #22c55e; }
+            .stack-trace {
+                font-size: 0.75rem;
+                background: #1e1e2e;
+                color: #cdd6f4;
+                border-radius: 6px;
+                padding: 12px;
+                max-height: 200px;
+                overflow-y: auto;
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+            .filter-btn.active { background: var(--honey); border-color: var(--honey); color: #fff; }
+        </style>
+    </th:block>
+</head>
+
+<body>
+<section layout:fragment="content">
+
+    <div class="page-heading">
+        <div class="page-title d-flex align-items-center justify-content-between">
+            <div>
+                <h3>에러 로그 <span class="badge bg-danger ms-2" th:text="${unresolvedCount}">0</span></h3>
+                <p class="text-subtitle text-muted">서버에서 발생한 500 에러 목록입니다.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a th:href="@{/owner/system/errors(filter='all')}"
+                   th:classappend="${filter == 'all'} ? 'active'" class="btn btn-outline-secondary btn-sm filter-btn">전체</a>
+                <a th:href="@{/owner/system/errors(filter='unresolved')}"
+                   th:classappend="${filter == 'unresolved'} ? 'active'" class="btn btn-outline-danger btn-sm filter-btn">미해결</a>
+            </div>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="card">
+            <div class="card-body p-0">
+                <div th:if="${logs.isEmpty()}" class="text-center py-5 text-muted">
+                    <i class="bi bi-check-circle fs-1 text-success"></i>
+                    <p class="mt-2">에러 로그가 없습니다.</p>
+                </div>
+
+                <div th:each="log : ${logs.content}" class="border-bottom p-3">
+                    <div class="d-flex align-items-start justify-content-between gap-3">
+                        <div class="flex-grow-1" style="min-width:0">
+                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                <span th:if="${log.resolved}" class="badge badge-resolved">해결됨</span>
+                                <span th:unless="${log.resolved}" class="badge badge-unresolved">미해결</span>
+                                <span class="badge bg-secondary" th:text="${log.requestMethod}">GET</span>
+                                <code class="text-danger small" th:text="${log.requestUrl}"></code>
+                                <small class="text-muted ms-auto"
+                                       th:text="${#temporals.format(log.occurredAt, 'yyyy-MM-dd HH:mm:ss')}"></small>
+                            </div>
+                            <p class="mb-1 fw-semibold small text-danger" th:text="${log.errorClass}"></p>
+                            <p class="mb-2 small text-dark" th:text="${log.message}"></p>
+                            <details>
+                                <summary class="small text-muted" style="cursor:pointer">스택 트레이스 보기</summary>
+                                <pre class="stack-trace mt-2" th:text="${log.stackTrace}"></pre>
+                            </details>
+                        </div>
+                        <div class="flex-shrink-0" th:unless="${log.resolved}">
+                            <button class="btn btn-sm btn-outline-success resolve-btn"
+                                    th:data-id="${log.errorLogId}">
+                                <i class="bi bi-check2"></i> 해결
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 페이지네이션 -->
+            <div class="card-footer d-flex justify-content-center" th:if="${logs.totalPages > 1}">
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" th:classappend="${logs.first} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="@{/owner/system/errors(page=${logs.number - 1}, filter=${filter})}">이전</a>
+                        </li>
+                        <li class="page-item" th:each="i : ${#numbers.sequence(0, logs.totalPages - 1)}"
+                            th:classappend="${i == logs.number} ? 'active'">
+                            <a class="page-link"
+                               th:href="@{/owner/system/errors(page=${i}, filter=${filter})}"
+                               th:text="${i + 1}">1</a>
+                        </li>
+                        <li class="page-item" th:classappend="${logs.last} ? 'disabled'">
+                            <a class="page-link"
+                               th:href="@{/owner/system/errors(page=${logs.number + 1}, filter=${filter})}">다음</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </section>
+
+</section>
+
+<th:block layout:fragment="scripts">
+<script>
+document.querySelectorAll('.resolve-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const res = await fetch(`/owner/system/errors/${id}/resolve`, { method: 'POST' });
+        if (res.ok) location.reload();
+    });
+});
+</script>
+</th:block>
+
+</body>
+</html>

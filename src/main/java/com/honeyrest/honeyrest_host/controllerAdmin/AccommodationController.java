@@ -173,7 +173,7 @@ public class AccommodationController {
         // 1) 로그인 체크
         if (authentication == null || !authentication.isAuthenticated()
             || authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
-            return "redirect:/admin/auth/login";
+            return "redirect:/auth/login";
         }
 
         // 2) 이메일(=username) 꺼내기 (UserDetails 구현체/기타 모두 커버)
@@ -188,14 +188,14 @@ public class AccommodationController {
         // 3) 관리자/유저 검증
         AdminLoginRequestDTO admin = userService.getUserByEmail(email);
         if (admin == null) {
-            return "redirect:/admin/auth/login";
+            return "redirect:/auth/login";
         }
 
         // 4) 이메일 -> 회사 DTO (null 방지)
         CompanyDTO companyDTO = companyService.getByUserEmail(admin.getEmail());
         if (companyDTO == null || companyDTO.getCompanyId() == null) {
             model.addAttribute("message", "회사 정보가 없습니다. 관리자에게 문의하세요.");
-            return "admin/common/error"; // 적절한 에러 페이지
+            return "error/500";
         }
 
         // 5) 페이징 조회

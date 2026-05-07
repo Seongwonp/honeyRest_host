@@ -12,12 +12,12 @@ public class AdminAuthPageController {
 
     @GetMapping("/login")
     public String loginPage() {
-        return "admin/auth/login";
+        return "redirect:/auth/login";
     }
     @GetMapping("/logout")
     public String logoutSuccess(RedirectAttributes ra) {
         ra.addFlashAttribute("logoutMessage", "로그아웃되었습니다.");
-        return "redirect: /admin/auth/login";
+        return "redirect:/auth/login";
     }
 
 }

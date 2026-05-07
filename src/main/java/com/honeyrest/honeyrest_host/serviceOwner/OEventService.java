@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
-import com.amazonaws.services.kms.model.NotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import com.honeyrest.honeyrest_host.dtoOwner.EventDTO;
 import com.honeyrest.honeyrest_host.entity.Event;
 import com.honeyrest.honeyrest_host.repositoryOwner.OEventRepository;
@@ -40,7 +40,7 @@ public class OEventService {
 
     public EventDTO getEvent(Long id) {
         Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("이벤트가 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("이벤트가 존재하지 않습니다."));
         return modelMapper.map(event, EventDTO.class);
     }
 }
