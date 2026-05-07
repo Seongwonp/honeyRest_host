@@ -82,3 +82,5 @@ Thumbs.db
 test-output/
 coverage/
 *.lcov
+
+**/honeyrest-7fb60-*.json
