@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecificationExecutor<Review> {
 
     // [기본 조회]
@@ -53,6 +55,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecif
     long countByAccommodationIdAndStatus(Long accommodationId, String status);
 
     long countByRoomIdAndStatus(Long roomId, String status);
+
+    Page<Review> findByAccommodationIdIn(List<Long> accommodationIds, Pageable pageable);
+
+    Page<Review> findByAccommodationIdInAndStatus(List<Long> accommodationIds, String status, Pageable pageable);
 
 }
 

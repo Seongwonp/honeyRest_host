@@ -3,171 +3,110 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{owner/layout/base}">
-
 <head>
-    <title>사용자 목록</title>
-    <th:block layout:fragment="head"></th:block>
+    <title>회원 관리</title>
+    <th:block layout:fragment="head">
+        <style>
+            .btn-chip { border-radius: var(--pill) !important; padding: .28rem .65rem; font-weight: 700; font-size: .82rem; }
+        </style>
+    </th:block>
 </head>
-
 <body>
 <th:block layout:fragment="content">
 
-    <!-- 검색 폼 (선택 사항, 필요한 경우 필터 추가 가능) -->
-    <div class="card p-4 mb-4 shadow-sm">
-        <form id="searchForm" class="row g-3 align-items-end">
-            <div class="col-md-4 col-sm-8 position-relative">
-                <label class="form-label"><i class="bi bi-people me-1"></i>유저 검색</label>
-                <input type="text" id="companySearchInput" class="form-control" placeholder="이름을 입력하세요">
-                <div id="companySearchResult" class="list-group position-absolute w-100"
-                     style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
-                <input type="hidden" name="companyId" id="companyIdInput">
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
-            </div>
-<!--            <div class="col text-end">-->
-<!--                <a th:href="@{/owner/user/create}" class="btn btn-primary">유저 등록</a>-->
-<!--            </div>-->
-        </form>
+    <!-- 헤더 -->
+    <div class="toolbar">
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="mb-0">회원 관리</h3>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <form class="search-wrap" method="get" th:action="@{/owner/user/list}">
+                <i class="bi bi-search text-muted"></i>
+                <input type="search" name="keyword" placeholder="이름 / 이메일 검색"
+                       th:value="${param.keyword}">
+                <button class="btn btn-primary btn-chip">검색</button>
+            </form>
+        </div>
     </div>
 
-    <!-- 사용자 테이블 -->
-    <div class="page-content">
-        <section class="section">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card shadow-sm border-0">
-                        <div class="card-header">
-                            <h5 class="mb-0">사용자 목록</h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                    <tr>
-                            <th>ID</th>
-                            <th>이름</th>
-                            <th>이메일</th>
-                            <th>연락처</th>
-                            <th>성별</th>
-                            <th>생년월일</th>
-                            <th>포인트</th>
-                            <th>권한</th>
-                            <th>상태</th>
-                            <th>마케팅 동의</th>
-                            <th>소셜 타입</th>
-                            <th>인증 여부</th>
-                            <th>최근 로그인</th>
-                        </tr>
-                        </thead>
-                                    <tbody>
-                                    <tr th:each="user : ${users}">
-                                        <td th:text="${user.userId}"></td>
-                                        <td th:text="${user.name}"></td>
-                                        <td th:text="${user.email}"></td>
-                                        <td th:text="${user.phone}"></td>
-                                        <td th:text="${user.gender}"></td>
-                                        <td th:text="${user.birthDate}"></td>
-                                        <td th:text="${#numbers.formatInteger(user.point, 3, 'COMMA')} + ' P'"></td>
-                                        <td th:text="${user.role}"></td>
-                                        <td th:text="${user.status}"
-                                            th:classappend="${user.status == '활성' ? 'status-active' : (user.status == '비활성' ? 'status-inactive' : 'status-pending')}"></td>
-                                        <td th:text="${user.marketingAgree ? '동의' : '거부'}"
-                                            th:classappend="${user.marketingAgree ? 'marketing-agree' : 'marketing-disagree'}"></td>
-                                        <td th:text="${user.socialType != null ? user.socialType : '자체'}"></td>
-                                        <td th:text="${user.verified ? '인증됨' : '미인증'}"
-                                            th:classappend="${user.verified ? 'verified' : 'not-verified'}"></td>
-                                        <td th:text="${user.lastLogin != null ? #temporals.format(user.lastLogin, 'yyyy-MM-dd HH:mm') : ''}"></td>
-                                    </tr>
-                                    <tr th:if="${#lists.isEmpty(users)}">
-                                        <td colspan="13" class="text-center">등록된 사용자가 없습니다.</td>
-                                    </tr>
-                                    </tbody>
+    <!-- 테이블 -->
+    <div class="card">
+        <div class="card-body table-responsive p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th class="ps-3 text-center hide-md">ID</th>
+                    <th>이름</th>
+                    <th>이메일</th>
+                    <th class="hide-md">연락처</th>
+                    <th class="hide-sm text-end">포인트</th>
+                    <th class="text-center">상태</th>
+                    <th class="hide-sm">소셜</th>
+                    <th class="hide-md">최근 로그인</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="u : ${users}">
+                    <td class="ps-3 text-center hide-md text-muted" style="font-size:.85rem;"
+                        th:text="${u.userId}">1</td>
+                    <td>
+                        <div class="fw-semibold" th:text="${u.name}">홍길동</div>
+                        <div class="text-muted" style="font-size:.78rem;"
+                             th:text="${u.gender != null ? u.gender : ''}"></div>
+                    </td>
+                    <td th:text="${u.email}">email@example.com</td>
+                    <td class="hide-md" th:text="${u.phone ?: '-'}">010-0000-0000</td>
+                    <td class="hide-sm text-end fw-semibold"
+                        th:text="${u.point != null ? #numbers.formatInteger(u.point, 3, 'COMMA') + ' P' : '0 P'}">0 P</td>
+                    <td class="text-center">
+                        <span class="badge-chip"
+                              th:classappend="${#strings.equalsIgnoreCase(u.status,'ACTIVE')} ? ' badge-active' :
+                                             (${#strings.equalsIgnoreCase(u.status,'INACTIVE')} ? ' badge-inactive' : ' chip-wait')"
+                              th:text="${u.status}">ACTIVE</span>
+                    </td>
+                    <td class="hide-sm text-muted" style="font-size:.84rem;"
+                        th:text="${u.socialType != null ? u.socialType : '자체'}">자체</td>
+                    <td class="hide-md text-muted" style="font-size:.82rem;"
+                        th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'yyyy-MM-dd HH:mm') : '-'}">-</td>
+                </tr>
+                <tr th:if="${users == null or #lists.isEmpty(users)}">
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-people d-block fs-2 mb-2"></i>
+                        등록된 회원이 없습니다.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- 페이지네이션 -->
+        <div class="card-footer d-flex justify-content-between align-items-center"
+             th:if="${pageResponseDTO != null}">
+            <div class="text-muted" style="font-size:.85rem;">
+                총 <span th:text="${pageResponseDTO.total}">0</span>개
             </div>
-        </section>
-    </div>
-
-    <!-- 페이지네이션 -->
-    <div class="pagination mt-3">
-        <ul class="pagination">
-            <li class="page-item" th:if="${pageResponseDTO.prev}">
-                <a class="page-link"
-                   th:href="@{/owner/user/list(page=${pageResponseDTO.prevPage}, size=${pageResponseDTO.pageRequestDTO.size})}">이전</a>
-            </li>
-
-            <li class="page-item"
-                th:each="pageNum : ${pageResponseDTO.pageNumList}"
-                th:classappend="${pageNum == pageResponseDTO.current} ? 'active'">
-                <a class="page-link"
-                   th:href="@{/owner/user/list(page=${pageNum}, size=${pageResponseDTO.pageRequestDTO.size})}"
-                   th:text="${pageNum}"></a>
-            </li>
-
-            <li class="page-item" th:if="${pageResponseDTO.next}">
-                <a class="page-link"
-                   th:href="@{/owner/user/list(page=${pageResponseDTO.nextPage}, size=${pageResponseDTO.pageRequestDTO.size})}">다음</a>
-            </li>
-        </ul>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" th:classappend="${!pageResponseDTO.prev} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/owner/user/list(page=${pageResponseDTO.prevPage}, size=${pageResponseDTO.pageRequestDTO.size})}">&laquo;</a>
+                    </li>
+                    <li class="page-item"
+                        th:each="num : ${pageResponseDTO.pageNumList}"
+                        th:classappend="${num == pageResponseDTO.current} ? 'active'">
+                        <a class="page-link"
+                           th:href="@{/owner/user/list(page=${num}, size=${pageResponseDTO.pageRequestDTO.size})}"
+                           th:text="${num}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${!pageResponseDTO.next} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/owner/user/list(page=${pageResponseDTO.nextPage}, size=${pageResponseDTO.pageRequestDTO.size})}">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
     </div>
 
 </th:block>
 </body>
 </html>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    document.addEventListener("DOMContentLoaded", function () {
-        const companySearchInput = document.getElementById("companySearchInput");
-        const companySearchResult = document.getElementById("companySearchResult");
-        const companyIdInput = document.getElementById("companyIdInput");
-
-        // 회사명 검색 (비동기)
-        companySearchInput.addEventListener("input", function () {
-            const keyword = this.value.trim();
-            if (keyword.length < 1) { // 최소 1글자부터 검색
-                companySearchResult.style.display = "none";
-                return;
-            }
-
-            fetch(`/owner/user/search?keyword=${keyword}`)
-                .then(res => res.json())
-                .then(data => {
-                    companySearchResult.innerHTML = "";
-                    if (!data || data.length === 0) {
-                        companySearchResult.style.display = "none";
-                        return;
-                    }
-
-                    data.forEach(c => {
-                        const item = document.createElement("button");
-                        item.type = "button";
-                        item.className = "list-group-item list-group-item-action";
-                        item.textContent = `${c.name}`;
-                        item.onclick = () => {
-                            companySearchInput.value = c.name;
-                            companyIdInput.value = c.companyId;
-                            companySearchResult.style.display = "none";
-                            // loadAccommodations(c.companyId); // 선택한 회사 기준 숙소 불러오기
-                        };
-                        companySearchResult.appendChild(item);
-                    });
-
-                    companySearchResult.style.display = "block";
-                });
-        });
-
-        // 검색폼 전송 시 URL 설정
-        document.getElementById('searchForm').addEventListener('submit', function (event) {
-            const companyId = companyIdInput.value;
-            // const accommodationId = accommodationSelect.value;
-            let actionUrl = "/owner/user/list";
-            this.action = actionUrl;
-        });
-    });
-    /*]]>*/
-</script>

@@ -2,21 +2,20 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.*;
-import com.honeyrest.honeyrest_host.serviceAdmin.ReservationService;
+import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.ReviewImageService;
 import com.honeyrest.honeyrest_host.serviceAdmin.ReviewService;
+import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.*;
@@ -30,7 +29,8 @@ import java.util.*;
 public class ReviewController {
     private final ReviewService reviewService;
     private final ReviewImageService reviewImageService;
-    private final ReservationService reservationService;
+    private final CompanyService companyService;
+    private final AccommodationService accommodationService;
 
     /**
      * 공백 -> null 치환
@@ -50,8 +50,12 @@ public class ReviewController {
                        @ModelAttribute PageRequestDTO pageRequestDTO,
                        Model model) {
 
+        List<Long> companyAccIds = accommodationService.getAccommodationIdsByAdminEmail(
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName()
+        );
+
         PageResponseDTO<ReviewDTO> page =
-                reviewService.getList(status, roomId, accommodationId, sort, pageRequestDTO);
+                reviewService.getListForCompany(companyAccIds, status, roomId, accommodationId, sort, pageRequestDTO);
 
         // 화면에 그려진 리뷰들 id 모으기
         //여러 리뷰 이미지 한번에 조회하기
@@ -154,65 +158,6 @@ public class ReviewController {
         ra.addFlashAttribute("success", "이미지를 삭제했습니다.");
         return "redirect:/admin/reviews/detail/{reviewId}";
     }
-
-    /* ===================== 등록 ===================== */
-
-    /* 등록 폼 */
-    @GetMapping("/add")
-    public String addForm(@RequestParam(required = false) Long reservationId, Model model, RedirectAttributes ra) {
-        ReviewDTO form = new ReviewDTO();
-        form.setStatus("VISIBLE"); // 기본값 예시
-
-        if (reservationId != null) {
-            ReservationDTO r = reservationService.getReservationById(reservationId);
-            if (r != null) {
-                form.setReservationId(r.getReservationId());
-                form.setAccommodationId(r.getAccommodationId());
-                form.setRoomId(r.getRoomId());
-                form.setUserId(r.getUserId());
-
-                String guest =
-                        (r.getGuestName() != null && !r.getGuestName().isBlank())
-                                ? r.getGuestName()
-                                : r.getUserName();
-
-                //화면 상단에 보여줄 프리뷰 용
-                model.addAttribute("accName", r.getAccommodationName());
-                model.addAttribute("roomName", r.getRoomName());
-                model.addAttribute("guestName", guest);
-            } else {
-                // 예약 못 찾은 경우
-                ra.addFlashAttribute("error", "해당 예약 ID를 찾을 수 없습니다. 다시 시도해주세요.");
-                return "redirect:/admin/reviews/add"; // 다시 add 페이지로 리다이렉트
-            }
-        }
-        model.addAttribute("form", form);
-        return "admin/reviews/add";
-    }
-
-    /* 등록 처리 */
-    @PostMapping("/add")
-    public String addSubmit(@Valid @ModelAttribute("form") ReviewDTO form,
-                            BindingResult binding,
-                            @RequestParam(value = "files", required = false) List<MultipartFile> files, // 업로드 파일
-                            RedirectAttributes ra) {
-
-        if (binding.hasErrors()) {
-            return "admin/reviews/add";
-        }
-
-        // 리뷰 저장
-        ReviewDTO saved = reviewService.insert(form);
-
-        // 이미지 업로드(폼 name="uploadFiles")
-        if (files != null && !files.isEmpty()) {
-            reviewImageService.uploadImages(saved.getReviewId(), files);
-        }
-
-        ra.addFlashAttribute("success", "리뷰가 등록되었습니다. (ID: " + saved.getReviewId() + ")");
-        return "redirect:/admin/reviews/detail/" + saved.getReviewId(); // ★ 슬래시 누락 수정
-    }
-
 
     /* ===================== 수정 ===================== */
 

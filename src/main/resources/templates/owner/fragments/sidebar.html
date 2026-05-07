@@ -44,70 +44,105 @@
                 <ul class="menu">
                     <li class="sidebar-title">총관리자 메뉴</li>
 
+                    <!-- 대시보드 -->
                     <li class="sidebar-item">
                         <a href="/owner/dashboard" class="sidebar-link">
                             <i class="bi bi-speedometer2"></i><span>대시보드</span>
                         </a>
                     </li>
 
+                    <!-- 업체 관리 -->
                     <li class="sidebar-item has-sub">
                         <a href="#" class="sidebar-link">
-                            <i class="bi bi-house-door"></i><span>업체/숙소 전체 관리</span>
+                            <i class="bi bi-building"></i><span>업체 관리</span>
                         </a>
                         <ul class="submenu">
-                            <li class="submenu-item"><a href="/owner/company/list">업체 목록</a></li>
-                            <li class="submenu-item"><a href="/owner/accommodation/list">숙소 목록</a></li>
-                            <li class="submenu-item"><a href="/owner/room/list">객실 목록</a></li>
+                            <li class="submenu-item"><a href="/owner/company/list">업체 목록 (전체)</a></li>
+                            <li class="submenu-item"><a href="/owner/company/create">업체 등록</a></li>
+                            <li class="submenu-item"><a href="/owner/company/inActive/list">비활성 업체</a></li>
                         </ul>
                     </li>
 
+                    <!-- 숙소 관리 -->
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-house-door"></i><span>숙소 관리</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/owner/accommodation/list">숙소 목록 (전체)</a></li>
+                            <li class="submenu-item"><a href="/owner/accommodation/create">숙소 등록</a></li>
+                            <li class="submenu-item"><a href="/owner/accommodation/inActive/list">비활성 숙소</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- 객실 관리 -->
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-door-open"></i><span>객실 관리</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/owner/room/list">객실 목록 (전체)</a></li>
+                            <li class="submenu-item"><a href="/owner/room/create">객실 등록</a></li>
+                            <li class="submenu-item"><a href="/owner/room/inActive/list">비활성 객실</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- 예약 관리 -->
+                    <li class="sidebar-item has-sub">
+                        <a href="#" class="sidebar-link">
+                            <i class="bi bi-journal-bookmark"></i><span>예약 관리</span>
+                        </a>
+                        <ul class="submenu">
+                            <li class="submenu-item"><a href="/owner/reservation/list">예약 목록 (전체)</a></li>
+                            <li class="submenu-item"><a href="/owner/reservation/inActive/list">취소 대기 목록</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- 회원 관리 -->
+                    <li class="sidebar-item">
+                        <a href="/owner/user/list" class="sidebar-link">
+                            <i class="bi bi-people"></i><span>회원 관리</span>
+                        </a>
+                    </li>
+
+                    <!-- 리뷰 관리 -->
+                    <li class="sidebar-item">
+                        <a href="/owner/review/list" class="sidebar-link">
+                            <i class="bi bi-star"></i><span>리뷰 관리</span>
+                        </a>
+                    </li>
+
+                    <!-- 쿠폰/이벤트 -->
                     <li class="sidebar-item">
                         <a href="/owner/coupon/list" class="sidebar-link">
                             <i class="bi bi-code-square"></i><span>쿠폰/이벤트</span>
                         </a>
                     </li>
 
-                    <li class="sidebar-item">
-                        <a href="/owner/sales/day" class="sidebar-link">
-                            <i class="bi bi-bar-chart-line"></i><span>매출/정산 확인</span>
-                        </a>
-                    </li>
-
-                    <li class="sidebar-item">
-                        <a href="/owner/reservation/list" class="sidebar-link">
-                            <i class="bi bi-journal-bookmark"></i><span>예약 관리</span>
-                        </a>
-                    </li>
-
-                    <li class="sidebar-item">
-                        <a href="/owner/user/list" class="sidebar-link">
-                            <i class="bi bi-people"></i><span>유저 관리</span>
-                        </a>
-                    </li>
-
+                    <!-- 매출/정산 -->
                     <li class="sidebar-item has-sub">
                         <a href="#" class="sidebar-link">
-                            <i class="bi bi-gear"></i><span>기타</span>
+                            <i class="bi bi-bar-chart-line"></i><span>매출/정산</span>
                         </a>
                         <ul class="submenu">
-                            <li class="submenu-item"><a href="/owner/company/inActive/list">비활성 업체 목록</a></li>
-                            <li class="submenu-item"><a href="/owner/accommodation/inActive/list">비활성 숙소 목록</a></li>
-                            <li class="submenu-item"><a href="/owner/reservation/inActive/list">예약 취소 대기 목록</a></li>
+                            <li class="submenu-item"><a href="/owner/sales/month">월별 매출</a></li>
+                            <li class="submenu-item"><a href="/owner/sales/day">일별 매출</a></li>
                         </ul>
                     </li>
 
                     <li class="sidebar-title">시스템</li>
 
+                    <!-- 에러 로그 -->
                     <li class="sidebar-item">
                         <a href="/owner/system/errors" class="sidebar-link">
                             <i class="bi bi-bug"></i>
                             <span>에러 로그</span>
                         </a>
                     </li>
+
                 </ul>
             </div>
 
-            <!-- 로그아웃 -->
             <div class="mt-auto pb-2">
                 <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none"></form>
                 <button type="button" class="sidebar-logout-btn"

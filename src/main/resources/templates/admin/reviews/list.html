@@ -23,7 +23,7 @@
 
             /* 카드/테이블 */
             .card{ border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(15,23,42,.05); }
-            .table{ margin:0; width:100%; table-layout:fixed; } /* ← 고정 레이아웃 */
+            .table{ margin:0; width:100%; }
             .table thead th{
                 background:#F5F7FF; color:#334155; font-weight:700;
                 border-bottom:1px solid #E2E8F0 !important; vertical-align:middle;
@@ -219,14 +219,14 @@
 
                 <thead>
                 <tr>
-                    <th>NO</th>
-                    <th>이미지</th>
+                    <th class="hide-md">NO</th>
+                    <th class="hide-sm">이미지</th>
                     <th>숙소/객실</th>
-                    <th>작성자</th>
+                    <th class="hide-md">작성자</th>
                     <th>평점</th>
-                    <th>내용</th>
+                    <th class="hide-sm">내용</th>
                     <th>상태</th>
-                    <th>작성일</th>
+                    <th class="hide-md">작성일</th>
                     <th>액션</th>
                 </tr>
                 </thead>
@@ -237,10 +237,10 @@
                 </tr>
 
                 <tr th:each="review, stat : ${page.dtoList}">
-                    <td th:text="${(pageRequestDTO.page - 1) * pageRequestDTO.size + stat.index + 1}">1</td>
+                    <td class="hide-md" th:text="${(pageRequestDTO.page - 1) * pageRequestDTO.size + stat.index + 1}">1</td>
 
                     <!-- 이미지 (썸네일 + 개수 배지) -->
-                    <td>
+                    <td class="hide-sm">
                         <!-- 썸네일이 있으면 표시 -->
                         <img th:if="${thumbUrlMap[review.reviewId] != null}"
                              th:src="${thumbUrlMap[review.reviewId]}"
@@ -270,7 +270,7 @@
                     </td>
 
                     <!-- 작성자 -->
-                    <td class="fw-700 ellipsis"
+                    <td class="fw-700 ellipsis hide-md"
                         th:title="${review.userName != null ? review.userName : review.userId}"
                         th:text="${review.userName != null ? review.userName : review.userId}">작성자</td>
 
@@ -281,7 +281,7 @@
                     </td>
 
                     <!-- 내용 + 운영자 댓글 배지 -->
-                    <td>
+                    <td class="hide-sm">
                         <div class="d-flex align-items-center gap-2">
                             <div class="ellipsis" th:text="${review.content != null ? review.content : ''}">내용 미리보기</div>
                             <span class="reply-badge"
@@ -317,7 +317,7 @@
                     </td>
 
                     <!-- 작성일 -->
-                    <td class="fw-700 ellipsis"
+                    <td class="fw-700 ellipsis hide-md"
                         th:text="${review.createdAt != null ? #temporals.format(review.createdAt,'yyyy-MM-dd HH:mm') : '-'}">-</td>
 
                     <!-- 액션 -->

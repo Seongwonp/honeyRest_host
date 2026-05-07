@@ -3,290 +3,155 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{owner/layout/base}">
-
 <head>
-    <title>숙소 관리자 대시보드</title>
-    <th:block layout:fragment="head"></th:block>
+    <title>객실 목록</title>
+    <th:block layout:fragment="head">
+        <style>
+            .thumb { width: 56px; height: 56px; object-fit: cover; border-radius: var(--r); border: 1px solid var(--border); }
+            .thumb-empty {
+                width: 56px; height: 56px; border-radius: var(--r); border: 1px dashed #CBD5E1;
+                color: var(--subtle); font-size: .7rem;
+                display: flex; align-items: center; justify-content: center; background: #F8FAFC;
+            }
+            .btn-chip { border-radius: var(--pill) !important; padding: .28rem .65rem; font-weight: 700; font-size: .82rem; }
+        </style>
+    </th:block>
 </head>
 <body>
 <th:block layout:fragment="content">
-    <div class="page-heading">
-        <h3 th:text="${accommodation != null} ? null : '전체 방 리스트'">방 리스트</h3>
-        <!-- 숙소 상세 정보 카드 -->
-        <div class="card shadow-lg border-0 mb-4" th:if="${accommodation != null}">
-            <!-- 헤더 -->
-            <div class="card-header bg-gradient-info text-white py-3 d-flex justify-content-between align-items-center rounded-top">
-                <h5 class="mb-0 fw-bold">
-                    <i class="bi bi-house-door me-2"></i> 숙소 상세 정보
-                </h5>
-                <span class="badge px-3 py-2"
-                      th:classappend="${accommodation.status == 'ACTIVE'} ? ' bg-success' : ' bg-secondary'"
-                      th:text="${accommodation.status == 'ACTIVE'} ? '활성' : '비활성'">활성</span>
-            </div>
 
-            <!-- 본문 -->
-            <div class="card-body p-4">
-                <div class="row">
-                    <!-- 왼쪽: 숙소 정보 -->
-                    <div class="col-md-7">
-                        <!-- 숙소 기본 정보 -->
-                        <div class="row g-4 mb-3">
-                            <div class="col-md-12">
-                                <label class="text-muted small fw-semibold">숙소명</label>
-                                <div class="fs-5 fw-bold" th:text="${accommodation.name}">한강 리조트</div>
-                            </div>
-
-                            <div class="col-md-12">
-                                <label class="text-muted small fw-semibold">주소</label>
-                                <div th:text="${accommodation.address}">서울 강남구 ...</div>
-                            </div>
-
-                            <div class="col-md-12">
-                                <label class="text-muted small fw-semibold">설명</label>
-                                <div th:text="${accommodation.description}">아늑한 숙소입니다...</div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="text-muted small fw-semibold">체크인 시간</label>
-                                <div th:text="${#temporals.format(accommodation.checkInTime, 'HH:mm')}">11:00</div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="text-muted small fw-semibold">체크아웃 시간</label>
-                                <div th:text="${#temporals.format(accommodation.checkOutTime, 'HH:mm')}">11:00</div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="text-muted small fw-semibold">최저가</label>
-                                <div th:text="${accommodation.minPrice + ' 원'}">100,000 원</div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="text-muted small fw-semibold">평점</label>
-                                <div th:text="${accommodation.rating}">4.5</div>
-                            </div>
-                        </div>
-
-                        <!-- 편의 시설 -->
-                        <div class="mt-4 p-3 border-top">
-                            <h6 class="fw-bold mb-3">
-                                <i class="bi bi-list-ul me-2"></i> 편의 시설
-                            </h6>
-                            <div class="row">
-                                <div class="fs-6 ps-2 border-start border-3">
-                                    <div th:text="${accommodation.amenities}"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 오른쪽: 이미지 -->
-                    <div class="col-md-5">
-                        <!-- 대표 이미지 -->
-                        <label class="text-muted small fw-semibold">대표 이미지</label>
-                        <div class="mt-2 mb-4">
-                            <img th:src="${accommodation.thumbnailUrl}" alt="숙소 썸네일" class="img-thumbnail w-100" style="height: 300px; object-fit: cover;">
-                        </div>
-
-                        <!-- 서브 이미지 -->
-                        <label class="text-muted small fw-semibold">서브 이미지</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            <div th:each="subImage : ${subImages}">
-                                <img th:src="${subImage.imageUrl}" alt="서브 이미지" class="img-thumbnail" style="height: 100px; width: 100px; object-fit: cover;">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 버튼 영역 -->
-                <div class="mt-4 text-end d-flex justify-content-end gap-2 flex-wrap">
-                    <a th:href="@{'/owner/sales/day/accommodation/' + ${accommodation.accommodationId}}" class="btn btn-success btn-sm px-3">
-                        <i class="bi bi-graph-up me-1"></i> 매출 보기
-                    </a>
-                    <a th:href="@{'/owner/calendar/accommodation/' + ${accommodation.accommodationId} + '/calendar'}" class="btn btn-secondary btn-sm px-3">
-                        <i class="bi bi-calendar-event me-1"></i> 예약 캘린더
-                    </a>
-                    <a th:href="@{'/owner/accommodation/' + ${accommodation.accommodationId} + '/modify'}" class="btn btn-primary btn-sm px-3">
-                        <i class="bi bi-pencil-square me-1"></i> 숙소 수정
-                    </a>
-                    <form th:action="@{'/owner/accommodation/' + ${accommodation.accommodationId} + '/delete'}"
-                          method="post"
-                          style="display:inline-block;"
-                          onsubmit="return confirm('정말 삭제하시겠습니까?');">
-                        <button type="submit" class="btn btn-danger btn-sm px-3"><i class="bi bi-trash me-1"></i>삭제</button>
-                    </form>
-                </div>
-            </div>
+    <!-- 숙소 컨텍스트 배너 (특정 숙소 필터 시) -->
+    <div class="d-flex align-items-center gap-2 mb-3 p-3 rounded"
+         style="background:var(--primary-soft);border:1px solid var(--primary-mid);"
+         th:if="${accommodation != null}">
+        <i class="bi bi-house-door text-primary fs-5"></i>
+        <div>
+            <span class="fw-bold" th:text="${accommodation.name}">숙소명</span>
+            <span class="text-muted ms-2" style="font-size:.85rem;"
+                  th:text="${accommodation.address ?: ''}"></span>
         </div>
+        <a th:href="@{/owner/room/list}" class="btn btn-soft btn-chip ms-auto">전체 보기</a>
+    </div>
 
-        <div class="card p-4 mb-4 shadow-sm">
-            <form id="searchForm" class="row g-3 align-items-end">
-                <div class="col-md-4 col-sm-8 position-relative">
-                    <label class="form-label"><i class="bi bi-building me-1"></i>객실 검색</label>
-                    <input type="text" id="roomSearchInput" class="form-control" placeholder="객실명을 입력하세요">
-                    <div id="roomSearchResult" class="list-group position-absolute w-100"
-                         style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
-                    <input type="hidden" name="roomIdInput" id="roomIdInput">
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
-                </div>
-                <div class="col text-end">
-                    <a th:href="@{/owner/room/create(accommodationId=${accommodationId})}" class="btn btn-primary">방 등록</a>
-                </div>
+    <!-- 헤더 -->
+    <div class="toolbar">
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="mb-0"
+                th:text="${accommodation != null ? accommodation.name + ' 객실 목록' : '전체 객실 목록'}">객실 목록</h3>
+            <span class="count-badge"
+                  th:if="${pageResponse != null}"
+                  th:text="'총 ' + ${pageResponse.total} + '개'">총 0개</span>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <form class="d-flex gap-2 align-items-center flex-wrap" method="get" th:action="@{/owner/room/list}">
+                <select class="form-select form-select-sm" name="accommodationId" style="width:auto"
+                        onchange="this.form.submit()">
+                    <option value="">전체 숙소</option>
+                    <option th:each="acc : ${accommodations}"
+                            th:value="${acc.accommodationId}"
+                            th:text="${acc.name}"
+                            th:selected="${accommodationId != null and accommodationId == acc.accommodationId}">숙소명</option>
+                </select>
             </form>
+            <a th:href="@{/owner/room/create}" class="btn btn-primary btn-chip">
+                <i class="bi bi-plus-lg me-1"></i>객실 등록
+            </a>
         </div>
-        <!-- 객실 리스트 카드 -->
-        <div class="mt-4">
-            <h6 class="fw-bold mb-3">객실 목록</h6>
+    </div>
 
-            <div class="row g-4">
-                <!-- Room 카드 반복 -->
-                <div class="col-md-4" th:each="room : ${rooms}">
-                    <div class="card h-100 shadow-sm p-3">
-                        <div class="d-flex flex-column justify-content-between h-100">
-                            <div class="d-flex justify-content-between">
-
-                                <!-- 텍스트 영역 -->
-                                <div class="flex-grow-1 pe-3">
-                                    <h5 class="card-title fw-bold">
-                                        <a th:href="@{'/owner/room/' + ${room.roomId} + '/reviews'}"
-                                           class="text-decoration-none text-dark"
-                                           th:text="${room.name}">객실명</a>
-                                    </h5>
-
-                                    <p class="mb-1"><strong>룸 ID:</strong> <span th:text="${room.roomId}">1</span></p>
-                                    <p class="mb-1"><strong>객실 유형:</strong> <span th:text="${room.type}">스탠다드</span></p>
-                                    <p class="mb-1"><strong>최대 인원:</strong> <span th:text="${room.maxOccupancy}">4</span></p>
-                                    <p class="mb-1"><strong>표준 인원:</strong> <span th:text="${room.standardOccupancy}">2</span></p>
-                                    <p class="mb-1"><strong>가격:</strong> <span th:text="${room.price + ' 원'}">120,000 원</span></p>
-                                    <p class="mb-1"><strong>총 객실 수:</strong> <span th:text="${room.totalRooms}">10</span></p>
-                                    <p class="mb-1"><strong>상태:</strong> <span th:text="${room.status}">예약 가능</span></p>
-                                </div>
-
-                                <!-- 이미지 영역 -->
-                                <div class="ms-2">
-                                    <div th:each="image : ${images}">
-                                        <img th:if="${image.roomId == room.roomId and image.sortOrder == 0}"
-                                             th:src="${image.imageUrl}"
-                                             alt="숙소 이미지"
-                                             class="img-fluid rounded"
-                                             style="width: 150px; height: 150px; object-fit: cover;">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 카드 하단: 수정/삭제 -->
-                            <div class="card-footer d-flex justify-content-end gap-2 mt-3">
-                                <a th:href="@{'/owner/room/' + ${room.roomId} + '/modify'}" class="btn btn-primary btn-sm">수정</a>
-
-                                <form th:action="@{'/owner/room/' + ${room.roomId} + '/delete'}"
-                                      method="post"
-                                      onsubmit="return confirm('정말 삭제하시겠습니까?');"
-                                      style="display:inline-block;">
-                                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
-                                </form>
-                            </div>
+    <!-- 테이블 -->
+    <div class="card">
+        <div class="card-body table-responsive p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th class="ps-3 hide-md text-center">ID</th>
+                    <th class="hide-sm text-center">이미지</th>
+                    <th>객실명</th>
+                    <th class="hide-md">숙소</th>
+                    <th class="hide-sm">유형</th>
+                    <th class="hide-sm text-center">최대인원</th>
+                    <th class="hide-sm text-end">가격</th>
+                    <th class="text-center">상태</th>
+                    <th class="text-center">액션</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="room : ${rooms}">
+                    <td class="ps-3 hide-md text-center text-muted" style="font-size:.85rem;"
+                        th:text="${room.roomId}">1</td>
+                    <td class="hide-sm text-center">
+                        <div class="thumb-empty mx-auto">이미지</div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold" th:text="${room.name}">객실명</div>
+                        <div class="text-muted" style="font-size:.78rem;"
+                             th:text="${room.type ?: ''}"></div>
+                    </td>
+                    <td class="hide-md text-muted" style="font-size:.88rem;"
+                        th:text="${room.accommodationName ?: '-'}">숙소명</td>
+                    <td class="hide-sm text-muted" style="font-size:.88rem;"
+                        th:text="${room.type ?: '-'}">유형</td>
+                    <td class="hide-sm text-center"
+                        th:text="${room.maxOccupancy != null ? room.maxOccupancy + '명' : '-'}">4명</td>
+                    <td class="hide-sm text-end fw-semibold"
+                        th:text="${room.price != null ? #numbers.formatInteger(room.price, 3, 'COMMA') + '원' : '-'}">-</td>
+                    <td class="text-center">
+                        <span class="badge-chip"
+                              th:classappend="${#strings.equalsIgnoreCase(room.status,'ACTIVE')}   ? ' badge-active'  :
+                                             (${#strings.equalsIgnoreCase(room.status,'INACTIVE')} ? ' badge-inactive' : ' chip-unk')"
+                              th:text="${room.status}">ACTIVE</span>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-inline-flex gap-1">
+                            <a class="btn btn-ghost btn-chip"
+                               th:href="@{'/owner/room/' + ${room.roomId} + '/modify'}">수정</a>
+                            <form th:action="@{'/owner/room/' + ${room.roomId} + '/delete'}"
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
+                            </form>
                         </div>
-                    </div>
-                </div>
-                <!-- 반복 끝 -->
-            </div>
+                    </td>
+                </tr>
+                <tr th:if="${rooms == null or #lists.isEmpty(rooms)}">
+                    <td colspan="9" class="text-center py-5 text-muted">
+                        <i class="bi bi-door-open d-block fs-2 mb-2"></i>
+                        등록된 객실이 없습니다.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
 
-        <div class="pagination mt-3">
-        <ul class="pagination">
-            <li class="page-item" th:if="${pageResponse.prev}">
-                <a class="page-link"
-                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${pageResponse.prevPage}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}">이전</a>
-            </li>
-
-            <li class="page-item"
-                th:each="num : ${pageResponse.pageNumList}"
-                th:classappend="${num == pageResponse.current} ? 'active'">
-                <a class="page-link"
-                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${num}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}"
-                   th:text="${num}"></a>
-            </li>
-
-            <li class="page-item" th:if="${pageResponse.next}">
-                <a class="page-link"
-                   th:href="@{/owner/accommodation/{accommodationId}/rooms(page=${pageResponse.nextPage}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}">다음</a>
-            </li>
-        </ul>
+        <!-- 페이지네이션 -->
+        <div class="card-footer d-flex justify-content-between align-items-center"
+             th:if="${pageResponse != null}">
+            <div class="text-muted" style="font-size:.85rem;">
+                총 <span th:text="${pageResponse.total}">0</span>개
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" th:classappend="${!pageResponse.prev} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/owner/room/list(page=${pageResponse.prevPage}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}">&laquo;</a>
+                    </li>
+                    <li class="page-item"
+                        th:each="num : ${pageResponse.pageNumList}"
+                        th:classappend="${num == pageResponse.current} ? 'active'">
+                        <a class="page-link"
+                           th:href="@{/owner/room/list(page=${num}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}"
+                           th:text="${num}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${!pageResponse.next} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/owner/room/list(page=${pageResponse.nextPage}, size=${pageResponse.pageRequestDTO.size}, accommodationId=${accommodationId})}">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
     </div>
-    </div>
+
 </th:block>
 </body>
 </html>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    document.addEventListener("DOMContentLoaded", function () {
-        const roomSearchInput = document.getElementById("roomSearchInput");
-        const roomSearchResult = document.getElementById("roomSearchResult");
-        const roomIdInput = document.getElementById("roomIdInput");
-        const accommodationId = /*[[${accommodationId}]]*/ '';
-
-        // 회사명 검색 (비동기)
-        roomSearchInput.addEventListener("input", function () {
-            const keyword = this.value.trim();
-            if (keyword.length < 1) { // 최소 1글자부터 검색
-                roomSearchResult.style.display = "none";
-                return;
-            }
-
-            fetch(`/owner/room/search?accommodationId=${accommodationId}&keyword=${keyword}`)
-                .then(res => res.json())
-                .then(data => {
-                    roomSearchResult.innerHTML = "";
-                    if (!data || data.length === 0) {
-                        roomSearchResult.style.display = "none";
-                        return;
-                    }
-
-                    data.forEach(c => {
-                        const item = document.createElement("button");
-                        item.className = "list-group-item list-group-item-action py-2 px-3";
-                        item.type = "button";
-                        item.textContent = `${c.name} (${c.ownerName})`;
-                        item.onclick = () => {
-                            roomSearchInput.value = c.name;
-                            roomIdInput.value = c.roomId;
-                            roomSearchResult.style.display = "none";
-                            // loadAccommodations(c.companyId); // 선택한 회사 기준 숙소 불러오기
-                        };
-                        roomSearchResult.appendChild(item);
-                    });
-
-                    roomSearchResult.style.display = "block";
-                });
-        });
-
-        // 숙소 목록 불러오기 (선택한 회사 기준)
-        function loadAccommodations(companyId) {
-            fetch(`/owner/company/${companyId}/accommodations/json`)
-                .then(res => res.json())
-                .then(data => {
-                    accommodationSelect.innerHTML = '<option value="">전체</option>';
-                    data.forEach(a => {
-                        const opt = document.createElement("option");
-                        opt.value = a.accommodationId;
-                        opt.textContent = a.name;
-                        accommodationSelect.appendChild(opt);
-                    });
-                });
-        }
-
-        // 검색폼 전송 시 URL 설정
-        document.getElementById('searchForm').addEventListener('submit', function (event) {
-            // const companyId = companyIdInput.value;
-            const roomId = roomIdInput.value;
-            let actionUrl = "/owner/room/list";
-
-            if (roomId) {
-                actionUrl = `/owner/room/${roomId}/reviews`;
-            }
-            this.action = actionUrl;
-        });
-    });
-    /*]]>*/
-</script>
-

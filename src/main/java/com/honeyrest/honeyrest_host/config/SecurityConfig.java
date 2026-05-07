@@ -69,9 +69,9 @@ public class SecurityConfig {
                         "/error/**"
                 ).permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").hasRole("SUPER_ADMIN")
+                .requestMatchers("/admin/customers/**", "/api/admin/companies/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/owner/**").hasRole("SUPER_ADMIN")
-                .requestMatchers("/admin/reports/**").hasRole("COMPANY_ADMIN")
                 .anyRequest().authenticated()
         );
 

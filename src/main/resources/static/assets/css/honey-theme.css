@@ -331,9 +331,39 @@ a.text-primary     { color: var(--honey-deeper) !important; }
   border-radius: var(--r-sm) !important;
 }
 
+/* ----- Toolbar & search responsive ----- */
+.toolbar {
+  display: flex; gap: 1rem; align-items: center; justify-content: space-between;
+  flex-wrap: wrap;
+}
+.count-badge {
+  background: var(--honey-soft); color: var(--honey-deeper);
+  border-radius: var(--pill); padding: .3rem .65rem;
+  font-weight: 700; font-size: .78rem; margin-left: .5rem;
+  border: 1px solid var(--honey-mid);
+}
+.search-wrap {
+  display: flex; gap: .5rem; align-items: center;
+  background: #F8FAFC; border-radius: var(--r);
+  padding: .38rem .6rem; border: 1px solid var(--border);
+}
+.search-wrap input { border: none; background: transparent; box-shadow: none; min-width: 200px; font-weight: 500; }
+.search-wrap input:focus { outline: none; box-shadow: none; }
+
 /* ----- Responsive util ----- */
-@media (max-width: 992px) { .hide-md { display: none !important; } }
-@media (max-width: 576px) { .hide-sm { display: none !important; } }
+@media (max-width: 992px) {
+  .hide-md { display: none !important; }
+  .toolbar { flex-direction: column; align-items: flex-start; }
+  .toolbar > div { width: 100%; }
+  .search-wrap { flex-wrap: wrap; }
+}
+@media (max-width: 576px) {
+  .hide-sm { display: none !important; }
+  .search-wrap input { min-width: 140px; }
+  .d-inline-flex.gap-1 { flex-wrap: wrap; }
+  .page-heading h3 { font-size: 1.2rem; }
+  .kpi-card .kpi-value { font-size: 1.4rem; }
+}
 
 /* ============================================================
    추가 허니 테마 스타일

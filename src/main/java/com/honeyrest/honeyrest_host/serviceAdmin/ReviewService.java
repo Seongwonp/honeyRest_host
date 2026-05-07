@@ -5,6 +5,7 @@ import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ReviewService {
@@ -16,6 +17,8 @@ public interface ReviewService {
 
     // 리뷰 목록 전체 조회
     PageResponseDTO<ReviewDTO> getList(String status, Long roomId, Long accommodationId,String sort, PageRequestDTO pageRequestDTO);
+
+    PageResponseDTO<ReviewDTO> getListForCompany(List<Long> accommodationIds, String status, Long roomId, Long accommodationId, String sort, PageRequestDTO pageRequestDTO);
 
     // 리뷰 등록
     ReviewDTO insert(ReviewDTO reviewDTO);

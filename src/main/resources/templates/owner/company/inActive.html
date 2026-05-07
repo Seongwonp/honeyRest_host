@@ -3,182 +3,105 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{owner/layout/base}">
-
 <head>
-    <title>숙소 관리자 대시보드</title>
-    <th:block layout:fragment="head"></th:block>
+    <title>비활성 업체</title>
+    <th:block layout:fragment="head">
+        <style>
+            .btn-chip { border-radius: var(--pill) !important; padding: .28rem .65rem; font-weight: 700; font-size: .82rem; }
+        </style>
+    </th:block>
 </head>
 <body>
 <th:block layout:fragment="content">
-    <div class="page-heading">
-        <h3>비활성 업체 리스트</h3>
-    </div>
-    <div class="card p-4 mb-4 shadow-sm">
-        <form id="searchForm" class="row g-3 align-items-end">
-            <div class="col-md-4 col-sm-8 position-relative">
-                <label class="form-label"><i class="bi bi-building me-1"></i>회사 검색</label>
-                <input type="text" id="companySearchInput" class="form-control" placeholder="회사명을 입력하세요">
-                <div id="companySearchResult" class="list-group position-absolute w-100"
-                     style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
-                <input type="hidden" name="companyId" id="companyIdInput">
-            </div>
-            <!--            <div class="col-md-4 col-sm-8">-->
-            <!--                <label class="form-label"><i class="bi bi-house-door me-1"></i>숙소</label>-->
-            <!--                <select name="accommodationId" class="form-select" id="accommodationSelect">-->
-            <!--                    <option value="">전체</option>-->
-            <!--                </select>-->
-            <!--            </div>-->
-            <div class="col-auto">
-                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
-            </div>
-            <div class="col text-end">
-                <a th:href="@{/owner/company/create}" class="btn btn-primary">업체 등록</a>
-            </div>
-        </form>
+
+    <!-- 헤더 -->
+    <div class="toolbar">
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="mb-0">비활성 업체 목록</h3>
+            <span class="count-badge"
+                  th:if="${responseDTO != null}"
+                  th:text="'총 ' + ${responseDTO.total} + '개'">총 0개</span>
+        </div>
+        <a th:href="@{/owner/company/list}" class="btn btn-soft btn-chip">활성 업체 보기</a>
     </div>
 
-    <div class="mt-4">
-        <h6 class="fw-bold mb-3">업체 목록</h6>
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-4" th:each="c : ${companies}">
-                <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-body">
-                        <!-- 업체명 -->
-                        <h5 class="card-title fw-bold mb-3">
-                            <a th:href="@{'/owner/company/' + ${c.companyId} + '/accommodations'}"
-                               th:text="${c.name}" class="text-decoration-none text-dark">업체명</a>
-                        </h5>
-                        <!-- 대표자 -->
-                        <p class="mb-2"><strong>대표자:</strong><span th:text="${c.ownerName}">홍길동</span></p>
-                        <!-- 사업자 번호 -->
-                        <p class="mb-2"><strong>사업자 번호:</strong><span th:text="${c.businessNumber}">123-45-67890</span></p>
-                        <!-- 연락처 -->
-                        <p class="mb-2"><strong>전화:</strong><span th:text="${c.phone}">010-1234-5678</span></p>
-                        <!-- 이메일 -->
-                        <p class="mb-2"><strong>이메일:</strong><span th:text="${c.email}">info@company.com</span></p>
-                        <!-- 주소 -->
-                        <p class="mb-2"><strong>주소:</strong><span th:text="${c.address}">서울특별시 강남구 ...</span></p>
-                        <!-- 수수료율 -->
-                        <p class="mb-2"><strong>수수료율:</strong><span th:text="${c.commissionRate + '%'}">10%</span></p>
-                        <!-- 상태 -->
-                        <p class="mb-2"><strong>상태:</strong><span th:text="${c.status}">ACTIVE</span></p>
-                        <!-- 은행 정보(JSON) -->
-                        <p class="mb-2"><strong>은행 정보:</strong><span th:text="${c.bankInfo}">{"bank":"국민은행","account":"123-456-7890"}</span></p>
-                        <!-- 등록일 -->
-                        <p class="mb-0"><strong>등록일:</strong><span th:text="${#temporals.format(c.createdAt, 'yyyy-MM-dd HH:mm')}">2025-09-01</span></p>
-                    </div>
-                    <!-- 수정 / 삭제 버튼 -->
-                    <div class="card-footer d-flex justify-content-end gap-2">
-                        <a th:href="@{'/owner/company/' + ${c.companyId} + '/modify'}"
-                           class="btn btn-primary btn-sm">수정</a>
-                        <form th:action="@{'/owner/company/' + ${c.companyId} + '/delete'}"
-                              method="post"
-                              onsubmit="return confirm('정말 삭제하시겠습니까?');"
-                              style="display:inline-block;">
-                            <button type="submit" class="btn btn-danger btn-sm">삭제</button>
-                        </form>
-                    </div>
-                </div>
+    <!-- 테이블 -->
+    <div class="card">
+        <div class="card-body table-responsive p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th class="ps-3">업체명</th>
+                    <th>대표자</th>
+                    <th class="hide-md">사업자번호</th>
+                    <th class="hide-md">전화</th>
+                    <th class="hide-sm">수수료율</th>
+                    <th class="hide-sm">등록일</th>
+                    <th class="text-center">액션</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${companies}">
+                    <td class="ps-3 fw-semibold">
+                        <div th:text="${c.name}">업체명</div>
+                        <div class="text-muted" style="font-size:.8rem;" th:text="${c.email}">email</div>
+                    </td>
+                    <td th:text="${c.ownerName}">홍길동</td>
+                    <td class="hide-md" th:text="${c.businessNumber}">123-45-67890</td>
+                    <td class="hide-md" th:text="${c.phone}">010-0000-0000</td>
+                    <td class="hide-sm" th:text="${c.commissionRate + '%'}">10%</td>
+                    <td class="hide-sm text-muted" style="font-size:.84rem;"
+                        th:text="${c.createdAt != null ? #temporals.format(c.createdAt,'yyyy-MM-dd') : '-'}">2025-01-01</td>
+                    <td class="text-center">
+                        <div class="d-inline-flex gap-1">
+                            <a class="btn btn-ghost btn-chip"
+                               th:href="@{'/owner/company/' + ${c.companyId} + '/modify'}">수정</a>
+                            <form th:action="@{'/owner/company/' + ${c.companyId} + '/delete'}"
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${companies == null or #lists.isEmpty(companies)}">
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="bi bi-building d-block fs-2 mb-2"></i>
+                        비활성 업체가 없습니다.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 페이지네이션 -->
+        <div class="card-footer d-flex justify-content-between align-items-center"
+             th:if="${responseDTO != null}">
+            <div class="text-muted" style="font-size:.85rem;">
+                총 <span th:text="${responseDTO.total}">0</span>개
             </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" th:classappend="${!responseDTO.prev} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/owner/company/inActive/list(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size})}">&laquo;</a>
+                    </li>
+                    <li class="page-item"
+                        th:each="num : ${responseDTO.pageNumList}"
+                        th:classappend="${num == responseDTO.current} ? 'active'">
+                        <a class="page-link"
+                           th:href="@{/owner/company/inActive/list(page=${num}, size=${responseDTO.pageRequestDTO.size})}"
+                           th:text="${num}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${!responseDTO.next} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/owner/company/inActive/list(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size})}">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 
-
-    <div class="pagination mt-3">
-        <ul class="pagination">
-            <li class="page-item" th:if="${responseDTO.prev}">
-                <a class="page-link"
-                   th:href="@{/owner/company/list(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size})}">이전</a>
-            </li>
-
-            <li class="page-item"
-                th:each="num : ${responseDTO.pageNumList}"
-                th:classappend="${num == responseDTO.current} ? 'active'">
-                <a class="page-link"
-                   th:href="@{/owner/company/list(page=${num}, size=${responseDTO.pageRequestDTO.size})}"
-                   th:text="${num}"></a>
-            </li>
-
-            <li class="page-item" th:if="${responseDTO.next}">
-                <a class="page-link"
-                   th:href="@{/owner/company/list(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size})}">다음</a>
-            </li>
-        </ul>
-    </div>
-
 </th:block>
-
 </body>
 </html>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    document.addEventListener("DOMContentLoaded", function () {
-        const companySearchInput = document.getElementById("companySearchInput");
-        const companySearchResult = document.getElementById("companySearchResult");
-        const companyIdInput = document.getElementById("companyIdInput");
-        const accommodationSelect = document.getElementById("accommodationSelect");
-
-        // 회사명 검색 (비동기)
-        companySearchInput.addEventListener("input", function () {
-            const keyword = this.value.trim();
-            if (keyword.length < 1) { // 최소 1글자부터 검색
-                companySearchResult.style.display = "none";
-                return;
-            }
-
-            fetch(`/owner/company/inActive/search?keyword=${keyword}`)
-                .then(res => res.json())
-                .then(data => {
-                    companySearchResult.innerHTML = "";
-                    if (!data || data.length === 0) {
-                        companySearchResult.style.display = "none";
-                        return;
-                    }
-
-                    data.forEach(c => {
-                        const item = document.createElement("button");
-                        item.type = "button";
-                        item.className = "list-group-item list-group-item-action";
-                        item.textContent = `${c.name} (${c.ownerName})`;
-                        item.onclick = () => {
-                            companySearchInput.value = c.name;
-                            companyIdInput.value = c.companyId;
-                            companySearchResult.style.display = "none";
-                            // loadAccommodations(c.companyId); // 선택한 회사 기준 숙소 불러오기
-                        };
-                        companySearchResult.appendChild(item);
-                    });
-
-                    companySearchResult.style.display = "block";
-                });
-        });
-
-        // // 숙소 목록 불러오기 (선택한 회사 기준)
-        // function loadAccommodations(companyId) {
-        //     fetch(`/owner/company/${companyId}/accommodations/json`)
-        //         .then(res => res.json())
-        //         .then(data => {
-        //             accommodationSelect.innerHTML = '<option value="">전체</option>';
-        //             data.forEach(a => {
-        //                 const opt = document.createElement("option");
-        //                 opt.value = a.accommodationId;
-        //                 opt.textContent = a.name;
-        //                 accommodationSelect.appendChild(opt);
-        //             });
-        //         });
-        // }
-
-        // 검색폼 전송 시 URL 설정
-        document.getElementById('searchForm').addEventListener('submit', function (event) {
-            const companyId = companyIdInput.value;
-            // const accommodationId = accommodationSelect.value;
-            let actionUrl = "/owner/company/inActive";
-
-            if (companyId) {
-                actionUrl = `/owner/accommodation/inActive`;
-            }
-            this.action = actionUrl;
-        });
-    });
-    /*]]>*/
-</script>

@@ -3,187 +3,190 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{owner/layout/base}">
-
 <head>
-    <title>숙소 예약 현황</title>
-    <th:block layout:fragment="head"></th:block>
+    <title>예약 관리</title>
+    <th:block layout:fragment="head">
+        <style>
+            .btn-chip { border-radius: var(--pill) !important; padding: .28rem .65rem; font-weight: 700; font-size: .82rem; }
+        </style>
+    </th:block>
 </head>
-
 <body>
 <th:block layout:fragment="content">
-    <div class="page-heading mb-3">
-        <h3 th:text="${company != null} ? ${company.name} + ' 예약 리스트' : '전체 예약 리스트'">예약 리스트</h3>
-        <p class="text-subtitle text-muted">관리자용 숙소 및 예약 현황</p>
-        <a th:href="@{/owner/reservation/create}" class="btn btn-primary mb-3" style="max-width: 140px;">예약 등록</a>
+
+    <!-- 헤더 -->
+    <div class="toolbar">
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="mb-0"
+                th:text="${company != null ? company.name + ' 예약 목록' : '전체 예약 목록'}">예약 목록</h3>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <form id="searchForm" class="d-flex gap-2 align-items-center flex-wrap">
+                <select id="companySelect" name="companyId" class="form-select form-select-sm" style="width:auto">
+                    <option value="">전체 업체</option>
+                </select>
+                <select id="accommodationSelect" name="accommodationId" class="form-select form-select-sm" style="width:auto">
+                    <option value="">전체 숙소</option>
+                </select>
+                <select id="roomSelect" name="roomId" class="form-select form-select-sm" style="width:auto">
+                    <option value="">전체 객실</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-chip">검색</button>
+            </form>
+            <a th:href="@{/owner/reservation/create}" class="btn btn-primary btn-chip">
+                <i class="bi bi-plus-lg me-1"></i>예약 등록
+            </a>
+        </div>
     </div>
 
-    <!-- 검색 폼 -->
-    <form method="get" action="/owner/reservation/list" class="search-form" id="searchForm">
-        <div>
-            <label for="companySelect">회사</label>
-            <select id="companySelect" name="companyId"></select>
+    <!-- 테이블 -->
+    <div class="card">
+        <div class="card-body table-responsive p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th class="ps-3 text-center hide-md">ID</th>
+                    <th>예약자</th>
+                    <th class="hide-sm">숙소명</th>
+                    <th class="hide-md">객실</th>
+                    <th class="hide-md">연락처</th>
+                    <th class="hide-sm">체크인</th>
+                    <th class="hide-sm">체크아웃</th>
+                    <th class="hide-sm text-end">가격</th>
+                    <th class="text-center">액션</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="res : ${reservations}">
+                    <td class="ps-3 text-center hide-md text-muted" style="font-size:.85rem;"
+                        th:text="${res.reservationId}">1</td>
+                    <td>
+                        <div class="fw-semibold" th:text="${res.guestName}">홍길동</div>
+                        <div class="text-muted hide-sm d-sm-none" style="font-size:.78rem;"
+                             th:text="${res.accommodationName}"></div>
+                    </td>
+                    <td class="hide-sm" th:text="${res.accommodationName ?: '-'}">숙소명</td>
+                    <td class="hide-md" th:text="${res.roomName ?: '-'}">객실명</td>
+                    <td class="hide-md" th:text="${res.guestPhone ?: '-'}">010-0000-0000</td>
+                    <td class="hide-sm" th:text="${res.checkInDate}">2025-01-01</td>
+                    <td class="hide-sm" th:text="${res.checkOutDate}">2025-01-02</td>
+                    <td class="hide-sm text-end fw-semibold"
+                        th:text="${res.price != null ? #numbers.formatInteger(res.price, 3, 'COMMA') + '원' : '-'}">-</td>
+                    <td class="text-center">
+                        <div class="d-inline-flex gap-1">
+                            <a class="btn btn-ghost btn-chip"
+                               th:href="@{'/owner/reservation/' + ${res.reservationId} + '/modify'}">수정</a>
+                            <form th:action="@{'/owner/reservation/' + ${res.reservationId} + '/delete'}"
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${reservations == null or #lists.isEmpty(reservations)}">
+                    <td colspan="9" class="text-center py-5 text-muted">
+                        <i class="bi bi-journal-bookmark d-block fs-2 mb-2"></i>
+                        예약 내역이 없습니다.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
-        <div>
-            <label for="accommodationSelect">숙소</label>
-            <select id="accommodationSelect" name="accommodationId"></select>
-        </div>
-        <div>
-            <label for="roomSelect">객실</label>
-            <select id="roomSelect" name="roomId"></select>
-        </div>
-        <div>
-            <button type="submit">검색</button>
-        </div>
-    </form>
 
-    <!-- 예약 테이블 -->
-    <div class="table-responsive">
-        <table class="table">
-            <thead>
-            <tr>
-                <th>예약 ID</th>
-                <th>예약자명</th>
-                <th>숙소명</th>
-                <th>연락처</th>
-                <th>방 이름</th>
-                <th>인원</th>
-                <th>체크인 날짜</th>
-                <th>체크아웃 날짜</th>
-                <th class="text-end">가격</th>
-                <th style="width: 70px;">수정</th>
-                <th style="width: 70px;">삭제</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="res : ${reservations}">
-                <td th:text="${res.reservationId}"></td>
-                <td th:text="${res.guestName}"></td>
-                <td th:text="${res.accommodationName}"></td>
-                <td th:text="${res.guestPhone}"></td>
-                <td th:text="${res.roomName}"></td>
-                <td th:text="${res.guestCount}"></td>
-                <td th:text="${res.checkInDate}"></td>
-                <td th:text="${res.checkOutDate}"></td>
-                <td class="text-end" th:text="${#numbers.formatInteger(res.price, 3, 'COMMA')} + ' 원'"></td>
-                <td>
-                    <a th:href="@{'/owner/reservation/' + ${res.reservationId} + '/modify'}"
-                       class="btn btn-primary btn-sm">수정</a>
-                </td>
-                <td>
-                    <form th:action="@{'/owner/reservation/' + ${res.reservationId} + '/delete'}" method="post" onsubmit="return confirm('정말 삭제하시겠습니까?');">
-                        <button type="submit" class="btn btn-danger btn-sm">삭제</button>
-                    </form>
-                </td>
-            </tr>
-            <tr th:if="${#lists.isEmpty(reservations)}">
-                <td colspan="7" class="text-center" style="padding: 20px; color: #888;">예약 내역이 없습니다.</td>
-            </tr>
-            </tbody>
-        </table>
+        <!-- 페이지네이션 -->
+        <div class="card-footer d-flex justify-content-between align-items-center"
+             th:if="${reservationPage != null}">
+            <div class="text-muted" style="font-size:.85rem;">
+                페이지 <span th:text="${reservationPage.current}">1</span>
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" th:classappend="${!reservationPage.prev} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/owner/reservation/list(page=${reservationPage.prevPage}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId})}">&laquo;</a>
+                    </li>
+                    <li class="page-item"
+                        th:each="num : ${reservationPage.pageNumList}"
+                        th:classappend="${num == reservationPage.current} ? 'active'">
+                        <a class="page-link"
+                           th:href="@{/owner/reservation/list(page=${num}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId})}"
+                           th:text="${num}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${!reservationPage.next} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/owner/reservation/list(page=${reservationPage.nextPage}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId})}">&raquo;</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
     </div>
 
-    <!-- 페이지네이션 -->
-    <ul class="pagination" role="navigation">
-        <li class="page-item" th:classappend="${!reservationPage.prev} ? 'disabled'">
-            <a class="page-link"
-               th:href="@{/owner/reservation/list(page=${reservationPage.prevPage}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId})}">이전</a>
-        </li>
-        <li class="page-item"
-            th:each="num : ${reservationPage.pageNumList}"
-            th:classappend="${num == reservationPage.current} ? 'active'">
-            <a class="page-link"
-               th:href="@{/owner/reservation/list(page=${num}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId})}"
-               th:text="${num}"></a>
-        </li>
-        <li class="page-item" th:classappend="${!reservationPage.next} ? 'disabled'">
-            <a class="page-link"
-               th:href="@{/owner/reservation/list(page=${reservationPage.nextPage}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId})}">다음</a>
-        </li>
-    </ul>
 </th:block>
 
+<th:block layout:fragment="script">
+<script th:inline="javascript">
+/*<![CDATA[*/
+const companySelect = document.getElementById("companySelect");
+const accommodationSelect = document.getElementById("accommodationSelect");
+const roomSelect = document.getElementById("roomSelect");
 
+const companies = /*[[${companies}]]*/ [];
+const accommodations = /*[[${accommodations}]]*/ [];
+const rooms = /*[[${rooms}]]*/ [];
+const selectedCompanyId = /*[[${companyId}]]*/ '';
+const selectedAccommodationId = /*[[${accommodationId}]]*/ '';
+const selectedRoomId = /*[[${roomId}]]*/ '';
+
+function loadCompanyOptions() {
+    companySelect.innerHTML = '<option value="">전체 업체</option>';
+    companies.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.companyId; opt.textContent = c.name;
+        if (c.companyId == selectedCompanyId) opt.selected = true;
+        companySelect.appendChild(opt);
+    });
+}
+function loadAccommodationOptions(companyId) {
+    accommodationSelect.innerHTML = '<option value="">전체 숙소</option>';
+    let filtered = companyId ? accommodations.filter(a => a.companyId == companyId) : accommodations;
+    filtered.forEach(a => {
+        const opt = document.createElement("option");
+        opt.value = a.accommodationId; opt.textContent = a.name;
+        if (a.accommodationId == selectedAccommodationId) opt.selected = true;
+        accommodationSelect.appendChild(opt);
+    });
+}
+function loadRoomOptions(accommodationId) {
+    roomSelect.innerHTML = '<option value="">전체 객실</option>';
+    let filtered = accommodationId ? rooms.filter(r => r.accommodationId == accommodationId) : rooms;
+    filtered.forEach(r => {
+        const opt = document.createElement("option");
+        opt.value = r.roomId; opt.textContent = r.name;
+        if (r.roomId == selectedRoomId) opt.selected = true;
+        roomSelect.appendChild(opt);
+    });
+}
+
+companySelect.addEventListener("change", function () { loadAccommodationOptions(this.value); loadRoomOptions(''); });
+accommodationSelect.addEventListener("change", function () { loadRoomOptions(this.value); });
+
+loadCompanyOptions();
+loadAccommodationOptions(selectedCompanyId);
+loadRoomOptions(selectedAccommodationId);
+
+document.getElementById('searchForm').addEventListener('submit', function (e) {
+    const cId = companySelect.value;
+    const aId = accommodationSelect.value;
+    const rId = roomSelect.value;
+    let url = "/owner/reservation/list";
+    if (rId) url = `/owner/reservation/room/${rId}?companyId=${cId}&accommodationId=${aId}&roomId=${rId}`;
+    else if (aId) url = `/owner/reservation/accommodation/${aId}?companyId=${cId}&accommodationId=${aId}`;
+    else if (cId) url = `/owner/reservation/company/${cId}?companyId=${cId}`;
+    this.action = url;
+});
+/*]]>*/
+</script>
+</th:block>
 </body>
 </html>
-<script th:inline="javascript">
-    const companySelect = document.getElementById("companySelect");
-    const accommodationSelect = document.getElementById("accommodationSelect");
-    const roomSelect = document.getElementById("roomSelect");
-
-    const companies = /*[[${companies}]]*/ [];
-    const accommodations = /*[[${accommodations}]]*/ [];
-    const rooms = /*[[${rooms}]]*/ [];
-
-    const selectedCompanyId = /*[[${companyId}]]*/ '';
-    const selectedAccommodationId = /*[[${accommodationId}]]*/ '';
-    const selectedRoomId = /*[[${roomId}]]*/ '';
-
-    function loadCompanyOptions() {
-        companySelect.innerHTML = '<option value="">전체</option>';
-        companies.forEach(c => {
-            const opt = document.createElement("option");
-            opt.value = c.companyId;
-            opt.textContent = c.name;
-            if (c.companyId == selectedCompanyId) opt.selected = true;
-            companySelect.appendChild(opt);
-        });
-    }
-
-    function loadAccommodationOptions(companyId) {
-        accommodationSelect.innerHTML = '<option value="">전체</option>';
-        let filtered = accommodations;
-        if (companyId) {
-            filtered = accommodations.filter(a => a.companyId == companyId);
-        }
-        filtered.forEach(a => {
-            const opt = document.createElement("option");
-            opt.value = a.accommodationId;
-            opt.textContent = a.name;
-            if (a.accommodationId == selectedAccommodationId) opt.selected = true;
-            accommodationSelect.appendChild(opt);
-        });
-    }
-
-    function loadRoomOptions(accommodationId) {
-        roomSelect.innerHTML = '<option value="">객실 선택</option>';
-        let filtered = rooms;
-        if (accommodationId) filtered = rooms.filter(a => a.accommodationId == accommodationId);
-        filtered.forEach(a => {
-            const opt = document.createElement("option");
-            opt.value = a.roomId;
-            opt.textContent = a.name;
-            if (a.roomId == selectedRoomId) opt.selected = true;
-            roomSelect.appendChild(opt);
-        });
-    }
-
-    companySelect.addEventListener("change", function () {
-        loadAccommodationOptions(this.value);
-        loadRoomOptions('');
-    });
-
-    accommodationSelect.addEventListener("change", function () {
-        loadRoomOptions(this.value);
-    });
-
-    // 초기 로딩
-    loadCompanyOptions();
-    loadAccommodationOptions(selectedCompanyId);
-    loadRoomOptions(selectedAccommodationId);
-
-    document.getElementById('searchForm').addEventListener('submit', function (event) {
-
-        const companyId = companySelect.value;
-        const accommodationId = accommodationSelect.value;
-        const roomId = roomSelect.value;
-        let actionUrl = "/owner/reservation/list";
-        if (roomId) {
-            actionUrl = `/owner/reservation/room/${roomId}?companyId=${companyId}&accommodationId=${accommodationId}&roomId=${roomId}`;
-        } else if (accommodationId) {
-            actionUrl = `/owner/reservation/accommodation/${accommodationId}?companyId=${companyId}&accommodationId=${accommodationId}&roomId=${roomId}`;
-        } else if (companyId) {
-            actionUrl = `/owner/reservation/company/${companyId}?companyId=${companyId}&accommodationId=${accommodationId}&roomId=${roomId}`;
-        }
-        this.action = actionUrl;
-    });
-</script>

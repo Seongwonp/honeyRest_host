@@ -209,6 +209,67 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponseDTO<ReviewDTO> getListForCompany(List<Long> accommodationIds,
+                                                        String status,
+                                                        Long roomId,
+                                                        Long accommodationId,
+                                                        String sort,
+                                                        PageRequestDTO pageRequestDTO) {
+        if (accommodationIds == null || accommodationIds.isEmpty()) {
+            return PageResponseDTO.<ReviewDTO>withAll()
+                    .pageRequestDTO(pageRequestDTO)
+                    .dtoList(List.of())
+                    .total(0)
+                    .build();
+        }
+
+        Pageable pageable = pageRequestDTO.getPageable(toSort(sort));
+        boolean all = (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status));
+        Page<Review> page;
+
+        if (roomId != null) {
+            if (all) {
+                page = reviewRepository.findByRoomId(roomId, pageable);
+            } else {
+                page = reviewRepository.findByRoomIdAndStatus(roomId, status, pageable);
+            }
+        } else if (accommodationId != null) {
+            if (all) {
+                page = reviewRepository.findByAccommodationId(accommodationId, pageable);
+            } else {
+                page = reviewRepository.findByAccommodationIdAndStatus(accommodationId, status, pageable);
+            }
+        } else {
+            if (all) {
+                page = reviewRepository.findByAccommodationIdIn(accommodationIds, pageable);
+            } else {
+                page = reviewRepository.findByAccommodationIdInAndStatus(accommodationIds, status, pageable);
+            }
+        }
+
+        List<ReviewDTO> list = page.getContent().stream()
+                .map(r -> {
+                    ReviewDTO dto = modelMapper.map(r, ReviewDTO.class);
+                    if (r.getReservation() != null) {
+                        dto.setAccommodationName(r.getReservation().getAccommodationName());
+                        dto.setRoomName(r.getReservation().getRoomName());
+                    }
+                    if (r.getUser() != null) {
+                        dto.setUserName(r.getUser().getName());
+                    }
+                    return dto;
+                })
+                .toList();
+
+        return PageResponseDTO.<ReviewDTO>withAll()
+                .pageRequestDTO(pageRequestDTO)
+                .dtoList(list)
+                .total((int) page.getTotalElements())
+                .build();
+    }
+
     // 리뷰 등록
     @Override
     @Transactional
