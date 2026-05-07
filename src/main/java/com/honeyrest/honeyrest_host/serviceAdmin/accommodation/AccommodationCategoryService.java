@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface AccommodationCategoryService {
     List<AccommodationCategoryDTO> list();
-    AccommodationCategoryDTO get(Long id);
+    AccommodationCategoryDTO get(Integer id);
 }

@@ -134,7 +134,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public List<ReservationDTO> findCompanyReservationsOverlapping(Long companyId, Long accommodationId, LocalDate start, LocalDate end) {
+    public List<ReservationDTO> findCompanyReservationsOverlapping(Integer companyId, Long accommodationId, LocalDate start, LocalDate end) {
 
         // 회사 기준(숙소 선택 가능)으로 월 범위에 “겹치는” 예약들
         List<Reservation> rows = reservationRepository
@@ -211,7 +211,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public List<ReservationDTO> findCompanyReservationsOnDate(Long companyId,
+    public List<ReservationDTO> findCompanyReservationsOnDate(Integer companyId,
                                                               Long accommodationId,
                                                               LocalDate date) {
         LocalDate start = date;
@@ -224,7 +224,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public PageResponseDTO<ReservationDTO> getCancelRequestsForCompany(Long companyId, String q, PageRequestDTO pr) {
+    public PageResponseDTO<ReservationDTO> getCancelRequestsForCompany(Integer companyId, String q, PageRequestDTO pr) {
         Pageable pageable = pr.getPageable(Sort.by("reservationId").descending());
 
         String normQ = (q == null || q.isBlank()) ? null : q.trim();
@@ -342,7 +342,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public PageResponseDTO<ReservationDTO> getCompanyReservations(Long companyId,
+    public PageResponseDTO<ReservationDTO> getCompanyReservations(Integer companyId,
                                                                   String status,
                                                                   String q,
                                                                   PageRequestDTO pageRequestDTO) {
@@ -373,7 +373,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public Page<ReservationDTO> getCompanyReservations(
-            Long companyId, String status, String q, Long accId, Pageable pageable) {
+            Integer companyId, String status, String q, Long accId, Pageable pageable) {
 
         String statusParam = normalizeStatus(status); // ALL/빈값 → null
         String qParam = normalizeBlankToNull(q);

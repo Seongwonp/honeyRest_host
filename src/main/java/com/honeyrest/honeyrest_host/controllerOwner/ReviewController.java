@@ -38,7 +38,7 @@ public class ReviewController {
 
         if (accommodationId != null) {
             // 특정 숙소 리뷰 조회
-            Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+            Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
             model.addAttribute("selectedCompanyId",  companyId);
             reviewPage = reviewService.getReviewsByAccommodationIdWithPageable(accommodationId, pageRequestDTO);
             model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
@@ -59,7 +59,7 @@ public class ReviewController {
     }
 
     @GetMapping( "/review/company/{companyId}")
-    public String reviews(@PathVariable(required = false) Long companyId,
+    public String reviews(@PathVariable(required = false) Integer companyId,
                           @RequestParam(required = false) Long accommodationId,
                           @ModelAttribute PageRequestDTO pageRequestDTO,
                           Model model) {
@@ -93,7 +93,7 @@ public class ReviewController {
     @GetMapping( "/review/room/{roomId}")
     public String reviews(@PathVariable(required = false) Long roomId,
                           @RequestParam(required = false) Long accommodationId,
-                          @RequestParam(required = false) Long companyId,
+                          @RequestParam(required = false) Integer companyId,
                           @ModelAttribute PageRequestDTO pageRequestDTO,
                           Model model) {
 

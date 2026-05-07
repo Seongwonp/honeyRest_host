@@ -127,7 +127,7 @@ public class OCompanyService {
                 .toList();
     }
 
-    public CompanyDTO getCompany(Long companyId) {
+    public CompanyDTO getCompany(Integer companyId) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new NotFoundException("숙소가 존재하지 않습니다."));
         return toDTO(company);
@@ -170,7 +170,7 @@ public class OCompanyService {
                 .build();
     }
 
-    public Long getCompanyIdByAccommodationId(Long accommodationId) {
+    public Integer getCompanyIdByAccommodationId(Long accommodationId) {
         Accommodation accommodation = accommodationRepository.findByAccommodationId(accommodationId);
         return accommodation.getCompany().getCompanyId();
     }

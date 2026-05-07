@@ -13,17 +13,17 @@ import java.util.List;
 
 public interface ReservationService {
 
-    List<ReservationDTO> findCompanyReservationsOnDate(Long companyId,
+    List<ReservationDTO> findCompanyReservationsOnDate(Integer companyId,
                                                        Long accommodationId,
                                                        LocalDate date);
 
-    PageResponseDTO<ReservationDTO> getCancelRequestsForCompany(Long companyId, String q, PageRequestDTO pr);
+    PageResponseDTO<ReservationDTO> getCancelRequestsForCompany(Integer companyId, String q, PageRequestDTO pr);
 
     @Transactional
     ReservationDTO createReservation(ReservationDTO dto);
 
     // 예약 현황으로 목록 조회
-    PageResponseDTO<ReservationDTO> getCompanyReservations(Long companyId, String status, String q, PageRequestDTO pageRequestDTO);
+    PageResponseDTO<ReservationDTO> getCompanyReservations(Integer companyId, String status, String q, PageRequestDTO pageRequestDTO);
 
     // 예약 번호로 조회
     ReservationDTO getReservationByNumber(String number);
@@ -42,12 +42,12 @@ public interface ReservationService {
     /*특정 객실(roomId)의 기간과 겹치는 예약들 */
     List<ReservationDTO> findRoomReservationsOverlapping(Long roomId, LocalDate start, LocalDate end);
 
-    List<ReservationDTO> findCompanyReservationsOverlapping(Long companyId, Long accommodationId, LocalDate start, LocalDate end);
+    List<ReservationDTO> findCompanyReservationsOverlapping(Integer companyId, Long accommodationId, LocalDate start, LocalDate end);
 
     ReservationDTO getReservationDetail(Long id);
 
     Page<ReservationDTO> getCompanyReservations(
-            Long companyId, String status, String q, Long accId, Pageable pageable);
+            Integer companyId, String status, String q, Long accId, Pageable pageable);
 
     // 예약 상태 전환 로그 , 알림
     ReservationDTO approveCancelRequest(Long reservationId, String reason); // 서비스에서 db 업데이트.dto 매핑해서 리던 -> json 으로 담기

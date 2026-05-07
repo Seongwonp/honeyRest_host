@@ -12,7 +12,7 @@ public interface AccommodationService {
     // 목록
     List<AccommodationCreateRequestDTO> getAll();
 
-    List<AccommodationCreateRequestDTO> getAllById(Long companyId);
+    List<AccommodationCreateRequestDTO> getAllById(Integer companyId);
 
     // id 조회
     AccommodationCreateRequestDTO getById(Long id);
@@ -26,17 +26,17 @@ public interface AccommodationService {
     // 삭제
     void delete(Long id);
 
-    Page<AccommodationListDTO> search(String q, Long categoryId, Long mainRegionId, Pageable pageable);
+    Page<AccommodationListDTO> search(String q, Integer categoryId, Integer mainRegionId, Pageable pageable);
 
     // 승인
     void changeStatus(Long id, String status); // "APPROVED" | "REJECTED" | "ACTIVE" 등
 
     long count();
     // 회사별 객실 조회
-    Page<AccommodationListDTO> findByCompanyId(Long companyId, Pageable pageable);
+    Page<AccommodationListDTO> findByCompanyId(Integer companyId, Pageable pageable);
 
     // 회사 + 상태별 조회(승인 대기 목록)
-    Page<AccommodationListDTO> findByCategoryIdAndStatus(Long companyId, String status, Pageable pageable);
+    Page<AccommodationListDTO> findByCategoryIdAndStatus(Integer companyId, String status, Pageable pageable);
 
     // 숙소 이름만 필요, 아무것도 말고 숙소명만 가져오기
     String getNameById(Long accommodationId);

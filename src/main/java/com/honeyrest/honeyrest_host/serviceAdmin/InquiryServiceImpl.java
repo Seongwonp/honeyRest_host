@@ -70,7 +70,7 @@ public class InquiryServiceImpl implements InquiryService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<InquiryDTO> listByCompany(Long companyId, String q, Boolean replied, Pageable pageable) {
+    public Page<InquiryDTO> listByCompany(Integer companyId, String q, Boolean replied, Pageable pageable) {
         // 공백/빈 문자열 방지
         String keyword = (q != null && !q.isBlank()) ? q.trim() : null;
         return inquiryRepository.searchByCompany(companyId, keyword, replied, pageable)
@@ -113,7 +113,7 @@ public class InquiryServiceImpl implements InquiryService {
 
     @Transactional(readOnly = true)
     @Override
-    public Page<InquiryDTO> listByCompany(Long companyId, Long accId, String q, Boolean replied, Pageable pageable) {
+    public Page<InquiryDTO> listByCompany(Integer companyId, Long accId, String q, Boolean replied, Pageable pageable) {
         Page<Inquiry> page = inquiryRepository.findByCompanyWithFilters(companyId, accId, q, replied, pageable);
         return page.map(inquiryMapper::toDTO);
     }

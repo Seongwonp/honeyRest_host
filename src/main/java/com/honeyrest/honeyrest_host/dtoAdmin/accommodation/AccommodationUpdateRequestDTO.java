@@ -17,8 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 public class AccommodationUpdateRequestDTO {
     // 수정은 부분 업데이트 허용 가정 → 전부 nullable
-    private Long companyId;
-    private Long categoryId;
+    private Integer companyId;
+    private Integer categoryId;
     private Long mainRegionId;
     private Long subRegionId;
 

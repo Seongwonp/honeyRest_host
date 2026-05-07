@@ -245,7 +245,7 @@ public class ReservationController {
     }
 
     @GetMapping("/day")
-    public String day(@RequestParam Long companyId,
+    public String day(@RequestParam Integer companyId,
                       @RequestParam(required = false) Long accommodationId,
                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
                       Model model) {

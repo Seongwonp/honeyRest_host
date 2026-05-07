@@ -353,7 +353,7 @@ public class AccommodationController {
     // 지역(대)의 하위(소) 목록 JSON (select 연동)
     @GetMapping(value = "/regions/children", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public List<Map<String, Object>> regionChildren(@RequestParam("parentId") Long parentId) {
+    public List<Map<String, Object>> regionChildren(@RequestParam("parentId") Integer parentId) {
         return regionRepository.findByParentId(parentId).stream()
                 .map(r -> Map.<String, Object>of(
                         "id", r.getRegionId(),

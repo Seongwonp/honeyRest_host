@@ -11,7 +11,7 @@ import java.util.List;
 public interface RoomService {
 
     // 회사 전체 또는 특정 숙소 페이징
-    Page<RoomDTO> findPageByCompany(Long companyId, Long accommodationId, Pageable pageable);
+    Page<RoomDTO> findPageByCompany(Integer companyId, Long accommodationId, Pageable pageable);
     // 특정 숙소만
     Page<RoomDTO> findPageByAccommodationId(Long accommodationId, Pageable pageable);
 
@@ -21,7 +21,7 @@ public interface RoomService {
     void modifyRoom(RoomDTO dto);
     void removeRoom(Long roomId);
 
-    List<RoomDTO> findAllByCompanyId(Long companyId);
+    List<RoomDTO> findAllByCompanyId(Integer companyId);
 
     List<RoomDTO> getRoomsByAccommodationId(Long accommodationId);
 

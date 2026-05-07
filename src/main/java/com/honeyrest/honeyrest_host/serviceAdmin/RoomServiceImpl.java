@@ -196,7 +196,7 @@ public class RoomServiceImpl implements RoomService {
 
     // 회사 전체/ 특정 숙소 커버 동시에 페이징
     @Override
-    public Page<RoomDTO> findPageByCompany(Long companyId, Long accommodationId, Pageable pageable) {
+    public Page<RoomDTO> findPageByCompany(Integer companyId, Long accommodationId, Pageable pageable) {
         return roomRepository.findRoomsOfCompany(companyId,accommodationId,pageable).map(this::toDTO);
     }
 
@@ -205,7 +205,7 @@ public class RoomServiceImpl implements RoomService {
         return roomRepository.findByAccommodation_AccommodationId(accommodationId, pageable).map(this::toDTO);
     }
     @Override
-    public List<RoomDTO> findAllByCompanyId(Long companyId){
+    public List<RoomDTO> findAllByCompanyId(Integer companyId){
         return roomRepository.findAllByAccommodation_Company_CompanyId(companyId).stream().map(this::toDTO).collect(Collectors.toList());
     }
 

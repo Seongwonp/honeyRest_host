@@ -34,7 +34,7 @@ public class AccommodationCategoryServiceImpl implements AccommodationCategorySe
     }
 
     @Override
-    public AccommodationCategoryDTO get(Long id) {
+    public AccommodationCategoryDTO get(Integer id) {
         var e = accommodationCategoryRepository.findById(id).orElseThrow(()
                 -> new EntityNotFoundException("카테고리가 존재하지 않습니다."));
         return toDTO(e);

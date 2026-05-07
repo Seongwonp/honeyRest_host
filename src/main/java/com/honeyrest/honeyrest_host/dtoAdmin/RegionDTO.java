@@ -7,8 +7,8 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class RegionDTO {
-    private Long regionId; // 고유 지역 id
-    private Long parentId; //상위 지역
+    private Integer regionId; // 고유 지역 id
+    private Integer parentId; //상위 지역
     private String name;
     private Integer level;
 

@@ -165,7 +165,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     }
 
     @Override
-    public List<AccommodationDTO> getAccommodationsByCompanyId(Long companyId) {
+    public List<AccommodationDTO> getAccommodationsByCompanyId(Integer companyId) {
         return accommodationRepository.findByCompany_CompanyId(companyId).stream().map(this::toDTO).toList();
     }
 
@@ -222,7 +222,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     }
 
     @Override
-    public PageResponseDTO<AccommodationDTO> getAccommodationsWithPageable(Long companyId, PageRequestDTO pageRequestDTO){
+    public PageResponseDTO<AccommodationDTO> getAccommodationsWithPageable(Integer companyId, PageRequestDTO pageRequestDTO){
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
                 pageRequestDTO.getSize(), Sort.by("accommodationId").descending());
 
@@ -250,7 +250,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     }
 
     @Override
-    public PageResponseDTO<AccommodationDTO> getInActiveAccommodationsWithPageable(Long companyId, PageRequestDTO pageRequestDTO){
+    public PageResponseDTO<AccommodationDTO> getInActiveAccommodationsWithPageable(Integer companyId, PageRequestDTO pageRequestDTO){
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
                 pageRequestDTO.getSize(), Sort.by("accommodationId").descending());
 
@@ -317,7 +317,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     }
 
     @Override
-    public List<AccommodationDTO> searchByNameContaining(Long companyId, String keyword) {
+    public List<AccommodationDTO> searchByNameContaining(Integer companyId, String keyword) {
         if (companyId == null || companyId == 0){
             return accommodationRepository.findByNameContainingIgnoreCase(keyword).stream().map(this::toDTO).toList();
         } else return accommodationRepository.findByCompany_CompanyIdAndNameContainingIgnoreCase(companyId, keyword)

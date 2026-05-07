@@ -22,7 +22,7 @@ public class CompanyController {
 
     @GetMapping("/company/list")
     public String companyList(
-            @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) Integer companyId,
             @RequestParam(required = false) Long accommodationId,
             @ModelAttribute PageRequestDTO pageRequestDTO,
             Model model) {
@@ -62,7 +62,7 @@ public class CompanyController {
     }
 
     @GetMapping("/company/{companyId}/modify")
-    public String modifyCompany(@PathVariable("companyId") Long companyId, Model model) {
+    public String modifyCompany(@PathVariable("companyId") Integer companyId, Model model) {
         model.addAttribute("companyId", companyId);
         model.addAttribute("company", companyService.getCompany(companyId));
         return "owner/company/modify";
@@ -75,7 +75,7 @@ public class CompanyController {
     }
 
     @PostMapping("/company/{companyId}/delete")
-    public String deleteCompany(@PathVariable Long companyId) {
+    public String deleteCompany(@PathVariable Integer companyId) {
         companyService.removeCompany(companyId);
         return "redirect:/owner/company/list";
     }
@@ -96,7 +96,7 @@ public class CompanyController {
     // 선택한 회사의 숙소 목록 JSON
     @GetMapping("/company/{companyId}/accommodations/json")
     @ResponseBody
-    public List<AccommodationDTO> getAccommodationsByCompany(@PathVariable Long companyId) {
+    public List<AccommodationDTO> getAccommodationsByCompany(@PathVariable Integer companyId) {
         return accommodationService.getAccommodationsByCompanyId(companyId);
     }
 

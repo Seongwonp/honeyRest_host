@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface RegionRepository extends JpaRepository<Region, Integer> {
     List<Region> findByLevel(Integer level);
-    List<Region> findByParentId(Long parentId);
+    List<Region> findByParentId(Integer parentId);
 }

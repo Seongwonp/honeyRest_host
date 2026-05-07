@@ -190,7 +190,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public List<AccommodationCreateRequestDTO> getAllById(Long companyId) {
+    public List<AccommodationCreateRequestDTO> getAllById(Integer companyId) {
         return accommodationRepository.findAllByCompany_CompanyId(companyId).stream().map(this::toDto).toList();
 
     }
@@ -226,8 +226,8 @@ public class AccommodationServiceImpl implements AccommodationService {
         String cancelJson = cancellationPolicyService.getMultilineByAccommodationId(id);
 
         // --- Region/Category/Company 등 ID 안전 추출 ---
-        Long companyId   = Optional.ofNullable(a.getCompany()).map(Company::getCompanyId).orElse(null);
-        Long categoryId  = Optional.ofNullable(a.getCategory()).map(AccommodationCategory::getCategoryId).orElse(null);
+        Integer companyId   = Optional.ofNullable(a.getCompany()).map(Company::getCompanyId).orElse(null);
+        Integer categoryId  = Optional.ofNullable(a.getCategory()).map(AccommodationCategory::getCategoryId).orElse(null);
         Long mainRegionId= Optional.ofNullable(a.getMainRegion()).map(Region::getRegionId).orElse(null);
 
         // 프로젝트마다 필드명이 다를 수 있어요.
@@ -344,7 +344,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Transactional
     public Page<AccommodationListDTO> findByManagerEmail(String email, Pageable pageable) {
-        Long companyId = companyRepository.findByEmail(email)
+        Integer companyId = companyRepository.findByEmail(email)
                 .map(Company::getCompanyId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 이메일로 등록된 없체가 없습니다." + email));
 
@@ -431,7 +431,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public Page<AccommodationListDTO> search(String q, Long categoryId, Long mainRegionId, Pageable pageable) {
+    public Page<AccommodationListDTO> search(String q, Integer categoryId, Integer mainRegionId, Pageable pageable) {
         return accommodationRepository.search(q, categoryId, mainRegionId, pageable);
     }
 
@@ -448,7 +448,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Override
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public Page<AccommodationListDTO> findByCompanyId(Long companyId, Pageable pageable) {
+    public Page<AccommodationListDTO> findByCompanyId(Integer companyId, Pageable pageable) {
         Page<AccommodationListDTO> page = accommodationRepository.findListByCompanyId(companyId, pageable);
 
         // 페이지 내용이 비어있으면 바로 반환
@@ -482,7 +482,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public Page<AccommodationListDTO> findByCategoryIdAndStatus(Long companyId, String status, Pageable pageable) {
+    public Page<AccommodationListDTO> findByCategoryIdAndStatus(Integer companyId, String status, Pageable pageable) {
         return accommodationRepository.findByCompany_CompanyIdAndStatus(companyId, status, pageable)
                 .map(this::toListDTOWithThumbnail);
     }

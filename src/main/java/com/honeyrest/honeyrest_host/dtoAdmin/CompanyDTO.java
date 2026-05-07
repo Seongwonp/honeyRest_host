@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CompanyDTO {
-    private Long companyId; // 업체 고유 식별자
+    private Integer companyId; // 업체 고유 식별자
 
 
     @NotBlank(message = "업체명은 필수입니다.")

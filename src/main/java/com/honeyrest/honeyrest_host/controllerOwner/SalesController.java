@@ -93,7 +93,7 @@ public class SalesController {
 
     @GetMapping("/sales/day/company/{companyId}")
     public String companyDailySales(
-            @PathVariable Long companyId,
+            @PathVariable Integer companyId,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             // 추가: 검색 조건 파라미터 받기
@@ -127,7 +127,7 @@ public class SalesController {
 
     @GetMapping("/sales/month/company/{companyId}")
     public String companyMonthSales(
-            @PathVariable Long companyId,
+            @PathVariable Integer companyId,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             // 추가: 검색 조건 파라미터 받기
@@ -167,7 +167,7 @@ public class SalesController {
             // 추가: 검색 조건 파라미터 받기
             Model model) {
 
-        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+        Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
         if (startDate == null || endDate == null) {
             LocalDate now = LocalDate.now();
             startDate = now.withDayOfMonth(1);
@@ -198,7 +198,7 @@ public class SalesController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             // 추가: 검색 조건 파라미터 받기
             Model model){
-        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+        Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
 
         if (startDate == null || endDate == null) {
             // 올해 전체: 1월 1일 ~ 12월 31일

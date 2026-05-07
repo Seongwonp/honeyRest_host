@@ -14,7 +14,7 @@ public interface InquiryService {
 
     Page<InquiryDTO> listByAccommodation(Long accommodationId, Pageable pageable);
 
-    Page<InquiryDTO> listByCompany(Long companyId, String q, Boolean replied, Pageable pageable);
+    Page<InquiryDTO> listByCompany(Integer companyId, String q, Boolean replied, Pageable pageable);
 
     /** 관리자 답변 등록/수정 → isReplied 자동 갱신 */
     InquiryDTO reply(Long inquiryId, String replyText);
@@ -24,5 +24,5 @@ public interface InquiryService {
     void delete(Long inquiryId);
 
     @Transactional(readOnly = true)
-    Page<InquiryDTO> listByCompany(Long companyId, Long accId, String q, Boolean replied, Pageable pageable);
+    Page<InquiryDTO> listByCompany(Integer companyId, Long accId, String q, Boolean replied, Pageable pageable);
 }

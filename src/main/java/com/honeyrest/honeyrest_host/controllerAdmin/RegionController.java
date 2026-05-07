@@ -26,7 +26,7 @@ public class RegionController {
     @Operation(summary = "하위 지역 조회")
     // 하위 지역 조회: parentId 기준
     @GetMapping("/{parentId}/children")
-    public List<RegionDTO> children(@PathVariable Long parentId){
+    public List<RegionDTO> children(@PathVariable Integer parentId){
         return regionRepository.findByParentId(parentId).stream()
                 .map(RegionDTO::of).toList();
     }

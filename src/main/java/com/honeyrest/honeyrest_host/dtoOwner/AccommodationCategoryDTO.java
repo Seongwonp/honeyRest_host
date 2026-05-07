@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 
 public class AccommodationCategoryDTO {
-    private Long categoryId; // 카테고리 고유 식별자
+    private Integer categoryId; // 카테고리 고유 식별자
     private String name; // 카테고리명
     private String iconUrl; // 카테고리 아이콘 이미지 경로
     private Integer sortOrder; // 정렬 순서

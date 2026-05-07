@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class CompanyDTO {
-    private Long companyId;          // 업체 고유 식별자 (PK)
+    private Integer companyId;          // 업체 고유 식별자 (PK)
     private String name;             // 업체명
     private String businessNumber;   // 사업자 등록번호
     private String ownerName;        // 대표자명

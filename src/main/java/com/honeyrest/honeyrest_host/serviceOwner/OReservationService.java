@@ -113,7 +113,7 @@ public class OReservationService {
                 .stream().map(this::toDTO).toList();
     }
 
-    public List<ReservationDTO> getReservationsByCompanyId(Long companyId) {
+    public List<ReservationDTO> getReservationsByCompanyId(Integer companyId) {
         return reservationRepository.findReservationsByAccommodation_Company_CompanyId(companyId)
                 .stream().map(this::toDTO).toList();
     }
@@ -173,7 +173,7 @@ public class OReservationService {
         return calendarMap;
     }
 
-    public PageResponseDTO<ReservationDTO> getReservationsByCompanyIdWithPageable(Long companyId, PageRequestDTO pageRequestDTO) {
+    public PageResponseDTO<ReservationDTO> getReservationsByCompanyIdWithPageable(Integer companyId, PageRequestDTO pageRequestDTO) {
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
                 pageRequestDTO.getSize(), Sort.by("reservationId").descending());
         Page<Reservation> page;
@@ -200,7 +200,7 @@ public class OReservationService {
                 .build();
     }
 
-    public PageResponseDTO<ReservationDTO> getCancelRequestReservationsByCompanyIdWithPageable(Long companyId, PageRequestDTO pageRequestDTO) {
+    public PageResponseDTO<ReservationDTO> getCancelRequestReservationsByCompanyIdWithPageable(Integer companyId, PageRequestDTO pageRequestDTO) {
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
                 pageRequestDTO.getSize(), Sort.by("reservationId").descending());
         Page<Reservation> page;

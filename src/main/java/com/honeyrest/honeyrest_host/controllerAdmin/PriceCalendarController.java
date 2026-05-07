@@ -47,10 +47,10 @@ public class PriceCalendarController {
      * companyId 없이 들어오면 로그인 사용자 기준으로 채워서 리다이렉트
      */
     @GetMapping("/page")
-    public String pageWithoutCompanyId(@RequestParam(required = false) Long companyId,
+    public String pageWithoutCompanyId(@RequestParam(required = false) Integer companyId,
                                        @RequestParam(required = false) String ym) {
         if (companyId == null) {
-            companyId = companyService.getCompanyIdByOfCurrentUser();
+            companyId = companyService.getCompanyIdByOfCurrentUser().intValue();
         }
         // ym 없으면 현재 월로
         String resolvedYm = (ym != null && !ym.isBlank()) ? ym : YearMonth.now().toString();
@@ -61,7 +61,7 @@ public class PriceCalendarController {
      * 월 캘린더 페이지 (companyId 필수 버전)
      */
     @GetMapping(value = "/page", params = "companyId")
-    public String page(@RequestParam Long companyId,
+    public String page(@RequestParam Integer companyId,
                        @RequestParam(required = false) Long accommodationId,
                        @RequestParam(required = false) String roomId,
                        @RequestParam(required = false) String ym,
@@ -110,7 +110,7 @@ public class PriceCalendarController {
      * 단건 (페이지 내 인라인 폼용)
      */
     @PostMapping("/upsert")
-    public String upsert(@RequestParam Long companyId,
+    public String upsert(@RequestParam Integer companyId,
                          @RequestParam(required = false) Long accommodationId,
                          @RequestParam Long roomId,
                          @RequestParam String yearMonth,
@@ -140,7 +140,7 @@ public class PriceCalendarController {
      * 벌크 업서트 (textarea JSON 전송용)
      */
     @PostMapping("/bulk-upsert")
-    public String bulkUpsert(@RequestParam Long companyId,
+    public String bulkUpsert(@RequestParam Integer companyId,
                              @RequestParam(required = false) Long accommodationId,
                              @RequestParam Long roomId,
                              @RequestParam String ym,
@@ -221,7 +221,7 @@ public class PriceCalendarController {
 
     @GetMapping("/daily-overview")
     @ResponseBody   // JSON 응답
-    public List<DailyOverviewDTO> getDailyOverview(@RequestParam Long companyId,
+    public List<DailyOverviewDTO> getDailyOverview(@RequestParam Integer companyId,
                                                    @RequestParam(required = false) Long accommodationId,
                                                    @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
                                                    @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
@@ -232,7 +232,7 @@ public class PriceCalendarController {
     // 5) 그리드 셀 데이터 (Grid Cells)
     @GetMapping("/grid-cells")
     @ResponseBody   // JSON 응답
-    public List<GridCellDTO> getGridCells(@RequestParam Long companyId,
+    public List<GridCellDTO> getGridCells(@RequestParam Integer companyId,
                                           @RequestParam(required = false) Long accommodationId,
                                           @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
                                           @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
@@ -241,7 +241,7 @@ public class PriceCalendarController {
 
     @GetMapping("/daily-revenue")
     @ResponseBody
-    public Map<LocalDate, BigDecimal> getDailyRevenue(@RequestParam Long companyId,
+    public Map<LocalDate, BigDecimal> getDailyRevenue(@RequestParam Integer companyId,
                                                       @RequestParam(required = false) Long accommodationId,
                                                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
                                                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
@@ -250,7 +250,7 @@ public class PriceCalendarController {
     @GetMapping("/daily-revenue/checkin")
     @ResponseBody
     public Map<LocalDate, BigDecimal> getDailyRevenueByCheckin(
-            @RequestParam Long companyId,
+            @RequestParam Integer companyId,
             @RequestParam(required = false) Long accommodationId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end

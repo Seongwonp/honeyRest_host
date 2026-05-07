@@ -102,7 +102,7 @@ public class OSalesService {
         return monthlySalesList;
     }
 
-    public List<DaySalesDTO> getCompanyDaySales(Long companyId, LocalDate startDate, LocalDate endDate) {
+    public List<DaySalesDTO> getCompanyDaySales(Integer companyId, LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByCompanyId(companyId)
                 .stream()
                 .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
@@ -144,7 +144,7 @@ public class OSalesService {
         return dailySalesList;
     }
 
-    public List<MonthSalesDTO> getCompanyMonthSales(Long companyId,LocalDate startDate, LocalDate endDate) {
+    public List<MonthSalesDTO> getCompanyMonthSales(Integer companyId,LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByCompanyId(companyId)
                 .stream()
                 .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))

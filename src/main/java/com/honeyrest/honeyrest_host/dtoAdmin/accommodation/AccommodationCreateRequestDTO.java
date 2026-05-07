@@ -22,9 +22,9 @@ public class AccommodationCreateRequestDTO {
 
     // 연관키 (필수)
     @NotNull
-    private Long companyId;
+    private Integer companyId;
     @NotNull
-    private Long categoryId;
+    private Integer categoryId;
     @NotNull
     private Long mainRegionId;
     @NotNull

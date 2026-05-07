@@ -72,7 +72,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     @Transactional(readOnly = true)
-    public CompanyDTO getById(Long id) {
+    public CompanyDTO getById(Integer id) {
         Company e = companyRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("업체가 존재하지 않습니다."));
         return toDTO(e);
@@ -85,7 +85,7 @@ public class CompanyServiceImpl implements CompanyService {
 
 
     @Override
-    public CompanyDTO update(Long id, CompanyDTO dto) {
+    public CompanyDTO update(Integer id, CompanyDTO dto) {
         Company cur = companyRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("업체가 존재하지 않습니다."));
 
@@ -106,7 +106,7 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public void delete(Long id) {
+    public void delete(Integer id) {
         if (!companyRepository.existsById(id)) {
             throw new EntityNotFoundException("업체가 존재하지 않습니다.");
         }

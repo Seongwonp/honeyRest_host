@@ -19,8 +19,8 @@ import java.util.List;
 @Builder
 public class AccommodationDTO {
     private Long AccommodationId;
-    private Long companyId;
-    private Long categoryId;
+    private Integer companyId;
+    private Integer categoryId;
     private Long mainRegionId;
     private Long subRegionId;
     private String name;

@@ -11,7 +11,7 @@ public interface RegionService {
     List<RegionDTO> listMainRegions();                 // level=1
 
     // 부모지역의 하위(소지역) 전체
-    List<RegionDTO> listSubRegions(Long parentId);     // 하위 지역
+    List<RegionDTO> listSubRegions(Integer parentId);     // 하위 지역
 
-    RegionDTO get(Long regionId);               // ★ 단건 조회 추가
+    RegionDTO get(Integer regionId);               // ★ 단건 조회 추가
 }

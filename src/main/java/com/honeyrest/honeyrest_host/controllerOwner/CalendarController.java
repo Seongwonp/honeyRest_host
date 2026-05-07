@@ -61,7 +61,7 @@ public class CalendarController {
             startDate = LocalDate.now().withDayOfMonth(1);
             endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
         }
-        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+        Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
 
         List<RoomDTO> roomList;
         // 해당 숙소의 방 리스트
@@ -114,7 +114,7 @@ public class CalendarController {
     }
 
     @GetMapping("/calendar/company/{companyId}/calendar")
-    public String roomCompanyCalendar(@PathVariable Long companyId,
+    public String roomCompanyCalendar(@PathVariable Integer companyId,
                                @RequestParam(required = false) Long accommodationId,
                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,

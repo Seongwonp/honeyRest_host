@@ -35,7 +35,7 @@ public class ReservationController {
             @PathVariable Long accommodationId,
             @ModelAttribute PageRequestDTO pageRequestDTO,
             Model model) {
-        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+        Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
 
         PageResponseDTO<ReservationDTO> reservationPage;
 
@@ -63,7 +63,7 @@ public class ReservationController {
 
     @GetMapping({ "/reservation/list","/reservation/company/{companyId}"})
     public String companyReservations(
-            @PathVariable(required = false) Long companyId,
+            @PathVariable(required = false) Integer companyId,
             @RequestParam(required = false) Long accommodationId,
             @ModelAttribute PageRequestDTO pageRequestDTO,
             Model model) {
@@ -121,7 +121,7 @@ public class ReservationController {
 
     @GetMapping("/reservation/room/{roomId}")
     public String roomReservations(@PathVariable Long roomId,
-                                   @RequestParam(required = false) Long companyId,
+                                   @RequestParam(required = false) Integer companyId,
                                    @RequestParam(required = false) Long accommodationId,
                                    @ModelAttribute PageRequestDTO pageRequestDTO,
                                    Model model){

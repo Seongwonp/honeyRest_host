@@ -12,7 +12,7 @@ import java.util.List;
 public interface OAccommodationService {
     List<AccommodationDTO> getAllAccommodations();
 
-    List<AccommodationDTO> getAccommodationsByCompanyId(Long companyId);
+    List<AccommodationDTO> getAccommodationsByCompanyId(Integer companyId);
 
     AccommodationDTO getByAccommodationId(Long accommodationId);
 
@@ -24,9 +24,9 @@ public interface OAccommodationService {
 
     void registerAccommodationImage(AccommodationImageDTO dto) throws JsonProcessingException;
 
-    PageResponseDTO<AccommodationDTO> getAccommodationsWithPageable(Long companyId, PageRequestDTO pageRequestDTO);
+    PageResponseDTO<AccommodationDTO> getAccommodationsWithPageable(Integer companyId, PageRequestDTO pageRequestDTO);
 
-    PageResponseDTO<AccommodationDTO> getInActiveAccommodationsWithPageable(Long companyId, PageRequestDTO pageRequestDTO);
+    PageResponseDTO<AccommodationDTO> getInActiveAccommodationsWithPageable(Integer companyId, PageRequestDTO pageRequestDTO);
 
     List<AccommodationImageDTO> getImagesByAccommodationId(Long id);
 
@@ -34,7 +34,7 @@ public interface OAccommodationService {
 
     void updateSubImages(Long accommodationId, List<MultipartFile> images) throws Exception;
 
-    List<AccommodationDTO> searchByNameContaining(Long companyId, String keyword);
+    List<AccommodationDTO> searchByNameContaining(Integer companyId, String keyword);
 
     List<AccommodationDTO> searchByNameContaining(String keyword);
 

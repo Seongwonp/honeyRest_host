@@ -57,7 +57,7 @@ public class RoomController {
 
     @GetMapping("/room/inActive/list")
     public String inActiveList(@ModelAttribute PageRequestDTO pageRequestDTO,
-                               @RequestParam(required = false) Long companyId,
+                               @RequestParam(required = false) Integer companyId,
                                Model model) {
 
         return "owner/room/inActive";
@@ -67,7 +67,7 @@ public class RoomController {
     public String createRoom(@RequestParam Long accommodationId, Model model) {
         model.addAttribute("accommodationId", accommodationId);
         if (accommodationId != 0) {
-            Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+            Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
             model.addAttribute("accommodations", accommodationService.getAccommodationsByCompanyId(companyId));
         } else {
             model.addAttribute("accommodations", accommodationService.getAllAccommodations());

@@ -58,7 +58,7 @@ public class RoomController {
                 : authentication.getName());
 
         // 2) 이메일 -> companyId
-        Long companyId = companyService.getByUserEmail(email).getCompanyId();
+        Integer companyId = companyService.getByUserEmail(email).getCompanyId();
 
         // 3) '내' 회사 객실만 페이징 조회
         Page<RoomDTO> page = roomService.findPageByCompany(companyId, null, pageable);
@@ -102,7 +102,7 @@ public class RoomController {
                 ? ud.getUsername()
                 : authentication.getName();
 
-        Long companyId = companyRepository.findByEmail(email)
+        Integer companyId = companyRepository.findByEmail(email)
                 .map(Company::getCompanyId)
                 .orElseThrow(() -> new UsernameNotFoundException("업체 관리자 이메일에 해당하는 회사가 없습니다."));
 
@@ -141,7 +141,7 @@ public class RoomController {
 
         AdminLoginRequestDTO admin = userService.getUserByEmail(email);
         CompanyDTO companyDTO = companyService.getByUserEmail(admin.getEmail());
-        Long companyId = companyDTO.getCompanyId();
+        Integer companyId = companyDTO.getCompanyId();
 
         RoomDTO form = new RoomDTO();
         form.setAccommodationId(accommodationId);
