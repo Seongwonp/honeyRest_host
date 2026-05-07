@@ -16,6 +16,7 @@ import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
 import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -47,7 +49,7 @@ public class ORoomServiceImpl implements ORoomService {
 
             return objectMapper.writeValueAsString(amenitiesList);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.warn("JSON parse error", e);
             return "[]"; // 실패 시 빈 배열 반환
         }
     }
@@ -80,7 +82,7 @@ public class ORoomServiceImpl implements ORoomService {
             // JSON 배열 문자열을 List<String>으로 역직렬화
             return objectMapper.readValue(jsonInput, new TypeReference<List<String>>() {});
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.warn("JSON parse error", e);
             return Collections.emptyList(); // 실패 시 빈 리스트 반환
         }
     }

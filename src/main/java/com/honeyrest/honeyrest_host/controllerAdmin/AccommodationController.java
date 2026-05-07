@@ -221,10 +221,13 @@ public class AccommodationController {
      * 상세 보기
      */
     @GetMapping("/detail/{id}")
-    public String detail(@PathVariable Long id, Model model) {
-        // DTO에 name, categoryName, regionName, minPrice, status, address, description, amenities, images, tags ...을 채워서 반환
+    public String detail(@PathVariable Long id, Model model, Authentication authentication) {
         AccommodationCreateRequestDTO acc = accommodationService.getById(id);
         if (acc == null) {
+            return "redirect:/admin/accommodations/list";
+        }
+        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
+        if (myCompany == null || !myCompany.getCompanyId().equals(acc.getCompanyId())) {
             return "redirect:/admin/accommodations/list";
         }
 
@@ -336,8 +339,14 @@ public class AccommodationController {
      */
     @PostMapping("/{id}/request")
     public String requestApproval(@PathVariable Long id,
-                                  @RequestParam(required = false, defaultValue = "PENDING") String to) {
-        accommodationService.changeStatus(id, to); // "PENDING"
+                                  @RequestParam(required = false, defaultValue = "PENDING") String to,
+                                  Authentication authentication) {
+        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
+        AccommodationCreateRequestDTO acc = accommodationService.getById(id);
+        if (acc == null || myCompany == null || !myCompany.getCompanyId().equals(acc.getCompanyId())) {
+            return "redirect:/admin/accommodations/list";
+        }
+        accommodationService.changeStatus(id, to);
         return "redirect:/admin/accommodations/list?status=PENDING";
     }
 
@@ -367,9 +376,13 @@ public class AccommodationController {
      * 수정 폼 (GET)
      */
     @GetMapping("/edit/{id}")
-    public String editForm(@PathVariable Long id, Model model) {
-        // 기본 dto 조회
+    public String editForm(@PathVariable Long id, Model model, Authentication authentication) {
         AccommodationCreateRequestDTO dto = accommodationService.getById(id);
+        if (dto == null) return "redirect:/admin/accommodations/list";
+        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
+        if (myCompany == null || !myCompany.getCompanyId().equals(dto.getCompanyId())) {
+            return "redirect:/admin/accommodations/list";
+        }
         model.addAttribute("dto", dto);
 
 
@@ -434,11 +447,17 @@ public class AccommodationController {
                              BindingResult binding,
                              @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
                              @RequestParam(value = "subImages", required = false) List<MultipartFile> subImages,
-                             // 삭제 토글/리스트 (UI에서 hidden으로 전달)
                              @RequestParam(value = "deleteThumbnail", defaultValue = "false") boolean deleteThumbnail,
                              @RequestParam(value = "deleteSubImageIds", required = false) List<Long> deleteSubImageIds,
                              RedirectAttributes ra,
-                             Model model) {
+                             Model model,
+                             Authentication authentication) {
+
+        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
+        AccommodationCreateRequestDTO existing = accommodationService.getById(id);
+        if (existing == null || myCompany == null || !myCompany.getCompanyId().equals(existing.getCompanyId())) {
+            return "redirect:/admin/accommodations/list";
+        }
 
         if (binding.hasErrors()) {
             binding.getAllErrors().forEach(err -> log.error("bind err: {}", err));
@@ -536,7 +555,12 @@ public class AccommodationController {
     }
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, RedirectAttributes ra) {
+    public String delete(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
+        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
+        AccommodationCreateRequestDTO acc = accommodationService.getById(id);
+        if (acc == null || myCompany == null || !myCompany.getCompanyId().equals(acc.getCompanyId())) {
+            return "redirect:/admin/accommodations/list";
+        }
         try {
             accommodationService.delete(id);
             ra.addAttribute("success", "숙소가 삭제되었습니다.");

@@ -3,7 +3,7 @@ package com.honeyrest.honeyrest_host.config;
 import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import com.honeyrest.honeyrest_host.security.JwtAuthFilter;
 import com.honeyrest.honeyrest_host.serviceOwner.OAdminUserDetailsService;
-import jakarta.servlet.http.Cookie;
+import org.springframework.http.ResponseCookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -99,12 +99,14 @@ public class SecurityConfig {
                             user.getRole()   // ex) "COMPANY_ADMIN" or "SUPER_ADMIN"
                     );
 
-                    // 2-3) 쿠키에 심기 (필요 시 Secure=true/MaxAge 설정)
-                    Cookie c = new Cookie("ACCESS_TOKEN", token);
-                    c.setHttpOnly(true);
-                    c.setPath("/");
-                    c.setSecure("https".equalsIgnoreCase(req.getScheme()));
-                    res.addCookie(c);
+                    // 2-3) 쿠키에 심기
+                    ResponseCookie cookie = ResponseCookie.from("ACCESS_TOKEN", token)
+                            .httpOnly(true)
+                            .path("/")
+                            .secure("https".equalsIgnoreCase(req.getScheme()))
+                            .sameSite("Lax")
+                            .build();
+                    res.addHeader("Set-Cookie", cookie.toString());
 
                     // 2-4) SecurityContext 갱신 (STATELESS라도 이후 필터에서 참조 가능)
                     var springAuth = new UsernamePasswordAuthenticationToken(

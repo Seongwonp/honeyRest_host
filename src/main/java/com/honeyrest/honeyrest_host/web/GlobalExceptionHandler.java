@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String handleEntityNotFound(EntityNotFoundException e, Model model) {
         log.warn("EntityNotFound: {}", e.getMessage());
-        model.addAttribute("message", "데이터를 찾을 수 없습니다: " + e.getMessage());
+        model.addAttribute("message", "데이터를 찾을 수 없습니다.");
         return "error/404";
     }
 
@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
     public String handleBadRequest(IllegalArgumentException e, Model model, HttpServletRequest request) {
         log.warn("BadRequest: {}", e.getMessage());
         errorLogService.saveAsync(e, request.getRequestURI(), request.getMethod());
-        model.addAttribute("message", "잘못된 요청입니다: " + e.getMessage());
+        model.addAttribute("message", "잘못된 요청입니다.");
         return "error/500";
     }
 

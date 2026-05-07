@@ -218,8 +218,9 @@ public class RoomController {
     /* ========== 수정 ========== */
     // 수정 폼
     @GetMapping("/edit/{roomId}")
-    public String editForm(@PathVariable Long roomId, Model model) {
-        RoomDTO form = roomService.getByRoomId(roomId); // 반드시 null 아니게
+    public String editForm(@PathVariable Long roomId, Model model, Authentication authentication) {
+        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
+        RoomDTO form = roomService.getByRoomId(roomId);
 
         // 숙소의 체크인/체크아웃을 표시용으로 세팅
         if (form.getAccommodationId() != null) {
@@ -240,7 +241,9 @@ public class RoomController {
                          @Valid @ModelAttribute("form") RoomDTO form,
                          BindingResult binding,
                          Model model,
-                         RedirectAttributes ra) throws Exception {
+                         RedirectAttributes ra,
+                         Authentication authentication) throws Exception {
+        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
 //        log.info("[ROOM UPDATE] id={}, checkIn={}, checkOut={}",
 //                roomId, form.getdCheckInTime(), form.getCheckOutTime());
         if (binding.hasErrors()) {
@@ -302,7 +305,9 @@ public class RoomController {
     @PostMapping("/{roomId}/delete")
     public String delete(@PathVariable Long roomId,
                          @RequestParam("accommodationId") Long accommodationId,
-                         RedirectAttributes ra) {
+                         RedirectAttributes ra,
+                         Authentication authentication) {
+        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
         try {
             roomService.removeRoom(roomId);
             ra.addFlashAttribute("success", "객실이 삭제되었습니다.");
@@ -314,7 +319,8 @@ public class RoomController {
     }
 
     @GetMapping("/detail/{roomId}")
-    public String roomDetail(@PathVariable Long roomId, Model model) {
+    public String roomDetail(@PathVariable Long roomId, Model model, Authentication authentication) {
+        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
         RoomDTO room = roomService.findDetailById(roomId);
         if (room == null) {
             return "redirect:/admin/rooms/list_all";
@@ -329,7 +335,13 @@ public class RoomController {
         return "admin/rooms/detail";
     }
 
-    /* ====== 아래 유틸은 컨트롤러 private 메서드로 두면 편해요 ====== */
+    private boolean isRoomOwner(Long roomId, Authentication authentication) {
+        RoomDTO room = roomService.getByRoomId(roomId);
+        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
+        if (myCompany == null || room.getAccommodationId() == null) return false;
+        var acc = accommodationService.getById(room.getAccommodationId());
+        return acc != null && myCompany.getCompanyId().equals(acc.getCompanyId());
+    }
 
     // JSON 배열 문자열(["TV","Wi-Fi"]) 또는 CSV("TV, Wi-Fi")를 List<String>으로 변환
     private List<String> toList(String jsonOrCsv) {
@@ -371,7 +383,9 @@ public class RoomController {
     // 상태변화
     @PostMapping("/{roomId}/toggle")
     public String toggle(@PathVariable Long roomId,
-                         RedirectAttributes ra) {
+                         RedirectAttributes ra,
+                         Authentication authentication) {
+        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
         roomService.toggleStatus(roomId);   // ACTIVE ↔ INACTIVE
         ra.addFlashAttribute("msg", "상태가 변경되었습니다.");
         return "redirect:/admin/rooms/list_all";

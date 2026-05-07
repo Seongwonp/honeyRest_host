@@ -13,6 +13,7 @@ import com.honeyrest.honeyrest_host.repositoryOwner.OCompanyRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -37,7 +39,7 @@ public class OCompanyService {
             // JSON 배열 문자열을 List<String>으로 역직렬화
             return objectMapper.readValue(jsonInput, new TypeReference<List<String>>() {});
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.warn("JSON parse error", e);
             return Collections.emptyList(); // 실패 시 빈 리스트 반환
         }
     }
@@ -72,7 +74,7 @@ public class OCompanyService {
 
             return objectMapper.writeValueAsString(amenitiesList);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.warn("JSON parse error", e);
             return "[]"; // 실패 시 빈 배열 반환
         }
     }
