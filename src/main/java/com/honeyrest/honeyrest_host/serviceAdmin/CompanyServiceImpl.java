@@ -120,20 +120,19 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public Integer getCompanyIdByUserEmail(String email) {
-        return companyRepository.findCompanyIdByUserEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("업체 아아디인 이메일을 찾을 수 없습니다" +
-                                                                "."));
+        return companyRepository.findCompanyIdByUserEmail(email).orElse(null);
     }
 
     @Override
     public Integer getCompanyIdByOfCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) throw new IllegalArgumentException("사용자권한없음.");
-        return getCompanyIdByUserEmail(auth.getName()); // 로그인 username(email)로 회사 ID 조회
+        if (auth == null) return null;
+        return getCompanyIdByUserEmail(auth.getName());
     }
 
     @Override
     public Integer getCompanyIdByAccommodationId(Long accommodationId) {
+        if (accommodationId == null) return null;
         return accommodationRepository.findCompanyIdByAccommodationId(accommodationId);
     }
 

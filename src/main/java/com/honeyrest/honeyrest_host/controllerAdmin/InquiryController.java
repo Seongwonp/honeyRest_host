@@ -49,17 +49,17 @@ public class InquiryController {
 
     }
     // 관리자모드에서 상세보기
-    @PostMapping("/detail/{id}")
-    public String detail(@PathVariable Long inquiryId, Model model) {
+    @GetMapping("/detail/{id}")
+    public String detail(@PathVariable("id") Long inquiryId, Model model) {
         InquiryDTO dto = inquiryService.get(inquiryId);
+        if (dto == null) return "redirect:/admin/inquiries/list";
         model.addAttribute("inquiry", dto);
-
-        return "admin/inquiries/l";
+        return "admin/inquiries/detail";
     }
 
     // 관리자 - 답글 등록/수정
     @PostMapping("/{id}/reply")
-    public String reply(@PathVariable Long inquiryId,
+    public String reply(@PathVariable("id") Long inquiryId,
                         @RequestParam("relpyText") String relpyText,
                         RedirectAttributes ra,
                         @RequestParam(required = false) Long accommodationId,
@@ -82,10 +82,10 @@ public class InquiryController {
 
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long inquiryId, RedirectAttributes ra) {
+    public String delete(@PathVariable("id") Long inquiryId, RedirectAttributes ra) {
         inquiryService.delete(inquiryId);
         ra.addFlashAttribute("message", "문의가 삭제되었습니다.");
-        return "redirect:/admin/inquiries/" + inquiryId;
+        return "redirect:/admin/inquiries/list";
     }
 
 

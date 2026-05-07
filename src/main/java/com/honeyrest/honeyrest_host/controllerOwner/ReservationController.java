@@ -164,15 +164,31 @@ public class ReservationController {
     }
 
     @PostMapping("/reservation/create")
-    public String createReservation(@ModelAttribute ReservationDTO form) {
+    public String createReservation(@ModelAttribute ReservationDTO form,
+                                    org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
         UserDTO user = userService.getUserByNameAndPhone(form.getGuestName(), form.getGuestPhone());
-        AccommodationDTO accommodation = accommodationService.getByName(form.getAccommodationName());
+        if (user == null) {
+            ra.addFlashAttribute("error", "해당 고객 정보를 찾을 수 없습니다.");
+            return "redirect:/owner/reservation/create";
+        }
 
-        RoomDTO room = roomService.getByAccommodationIdAndId(accommodation.getAccommodationId(), Long.valueOf(form.getRoomName()));
+        AccommodationDTO accommodation = accommodationService.getByName(form.getAccommodationName());
+        if (accommodation == null) {
+            ra.addFlashAttribute("error", "숙소 정보를 찾을 수 없습니다.");
+            return "redirect:/owner/reservation/create";
+        }
+
+        RoomDTO room = roomService.getByAccommodationIdAndId(
+                accommodation.getAccommodationId(), Long.valueOf(form.getRoomName()));
+        if (room == null) {
+            ra.addFlashAttribute("error", "객실 정보를 찾을 수 없습니다.");
+            return "redirect:/owner/reservation/create";
+        }
 
         // 유효성 검사
         if (form.getGuestCount() > room.getMaxOccupancy()) {
-            throw new IllegalArgumentException("투숙 인원이 초과되었습니다.");
+            ra.addFlashAttribute("error", "투숙 인원이 최대 수용 인원을 초과합니다.");
+            return "redirect:/owner/reservation/create";
         }
 
         ReservationDTO reservation = ReservationDTO.builder()

@@ -52,6 +52,7 @@ public class PriceCalendarController {
         if (companyId == null) {
             companyId = companyService.getCompanyIdByOfCurrentUser();
         }
+        if (companyId == null) return "redirect:/admin/dashboard";
         // ym 없으면 현재 월로
         String resolvedYm = (ym != null && !ym.isBlank()) ? ym : YearMonth.now().toString();
         return "redirect:/admin/price/page?companyId=" + companyId + "&ym=" + resolvedYm;
