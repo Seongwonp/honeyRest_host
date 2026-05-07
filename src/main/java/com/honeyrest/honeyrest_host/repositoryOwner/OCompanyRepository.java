@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface OCompanyRepository extends JpaRepository<Company,Long> {
+public interface OCompanyRepository extends JpaRepository<Company,Integer> {
     List<Company> findByName(String keyword);
 }
