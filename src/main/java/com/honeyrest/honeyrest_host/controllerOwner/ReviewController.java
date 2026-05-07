@@ -72,11 +72,11 @@ public class ReviewController {
 
         if (companyId != null) {
             // 특정 숙소 리뷰 조회
-            reviewPage = reviewService.getReviewsByAccommodationIdWithPageable(companyId, pageRequestDTO);
+            reviewPage = reviewService.getReviewsByAccommodationIdWithPageable(companyId.longValue(), pageRequestDTO);
             model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
         } else {
             // 전체 리뷰 조회
-            reviewPage = reviewService.getReviewsByAccommodationIdWithPageable(companyId ,pageRequestDTO);
+            reviewPage = reviewService.getReviewsByAccommodationIdWithPageable((Long) null, pageRequestDTO);
         }
 
         // 모델에 데이터 추가

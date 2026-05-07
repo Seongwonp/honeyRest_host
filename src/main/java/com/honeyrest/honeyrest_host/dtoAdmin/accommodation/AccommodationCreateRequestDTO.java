@@ -26,9 +26,9 @@ public class AccommodationCreateRequestDTO {
     @NotNull
     private Integer categoryId;
     @NotNull
-    private Long mainRegionId;
+    private Integer mainRegionId;
     @NotNull
-    private Long subRegionId;
+    private Integer subRegionId;
 
     private Long accommodationId;
 

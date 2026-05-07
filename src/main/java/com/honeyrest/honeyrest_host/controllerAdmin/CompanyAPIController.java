@@ -35,19 +35,19 @@ public class CompanyAPIController {
 
     @Operation(summary = "업체 단건 조회")
     @GetMapping("/{id}")
-    public CompanyDTO get(@PathVariable Long id) {
+    public CompanyDTO get(@PathVariable Integer id) {
         return companyService.getById(id);
     }
 
     @Operation(summary = "업체 수정(전체/부분)")
     @PutMapping("/{id}")
-    public CompanyDTO update(@PathVariable Long id, @RequestBody CompanyDTO req) {
+    public CompanyDTO update(@PathVariable Integer id, @RequestBody CompanyDTO req) {
         return companyService.update(id, req);
     }
 
     @Operation(summary = "업체 삭제")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
         companyService.delete(id);
         return ResponseEntity.noContent().build();
     }

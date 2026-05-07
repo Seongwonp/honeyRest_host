@@ -16,7 +16,7 @@ public class ORegionService {
     private final ORegionRepository regionRepository;
     private final ModelMapper modelMapper;
 
-    public RegionDTO getRegion(Long id){
+    public RegionDTO getRegion(Integer id){
         return modelMapper.map(regionRepository.findById(id), RegionDTO.class);
     }
     public List<RegionDTO> getAllRegions(){

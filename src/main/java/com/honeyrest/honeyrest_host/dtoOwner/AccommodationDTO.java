@@ -21,8 +21,8 @@ public class AccommodationDTO {
     private Long AccommodationId;
     private Integer companyId;
     private Integer categoryId;
-    private Long mainRegionId;
-    private Long subRegionId;
+    private Integer mainRegionId;
+    private Integer subRegionId;
     private String name;
     private String address;
     private BigDecimal latitude;

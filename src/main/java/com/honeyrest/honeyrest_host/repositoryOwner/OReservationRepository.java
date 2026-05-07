@@ -13,7 +13,7 @@ import java.util.List;
 public interface OReservationRepository extends JpaRepository<Reservation, Long> {
     List<Reservation> findReservationsByAccommodation_AccommodationId(Long accommodationId);
 
-    List<Reservation> findReservationsByAccommodation_Company_CompanyId(Long CompanyId);
+    List<Reservation> findReservationsByAccommodation_Company_CompanyId(Integer CompanyId);
 
     @Query("SELECT r FROM Reservation r WHERE r.room.roomId = :roomId " +
             "AND (r.checkInDate <= :endDate AND r.checkOutDate >= :startDate)")
@@ -21,7 +21,7 @@ public interface OReservationRepository extends JpaRepository<Reservation, Long>
 
     Page<Reservation> findByAccommodation_AccommodationId(Long accommodationId, Pageable pageable);
 
-    Page<Reservation> findByAccommodation_Company_CompanyId(Long CompanyId, Pageable pageable);
+    Page<Reservation> findByAccommodation_Company_CompanyId(Integer CompanyId, Pageable pageable);
 
     Page<Reservation> findByRoom_RoomId(Long roomId, Pageable pageable);
 

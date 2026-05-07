@@ -19,8 +19,8 @@ public class AccommodationUpdateRequestDTO {
     // 수정은 부분 업데이트 허용 가정 → 전부 nullable
     private Integer companyId;
     private Integer categoryId;
-    private Long mainRegionId;
-    private Long subRegionId;
+    private Integer mainRegionId;
+    private Integer subRegionId;
 
     private String name;
     private String address;

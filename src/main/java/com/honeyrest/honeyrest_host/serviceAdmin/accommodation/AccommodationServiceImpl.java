@@ -228,11 +228,11 @@ public class AccommodationServiceImpl implements AccommodationService {
         // --- Region/Category/Company 등 ID 안전 추출 ---
         Integer companyId   = Optional.ofNullable(a.getCompany()).map(Company::getCompanyId).orElse(null);
         Integer categoryId  = Optional.ofNullable(a.getCategory()).map(AccommodationCategory::getCategoryId).orElse(null);
-        Long mainRegionId= Optional.ofNullable(a.getMainRegion()).map(Region::getRegionId).orElse(null);
+        Integer mainRegionId= Optional.ofNullable(a.getMainRegion()).map(Region::getRegionId).orElse(null);
 
         // 프로젝트마다 필드명이 다를 수 있어요.
         // 엔티티가 getSubRegion() (Region) 을 쓰면 아래처럼:
-        Long subRegionId = Optional.ofNullable(a.getSubRegion()).map(Region::getRegionId).orElse(null);
+        Integer subRegionId = Optional.ofNullable(a.getSubRegion()).map(Region::getRegionId).orElse(null);
         // 만약 엔티티가 getSubRegionId() (Region) 라면 윗줄 대신 이렇게:
         // Long subRegionId = Optional.ofNullable(a.getSubRegionId()).map(Region::getRegionId).orElse(null);
 

@@ -105,7 +105,7 @@ public class OCompanyService {
         companyRepository.save(toEntity(dto));
     }
 
-    public void removeCompany(Long id) {
+    public void removeCompany(Integer id) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Company not found"));
 
