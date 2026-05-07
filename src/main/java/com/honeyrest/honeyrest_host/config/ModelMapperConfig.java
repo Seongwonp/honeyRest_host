@@ -50,13 +50,13 @@ public class ModelMapperConfig {
             m.map(Accommodation::getThumbnail, AccommodationCreateRequestDTO::setThumbnail);
 
             // 연관 ID (null-safe)
-            m.<Long>map(src -> src.getCompany() == null ? null : src.getCompany().getCompanyId(),
+            m.<Integer>map(src -> src.getCompany() == null ? null : src.getCompany().getCompanyId(),
                     AccommodationCreateRequestDTO::setCompanyId);
-            m.<Long>map(src -> src.getCategory() == null ? null : src.getCategory().getCategoryId(),
+            m.<Integer>map(src -> src.getCategory() == null ? null : src.getCategory().getCategoryId(),
                     AccommodationCreateRequestDTO::setCategoryId);
-            m.<Long>map(src -> src.getMainRegion() == null ? null : src.getMainRegion().getRegionId(),
+            m.<Integer>map(src -> src.getMainRegion() == null ? null : src.getMainRegion().getRegionId(),
                     AccommodationCreateRequestDTO::setMainRegionId);
-            m.<Long>map(src -> src.getSubRegion() == null ? null : src.getSubRegion().getRegionId(),
+            m.<Integer>map(src -> src.getSubRegion() == null ? null : src.getSubRegion().getRegionId(),
                     AccommodationCreateRequestDTO::setSubRegionId);
 
             // amenities: String → JsonNode
