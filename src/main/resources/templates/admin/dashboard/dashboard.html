@@ -33,8 +33,8 @@
 <body>
 <th:block layout:fragment="content">
     <div class="page-heading">
-        <h3>숙소 관리자 대시보드</h3>
-        <p class="text-subtitle text-muted">관리자용 숙소 · 예약 · 매출 현황</p>
+        <h3 th:text="${companyName != null and !companyName.isEmpty()} ? ${companyName} + ' 대시보드' : '업주 대시보드'">업주 대시보드</h3>
+        <p class="text-subtitle text-muted">내 숙소 · 예약 · 매출 현황을 한눈에 확인하세요.</p>
     </div>
 
     <div class="page-content">

@@ -4,138 +4,156 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{owner/layout/base}">
 <head>
-    <title>업주 대시보드</title>
+    <title>총관리자 대시보드</title>
+    <th:block layout:fragment="head">
+        <style>
+            .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+            @media (max-width: 1199px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+            @media (max-width: 767px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+            .kpi-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--sh-sm); padding: 20px; display: flex; flex-direction: column; gap: 8px; transition: transform .15s; }
+            .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--sh); }
+            .kpi-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+            .kpi-icon.honey { background: var(--honey-soft); color: var(--honey-deeper); }
+            .kpi-icon.green { background: #E8F5E9; color: #2E7D32; }
+            .kpi-icon.blue  { background: #E3F2FD; color: #1565C0; }
+            .kpi-icon.purple{ background: #F3E8FF; color: #7C3AED; }
+            .kpi-icon.red   { background: #FFEBEE; color: #C62828; }
+            .kpi-label { font-size: .8rem; color: var(--muted); font-weight: 600; }
+            .kpi-value { font-size: 2rem; font-weight: 800; color: var(--ink); line-height: 1; }
+            .quick-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--sh-sm); padding: 20px; }
+            .quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+            @media (max-width: 767px) { .quick-grid { grid-template-columns: repeat(2, 1fr); } }
+            .quick-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px; border-radius: 12px; background: var(--honey-soft); border: 1px solid var(--honey-mid); color: var(--honey-deeper); font-weight: 700; font-size: .85rem; text-decoration: none; transition: box-shadow .15s; }
+            .quick-btn:hover { box-shadow: 0 4px 12px rgba(249,168,37,.3); color: var(--honey-deeper); }
+            .quick-btn i { font-size: 1.4rem; }
+            .admin-profile { background: #fff; border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--sh-sm); padding: 20px; display: flex; align-items: center; gap: 16px; }
+            .admin-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--honey-soft); color: var(--honey-deeper); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+            .badge-super { background: linear-gradient(135deg, #FFD54F, #F9A825); color: #1A1200; font-size: .72rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px; }
+        </style>
+    </th:block>
 </head>
-
 <body>
 <th:block layout:fragment="content">
 
-    <!-- 헤더 -->
     <div class="page-heading d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <div>
-            <h3 class="mb-1">업주 대시보드</h3>
-            <div class="subtext">내 숙소 현황을 한눈에 확인하세요.</div>
+            <h3 class="mb-1">총관리자 대시보드</h3>
+            <div class="subtext">HoneyRest 플랫폼 전체 현황을 한눈에 확인하세요.</div>
         </div>
+        <span class="badge-super">SUPER ADMIN</span>
     </div>
 
-    <!-- KPI 카드 -->
     <div class="page-content">
         <section class="section">
+
+            <!-- KPI 5종 -->
+            <div class="kpi-grid mb-4">
+
+                <div class="kpi-card">
+                    <div class="kpi-icon honey"><i class="bi bi-building"></i></div>
+                    <div class="kpi-label">등록 업체 수</div>
+                    <div class="kpi-value" th:text="${companyCount} ?: '0'">0</div>
+                    <a href="/owner/company/list" class="small fw-semibold" style="color:var(--honey-deeper);">관리 →</a>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon green"><i class="bi bi-house-door-fill"></i></div>
+                    <div class="kpi-label">전체 숙소 수</div>
+                    <div class="kpi-value" th:text="${accommodationCount} ?: '0'">0</div>
+                    <a href="/owner/accommodation/list" class="small fw-semibold" style="color:#2E7D32;">관리 →</a>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon blue"><i class="bi bi-door-open-fill"></i></div>
+                    <div class="kpi-label">전체 객실 수</div>
+                    <div class="kpi-value" th:text="${roomCount} ?: '0'">0</div>
+                    <a href="/owner/room/list" class="small fw-semibold" style="color:#1565C0;">관리 →</a>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon red"><i class="bi bi-calendar-check-fill"></i></div>
+                    <div class="kpi-label">활성 예약 건수</div>
+                    <div class="kpi-value" th:text="${reservationCount} ?: '0'">0</div>
+                    <a href="/owner/reservation/list" class="small fw-semibold" style="color:#C62828;">관리 →</a>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon purple"><i class="bi bi-people-fill"></i></div>
+                    <div class="kpi-label">전체 회원 수</div>
+                    <div class="kpi-value" th:text="${userCount} ?: '0'">0</div>
+                    <a href="/owner/user/list" class="small fw-semibold" style="color:#7C3AED;">관리 →</a>
+                </div>
+
+            </div>
+
+            <!-- 관리자 프로필 + 바로가기 -->
             <div class="row g-3 mb-4">
 
-                <div class="col-6 col-lg-3">
-                    <div class="card h-100">
-                        <div class="card-body px-4 py-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="kpi-icon honey">
-                                    <i class="bi bi-building"></i>
-                                </div>
-                                <div>
-                                    <div class="text-muted small fw-semibold">등록 업체 수</div>
-                                    <div class="fw-800 fs-4 lh-1 mt-1" th:text="${companyCount} ?: '0'">0</div>
-                                </div>
-                            </div>
+                <div class="col-12 col-lg-4">
+                    <div class="admin-profile h-100">
+                        <div class="admin-avatar"><i class="bi bi-shield-fill-check"></i></div>
+                        <div>
+                            <div class="fw-bold fs-5" th:text="${currentAdmin != null ? currentAdmin.name : '관리자'}">관리자</div>
+                            <div class="text-muted small" th:text="${currentAdmin != null ? currentAdmin.email : '-'}">-</div>
+                            <span class="badge-super mt-1 d-inline-block">SUPER_ADMIN</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-6 col-lg-3">
-                    <div class="card h-100">
-                        <div class="card-body px-4 py-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="kpi-icon green">
-                                    <i class="bi bi-house-door-fill"></i>
-                                </div>
-                                <div>
-                                    <div class="text-muted small fw-semibold">숙소 수</div>
-                                    <div class="fw-800 fs-4 lh-1 mt-1" th:text="${accommodationCount} ?: '0'">0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-6 col-lg-3">
-                    <div class="card h-100">
-                        <div class="card-body px-4 py-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="kpi-icon blue">
-                                    <i class="bi bi-door-open-fill"></i>
-                                </div>
-                                <div>
-                                    <div class="text-muted small fw-semibold">총 객실 수</div>
-                                    <div class="fw-800 fs-4 lh-1 mt-1" th:text="${roomCount} ?: '0'">0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-6 col-lg-3">
-                    <div class="card h-100">
-                        <div class="card-body px-4 py-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="kpi-icon red">
-                                    <i class="bi bi-calendar-check-fill"></i>
-                                </div>
-                                <div>
-                                    <div class="text-muted small fw-semibold">활성 예약</div>
-                                    <div class="fw-800 fs-4 lh-1 mt-1" th:text="${reservationCount} ?: '0'">0</div>
-                                </div>
-                            </div>
+                <div class="col-12 col-lg-8">
+                    <div class="quick-card h-100">
+                        <div class="fw-bold mb-1">빠른 메뉴</div>
+                        <div class="quick-grid">
+                            <a href="/owner/company/list" class="quick-btn">
+                                <i class="bi bi-building"></i>업체 관리
+                            </a>
+                            <a href="/owner/accommodation/list" class="quick-btn">
+                                <i class="bi bi-house-door"></i>숙소 관리
+                            </a>
+                            <a href="/owner/room/list" class="quick-btn">
+                                <i class="bi bi-door-open"></i>객실 관리
+                            </a>
+                            <a href="/owner/reservation/list" class="quick-btn">
+                                <i class="bi bi-journal-bookmark"></i>예약 관리
+                            </a>
+                            <a href="/owner/user/list" class="quick-btn">
+                                <i class="bi bi-people"></i>회원 관리
+                            </a>
+                            <a href="/owner/coupon/list" class="quick-btn">
+                                <i class="bi bi-code-square"></i>쿠폰/이벤트
+                            </a>
+                            <a href="/owner/sales/month" class="quick-btn">
+                                <i class="bi bi-bar-chart-line"></i>매출 확인
+                            </a>
+                            <a href="/owner/system/errors" class="quick-btn">
+                                <i class="bi bi-bug"></i>에러 로그
+                            </a>
+                            <a href="/owner/company/inActive/list" class="quick-btn">
+                                <i class="bi bi-archive"></i>비활성 업체
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 업주 프로필 카드 -->
-            <div class="row g-3">
-                <div class="col-12 col-lg-5">
-                    <div class="card h-100">
-                        <div class="card-header fw-bold">내 정보</div>
-                        <div class="card-body px-4 py-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="kpi-icon honey" style="width:56px;height:56px;font-size:1.5rem;">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
-                                <div>
-                                    <div class="fw-bold fs-5" th:text="${currentAdmin != null ? currentAdmin.name : '업주'}">업주</div>
-                                    <div class="text-muted small" th:text="${currentAdmin != null ? currentAdmin.email : '-'}">-</div>
-                                    <div class="text-muted small" th:text="${currentAdmin != null ? currentAdmin.role : '-'}">-</div>
-                                </div>
-                            </div>
-                        </div>
+            <!-- 플랫폼 관리 안내 -->
+            <div class="quick-card">
+                <div class="fw-bold mb-2"><i class="bi bi-info-circle me-1"></i>총관리자 권한 안내</div>
+                <div class="row g-2 small text-muted">
+                    <div class="col-12 col-md-4">
+                        <i class="bi bi-check2-circle text-success me-1"></i>모든 업체 및 숙소를 직접 등록·수정·비활성화할 수 있습니다.
                     </div>
-                </div>
-
-                <div class="col-12 col-lg-7">
-                    <div class="card h-100">
-                        <div class="card-header fw-bold">바로가기</div>
-                        <div class="card-body px-4 py-3">
-                            <div class="d-flex flex-wrap gap-2">
-                                <a href="/owner/accommodation/list" class="btn btn-sm" style="background:var(--honey-soft);border:1px solid var(--honey-mid);color:var(--honey-deeper);font-weight:600;">
-                                    <i class="bi bi-house-door me-1"></i>숙소 목록
-                                </a>
-                                <a href="/owner/reservation/list" class="btn btn-sm" style="background:var(--honey-soft);border:1px solid var(--honey-mid);color:var(--honey-deeper);font-weight:600;">
-                                    <i class="bi bi-journal-bookmark me-1"></i>예약 관리
-                                </a>
-                                <a href="/owner/room/list" class="btn btn-sm" style="background:var(--honey-soft);border:1px solid var(--honey-mid);color:var(--honey-deeper);font-weight:600;">
-                                    <i class="bi bi-door-open me-1"></i>객실 목록
-                                </a>
-                                <a href="/owner/sales/day" class="btn btn-sm" style="background:var(--honey-soft);border:1px solid var(--honey-mid);color:var(--honey-deeper);font-weight:600;">
-                                    <i class="bi bi-bar-chart-line me-1"></i>매출 확인
-                                </a>
-                                <a href="/owner/coupon/list" class="btn btn-sm" style="background:var(--honey-soft);border:1px solid var(--honey-mid);color:var(--honey-deeper);font-weight:600;">
-                                    <i class="bi bi-code-square me-1"></i>쿠폰/이벤트
-                                </a>
-                            </div>
-                        </div>
+                    <div class="col-12 col-md-4">
+                        <i class="bi bi-check2-circle text-success me-1"></i>전체 회원, 예약, 결제 내역을 조회·관리할 수 있습니다.
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <i class="bi bi-check2-circle text-success me-1"></i>쿠폰·이벤트·배너를 생성하고 플랫폼 전체에 적용할 수 있습니다.
                     </div>
                 </div>
             </div>
+
         </section>
     </div>
-
 
 </th:block>
 </body>

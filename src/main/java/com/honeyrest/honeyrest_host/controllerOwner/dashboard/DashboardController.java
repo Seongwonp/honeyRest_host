@@ -9,7 +9,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Objects;
 
 @Controller("ownerDashboardController")
 @RequestMapping("/owner")
@@ -34,27 +33,11 @@ public class DashboardController {
         var owner = userRepository.findByEmail(email);
         if (owner == null) return "redirect:/auth/login";
 
-        long companyCount;
-        long accommodationCount;
-        long roomCount;
-        long reservationCount;
-        if (Objects.equals(owner.getRole(), "SUPER_ADMIN")) {
-            // 전체 합계
-            companyCount = companyService.getAllCompanies().size();
-            accommodationCount = accommodationService.getAllAccommodations().size();
-            roomCount = roomService.getAllRooms().size();
-            reservationCount = reservationService.getReservationsByActive().size(); // 취소 제외 예시
-        } else {
-            // 그 외 ROLE이면 필요에 맞게
-            companyCount = 0;
-            accommodationCount = 0;
-            reservationCount = 0;
-            roomCount = 0;
-        }
-        model.addAttribute("companyCount", companyCount);
-        model.addAttribute("accommodationCount", accommodationCount);
-        model.addAttribute("roomCount", roomCount);
-        model.addAttribute("reservationCount", reservationCount);
+        model.addAttribute("companyCount", companyService.getAllCompanies().size());
+        model.addAttribute("accommodationCount", accommodationService.getAllAccommodations().size());
+        model.addAttribute("roomCount", roomService.getAllRooms().size());
+        model.addAttribute("reservationCount", reservationService.getReservationsByActive().size());
+        model.addAttribute("userCount", userRepository.count());
         model.addAttribute("currentAdmin", owner);
 
         return "owner/dashboard/dashboard";

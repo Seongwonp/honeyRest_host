@@ -29,10 +29,11 @@ import java.util.List;
 @Log4j2
 public class DashboardController {
 
-    private final DashboardService dashboardService; // Service만 의존
+    private final DashboardService dashboardService;
     private final AccommodationService accommodationService;
     private final SalesChartService salesChartService;
-    private final DashboardReportService dashboardReportService;   // 점유율/체크인
+    private final DashboardReportService dashboardReportService;
+    private final CompanyService companyService;
 
 
     @GetMapping("/dashboard")
@@ -47,6 +48,9 @@ public class DashboardController {
         model.addAttribute("resCount", counts.getResCount());
         model.addAttribute("roomCount", counts.getRoomCount());
         model.addAttribute("currentAdmin", admin);
+
+        var company = companyService.getByUserEmail(email);
+        model.addAttribute("companyName", company != null ? company.getName() : "");
 
         List<Long> accIds = accommodationService.getAccommodationIdsByAdminEmail(email);
 
