@@ -34,7 +34,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
 
     // 예약 수량 맵: (roomId -> (date -> 예약수량))
     private Map<Long, Map<LocalDate, Integer>> buildBookedQtyMap(
-            Long companyId,
+            Integer companyId,
             Long accommodationId,
             LocalDate start,
             LocalDate end
@@ -86,7 +86,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     // 회사(+선택 숙소)의 체크인 기준 일별 매출 맵
 // 결과: roomId -> (date -> 합계 매출)
     private Map<Long, Map<LocalDate, BigDecimal>> buildCheckinRevenuePerDay(
-            Long companyId,
+            Integer companyId,
             Long accommodationId,
             LocalDate start,
             LocalDate end
@@ -114,7 +114,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
 
     // 한숙소의 모든 객실을 포함에 월 단위 표로 그리고 싶을 때
     @Override
-    public PriceCalendarDTO getMonth(Long companyId, Long accommodationId, YearMonth ym, Integer minAvailable) {
+    public PriceCalendarDTO getMonth(Integer companyId, Long accommodationId, YearMonth ym, Integer minAvailable) {
         LocalDate start = ym.atDay(1);
         LocalDate end   = ym.atEndOfMonth();
 
@@ -273,7 +273,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     }
 
     // 이번달 총 객실수 / 예약 가능 객실 수 / 최저가/ 최고가
-    public List<DailyOverviewDTO> getDailyOverview(Long companyId,
+    public List<DailyOverviewDTO> getDailyOverview(Integer companyId,
                                                    Long accommodationId,
                                                    LocalDate start,
                                                    LocalDate end) {
@@ -294,7 +294,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
    //  숙소별 × 날짜별 매트릭스 화면 (엑셀 같은 형태) 그릴 때.
 
     @Override
-    public List<GridCellDTO> getGridCells(Long companyId,
+    public List<GridCellDTO> getGridCells(Integer companyId,
                                           Long accommodationId,
                                           LocalDate start,
                                           LocalDate end) {
@@ -316,7 +316,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     //체크인 매출 기준
     @Override
     public Map<LocalDate, BigDecimal> getDailyRevenueByCheckin(
-            Long companyId, Long accommodationId, LocalDate start, LocalDate end) {
+            Integer companyId, Long accommodationId, LocalDate start, LocalDate end) {
 
         // 초기화: 요청 구간의 모든 날짜 키를 0으로 세팅(원하면 생략 가능)
         Map<LocalDate, BigDecimal> result = new LinkedHashMap<>();

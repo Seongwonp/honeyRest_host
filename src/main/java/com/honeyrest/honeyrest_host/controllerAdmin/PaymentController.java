@@ -126,7 +126,7 @@ public class PaymentController {
         String loginEmail = (user != null) ? user.getEmail() : null;
 
         // 2) 회샤 id
-        Long companyId = companyService.getCompanyIdByOfCurrentUser();
+        Integer companyId = companyService.getCompanyIdByOfCurrentUser();
 
         // 결제 기준으로 '취소/환불'만 가져오기
         List<String> statuses = List.of("CANCEL");

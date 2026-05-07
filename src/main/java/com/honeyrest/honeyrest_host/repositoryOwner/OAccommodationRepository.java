@@ -11,15 +11,15 @@ import java.util.List;
 public interface OAccommodationRepository extends JpaRepository<Accommodation, Long> {
 
     @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
-    List<Accommodation> findByCompany_CompanyId(Long companyCompanyId);
+    List<Accommodation> findByCompany_CompanyId(Integer companyCompanyId);
 
     @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
-    Page<Accommodation> findByCompany_CompanyId(Long companyId, Pageable pageable);
+    Page<Accommodation> findByCompany_CompanyId(Integer companyId, Pageable pageable);
 
     Accommodation findByAccommodationId(Long accommodationId);
 
     @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
-    List<Accommodation> findByCompany_CompanyIdAndNameContainingIgnoreCase(Long companyId, String name);
+    List<Accommodation> findByCompany_CompanyIdAndNameContainingIgnoreCase(Integer companyId, String name);
 
     @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
     List<Accommodation> findByNameContainingIgnoreCase(String keyword);

@@ -42,7 +42,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             )
             """)
     Page<Payment> search(
-            @Param("companyId") Long companyId,
+            @Param("companyId") Integer companyId,
             @Param("accommodationId") Long accommodationId,
             @Param("methods") List<String> methods,
             @Param("methodsEmpty") boolean methodsEmpty, // 리스트 비었을 때 true

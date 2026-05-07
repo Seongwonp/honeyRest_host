@@ -49,7 +49,7 @@ public class ReservationController {
                                  @RequestParam(defaultValue = "10") int size,
                                  Model model) {
 
-        Long companyId = companyService.getCompanyIdByOfCurrentUser();
+        Integer companyId = companyService.getCompanyIdByOfCurrentUser();
 
         PageRequestDTO pr = PageRequestDTO.builder().page(page).size(size).build();
         PageResponseDTO<ReservationDTO> resp = reservationService.getCancelRequestsForCompany(companyId, q, pr);
@@ -139,7 +139,7 @@ public class ReservationController {
                      Authentication authentication,
                      Model model) {
 
-        Long companyId = companyService.getCompanyIdByOfCurrentUser();
+        Integer companyId = companyService.getCompanyIdByOfCurrentUser();
 
         // 정렬 숙소명 -> 체크인
         Sort sort = Sort.by("accommodationName").descending()
@@ -198,7 +198,7 @@ public class ReservationController {
     @GetMapping("/new")
     public String newReservation(Authentication authentication, Model model) {
 
-        Long companyId = companyService.getCompanyIdByOfCurrentUser();
+        Integer companyId = companyService.getCompanyIdByOfCurrentUser();
 
         ReservationDTO form = new ReservationDTO();
         model.addAttribute("form", form);

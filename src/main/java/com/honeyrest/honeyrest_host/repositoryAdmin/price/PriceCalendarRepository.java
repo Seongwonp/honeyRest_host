@@ -91,7 +91,7 @@ public interface PriceCalendarRepository extends JpaRepository<PriceCalendar, Lo
             ORDER BY d.d
             """, nativeQuery = true)
     List<DailyAggProjection> findDailyOverview(
-            @Param("companyId") Long companyId,
+            @Param("companyId") Integer companyId,
             @Param("accommodationId") Long accommodationId,
             @Param("start") java.sql.Date start,
             @Param("end") java.sql.Date end
@@ -122,7 +122,7 @@ public interface PriceCalendarRepository extends JpaRepository<PriceCalendar, Lo
             ORDER BY r.room_id, d.d
             """, nativeQuery = true)
     List<GridCellProjection> findGridCells(
-            @Param("companyId") Long companyId,
+            @Param("companyId") Integer companyId,
             @Param("accommodationId") Long accommodationId,
             @Param("start") java.sql.Date start,
             @Param("end") java.sql.Date end

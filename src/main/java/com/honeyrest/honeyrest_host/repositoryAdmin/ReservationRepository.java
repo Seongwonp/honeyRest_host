@@ -69,7 +69,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                  r.guestPhone like concat('%', :q, '%')
               )
             """)
-    Page<Reservation> findCompanyReservations(@Param("companyId") Long companyId,
+    Page<Reservation> findCompanyReservations(@Param("companyId") Integer companyId,
                                               @Param("status") String status,
                                               @Param("q") String q,
                                               Pageable pageable);
@@ -92,7 +92,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                 where c.companyId = :companyId
                   and r.status <> 'CANCELLED'
             """)
-    long countActiveByCompanyId(@Param("companyId") Long companyId);
+    long countActiveByCompanyId(@Param("companyId") Integer companyId);
 
     // 회사(or 숙소) 객실의 월 범위에 걸친 예약들 싸그리
     // 체크인/ 체크아웃 날짜가 그달과 겹치는 모든 예약 포함. -> 월단위 캘린더 재고/예약 표시
@@ -109,7 +109,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                    and r.checkOutDate >  :startDate
                   )
             """)
-    List<Reservation> findOverlappedReservationsForMonth(@Param("companyId") Long companyId,
+    List<Reservation> findOverlappedReservationsForMonth(@Param("companyId") Integer companyId,
                                                          @Param("accommodationId") Long accommodationId,
                                                          @Param("startDate") LocalDate startDate,
                                                          @Param("endDate") LocalDate endDate);
@@ -149,7 +149,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                   )
             """)
     Page<Reservation> searchCompanyReservations(
-            @Param("companyId") Long companyId,
+            @Param("companyId") Integer companyId,
             @Param("status") String status,
             @Param("q") String q,
             @Param("accId") Long accId,
@@ -214,7 +214,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
        and r.status in ('CONFIRMED','PENDING','CANCEL_REQUEST','NO_SHOW','COMPLETED')
        and r.checkInDate between :startDate and :endDate
 """)
-    List<Reservation> findCheckinsForRange(@Param("companyId") Long companyId,
+    List<Reservation> findCheckinsForRange(@Param("companyId") Integer companyId,
                                            @Param("accommodationId") Long accommodationId,
                                            @Param("roomId") Long roomId,
                                            @Param("startDate") LocalDate startDate,

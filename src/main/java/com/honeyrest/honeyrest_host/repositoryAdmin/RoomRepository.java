@@ -16,7 +16,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     long count();
     @Query("select count(r) from Room r where r.accommodation.company.companyId = :companyId")
-    long countByCompanyId(@Param("companyId") Long companyId);
+    long countByCompanyId(@Param("companyId") Integer companyId);
 
     // 페이징
     Page<Room> findByAccommodation_AccommodationId(Long accommodationId, Pageable pageable);
@@ -41,11 +41,11 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
                 where c.companyId = :companyId
                   and (:accommodationId is null or a.accommodationId = :accommodationId)
             """)
-    Page<Room> findRoomsOfCompany(@Param("companyId") Long companyId,
+    Page<Room> findRoomsOfCompany(@Param("companyId") Integer companyId,
                                   @Param("accommodationId") Long accommodationId, Pageable pageable);
 
 
-    List<Room> findAllByAccommodation_Company_CompanyId(Long companyId);
+    List<Room> findAllByAccommodation_Company_CompanyId(Integer companyId);
 
 
     // 숙소까지 한번에 로딩 (상세 페이지용)

@@ -50,7 +50,7 @@ public class PriceCalendarController {
     public String pageWithoutCompanyId(@RequestParam(required = false) Integer companyId,
                                        @RequestParam(required = false) String ym) {
         if (companyId == null) {
-            companyId = companyService.getCompanyIdByOfCurrentUser().intValue();
+            companyId = companyService.getCompanyIdByOfCurrentUser();
         }
         // ym 없으면 현재 월로
         String resolvedYm = (ym != null && !ym.isBlank()) ? ym : YearMonth.now().toString();
@@ -178,7 +178,7 @@ public class PriceCalendarController {
             startDate = LocalDate.now().withDayOfMonth(1);
             endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
         }
-        Long companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+        Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
 
         // 해당 숙소의 방 리스트
         List<RoomDTO> roomList = roomService.getRoomsByAccommodationId(accommodationId);

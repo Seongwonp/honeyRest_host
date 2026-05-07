@@ -56,7 +56,7 @@ public class DashboardServiceImpl implements DashboardService {
             resCount = reservationRepository.countActiveAll();
             roomCount = roomRepository.count();
         } else if ("COMPANY_ADMIN".equals(admin.getRole())) {
-            Long companyId = companyRepository.findCompanyIdByUserEmail(admin.getEmail()).orElse(null);
+            Integer companyId = companyRepository.findCompanyIdByUserEmail(admin.getEmail()).orElse(null);
             if (companyId != null) {
                 accCount = accommodationRepository.countByCompany_CompanyId(companyId);
                 resCount = reservationRepository.countActiveByCompanyId(companyId);

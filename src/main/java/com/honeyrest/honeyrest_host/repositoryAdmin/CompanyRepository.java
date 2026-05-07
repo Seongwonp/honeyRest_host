@@ -18,7 +18,7 @@ public interface CompanyRepository extends JpaRepository<Company,Integer> {
          where u.email = :email
            and u.email = c.email
     """)
-    Optional<Long> findCompanyIdByUserEmail(@Param("email") String email);
+    Optional<Integer> findCompanyIdByUserEmail(@Param("email") String email);
 
     Company findCompanyByEmail(String email);
 

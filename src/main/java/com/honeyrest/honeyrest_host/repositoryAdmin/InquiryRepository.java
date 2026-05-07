@@ -21,7 +21,7 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
            or i.user.name like concat('%', :q, '%'))
       and (:replied is null or i.isReplied = :replied)
     """)
-    Page<Inquiry> findByCompany(@Param("companyId") Long companyId,
+    Page<Inquiry> findByCompany(@Param("companyId") Integer companyId,
                                 @Param("q") String q,
                                 @Param("replied") Boolean replied,
                                 Pageable pageable);
@@ -51,7 +51,7 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
            )
          order by i.createdAt desc
     """)
-    Page<Inquiry> searchByCompany(Long companyId, String q, Boolean replied, Pageable pageable);
+    Page<Inquiry> searchByCompany(Integer companyId, String q, Boolean replied, Pageable pageable);
 
     // 회수 소속 숙소 문의만 가져오기.
     @Query("""
@@ -68,7 +68,7 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
       and (:replied is null or i.isReplied = :replied)
     order by i.createdAt desc
     """)
-    Page<Inquiry> findByCompanyWithFilters(@Param("companyId") Long companyId,
+    Page<Inquiry> findByCompanyWithFilters(@Param("companyId") Integer companyId,
                                            @Param("accId") Long accommodationId,   // nullable
                                            @Param("q") String q,                   // nullable
                                            @Param("replied") Boolean replied,      // nullable

@@ -17,7 +17,7 @@ import java.util.Map;
 
 public interface PriceCalendarService {
 
-    PriceCalendarDTO getMonth(Long companyId,
+    PriceCalendarDTO getMonth(Integer companyId,
                               Long accommodationId,
                               YearMonth ym,
                               Integer minAvailable);
@@ -35,12 +35,12 @@ public interface PriceCalendarService {
 
     Map<LocalDate, PriceCalendarDTO> getCalendarData(Long roomId, LocalDate startDate, LocalDate endDate);
 
-    List<DailyOverviewDTO>  getDailyOverview(Long companyId, Long accommodationId, LocalDate start, LocalDate end);
+    List<DailyOverviewDTO>  getDailyOverview(Integer companyId, Long accommodationId, LocalDate start, LocalDate end);
 
-    List<GridCellDTO> getGridCells(Long companyId, Long accommodationId, LocalDate start, LocalDate end);
+    List<GridCellDTO> getGridCells(Integer companyId, Long accommodationId, LocalDate start, LocalDate end);
 
     //체크인 매출 기준
-    Map<LocalDate, BigDecimal> getDailyRevenueByCheckin(Long companyId,
+    Map<LocalDate, BigDecimal> getDailyRevenueByCheckin(Integer companyId,
                                                         Long accommodationId,
                                                         LocalDate start,
                                                         LocalDate end);

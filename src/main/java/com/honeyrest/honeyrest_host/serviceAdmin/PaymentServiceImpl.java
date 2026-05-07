@@ -35,7 +35,7 @@ public class PaymentServiceImpl implements PaymentService {
     public Page<PaymentDTO> listForCompanyUser(String loginEmail, Long accommodationId, List<String> statuses, List<String> methods, String q, LocalDate from, LocalDate to, Pageable pageable) {
         // 1) 로그인 유지 + 회사 찾기
        CompanyDTO companyDTO = companyService.getByUserEmail(loginEmail);
-        Long companyId = (companyDTO != null) ? companyDTO.getCompanyId() : null;
+        Integer companyId = (companyDTO != null) ? companyDTO.getCompanyId() : null;
 
         // 2) 결제
         List<String> effStatuses = (statuses == null || statuses.isEmpty()) ? DEFAULT_STATUSES : statuses;

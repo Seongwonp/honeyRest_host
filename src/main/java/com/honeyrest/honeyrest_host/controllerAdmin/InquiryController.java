@@ -31,7 +31,7 @@ public class InquiryController {
                        @RequestParam(defaultValue = "10") int size,
                        Model model) {
 
-        Long companyId = companyService.getCompanyIdByOfCurrentUser();
+        Integer companyId = companyService.getCompanyIdByOfCurrentUser();
 
         Pageable pageable = PageRequest.of(Math.max(page - 1, 0), size);
 

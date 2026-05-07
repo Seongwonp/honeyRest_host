@@ -24,14 +24,14 @@ import java.util.Optional;
 public interface AccommodationRepository extends JpaRepository<Accommodation, Long>, AccommodationQuery {
 
 
-    Page<Accommodation> findByCompany_CompanyIdAndStatus(Long companyId, String status, Pageable pageable);
+    Page<Accommodation> findByCompany_CompanyIdAndStatus(Integer companyId, String status, Pageable pageable);
 
-    Long countByCompany_CompanyId(Long companyId);
+    Long countByCompany_CompanyId(Integer companyId);
 
-    List<Accommodation> findAllByCompany_CompanyId(Long companyId);
+    List<Accommodation> findAllByCompany_CompanyId(Integer companyId);
 
     @Query("select a.company.companyId from Accommodation a where a.accommodationId = :id")
-    Long findCompanyIdByAccommodationId(@Param("id") Long accommodationId);
+    Integer findCompanyIdByAccommodationId(@Param("id") Long accommodationId);
 
     // --- 연관관계: 개별 업데이트 (COALESCE/CASE 없이 대입만) ---
     @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -107,7 +107,7 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
                                 from Accommodation a
                                             where a.company.companyId = :companyId
                     """)
-    Page<AccommodationListDTO> findListByCompanyId(@Param("companyId") Long companyId, Pageable pageable);
+    Page<AccommodationListDTO> findListByCompanyId(@Param("companyId") Integer companyId, Pageable pageable);
 
     @Query("select a.name from Accommodation a where a.accommodationId = :id")
     Optional<String> findNameById(@Param("id") Long accommodationId);
@@ -125,7 +125,7 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
 
 
 interface AccommodationQuery {
-    Page<AccommodationListDTO> search(String q, Long categoryId, Long mainRegionId, Pageable pageable);
+    Page<AccommodationListDTO> search(String q, Integer categoryId, Integer mainRegionId, Pageable pageable);
 }
 
 @Repository
@@ -134,7 +134,7 @@ class AccommodationQueryImpl implements AccommodationQuery {
     private final EntityManager em;
 
     @Override
-    public Page<AccommodationListDTO> search(String q, Long categoryId, Long mainRegionId, Pageable pageable) {
+    public Page<AccommodationListDTO> search(String q, Integer categoryId, Integer mainRegionId, Pageable pageable) {
         String where = " where 1=1 ";
         if (q != null && !q.isBlank()) where += " and (a.name like :q or a.address like :q) ";
         if (categoryId != null) where += " and c.categoryId = :categoryId ";

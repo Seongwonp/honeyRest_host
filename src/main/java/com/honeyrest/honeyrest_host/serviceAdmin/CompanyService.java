@@ -14,7 +14,7 @@ public interface CompanyService {
 
     CompanyDTO getByUserEmail(String email);
 
-    Long getCompanyIdByUserEmail(String email);
-    Long getCompanyIdByOfCurrentUser();
-    Long getCompanyIdByAccommodationId(Long accommodationId);
+    Integer getCompanyIdByUserEmail(String email);
+    Integer getCompanyIdByOfCurrentUser();
+    Integer getCompanyIdByAccommodationId(Long accommodationId);
 }

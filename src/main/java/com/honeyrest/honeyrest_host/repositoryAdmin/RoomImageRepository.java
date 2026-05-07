@@ -28,7 +28,7 @@ public interface RoomImageRepository extends JpaRepository<RoomImage, Long> {
         JOIN accommodation a ON a.accommodation_id = rm.accommodation_id
         WHERE a.company_id = :companyId
         """, nativeQuery = true)
-    int countRoomsByCompany(@Param("companyId") Long companyId);
+    int countRoomsByCompany(@Param("companyId") Integer companyId);
 }
 
 
