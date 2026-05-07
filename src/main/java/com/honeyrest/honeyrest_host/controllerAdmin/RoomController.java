@@ -58,7 +58,9 @@ public class RoomController {
                 : authentication.getName());
 
         // 2) 이메일 -> companyId
-        Integer companyId = companyService.getByUserEmail(email).getCompanyId();
+        CompanyDTO company = companyService.getByUserEmail(email);
+        if (company == null) return "redirect:/admin/auth/login";
+        Integer companyId = company.getCompanyId();
 
         // 3) '내' 회사 객실만 페이징 조회
         Page<RoomDTO> page = roomService.findPageByCompany(companyId, null, pageable);
@@ -140,7 +142,9 @@ public class RoomController {
         }
 
         AdminLoginRequestDTO admin = userService.getUserByEmail(email);
+        if (admin == null) return "redirect:/admin/auth/login";
         CompanyDTO companyDTO = companyService.getByUserEmail(admin.getEmail());
+        if (companyDTO == null) return "redirect:/admin/auth/login";
         Integer companyId = companyDTO.getCompanyId();
 
         RoomDTO form = new RoomDTO();

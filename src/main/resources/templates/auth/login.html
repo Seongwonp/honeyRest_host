@@ -5,58 +5,51 @@
       layout:decorate="~{common/layout/blank}">
 <head>
     <meta charset="UTF-8">
-    <title layout:fragment="title">로그인</title>
+    <title layout:fragment="title">로그인 | HoneyRest</title>
     <th:block layout:fragment="head">
+        <link rel="stylesheet" th:href="@{/assets/css/honey-theme.css}" />
         <style>
-            .login-card { max-width: 420px; margin: 80px auto; }
+            body { background: linear-gradient(135deg, #FFF8E1 0%, #FFE082 40%, #FFD54F 100%) !important; }
         </style>
     </th:block>
 </head>
 <body>
 <th:block layout:fragment="content">
-    <section class="section">
-        <div class="container">
-            <div class="card login-card shadow-sm">
-                <div class="card-body">
-                    <h4 class="card-title mb-4 fw-bold">관리자 로그인</h4>
+    <div class="login-wrapper">
+        <div class="login-card-honey">
+            <div class="login-logo">
+                <span class="logo-icon">🍯</span>
+                <h1>HoneyRest</h1>
+                <p>호스트 관리 시스템</p>
+            </div>
 
-                    <form method="post" th:action="@{/auth/login}" class="mt-4">
-                        <div class="mb-3">
-                            <label for="email" class="form-label">이메일</label>
-                            <input type="email" class="form-control" id="email"
-                                   name="email" required autocomplete="username" />
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="password" class="form-label">비밀번호</label>
-                            <input type="password" class="form-control" id="password"
-                                   name="password" required autocomplete="current-password" />
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100">로그인</button>
-                    </form>
-
-                    <!-- ↓ 옵션: 실패 시 ?error 파라미터로 메시지 표시 -->
-                    <div th:if="${param.error}" class="text-danger mt-3">
-                        로그인에 실패했습니다. 이메일/비밀번호를 확인하세요.
-                    </div>
-
+            <form method="post" th:action="@{/auth/login}">
+                <div class="mb-3">
+                    <label for="email" class="form-label">이메일</label>
+                    <input type="email" class="form-control" id="email"
+                           name="email" placeholder="관리자 이메일 입력"
+                           required autocomplete="username" />
                 </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label">비밀번호</label>
+                    <input type="password" class="form-control" id="password"
+                           name="password" placeholder="비밀번호 입력"
+                           required autocomplete="current-password" />
+                </div>
+
+                <button type="submit" class="btn btn-login">로그인</button>
+            </form>
+
+            <div th:if="${param.error}" class="alert mt-3 p-2 text-center"
+                 style="background:#FEE2E2;color:#DC2626;border-radius:10px;font-size:.9rem;">
+                이메일 또는 비밀번호가 올바르지 않습니다.
+            </div>
+            <div th:if="${param.logout}" class="alert mt-3 p-2 text-center"
+                 style="background:#DCFCE7;color:#16A34A;border-radius:10px;font-size:.9rem;">
+                로그아웃되었습니다.
             </div>
         </div>
-    </section>
-</th:block>
-
-<th:block layout:fragment="script">
-    <script>
-        /*<![CDATA[*/
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has("logout")) {
-            alert("로그아웃되었습니다.");
-        }
-        /*]]>*/
-
-    </script>
+    </div>
 </th:block>
 </body>
 </html>

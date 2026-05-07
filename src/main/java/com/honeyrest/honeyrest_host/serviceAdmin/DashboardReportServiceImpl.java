@@ -102,7 +102,11 @@ public class DashboardReportServiceImpl implements DashboardReportService {
                 String guestName = (r.length > 1 && r[1] != null) ? r[1].toString() : "-";
                 String accommodationName = (r.length > 2 && r[2] != null) ? r[2].toString() : "";
                 String roomName = (r.length > 3 && r[3] != null) ? r[3].toString() : "";
-                LocalDate checkIn = (r[4] != null) ? ((java.sql.Date) r[4]).toLocalDate() : null;
+                LocalDate checkIn = null;
+                if (r.length > 4 && r[4] != null) {
+                    if (r[4] instanceof java.sql.Date d) checkIn = d.toLocalDate();
+                    else if (r[4] instanceof LocalDate ld) checkIn = ld;
+                }
                 int nights = (r.length > 5 && r[5] instanceof Number n5) ? n5.intValue() : 0;
 
                 out.add(UpcomingCheckinDTO.builder()
