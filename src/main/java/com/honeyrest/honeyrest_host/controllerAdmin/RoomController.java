@@ -4,7 +4,6 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 import com.honeyrest.honeyrest_host.dtoAdmin.*;
 import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
-import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
 import com.honeyrest.honeyrest_host.serviceAdmin.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
 import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
@@ -41,8 +40,8 @@ public class RoomController {
     private final AccommodationService accommodationService;
     private final CompanyService companyService;
     private final UserService userService;
+    private final CompanyResourceAccessService resourceAccessService;
 
-    private final AccommodationRepository accommodationRepository;
     private final FileUploadUtil fileUploadUtil;
 
     /**
@@ -147,6 +146,10 @@ public class RoomController {
         if (companyDTO == null) return "redirect:/auth/login";
         Integer companyId = companyDTO.getCompanyId();
 
+        if (accommodationId != null && !resourceAccessService.ownsAccommodation(companyId, accommodationId)) {
+            return "redirect:/admin/rooms/list_all";
+        }
+
         RoomDTO form = new RoomDTO();
         form.setAccommodationId(accommodationId);
         model.addAttribute("form", form);
@@ -161,10 +164,15 @@ public class RoomController {
     public String create(@Valid @ModelAttribute("form") RoomDTO form,
                          BindingResult binding,
                          Model model,
-                         RedirectAttributes ra) {
+                         RedirectAttributes ra,
+                         Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.ownsAccommodation(companyId, form.getAccommodationId())) {
+            return "redirect:/admin/rooms/list_all";
+        }
         if (binding.hasErrors()) {
             // 에러 시 다시 렌더링할 데이터들 채워줌
-            model.addAttribute("accommodations", accommodationRepository.findAll());
+            model.addAttribute("accommodations", accommodationService.getAllById(companyId));
             return "admin/rooms/add";
         }
         try {
@@ -231,7 +239,8 @@ public class RoomController {
             }
         }
         model.addAttribute("form", form);
-        model.addAttribute("accommodations", accommodationRepository.findAll());
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        model.addAttribute("accommodations", accommodationService.getAllById(companyId));
         return "admin/rooms/edit"; // templates/admin/rooms/edit.html
     }
 
@@ -248,7 +257,8 @@ public class RoomController {
 //                roomId, form.getdCheckInTime(), form.getCheckOutTime());
         if (binding.hasErrors()) {
             binding.getAllErrors().forEach(err -> log.error("bind err: {}", err));
-            model.addAttribute("accommodations", accommodationRepository.findAll());
+            Integer companyId = resourceAccessService.currentCompanyId(authentication);
+            model.addAttribute("accommodations", accommodationService.getAllById(companyId));
             // 에러 시에도 사용자가 입력한 정책을 유지
             return "admin/rooms/edit";
         }
@@ -336,11 +346,8 @@ public class RoomController {
     }
 
     private boolean isRoomOwner(Long roomId, Authentication authentication) {
-        RoomDTO room = roomService.getByRoomId(roomId);
-        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
-        if (myCompany == null || room.getAccommodationId() == null) return false;
-        var acc = accommodationService.getById(room.getAccommodationId());
-        return acc != null && myCompany.getCompanyId().equals(acc.getCompanyId());
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        return resourceAccessService.ownsRoom(companyId, roomId);
     }
 
     // JSON 배열 문자열(["TV","Wi-Fi"]) 또는 CSV("TV, Wi-Fi")를 List<String>으로 변환
