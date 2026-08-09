@@ -13,6 +13,7 @@ import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationCate
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationImageService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
+import com.honeyrest.honeyrest_host.serviceAdmin.CompanyResourceAccessService;
 import com.honeyrest.honeyrest_host.serviceAdmin.UserService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationTagService;
 import com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser;
@@ -51,6 +52,7 @@ public class AccommodationController {
     private final CompanyService companyService;
     private final FileUploadUtil fileUploadUtil;
     private final UserService userService;
+    private final CompanyResourceAccessService resourceAccessService;
     private final AccommodationTagService accommodationTagService;
     private final CancellationPolicyService cancellationPolicyService;
 
@@ -84,7 +86,11 @@ public class AccommodationController {
                             BindingResult binding,
                             @RequestParam(value = "subImages", required = false) List<MultipartFile> subImages,
                             Model model,
-                            RedirectAttributes ra) {
+                            RedirectAttributes ra,
+                            Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (companyId == null) return "redirect:/auth/login";
+        form.setCompanyId(companyId);
         if (binding.hasErrors()) {
             binding.getAllErrors().forEach(err -> log.warn("bind err: {}", err));
             model.addAttribute("mainRegions", regionRepository.findByLevel(1));
@@ -354,8 +360,12 @@ public class AccommodationController {
      * (선택) 다건 승인요청
      */
     @PostMapping("/request")
-    public String requestApprovalBulk(@RequestParam("ids") List<Long> ids) {
-        ids.forEach(i -> accommodationService.changeStatus(i, "PENDING"));
+    public String requestApprovalBulk(@RequestParam("ids") List<Long> ids,
+                                      Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        ids.stream()
+                .filter(id -> resourceAccessService.ownsAccommodation(companyId, id))
+                .forEach(id -> accommodationService.changeStatus(id, "PENDING"));
         return "redirect:/admin/accommodations/list?status=PENDING";
     }
 

@@ -38,6 +38,7 @@ public class ReservationController {
     private final CompanyService companyService;
     private final AccommodationService accommodationService;
     private final RoomService roomService;
+    private final CompanyResourceAccessService resourceAccessService;
 
 
     /**
@@ -69,7 +70,13 @@ public class ReservationController {
      */
     @PostMapping(value = "/cancel-request/{id}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> approve(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> approve(@PathVariable Long id,
+                                                        Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.ownsReservation(companyId, id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("ok", false, "message", "접근 권한이 없습니다."));
+        }
         try {
             // 사유 없이 즉시 승인 (서비스 시그니처에 맞춰 호출)
             ReservationDTO updated = reservationService.approveCancelRequest(id, null);
@@ -96,7 +103,12 @@ public class ReservationController {
     @PostMapping("/cancel-request/{id}/reject")
     public String reject(@PathVariable Long id,
                          @RequestParam(required = false) String reason,
-                         RedirectAttributes rttr) {
+                         RedirectAttributes rttr,
+                         Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.ownsReservation(companyId, id)) {
+            return "redirect:/admin/reservations/cancel-requests";
+        }
         try {
             // 예약 상태는 변경하지 않고(서비스도 상태 변경하지 않게!)
             reservationService.rejectCancelRequest(id, reason);
@@ -110,15 +122,19 @@ public class ReservationController {
     }
 
 
-    @PostMapping("/admin/reservations/{id}/complete")
-    public String complete(@PathVariable Long id, RedirectAttributes ra) {
+    @PostMapping("/{id}/complete")
+    public String complete(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.ownsReservation(companyId, id)) return "redirect:/admin/reservations/my";
         reservationService.markCompleted(id);
         ra.addFlashAttribute("msg","체크아웃 완료 처리");
         return "redirect:/admin/reservations/list-all";
     }
 
-    @PostMapping("/admin/reservations/{id}/no-show")
-    public String noShow(@PathVariable Long id, RedirectAttributes ra) {
+    @PostMapping("/{id}/no-show")
+    public String noShow(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.ownsReservation(companyId, id)) return "redirect:/admin/reservations/my";
         reservationService.markNoShow(id);
         ra.addFlashAttribute("msg","노쇼 처리 완료");
         return "redirect:/admin/reservations/list-all";
@@ -216,7 +232,15 @@ public class ReservationController {
      */
     @PostMapping
     public String create(@Valid @ModelAttribute("form") ReservationDTO form,
-                         RedirectAttributes ra) {
+                         RedirectAttributes ra,
+                         Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.canCreateReservation(companyId, form)) {
+            ra.addFlashAttribute("msg", "선택한 숙소 또는 객실에 접근 권한이 없습니다.");
+            return "redirect:/admin/reservations/new";
+        }
+        RoomDTO room = roomService.getByRoomId(form.getRoomId());
+        form.setAccommodationId(room.getAccommodationId());
         ReservationDTO saved = reservationService.createReservation(form);
         ra.addFlashAttribute("msg", "예약이 등록되었습니다. (" + saved.getReservationNumber() + ")");
         return "redirect:/admin/reservations/list?number=" + saved.getReservationNumber();
@@ -226,7 +250,11 @@ public class ReservationController {
      * 예약 상세 페이지
      */
     @GetMapping("/{reservationId}")
-    public String detail(@PathVariable Long reservationId, Model model) {
+    public String detail(@PathVariable Long reservationId, Model model, Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.ownsReservation(companyId, reservationId)) {
+            return "redirect:/admin/reservations/my";
+        }
         ReservationDTO reservation = reservationService.getReservationDetail(reservationId);
         model.addAttribute("reservation", reservation); // DTO로 바꾸고 싶으면 매핑해서
         return "admin/reservations/detail";
@@ -238,17 +266,29 @@ public class ReservationController {
     @PostMapping("/{reservationId}/cancel")
     public String cancel(@PathVariable Long reservationId,
                          @RequestParam(required = false) String reason,
-                         RedirectAttributes ra) {
+                         RedirectAttributes ra,
+                         Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.ownsReservation(companyId, reservationId)) {
+            return "redirect:/admin/reservations/my";
+        }
         reservationService.cancelReservation(reservationId, reason);
         ra.addFlashAttribute("msg", "예약이 취소되었습니다.");
         return "redirect:/admin/reservations/list";
     }
 
     @GetMapping("/day")
-    public String day(@RequestParam Integer companyId,
+    public String day(@RequestParam(required = false) Integer companyId,
                       @RequestParam(required = false) Long accommodationId,
                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
-                      Model model) {
+                      Model model,
+                      Authentication authentication) {
+
+        companyId = resourceAccessService.currentCompanyId(authentication);
+        if (companyId == null) return "redirect:/auth/login";
+        if (accommodationId != null && !resourceAccessService.ownsAccommodation(companyId, accommodationId)) {
+            accommodationId = null;
+        }
 
         // 날짜 파라미터가 없으면 오늘로 기본값
         if (date == null) {
