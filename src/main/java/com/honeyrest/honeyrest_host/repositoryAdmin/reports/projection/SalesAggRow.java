@@ -1,9 +1,6 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection;
-
-
-import org.joda.time.LocalDate;
-
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public interface SalesAggRow {
     LocalDate getBucket();

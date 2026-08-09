@@ -2,11 +2,11 @@ package com.honeyrest.honeyrest_host.repositoryAdmin;
 
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection.*;
-import org.joda.time.LocalDate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface ReportRepository extends JpaRepository <Accommodation, Long> {
@@ -189,4 +189,3 @@ public interface ReportRepository extends JpaRepository <Accommodation, Long> {
             @Param("limit") int limit
     );
 }
-

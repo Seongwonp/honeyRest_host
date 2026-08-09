@@ -36,6 +36,7 @@ public class Notification extends BaseEntity {
     private String targetUrl; // 알림 클릭 시 이동할 URL
 
     @Column(name = "is_read",nullable = false)
+    @Builder.Default
     private boolean isRead = false; // 읽음 여부(기본값 false)
 
 }

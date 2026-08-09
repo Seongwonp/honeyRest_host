@@ -66,6 +66,7 @@ public class User extends BaseEntity {
     private LocalDateTime lastLogin; // 마지막 로그인 시간
 
     @Column(name = "is_verified", nullable = false)
+    @Builder.Default
     private Boolean isVerified = false; // 이메일 인증 여부
 
 }

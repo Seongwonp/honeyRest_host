@@ -32,9 +32,9 @@ public class AdminSignupRequestDTO {
 
     private int point; // 사용자에 대한 포인트
 
+    @Builder.Default
     private Boolean isVerified = false; // 이메일 인증 여부
 
     private String gender;          // 성별 (예: "M", "F")
     private Boolean marketingAgree; // 마케팅 수신 동의
 }
-
