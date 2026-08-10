@@ -5,7 +5,6 @@ import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PaymentDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.ReservationDTO;
-import com.honeyrest.honeyrest_host.entity.User;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.PaymentService;
 import com.honeyrest.honeyrest_host.serviceAdmin.ReservationService;
@@ -112,7 +111,7 @@ public class PaymentController {
     }
 
     @GetMapping("/refunds")
-    public String refunds(@AuthenticationPrincipal User user,
+    public String refunds(Authentication auth,
                           @RequestParam(defaultValue = "1") int page,
                           @RequestParam(defaultValue = "10") int size,
                           @RequestParam(defaultValue = "false") boolean includeUnpaidCancels,
@@ -123,7 +122,10 @@ public class PaymentController {
                           Model model) {
 
         // 회사/사용자 맥락이 필요하면 로그인 이메일로 조회
-        String loginEmail = (user != null) ? user.getEmail() : null;
+        // 주의: 이전에는 @AuthenticationPrincipal User user를 사용했는데, 이 앱의 JWT principal은
+        // User 엔티티가 아니라 String(email)이라 항상 null로 주입되어 로그인 이메일이 유실됐고,
+        // 그 결과 PaymentRepository.search의 companyId 필터가 통째로 빠져 전 회사 결제/환불이 노출됐다.
+        String loginEmail = (auth != null) ? auth.getName() : null;
 
         // 2) 회샤 id
         Integer companyId = companyService.getCompanyIdByOfCurrentUser();

@@ -70,6 +70,14 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/customers/**", "/api/admin/companies/**").hasRole("SUPER_ADMIN")
+                // 회사 관리자(신규 업체) 자가 가입/로그인은 비로그인 상태에서 호출되어야 하므로 명시적으로 공개한다.
+                // AdminAuthService가 role을 항상 COMPANY_ADMIN으로 고정하므로 여기서 권한 상승은 발생하지 않는다.
+                .requestMatchers("/api/admin/auth/**").permitAll()
+                // /api/owner/auth/signup은 SUPER_ADMIN 계정을 만들 수 있는 엔드포인트이므로
+                // /owner/** 와 별개로 반드시 이미 SUPER_ADMIN으로 인증된 사용자만 호출할 수 있어야 한다.
+                // (이전에는 이 경로가 어떤 규칙에도 매칭되지 않아 anyRequest().authenticated()로 떨어졌고,
+                //  Spring Security 기본 설정상 익명 사용자까지 통과시켜 role=SUPER_ADMIN 자가 발급이 가능했다.)
+                .requestMatchers("/api/owner/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/owner/**").hasRole("SUPER_ADMIN")
                 .anyRequest().authenticated()

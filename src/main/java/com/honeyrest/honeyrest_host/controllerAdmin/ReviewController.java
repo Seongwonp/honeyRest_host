@@ -2,6 +2,7 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.*;
+import com.honeyrest.honeyrest_host.serviceAdmin.CompanyResourceAccessService;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.ReviewImageService;
 import com.honeyrest.honeyrest_host.serviceAdmin.ReviewService;
@@ -10,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -31,6 +34,19 @@ public class ReviewController {
     private final ReviewImageService reviewImageService;
     private final CompanyService companyService;
     private final AccommodationService accommodationService;
+    private final CompanyResourceAccessService resourceAccessService;
+
+    /**
+     * 목록(list)만 회사 소유 accommodationId로 스코프되어 있었고, 단건 조작 8개
+     * (detail/update/uploadImages/deleteImage/saveReply/changeStatus/delete/toggle)는
+     * reviewId만 알면 다른 회사의 리뷰도 조작할 수 있었다(P0-5). 모든 단건 핸들러 진입부에서 검증한다.
+     */
+    private void requireOwnReview(Authentication authentication, Long reviewId) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.ownsReview(companyId, reviewId)) {
+            throw new AccessDeniedException("해당 리뷰에 접근할 권한이 없습니다.");
+        }
+    }
 
     /**
      * 공백 -> null 치환
@@ -101,7 +117,8 @@ public class ReviewController {
 
     /* 상세*/
     @GetMapping("/detail/{id}")
-    public String detail(@PathVariable Long id, Model model, RedirectAttributes ra) {
+    public String detail(Authentication authentication, @PathVariable Long id, Model model, RedirectAttributes ra) {
+        requireOwnReview(authentication, id);
         return reviewService.getOne(id).map(dto -> {
                     List<ReviewImageDTO> imgs = reviewImageService.getImages(id);
                     dto.setImageList(imgs);
@@ -119,10 +136,12 @@ public class ReviewController {
      * 상세에서 상태/답변 저장 (부분 저장)
      */
     @PostMapping("/detail/{id}")
-    public String update(@PathVariable Long id,
+    public String update(Authentication authentication,
+                         @PathVariable Long id,
                          @ModelAttribute("review") ReviewDTO form,
                          BindingResult bindingResult,
                          RedirectAttributes ra) {
+        requireOwnReview(authentication, id);
         if (bindingResult.hasErrors()) {
             return "admin/reviews/detail";
         }
@@ -135,9 +154,11 @@ public class ReviewController {
      * 상세에서 이미지 업로드
      */
     @PostMapping("/detail/{id}/images")
-    public String uploadImages(@PathVariable Long id,
+    public String uploadImages(Authentication authentication,
+                               @PathVariable Long id,
                                @RequestParam("images") List<MultipartFile> files,
                                RedirectAttributes ra) {
+        requireOwnReview(authentication, id);
         if (files != null && !files.isEmpty()) {
             reviewImageService.uploadImages(id, files); // 서비스에서 Firebase 업로드 + DB 저장
             ra.addFlashAttribute("success", "이미지를 업로드했습니다.");
@@ -151,9 +172,11 @@ public class ReviewController {
      * 상세에서 이미지 삭제
      */
     @PostMapping("/detail/{reviewId}/images/{imageId}/delete")
-    public String deleteImage(@PathVariable Long reviewId,
+    public String deleteImage(Authentication authentication,
+                              @PathVariable Long reviewId,
                               @PathVariable Long imageId,
                               RedirectAttributes ra) {
+        requireOwnReview(authentication, reviewId);
         reviewImageService.deleteImage(reviewId, imageId, true); // 서비스 내부에서 Firebase 삭제 + DB 삭제
         ra.addFlashAttribute("success", "이미지를 삭제했습니다.");
         return "redirect:/admin/reviews/detail/{reviewId}";
@@ -187,9 +210,11 @@ public class ReviewController {
      * 답변 등록/수정만(부분 업데이트)
      */
     @PostMapping("/{id}/reply")
-    public String saveReply(@PathVariable Long id,
+    public String saveReply(Authentication authentication,
+                            @PathVariable Long id,
                             @RequestParam String reply,
                             RedirectAttributes ra) {
+        requireOwnReview(authentication, id);
         ReviewDTO patch = ReviewDTO.builder().reply(reply).build();
         reviewService.patch(id, patch);
         ra.addFlashAttribute("success", "답변이 저장되었습니다.");
@@ -200,9 +225,11 @@ public class ReviewController {
      * 상태 변경 (VISIBLE/HIDDEN 등)
      */
     @PostMapping("/{id}/status")
-    public String changeStatus(@PathVariable Long id,
+    public String changeStatus(Authentication authentication,
+                               @PathVariable Long id,
                                @RequestParam String value,
                                RedirectAttributes ra) {
+        requireOwnReview(authentication, id);
         try {
             reviewService.changeStatus(id, value);
             ra.addFlashAttribute("success", "상태를 " + value + "(으)로 변경했습니다.");
@@ -220,12 +247,14 @@ public class ReviewController {
 
     /* 소프트 삭제 → HIDDEN */
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, @RequestParam(required = false) String status,
+    public String delete(Authentication authentication,
+                         @PathVariable Long id, @RequestParam(required = false) String status,
                          @RequestParam(required = false) String sort,
                          @RequestParam(required = false, defaultValue = "1") int page,
                          @RequestParam(required = false, defaultValue = "10") int size,
                          @RequestParam(required = false, defaultValue = "list") String view,
                          RedirectAttributes ra) {
+        requireOwnReview(authentication, id);
         log.info(">> DELETE request for review {}", id);
         try {
             // 서비스에 위임 (내부에서 softHide 처리)
@@ -249,13 +278,15 @@ public class ReviewController {
     }
 
     @PostMapping("/{id}/toggle")
-    public String toggle(@PathVariable Long id,
+    public String toggle(Authentication authentication,
+                         @PathVariable Long id,
                          @RequestParam(required = false) String view,
                          @RequestParam(required = false) String status,
                          @RequestParam(required = false) String sort,
                          @RequestParam(required = false, defaultValue = "1") Integer page,
                          @RequestParam(required = false, defaultValue = "10") Integer size,
                          RedirectAttributes ra) {
+        requireOwnReview(authentication, id);
         ReviewDTO after = reviewService.toggleVisibleHidden(id);
         ra.addFlashAttribute("success", "상태를 " + after.getStatus() + "(으)로 변경했습니다.");
         // 현재 필터/뷰 유지한 채 목록으로

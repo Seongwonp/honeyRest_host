@@ -37,7 +37,7 @@ public class OAdminAuthService {
         }
 
         String role = request.getRole() != null ? request.getRole() : "COMPANY_ADMIN";
-        if (role == "GENERAL") {
+        if ("GENERAL".equals(role)) {
             throw new IllegalArgumentException("관리자 가입은 GENERAL 권한을 허용하지 않습니다.");
         }
 
@@ -52,7 +52,8 @@ public class OAdminAuthService {
                 .isVerified(true)
                 .lastLogin(LocalDateTime.now())
                 .point(0)
-                .role(request.getRole()) // COMPANY_ADMIN or SUPER_ADMIN
+                .role(role) // 이 API는 SecurityConfig에서 SUPER_ADMIN 인증을 요구하므로,
+                            // 이미 검증된 super admin이 명시한 role(COMPANY_ADMIN 또는 SUPER_ADMIN)을 그대로 사용한다.
                 .status("ACTIVE")
                 .build();
 
