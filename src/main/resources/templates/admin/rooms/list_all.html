@@ -168,6 +168,7 @@
                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                             <li>
                                                 <form th:action="@{/admin/rooms/{id}/toggle(id=${room.roomId})}" method="post">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                                     <input type="hidden" name="accommodationId" th:value="${room.accommodationId}">
                                                     <button class="dropdown-item d-flex align-items-center" type="submit">
                                                         <span class="me-2" aria-hidden="true"></span>
@@ -179,6 +180,7 @@
                                             <li>
                                                 <form th:action="@{/admin/rooms/{id}/delete(id=${room.roomId})}" method="post"
                                                       onsubmit="return confirm('삭제하시겠습니까? 예약이 있으면 실패할 수 있어요.');">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                                     <input type="hidden" name="accommodationId" th:value="${room.accommodationId}">
                                                     <button class="dropdown-item text-danger d-flex align-items-center" type="submit">
                                                         <span class="me-2" aria-hidden="true"></span>삭제

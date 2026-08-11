@@ -12,6 +12,7 @@
 
     <div class="page-content">
         <form th:action="@{/owner/accommodation/create}" method="post" enctype="multipart/form-data" class="needs-validation" >
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
             <div class="card shadow-sm mb-4 p-4">
                 <h5 class="mb-3">기본 정보</h5>

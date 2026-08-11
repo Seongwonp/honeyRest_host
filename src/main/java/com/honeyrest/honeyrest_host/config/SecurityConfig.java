@@ -22,7 +22,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.multipart.support.MultipartFilter;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -54,10 +64,38 @@ public class SecurityConfig {
         return new ProviderManager(daoAuthProvider());
     }
 
+    // http.addFilterBefore(new MultipartFilter(), ...)로 직접 new 하면 GenericFilterBean의
+    // ServletContext 초기화 콜백을 받지 못해 "No ServletContext" 예외가 난다.
+    // 스프링 빈으로 등록해야 컨테이너가 정상적으로 초기화해 준다.
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public MultipartFilter multipartFilter() {
+        return new MultipartFilter();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, MultipartFilter multipartFilter) throws Exception {
         // 0) 기본 보안 옵션
-        http.csrf(csrf -> csrf.disable());
+        // STATELESS라 세션 기반 CsrfTokenRepository가 동작하지 않으므로 쿠키 기반 저장소를 사용한다.
+        http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+        // multipart/form-data(이미지 업로드) 요청은 CsrfFilter가 실행되는 시점에 바디가 아직
+        // 파싱되지 않아 request.getParameter("_csrf")가 비어 항상 403이 난다.
+        // CsrfFilter보다 앞에서 멀티파트 바디를 먼저 파싱하도록 배치한다.
+        http.addFilterBefore(multipartFilter, CsrfFilter.class);
+        // CsrfToken은 지연 로딩되어 뷰에서 실제로 값을 읽는 시점에야 쿠키가 저장된다.
+        // 응답 바디(사이드바 등)가 기본 응답 버퍼(8KB)를 넘겨 커밋된 뒤에 토큰을 읽으면
+        // Set-Cookie가 누락되어 다음 POST가 403(CSRF 불일치)이 나므로, 필터 체인 초입에서
+        // 토큰을 미리 로드해 응답 커밋 전에 쿠키를 확정한다.
+        http.addFilterAfter(new OncePerRequestFilter() {
+            @Override
+            protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                             FilterChain filterChain) throws ServletException, IOException {
+                CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+                if (csrfToken != null) {
+                    csrfToken.getToken();
+                }
+                filterChain.doFilter(request, response);
+            }
+        }, CsrfFilter.class);
         http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // 1) 인가 규칙

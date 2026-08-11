@@ -167,6 +167,7 @@
     <div id="editModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid #ccc; z-index:1050;">
         <h3 class="fw-bold mb-3">가격/재고 수정</h3>
         <form id="editForm" method="post" action="/owner/rooms/calendar/update">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
             <input type="hidden" name="roomId" id="roomId">
             <input type="hidden" name="date" id="date">
             <div class="mb-3">
