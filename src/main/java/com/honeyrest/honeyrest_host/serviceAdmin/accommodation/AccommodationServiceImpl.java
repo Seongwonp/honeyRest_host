@@ -437,6 +437,12 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Override
     public void changeStatus(Long id, String status) {
+        // 이 메서드는 회사 관리자가 승인 요청(PENDING 제출)에만 쓴다. 과거에는 호출자가 임의의
+        // status(예: APPROVED)를 넘겨 총관리자 승인 없이 자가 승인이 가능했다(P1-1).
+        // 실제 승인/거절은 OAccommodationService.approve/reject(SUPER_ADMIN 전용)로 분리했다.
+        if (!"PENDING".equals(status)) {
+            throw new IllegalArgumentException("회사 관리자는 승인 요청(PENDING) 상태로만 전환할 수 있습니다.");
+        }
         int affected = accommodationRepository.patchUpdateScalars(
                 id, null, null, null, null, null, null, null, null, null, status, null);
         if (affected == 0) throw new EntityNotFoundException("숙소가 존재하지 않습니다. id=" + id);

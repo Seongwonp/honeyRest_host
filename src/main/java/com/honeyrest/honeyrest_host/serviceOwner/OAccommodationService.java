@@ -42,4 +42,10 @@ public interface OAccommodationService {
     Long getAccommodationIdByRoomId(Long roomId);
 
     AccommodationDTO getByName(String accommodationName);
+
+    /** PENDING 상태의 숙소만 ACTIVE로 승인한다(SUPER_ADMIN 전용, P1-1/P1-2). */
+    void approve(Long accommodationId);
+
+    /** PENDING 상태의 숙소만 REJECTED로 거절한다(SUPER_ADMIN 전용, P1-1/P1-2). */
+    void reject(Long accommodationId);
 }

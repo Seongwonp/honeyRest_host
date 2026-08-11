@@ -344,4 +344,20 @@ public class OAccommodationServiceImpl implements OAccommodationService {
         if (acc == null) throw new EntityNotFoundException("숙소를 찾을 수 없습니다. name=" + accommodationName);
         return toDTO(acc);
     }
+
+    @Override
+    public void approve(Long accommodationId) {
+        int updated = accommodationRepository.updateStatusIfCurrent(accommodationId, "PENDING", "ACTIVE");
+        if (updated == 0) {
+            throw new IllegalStateException("승인 대기(PENDING) 상태의 숙소만 승인할 수 있습니다.");
+        }
+    }
+
+    @Override
+    public void reject(Long accommodationId) {
+        int updated = accommodationRepository.updateStatusIfCurrent(accommodationId, "PENDING", "REJECTED");
+        if (updated == 0) {
+            throw new IllegalStateException("승인 대기(PENDING) 상태의 숙소만 거절할 수 있습니다.");
+        }
+    }
 }

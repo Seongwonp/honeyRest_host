@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -122,6 +123,33 @@ public class AccommodationController {
     @PostMapping("/accommodation/{accommodationId}/delete")
     public String deleteAccommodation(@PathVariable Long accommodationId) {
         accommodationService.removeAccommodation(accommodationId);
+        return "redirect:/owner/accommodation/list";
+    }
+
+    /**
+     * 숙소 승인 (PENDING -> ACTIVE). 이 컨트롤러는 /owner/** 전체가 SecurityConfig에서
+     * SUPER_ADMIN 전용으로 잠겨 있으므로, 회사 관리자는 이 경로에 도달할 수 없다(P1-1/P1-2).
+     */
+    @PostMapping("/accommodation/{accommodationId}/approve")
+    public String approveAccommodation(@PathVariable Long accommodationId, RedirectAttributes ra) {
+        try {
+            accommodationService.approve(accommodationId);
+            ra.addFlashAttribute("success", "숙소를 승인했습니다.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/owner/accommodation/list";
+    }
+
+    /** 숙소 거절 (PENDING -> REJECTED). */
+    @PostMapping("/accommodation/{accommodationId}/reject")
+    public String rejectAccommodation(@PathVariable Long accommodationId, RedirectAttributes ra) {
+        try {
+            accommodationService.reject(accommodationId);
+            ra.addFlashAttribute("success", "숙소를 거절했습니다.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/owner/accommodation/list";
     }
 

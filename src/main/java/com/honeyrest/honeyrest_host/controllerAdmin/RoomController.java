@@ -253,6 +253,13 @@ public class RoomController {
                          RedirectAttributes ra,
                          Authentication authentication) throws Exception {
         if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
+        // roomId 소유권만 확인하고 form.accommodationId는 검증하지 않아, 자기 객실을 타사 숙소
+        // 소속으로 옮길 수 있었다(P1-3). 대상 숙소도 같은 회사 소유인지 확인한다.
+        Integer ownerCompanyId = resourceAccessService.currentCompanyId(authentication);
+        if (form.getAccommodationId() != null
+                && !resourceAccessService.ownsAccommodation(ownerCompanyId, form.getAccommodationId())) {
+            return "redirect:/admin/rooms/list_all";
+        }
 //        log.info("[ROOM UPDATE] id={}, checkIn={}, checkOut={}",
 //                roomId, form.getdCheckInTime(), form.getCheckOutTime());
         if (binding.hasErrors()) {
