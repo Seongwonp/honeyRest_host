@@ -19,8 +19,8 @@ public interface AccommodationImageService {
     //삭제
     void delete(Long imageId);
 
-    // 여러장 삭제
-    void deleteSubImages(List<Long> imageIds);
+    // 여러장 삭제 (accommodationId 소속인 이미지만, P1-4)
+    void deleteSubImages(Long accommodationId, List<Long> imageIds);
     // 정렬 변경 옵션
     void updateSort(Long ImageId, Integer sortOrder);
 

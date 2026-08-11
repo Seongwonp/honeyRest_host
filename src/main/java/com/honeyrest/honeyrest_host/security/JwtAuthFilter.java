@@ -16,7 +16,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
-import jakarta.servlet.http.Cookie;
 
 import java.io.IOException;
 import java.util.List;
@@ -54,11 +53,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 String email = (String) claims.get("email");
                 String roleStr = (String) claims.get("role");
+                String typ = (String) claims.get("typ");
 
-                if (email != null && roleStr != null) {
+                // refresh token은 typ 검증 없이도 access token과 동일하게 인증에 통용됐다(P1-7).
+                // refresh token은 14일짜리라, 유출 시 access token 1시간 만료 정책이 무의미해진다.
+                if (email != null && roleStr != null && "access".equals(typ)) {
                     var auth = new UsernamePasswordAuthenticationToken(
                             email, null, List.of(new SimpleGrantedAuthority("ROLE_" + roleStr)));
                     SecurityContextHolder.getContext().setAuthentication(auth);
+                } else if (email != null && roleStr != null) {
+                    log.warn("[JWT] {} refresh(또는 typ 불명) 토큰으로 인증 시도 차단: typ={}", uri, typ);
                 }
             }
         } catch (Exception e) {
@@ -67,37 +71,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 
         filterChain.doFilter(request, response);
-    }
-
-    private String resolveToken(HttpServletRequest request) {
-        // 1) Authorization: Bearer ...
-        String bearer = request.getHeader("Authorization");
-        if (bearer != null && !bearer.isBlank()) {
-            return bearer;
-        }
-        // 2) Cookie: ACCESS_TOKEN
-        if (request.getCookies() != null) {
-            for (Cookie c : request.getCookies()) {
-                if ("ACCESS_TOKEN".equals(c.getName())) {
-                    return c.getValue(); // 여기 값은 보통 순수 JWT
-                }
-            }
-        }
-        return null;
-    }
-
-    private String normalizeToken(String raw) {
-        if (raw == null) return null;
-        String v = raw.trim();
-        if (v.length() >= 7 && v.regionMatches(true, 0, "Bearer ", 0, 7)) {
-            return v.substring(7).trim();
-        }
-        return v;
-    }
-
-    private String mask(String v) {
-        if (v == null) return null;
-        return (v.length() <= 12) ? v : v.substring(0, 6) + "..." + v.substring(v.length() - 6);
     }
 
     @Override

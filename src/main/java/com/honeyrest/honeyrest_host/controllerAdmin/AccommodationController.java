@@ -342,17 +342,17 @@ public class AccommodationController {
 
     /*
      *  총관리자에게 승인요청 (DRAFT/REJECTED → PENDING)
+     *  과거에는 클라이언트가 to=APPROVED를 보내 총관리자 승인 없이 자가 승인이 가능했다(P1-1).
+     *  회사 관리자는 PENDING 제출만 할 수 있고, 실제 승인/거절은 SUPER_ADMIN 전용 흐름에서만 이뤄진다.
      */
     @PostMapping("/{id}/request")
-    public String requestApproval(@PathVariable Long id,
-                                  @RequestParam(required = false, defaultValue = "PENDING") String to,
-                                  Authentication authentication) {
+    public String requestApproval(@PathVariable Long id, Authentication authentication) {
         CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
         AccommodationCreateRequestDTO acc = accommodationService.getById(id);
         if (acc == null || myCompany == null || !myCompany.getCompanyId().equals(acc.getCompanyId())) {
             return "redirect:/admin/accommodations/list";
         }
-        accommodationService.changeStatus(id, to);
+        accommodationService.changeStatus(id, "PENDING");
         return "redirect:/admin/accommodations/list?status=PENDING";
     }
 
@@ -519,9 +519,9 @@ public class AccommodationController {
                 );
             }
 
-            // 기존 sub 이미지 삭제(있다면)
+            // 기존 sub 이미지 삭제(있다면) - id는 이미 위에서 호출자 소유로 검증됨
             if (deleteSubImageIds != null && !deleteSubImageIds.isEmpty()) {
-                accommodationImageService.deleteSubImages(deleteSubImageIds);
+                accommodationImageService.deleteSubImages(id, deleteSubImageIds);
             }
 
             // 5) SUB 이미지 추가

@@ -95,11 +95,13 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
     }
 
     @Override
-    public void deleteSubImages(List<Long> imageIds) {
+    public void deleteSubImages(Long accommodationId, List<Long> imageIds) {
         if(imageIds == null || imageIds.isEmpty()) {
             return;
         }
-        accommodationImageRepository.deleteAllById(imageIds);
+        // imageId가 실제로 이 숙소 소속인지 확인 없이 그대로 삭제하면 타 숙소 이미지를
+        // imageId만 알아내 삭제할 수 있었다(P1-4).
+        accommodationImageRepository.deleteByAccommodation_AccommodationIdAndImageIdIn(accommodationId, imageIds);
     }
 
     @Override
