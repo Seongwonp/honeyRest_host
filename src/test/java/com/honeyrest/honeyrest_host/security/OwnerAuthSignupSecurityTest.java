@@ -56,16 +56,49 @@ class OwnerAuthSignupSecurityTest {
     void superAdmin은_새_관리자를_생성할_수_있다() {
         String token = jwtTokenProvider.createAccessToken(2L, "super-admin@test.local", "SUPER_ADMIN");
 
-        ResponseEntity<String> response = attemptSignup(token, "COMPANY_ADMIN", "created-by-super");
+        // Spring Security 6의 기본 CsrfTokenRequestHandler(XorCsrfTokenRequestAttributeHandler)는
+        // BREACH 공격 방어를 위해 화면에 노출하는 토큰 값을 매 요청 XOR로 마스킹한다. 즉 쿠키에 저장된
+        // 원본 값과 폼/헤더로 제출하는 값이 서로 다르다(같은 문자열을 넣으면 오히려 실패한다).
+        // 실제 브라우저처럼 로그인 페이지의 숨은 input에서 마스킹된 값을 그대로 읽어와야 한다.
+        ResponseEntity<String> loginPage = restTemplate.getForEntity("/auth/login", String.class);
+        String xsrfCookie = loginPage.getHeaders().get(HttpHeaders.SET_COOKIE).stream()
+                .filter(c -> c.startsWith("XSRF-TOKEN="))
+                .findFirst()
+                .map(c -> c.substring("XSRF-TOKEN=".length()).split(";")[0])
+                .orElseThrow(() -> new IllegalStateException("XSRF-TOKEN 쿠키를 받지 못함"));
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("name=\"_csrf\"\\s+value=\"([^\"]+)\"")
+                .matcher(loginPage.getBody());
+        if (!m.find()) {
+            throw new IllegalStateException("로그인 페이지에서 _csrf 히든 필드를 찾지 못함");
+        }
+        String csrfHeaderValue = m.group(1);
 
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        ResponseEntity<String> response = attemptSignup(token, xsrfCookie, csrfHeaderValue, "COMPANY_ADMIN", "created-by-super");
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode(),
+                "body=" + response.getBody());
     }
 
     private ResponseEntity<String> attemptSignup(String accessToken, String targetRole, String emailPrefix) {
+        return attemptSignup(accessToken, null, null, targetRole, emailPrefix);
+    }
+
+    private ResponseEntity<String> attemptSignup(String accessToken, String csrfCookieValue, String csrfHeaderValue,
+                                                  String targetRole, String emailPrefix) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        StringBuilder cookie = new StringBuilder();
         if (accessToken != null) {
-            headers.add(HttpHeaders.COOKIE, "ACCESS_TOKEN=" + accessToken);
+            cookie.append("ACCESS_TOKEN=").append(accessToken);
+        }
+        if (csrfCookieValue != null) {
+            if (!cookie.isEmpty()) cookie.append("; ");
+            cookie.append("XSRF-TOKEN=").append(csrfCookieValue);
+            headers.add("X-XSRF-TOKEN", csrfHeaderValue);
+        }
+        if (!cookie.isEmpty()) {
+            headers.add(HttpHeaders.COOKIE, cookie.toString());
         }
         String body = """
                 {"email":"%s@test.local","password":"test1234","name":"보안 테스트","role":"%s"}

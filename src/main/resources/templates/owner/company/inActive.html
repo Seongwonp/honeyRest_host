@@ -59,6 +59,7 @@
                             <form th:action="@{'/owner/company/' + ${c.companyId} + '/delete'}"
                                   method="post" class="d-inline"
                                   onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                 <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
                             </form>
                         </div>

@@ -59,6 +59,7 @@
                         <form th:action="@{/admin/accommodations/edit/{id}(id=${acc.accommodationId})}"
                               th:object="${form}" method="post" enctype="multipart/form-data">
 
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                             <input type="hidden" name="id" th:value="${acc.accommodationId}"/>
 
                             <div class="row g-3">

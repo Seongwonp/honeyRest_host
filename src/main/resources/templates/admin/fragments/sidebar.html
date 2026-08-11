@@ -136,7 +136,9 @@
             </div>
 
             <div class="mt-auto pb-2">
-                <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none"></form>
+                <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                </form>
                 <button type="button" class="sidebar-logout-btn"
                         onclick="document.getElementById('logoutForm').submit();">
                     <i class="bi bi-box-arrow-right me-2"></i>로그아웃
