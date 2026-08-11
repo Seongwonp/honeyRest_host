@@ -1,7 +1,9 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
 import com.honeyrest.honeyrest_host.dtoAdmin.CompanyDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.InquiryDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.ReservationDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.RoomDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationCreateRequestDTO;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
@@ -20,6 +22,8 @@ public class CompanyResourceAccessService {
     private final AccommodationService accommodationService;
     private final RoomService roomService;
     private final ReservationService reservationService;
+    private final ReviewService reviewService;
+    private final InquiryService inquiryService;
 
     public Integer currentCompanyId(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) return null;
@@ -52,6 +56,28 @@ public class CompanyResourceAccessService {
         try {
             ReservationDTO reservation = reservationService.getReservationDetail(reservationId);
             return reservation != null && ownsAccommodation(companyId, reservation.getAccommodationId());
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    public boolean ownsReview(Integer companyId, Long reviewId) {
+        if (companyId == null || reviewId == null) return false;
+        try {
+            return reviewService.getOne(reviewId)
+                    .map(ReviewDTO::getAccommodationId)
+                    .map(accId -> ownsAccommodation(companyId, accId))
+                    .orElse(false);
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    public boolean ownsInquiry(Integer companyId, Long inquiryId) {
+        if (companyId == null || inquiryId == null) return false;
+        try {
+            InquiryDTO inquiry = inquiryService.get(inquiryId);
+            return inquiry != null && ownsAccommodation(companyId, inquiry.getAccommodationId());
         } catch (RuntimeException ignored) {
             return false;
         }

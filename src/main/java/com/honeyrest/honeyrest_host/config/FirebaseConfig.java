@@ -14,7 +14,7 @@ public class FirebaseConfig {
     @PostConstruct
     public void init() throws Exception {
         InputStream serviceAccount = getClass().getClassLoader()
-                .getResourceAsStream("honeyrest-7fb60-firebase-adminsdk-fbsvc-17f8ee9da5.json");
+                .getResourceAsStream("honeyrest-7fb60-firebase-adminsdk-fbsvc-70bafb1ad4.json");
 
         if (serviceAccount == null) {
             throw new IllegalStateException("Firebase 서비스 계정 키 파일을 찾을 수 없습니다.");

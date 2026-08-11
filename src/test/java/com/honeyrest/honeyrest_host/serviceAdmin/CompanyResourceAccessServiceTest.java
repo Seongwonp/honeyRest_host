@@ -1,7 +1,9 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
 import com.honeyrest.honeyrest_host.dtoAdmin.CompanyDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.InquiryDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.ReservationDTO;
+import com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.RoomDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationCreateRequestDTO;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
@@ -11,6 +13,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -22,6 +26,8 @@ class CompanyResourceAccessServiceTest {
     @Mock AccommodationService accommodationService;
     @Mock RoomService roomService;
     @Mock ReservationService reservationService;
+    @Mock ReviewService reviewService;
+    @Mock InquiryService inquiryService;
     @Mock Authentication authentication;
 
     private CompanyResourceAccessService accessService;
@@ -29,7 +35,8 @@ class CompanyResourceAccessServiceTest {
     @BeforeEach
     void setUp() {
         accessService = new CompanyResourceAccessService(
-                companyService, accommodationService, roomService, reservationService);
+                companyService, accommodationService, roomService, reservationService,
+                reviewService, inquiryService);
     }
 
     @Test
@@ -84,5 +91,27 @@ class CompanyResourceAccessServiceTest {
                 .build();
 
         assertThat(accessService.canCreateReservation(7, form)).isFalse();
+    }
+
+    @Test
+    void rejectsReviewOwnedByAnotherCompany() {
+        when(reviewService.getOne(55L)).thenReturn(
+                Optional.of(ReviewDTO.builder().reviewId(55L).accommodationId(30L).build()));
+        when(accommodationService.getById(30L)).thenReturn(
+                AccommodationCreateRequestDTO.builder().accommodationId(30L).companyId(7).build());
+
+        assertThat(accessService.ownsReview(7, 55L)).isTrue();
+        assertThat(accessService.ownsReview(8, 55L)).isFalse();
+    }
+
+    @Test
+    void rejectsInquiryOwnedByAnotherCompany() {
+        when(inquiryService.get(66L)).thenReturn(
+                InquiryDTO.builder().inquiryId(66L).accommodationId(30L).build());
+        when(accommodationService.getById(30L)).thenReturn(
+                AccommodationCreateRequestDTO.builder().accommodationId(30L).companyId(7).build());
+
+        assertThat(accessService.ownsInquiry(7, 66L)).isTrue();
+        assertThat(accessService.ownsInquiry(8, 66L)).isFalse();
     }
 }

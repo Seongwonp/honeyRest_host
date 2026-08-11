@@ -28,10 +28,10 @@ public class FileUploadUtil {
      */
     public FileUploadUtil() throws Exception {
         GoogleCredentials credentials = GoogleCredentials
-                .fromStream(new ClassPathResource("honeyrest-7fb60-firebase-adminsdk-fbsvc-17f8ee9da5.json").getInputStream()) // 🔑 경로 확인
+                .fromStream(new ClassPathResource("honeyrest-7fb60-firebase-adminsdk-fbsvc-70bafb1ad4.json").getInputStream()) // 🔑 경로 확인
                 .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
-        //배포  new ClassPathResource("honeyrest-7fb60-firebase-adminsdk-fbsvc-17f8ee9da5.json").getInputStream()
-        //일반  new FileInputStream("src/main/resources/honeyrest-7fb60-firebase-adminsdk-fbsvc-17f8ee9da5.json")
+        //배포  new ClassPathResource("honeyrest-7fb60-firebase-adminsdk-fbsvc-70bafb1ad4.json").getInputStream()
+        //일반  new FileInputStream("src/main/resources/honeyrest-7fb60-firebase-adminsdk-fbsvc-70bafb1ad4.json")
         storage = StorageOptions.newBuilder()
                 .setCredentials(credentials)
                 .setProjectId("honeyrest-7fb60")

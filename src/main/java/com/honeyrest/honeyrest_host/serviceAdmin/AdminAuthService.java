@@ -26,9 +26,9 @@ public class AdminAuthService {
     /** 관리자 가입 */
     public Long adminSignup(AdminSignupRequestDTO request) {
         // 이메일 중복 체크
-//        if (userRepository.findByEmail(request.getEmail())) {
-//            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
-//        }
+        if (userRepository.findByEmail(request.getEmail()) != null) {
+            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+        }
 
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new IllegalArgumentException("비밀번호는 필수입니다.");
@@ -38,7 +38,7 @@ public class AdminAuthService {
         }
 
         String role = request.getRole() != null ? request.getRole() : "COMPANY_ADMIN";
-        if (role == "GENERAL") {
+        if ("GENERAL".equals(role)) {
             throw new IllegalArgumentException("관리자 가입은 GENERAL 권한을 허용하지 않습니다.");
         }
 

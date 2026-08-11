@@ -5,6 +5,7 @@ import com.honeyrest.honeyrest_host.dtoAdmin.DailyOverviewDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.GridCellDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.RoomDTO;
+import com.honeyrest.honeyrest_host.serviceAdmin.CompanyResourceAccessService;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.PriceCalendarService;
 import com.honeyrest.honeyrest_host.serviceAdmin.RoomService;
@@ -12,6 +13,8 @@ import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationServ
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +42,20 @@ public class PriceCalendarController {
     private final ObjectMapper objectMapper;
     private final CompanyService companyService;
     private final AccommodationService accommodationService;
+    private final CompanyResourceAccessService resourceAccessService;
+
+    /**
+     * 클라이언트가 보낸 companyId는 신뢰하지 않고 로그인 사용자 기준으로 다시 계산한다.
+     * (과거에는 이 컨트롤러 전체가 요청 파라미터의 companyId/roomId를 그대로 사용해
+     *  다른 회사의 가격·재고를 조회·변조할 수 있었다 - P0-4)
+     */
+    private Integer requireOwnCompanyId(Authentication authentication) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (companyId == null) {
+            throw new AccessDeniedException("회사 정보를 확인할 수 없습니다.");
+        }
+        return companyId;
+    }
 
 
 
@@ -47,11 +64,9 @@ public class PriceCalendarController {
      * companyId 없이 들어오면 로그인 사용자 기준으로 채워서 리다이렉트
      */
     @GetMapping("/page")
-    public String pageWithoutCompanyId(@RequestParam(required = false) Integer companyId,
-                                       @RequestParam(required = false) String ym) {
-        if (companyId == null) {
-            companyId = companyService.getCompanyIdByOfCurrentUser();
-        }
+    public String pageWithoutCompanyId(@RequestParam(required = false) String ym) {
+        // 쿼리스트링에 companyId가 있어도 무시하고 로그인 사용자의 회사로만 리다이렉트한다.
+        Integer companyId = companyService.getCompanyIdByOfCurrentUser();
         if (companyId == null) return "redirect:/admin/dashboard";
         // ym 없으면 현재 월로
         String resolvedYm = (ym != null && !ym.isBlank()) ? ym : YearMonth.now().toString();
@@ -62,7 +77,8 @@ public class PriceCalendarController {
      * 월 캘린더 페이지 (companyId 필수 버전)
      */
     @GetMapping(value = "/page", params = "companyId")
-    public String page(@RequestParam Integer companyId,
+    public String page(Authentication authentication,
+                       @RequestParam Integer companyId,
                        @RequestParam(required = false) Long accommodationId,
                        @RequestParam(required = false) String roomId,
                        @RequestParam(required = false) String ym,
@@ -70,8 +86,17 @@ public class PriceCalendarController {
                        @RequestParam(required = false, defaultValue = "calendar") String mode,
                        Model model) {
 
+        // 쿼리스트링의 companyId는 URL 구성/표시용일 뿐, 실제 조회는 로그인 사용자의 회사로만 수행한다.
+        companyId = requireOwnCompanyId(authentication);
+
         // 1) 파라미터 해석
         Long resolvedRoomId = (roomId == null || roomId.isBlank() || "null".equalsIgnoreCase(roomId) ? null : Long.valueOf(roomId));
+        if (resolvedRoomId != null && !resourceAccessService.ownsRoom(companyId, resolvedRoomId)) {
+            throw new AccessDeniedException("해당 객실에 접근할 권한이 없습니다.");
+        }
+        if (accommodationId != null && !resourceAccessService.ownsAccommodation(companyId, accommodationId)) {
+            throw new AccessDeniedException("해당 숙소에 접근할 권한이 없습니다.");
+        }
 
 
         YearMonth yearMonth;
@@ -111,7 +136,8 @@ public class PriceCalendarController {
      * 단건 (페이지 내 인라인 폼용)
      */
     @PostMapping("/upsert")
-    public String upsert(@RequestParam Integer companyId,
+    public String upsert(Authentication authentication,
+                         @RequestParam Integer companyId,
                          @RequestParam(required = false) Long accommodationId,
                          @RequestParam Long roomId,
                          @RequestParam String yearMonth,
@@ -122,6 +148,13 @@ public class PriceCalendarController {
                          @RequestParam(required = false) Integer minAvailable,
 
                          RedirectAttributes ra) {
+
+        // priceCalendarService.upsert는 companyId 없이 roomId만으로 동작하므로,
+        // 여기서 반드시 roomId가 로그인 회사 소유인지 확인해야 한다(P0-4, 가격 변조 방지).
+        companyId = requireOwnCompanyId(authentication);
+        if (!resourceAccessService.ownsRoom(companyId, roomId)) {
+            throw new AccessDeniedException("해당 객실의 가격을 수정할 권한이 없습니다.");
+        }
 
         boolean created = priceCalendarService.upsert(roomId, date, price, available);
         ra.addFlashAttribute("toast", created ? "신규 생성 완료" : "수정 완료");
@@ -141,7 +174,8 @@ public class PriceCalendarController {
      * 벌크 업서트 (textarea JSON 전송용)
      */
     @PostMapping("/bulk-upsert")
-    public String bulkUpsert(@RequestParam Integer companyId,
+    public String bulkUpsert(Authentication authentication,
+                             @RequestParam Integer companyId,
                              @RequestParam(required = false) Long accommodationId,
                              @RequestParam Long roomId,
                              @RequestParam String ym,
@@ -149,11 +183,26 @@ public class PriceCalendarController {
                              @RequestParam(required = false, defaultValue = "calendar") String mode,
                              @RequestParam(required = false) Integer minAvailable,
                              RedirectAttributes ra) {
+        companyId = requireOwnCompanyId(authentication);
+        if (!resourceAccessService.ownsRoom(companyId, roomId)) {
+            throw new AccessDeniedException("해당 객실의 가격을 수정할 권한이 없습니다.");
+        }
         try {
             PriceCalendarDTO priceCalendarDTO =
                     objectMapper.readValue(json, PriceCalendarDTO.class);
+            // payload 안의 모든 room이 로그인 회사 소유인지 확인(roomId 하나만 검증하면
+            // JSON 본문에 다른 회사의 roomId를 섞어 보내는 우회가 가능하다).
+            Integer verifiedCompanyId = companyId;
+            boolean allOwned = priceCalendarDTO.getRooms() == null || priceCalendarDTO.getRooms().stream()
+                    .allMatch(roomDTO -> roomDTO.getRoom() != null
+                            && resourceAccessService.ownsRoom(verifiedCompanyId, roomDTO.getRoom().getRoomId()));
+            if (!allOwned) {
+                throw new AccessDeniedException("일부 객실에 대한 권한이 없습니다.");
+            }
             priceCalendarService.bulkUpsert(priceCalendarDTO);
             ra.addFlashAttribute("toast", "벌크 업서트 완료");
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             ra.addFlashAttribute("error", "벌크 업서트 실패: " + e.getMessage());
         }
@@ -170,7 +219,8 @@ public class PriceCalendarController {
     }
 
     @GetMapping("/calendar/{accommodationId}")
-    public String roomCalendar(@PathVariable Long accommodationId,
+    public String roomCalendar(Authentication authentication,
+                               @PathVariable Long accommodationId,
                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
                                Model model) {
@@ -179,7 +229,12 @@ public class PriceCalendarController {
             startDate = LocalDate.now().withDayOfMonth(1);
             endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
         }
-        Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
+        // accommodationId만으로 companyId를 역산하면 임의 accommodationId를 넣어
+        // 다른 회사의 캘린더를 열람할 수 있으므로, 로그인 회사 소유인지 먼저 확인한다.
+        Integer companyId = requireOwnCompanyId(authentication);
+        if (!resourceAccessService.ownsAccommodation(companyId, accommodationId)) {
+            throw new AccessDeniedException("해당 숙소에 접근할 권한이 없습니다.");
+        }
 
         // 해당 숙소의 방 리스트
         List<RoomDTO> roomList = roomService.getRoomsByAccommodationId(accommodationId);
@@ -222,10 +277,15 @@ public class PriceCalendarController {
 
     @GetMapping("/daily-overview")
     @ResponseBody   // JSON 응답
-    public List<DailyOverviewDTO> getDailyOverview(@RequestParam Integer companyId,
+    public List<DailyOverviewDTO> getDailyOverview(Authentication authentication,
+                                                   @RequestParam Integer companyId,
                                                    @RequestParam(required = false) Long accommodationId,
                                                    @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
                                                    @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
+        companyId = requireOwnCompanyId(authentication);
+        if (accommodationId != null && !resourceAccessService.ownsAccommodation(companyId, accommodationId)) {
+            throw new AccessDeniedException("해당 숙소에 접근할 권한이 없습니다.");
+        }
         return priceCalendarService.getDailyOverview(companyId, accommodationId, start, end);
     }
 
@@ -233,29 +293,44 @@ public class PriceCalendarController {
     // 5) 그리드 셀 데이터 (Grid Cells)
     @GetMapping("/grid-cells")
     @ResponseBody   // JSON 응답
-    public List<GridCellDTO> getGridCells(@RequestParam Integer companyId,
+    public List<GridCellDTO> getGridCells(Authentication authentication,
+                                          @RequestParam Integer companyId,
                                           @RequestParam(required = false) Long accommodationId,
                                           @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
                                           @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
+        companyId = requireOwnCompanyId(authentication);
+        if (accommodationId != null && !resourceAccessService.ownsAccommodation(companyId, accommodationId)) {
+            throw new AccessDeniedException("해당 숙소에 접근할 권한이 없습니다.");
+        }
         return priceCalendarService.getGridCells(companyId, accommodationId, start, end);
     }
 
     @GetMapping("/daily-revenue")
     @ResponseBody
-    public Map<LocalDate, BigDecimal> getDailyRevenue(@RequestParam Integer companyId,
+    public Map<LocalDate, BigDecimal> getDailyRevenue(Authentication authentication,
+                                                      @RequestParam Integer companyId,
                                                       @RequestParam(required = false) Long accommodationId,
                                                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
                                                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
+        companyId = requireOwnCompanyId(authentication);
+        if (accommodationId != null && !resourceAccessService.ownsAccommodation(companyId, accommodationId)) {
+            throw new AccessDeniedException("해당 숙소에 접근할 권한이 없습니다.");
+        }
         return priceCalendarService.getDailyRevenueByCheckin(companyId, accommodationId, start, end);
     }
     @GetMapping("/daily-revenue/checkin")
     @ResponseBody
     public Map<LocalDate, BigDecimal> getDailyRevenueByCheckin(
+            Authentication authentication,
             @RequestParam Integer companyId,
             @RequestParam(required = false) Long accommodationId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate start,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end
     ) {
+        companyId = requireOwnCompanyId(authentication);
+        if (accommodationId != null && !resourceAccessService.ownsAccommodation(companyId, accommodationId)) {
+            throw new AccessDeniedException("해당 숙소에 접근할 권한이 없습니다.");
+        }
         return priceCalendarService.getDailyRevenueByCheckin(companyId, accommodationId, start, end);
     }
 

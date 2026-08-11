@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Log4j2
 
 class ReservationServiceImplTest {

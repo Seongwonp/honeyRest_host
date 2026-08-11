@@ -2,6 +2,7 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.InquiryDTO;
+import com.honeyrest.honeyrest_host.serviceAdmin.CompanyResourceAccessService;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.InquiryService;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +25,15 @@ public class InquiryController {
 
     private final InquiryService inquiryService;
     private final CompanyService companyService;
+    private final CompanyResourceAccessService resourceAccessService;
+
+    /** 목록은 이미 companyId로 스코프되지만 단건 3개(detail/reply/delete)는 검증이 없었다(P0-5). */
+    private void requireOwnInquiry(Authentication authentication, Long inquiryId) {
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (!resourceAccessService.ownsInquiry(companyId, inquiryId)) {
+            throw new AccessDeniedException("해당 문의에 접근할 권한이 없습니다.");
+        }
+    }
 
     @GetMapping("/list")
     public String list(@RequestParam(required = false) Long accommodationId,
@@ -50,7 +62,8 @@ public class InquiryController {
     }
     // 관리자모드에서 상세보기
     @GetMapping("/detail/{id}")
-    public String detail(@PathVariable("id") Long inquiryId, Model model) {
+    public String detail(Authentication authentication, @PathVariable("id") Long inquiryId, Model model) {
+        requireOwnInquiry(authentication, inquiryId);
         InquiryDTO dto = inquiryService.get(inquiryId);
         if (dto == null) return "redirect:/admin/inquiries/list";
         model.addAttribute("inquiry", dto);
@@ -59,7 +72,8 @@ public class InquiryController {
 
     // 관리자 - 답글 등록/수정
     @PostMapping("/{id}/reply")
-    public String reply(@PathVariable("id") Long inquiryId,
+    public String reply(Authentication authentication,
+                        @PathVariable("id") Long inquiryId,
                         @RequestParam("relpyText") String relpyText,
                         RedirectAttributes ra,
                         @RequestParam(required = false) Long accommodationId,
@@ -67,6 +81,7 @@ public class InquiryController {
                         @RequestParam(required = false) Boolean replied,
                         @RequestParam(defaultValue = "1") int page,
                         @RequestParam(defaultValue = "10") int size) {
+        requireOwnInquiry(authentication, inquiryId);
         try {
             inquiryService.reply(inquiryId, relpyText);
             ra.addAttribute("msg", "답변이 저장되었습니다.");
@@ -82,7 +97,8 @@ public class InquiryController {
 
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable("id") Long inquiryId, RedirectAttributes ra) {
+    public String delete(Authentication authentication, @PathVariable("id") Long inquiryId, RedirectAttributes ra) {
+        requireOwnInquiry(authentication, inquiryId);
         inquiryService.delete(inquiryId);
         ra.addFlashAttribute("message", "문의가 삭제되었습니다.");
         return "redirect:/admin/inquiries/list";

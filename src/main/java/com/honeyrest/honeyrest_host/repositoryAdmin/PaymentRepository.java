@@ -25,11 +25,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      * 결제 수단, 경제 상태, 기간, 검색어(예약번호/이름/전화) 지원
      * page 형태로 리턴(페이징 처리)
      */
-    /* 결제 내역 화면(관리자 -> 결제내역, 정신 리포트) 에서 검색 조건 줬을 떄 사용됨 : 주어진 조건이 있으면 필터링, 없으면 전체 허용하는 JPQL */
+    /* 결제 내역 화면(관리자 -> 결제내역, 정산 리포트)에서 검색 조건 줬을 때 사용됨.
+     * companyId는 테넌트 경계이므로 null-bypass를 허용하지 않는다(항상 필수 일치).
+     * 그 외 조건은 주어지면 필터링, 없으면 전체 허용. */
     @Query("""
             select p from Payment p
-            join p.reservation r where (:companyId is null or r.accommodation.company.companyId = :companyId) 
-            and(:accommodationId is null or r.accommodation.accommodationId = :accommodationId) 
+            join p.reservation r where r.accommodation.company.companyId = :companyId
+            and(:accommodationId is null or r.accommodation.accommodationId = :accommodationId)
             and(:methodsEmpty = true or p.paymentMethod in :methods) 
             and(:statusesEmpty = true or p.paymentStatus in :statuses) 
             and(:from is null or p.paymentDate >= :from) 

@@ -37,6 +37,14 @@ public class PaymentServiceImpl implements PaymentService {
        CompanyDTO companyDTO = companyService.getByUserEmail(loginEmail);
         Integer companyId = (companyDTO != null) ? companyDTO.getCompanyId() : null;
 
+        // company를 특정할 수 없으면(로그인 이메일 누락, 매핑 실패 등) 전체 조회로 새지 않도록
+        // 빈 결과를 반환한다. 이 메서드는 회사 관리자 화면(controllerAdmin)에서만 호출되므로
+        // companyId가 null인 정상 케이스는 없다.
+        if (companyId == null) {
+            log.warn("PaymentServiceImpl.listForCompanyUser: companyId를 확인할 수 없어 빈 결과를 반환합니다. loginEmail={}", loginEmail);
+            return Page.empty(pageable);
+        }
+
         // 2) 결제
         List<String> effStatuses = (statuses == null || statuses.isEmpty()) ? DEFAULT_STATUSES : statuses;
         boolean statusesEmpty = (effStatuses == null || effStatuses.isEmpty());
