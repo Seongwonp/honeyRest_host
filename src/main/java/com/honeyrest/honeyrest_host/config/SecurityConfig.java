@@ -24,6 +24,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -81,7 +82,19 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, MultipartFilter multipartFilter) throws Exception {
         // 0) 기본 보안 옵션
         // STATELESS라 세션 기반 CsrfTokenRepository가 동작하지 않으므로 쿠키 기반 저장소를 사용한다.
-        http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        // STATELESS 에서는 SessionManagementFilter 가 JwtAuthFilter 로 인증된 모든 요청을 "새 인증"으로 보고
+        // CsrfAuthenticationStrategy 로 CSRF 토큰을 매번 교체했다. 교체된 토큰은 화면이 응답 버퍼(8KB)를 넘긴 뒤에야
+        // 읽혀 Set-Cookie 가 빠지고, 브라우저에서 폼 POST(객실 등록, 예약 완료, 숙소 승인 등)가 403 이 됐다.
+        // 토큰 교체(로그인 시 토큰 고정 방지)는 실제 로그인 요청(POST /auth/login)에서만 수행한다.
+        CsrfAuthenticationStrategy rotateOnLogin = new CsrfAuthenticationStrategy(csrfTokenRepository);
+        http.csrf(csrf -> csrf
+                .csrfTokenRepository(csrfTokenRepository)
+                .sessionAuthenticationStrategy((authentication, request, response) -> {
+                    if (isLoginSubmit(request)) {
+                        rotateOnLogin.onAuthentication(authentication, request, response);
+                    }
+                }));
         // multipart/form-data(이미지 업로드) 요청은 CsrfFilter가 실행되는 시점에 바디가 아직
         // 파싱되지 않아 request.getParameter("_csrf")가 비어 항상 403이 난다.
         // CsrfFilter보다 앞에서 멀티파트 바디를 먼저 파싱하도록 배치한다.
@@ -197,5 +210,11 @@ public class SecurityConfig {
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /** 폼 로그인 처리 요청(POST /auth/login) 여부 */
+    static boolean isLoginSubmit(HttpServletRequest request) {
+        return "POST".equalsIgnoreCase(request.getMethod())
+                && (request.getContextPath() + "/auth/login").equals(request.getRequestURI());
     }
 }

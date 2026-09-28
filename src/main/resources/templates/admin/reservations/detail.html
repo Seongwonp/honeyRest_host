@@ -111,7 +111,7 @@
                                 <div class="kv"><dt>예약 번호</dt><dd th:text="*{reservationNumber}">-</dd></div>
                                 <div class="kv"><dt>상태</dt>
                                     <dd>
-                    <span class="badge-soft"
+                    <span class="badge-soft" data-testid="reservation-status"
                           th:with="st=${#strings.toUpperCase(reservation.status)}"
                           th:text="${st ?: 'UNKNOWN'}"
                           th:classappend="${
@@ -183,6 +183,28 @@
                 <div class="card shadow-sm">
                     <div class="card-body d-flex flex-wrap gap-2">
                         <a class="btn btn-pill btn-outline-lilac" th:href="@{/admin/reservations/my}">목록</a>
+
+                        <!-- 체크아웃 완료: CONFIRMED → COMPLETED (서비스에서 상태 전이를 한 번 더 검증) -->
+                        <form th:if="${#strings.toUpperCase(reservation.status) == 'CONFIRMED'}"
+                              th:action="@{|/admin/reservations/${reservation.reservationId}/complete|}" method="post"
+                              onsubmit="return confirm('체크아웃 완료(COMPLETED)로 처리하시겠습니까?');">
+                            <input type="hidden" th:if="${_csrf}"
+                                   th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn btn-pill btn-outline-lilac" data-testid="btn-complete">
+                                체크아웃 완료
+                            </button>
+                        </form>
+
+                        <!-- 노쇼: PENDING/CONFIRMED → NO_SHOW -->
+                        <form th:if="${#strings.toUpperCase(reservation.status) == 'CONFIRMED' or #strings.toUpperCase(reservation.status) == 'PENDING'}"
+                              th:action="@{|/admin/reservations/${reservation.reservationId}/no-show|}" method="post"
+                              onsubmit="return confirm('노쇼(NO_SHOW)로 처리하시겠습니까?');">
+                            <input type="hidden" th:if="${_csrf}"
+                                   th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn btn-pill btn-outline-lilac" data-testid="btn-no-show">
+                                노쇼 처리
+                            </button>
+                        </form>
 
                         <form th:action="@{|/admin/reservations/${reservation.reservationId}/cancel|}" method="post"
                               onsubmit="return confirm('이 예약을 취소하시겠습니까?');">

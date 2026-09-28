@@ -291,7 +291,8 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .amenities(amenitiesJson)
                 .checkInTime(req.getCheckInTime())
                 .checkOutTime(req.getCheckOutTime())
-                .status(req.getStatus() == null ? "PENDING" : req.getStatus())
+                // 신규 숙소는 항상 승인 대기로 시작한다. 폼의 status(ACTIVE 등)는 신뢰하지 않는다.
+                .status(AccommodationStatusPolicy.INITIAL_STATUS)
                 .minPrice(req.getMinPrice())
                 .build();
 
@@ -397,7 +398,8 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         LocalDateTime checkInTime = req.getCheckInTime();
         LocalDateTime checkOutTime = req.getCheckOutTime();
-        String status = hasText(req.getStatus()) ? req.getStatus().trim() : null;
+        // 회사 관리자는 PENDING/INACTIVE 로만 바꿀 수 있다. ACTIVE 는 총관리자 승인(approve)으로만 전환된다.
+        String status = AccommodationStatusPolicy.resolveCompanyAdminStatus(oldStatus, req.getStatus());
         BigDecimal minPrice = req.getMinPrice();
 
         int affected = accommodationRepository.patchUpdateScalars(

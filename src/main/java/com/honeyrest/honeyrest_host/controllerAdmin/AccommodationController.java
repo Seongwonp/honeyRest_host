@@ -12,6 +12,7 @@ import com.honeyrest.honeyrest_host.serviceAdmin.RegionService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationCategoryService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationImageService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
+import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationStatusPolicy;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyResourceAccessService;
 import com.honeyrest.honeyrest_host.serviceAdmin.UserService;
@@ -92,6 +93,8 @@ public class AccommodationController {
         Integer companyId = resourceAccessService.currentCompanyId(authentication);
         if (companyId == null) return "redirect:/auth/login";
         form.setCompanyId(companyId);
+        // 신규 등록은 항상 승인 대기(PENDING)로 시작한다 (서비스에서도 강제).
+        form.setStatus(AccommodationStatusPolicy.INITIAL_STATUS);
         if (binding.hasErrors()) {
             binding.getAllErrors().forEach(err -> log.warn("bind err: {}", err));
             model.addAttribute("mainRegions", regionRepository.findByLevel(1));
@@ -470,6 +473,13 @@ public class AccommodationController {
             return "admin/accommodations/edit";
         }
         try {
+            // 0) 상태 변경 검증을 이미지 삭제/업로드 같은 부수효과보다 먼저 한다.
+            //    회사 관리자는 PENDING/INACTIVE 로만 바꿀 수 있고 ACTIVE 는 총관리자 승인으로만 전환된다.
+            //    (서비스 update 에서도 같은 규칙을 한 번 더 적용한다)
+            AccommodationCreateRequestDTO current = accommodationService.getById(id);
+            AccommodationStatusPolicy.resolveCompanyAdminStatus(
+                    current == null ? null : current.getStatus(), form.getStatus());
+
             // 1) amenities 정규화
             form.setAmenities(AmenitiesParser.normalizeToJson(form.getAmenities()));
 

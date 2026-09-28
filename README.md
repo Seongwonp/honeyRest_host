@@ -217,12 +217,34 @@ MySQL·시크릿 파일 없이 관리자 화면을 둘러볼 수 있는 실행 �
 ./gradlew integrationTest    # Docker 필요: 서브모듈의 마이그레이션으로 공유 스키마 교차 검증 (CI 2단계)
 ```
 
-- **68개 테스트** — 회사 소유권(`CompanyResourceAccessServiceTest`), 권한 상승 차단(`OwnerAuthSignupSecurityTest`), `typ` 검증(`JwtAuthFilterTest`), 재고 가드(`ReservationServiceImplInventoryTest`, `OReservationServiceInventoryTest`), 상태 상수, 예약 수정 컨트롤러, 상태 필터 JPQL 페이지·count 정합
+- **87개 테스트** — 회사 소유권(`CompanyResourceAccessServiceTest`), 권한 상승 차단(`OwnerAuthSignupSecurityTest`), `typ` 검증(`JwtAuthFilterTest`), 재고 가드(`ReservationServiceImplInventoryTest`, `OReservationServiceInventoryTest`), 숙소 승인 우회 차단(`AccommodationStatusGuardTest`), CSRF 토큰 비교체(`CsrfTokenStabilityTest`), 알림 값 리다이렉트 누출(`NotificationInterceptorTest`), 상태 상수, 예약 수정 컨트롤러, 상태 필터 JPQL 페이지·count 정합
 - **test 프로필**: H2 인메모리(MySQL 모드, `NON_KEYWORDS=USER`) + `create-drop` + 더미 `jwt.secret` + `app.storage.type=local`. 통합 테스트는 `JpaTestFixtures`로 데이터를 만들고 트랜잭션 롤백하므로 하드코딩 ID나 실 DB에 의존하지 않습니다(이전에는 46개 중 10개가 로컬 MySQL 부재로 실패).
 - **트레이드오프**: 스키마를 엔티티 매핑에서 생성하므로 **운영 MySQL 스키마(Flyway)와의 차이는 테스트로 잡지 못합니다.** 이 차이는 아래 스키마 교차 검증 테스트가 따로 잡습니다.
 - **스키마 교차 검증** (`@Tag("integration")`, 기본 `test`에서는 제외): [`HostSchemaAgainstUserMigrationsIntegrationTest`](src/test/java/com/honeyrest/honeyrest_host/schema/HostSchemaAgainstUserMigrationsIntegrationTest.java)가 Testcontainers로 `mysql:8.0`을 띄우고 서브모듈 `libs/honeyrest-user`에 들어 있는 [사용자 API](https://github.com/Seongwonp/honeyRest_user)의 Flyway 마이그레이션(V1~최신)을 그대로 적용한 뒤, 공유 엔티티 + `ErrorLog`로 `ddl-auto=validate` 기동합니다. 운영 기동 시점에야 드러나던 drift(누락 테이블·컬럼, 타입 불일치)를 CI에서 잡습니다. 지금까지 찾은 차이와 처리는 [DB_SCHEMA.md §6](DB_SCHEMA.md) 참고.
 - **로컬 실행**: Docker를 켜고 서브모듈을 초기화한 상태에서 `./gradlew integrationTest` (기본 경로 `libs/honeyrest-user/src/main/resources/db/migration`). 다른 위치의 마이그레이션을 쓰려면 `HONEYREST_USER_MIGRATIONS=/path/to/db/migration ./gradlew integrationTest`(지정 시 우선), `-PhoneyrestUserDir=../honeyRest_user`를 주면 그 저장소의 마이그레이션을 씁니다. Docker나 마이그레이션 디렉터리가 없으면 실패가 아니라 skip 됩니다.
-- **CI**: [GitHub Actions](.github/workflows/ci.yml) — `main` push/PR마다(+ 사용자 저장소 변경을 잡기 위해 매일 1회 예약 실행) `submodules: recursive`로 체크아웃하고(예약·수동 실행은 서브모듈을 사용자 저장소 `main` 최신으로 올려 다음 재고정 대상과의 호환성을 확인) JDK 17로 `./gradlew build` → `./gradlew integrationTest`(`INTEGRATION_REQUIRE_DOCKER=true`로 Docker·마이그레이션 부재 시 skip 대신 실패), 실패 시 테스트 리포트 업로드
+- **관리자 E2E (Playwright)**: [`e2e/`](e2e)는 `screenshot,local-demo` 프로필로 앱을 띄워(`playwright.config.ts`의 `webServer`가 `./gradlew bootRun` 실행 후 `/auth/login` 응답을 기다림) 실제 브라우저로 관리자 흐름을 검증합니다. 시나리오가 같은 H2 데이터를 바꾸므로 `workers=1`로 파일 순서대로 실행합니다.
+
+  | 스펙 | 시나리오 |
+  | --- | --- |
+  | `01-dashboard` | 회사 관리자 로그인 → 대시보드 KPI 3종 표시 / 가격 캘린더 리다이렉트 URL에 `_notifyCancelCount` 미포함 |
+  | `02-room-create` | 객실 등록 → 성공 토스트 + 객실 목록에 표시 |
+  | `03-reservation-complete` | 예약 현황(확정) → 상세 → 체크아웃 완료 → `COMPLETED` |
+  | `04-reservation-inventory` | 같은 기간 예약으로 객실(총 2실)을 채운 뒤 겹치는 예약 → 재고 부족(409 의미) flash |
+  | `05-super-admin-approve` | 총관리자 로그인 → 승인 대기 숙소 승인 → `ACTIVE` 목록으로 이동 |
+  | `06-access-control` | 타사 숙소 상세·수정 403 / 승인 대기 숙소 수정 폼에 `ACTIVE` 선택지 없음 / 운영 중 숙소는 "현재 상태 유지"로만 표시 |
+
+  ```bash
+  cd e2e
+  npm ci
+  npx playwright install chromium   # 최초 1회 (CI 는 --with-deps)
+  npx playwright test               # 앱을 새로 띄워 실행 (8081 포트가 비어 있어야 함)
+  npx playwright show-report        # HTML 리포트
+  ```
+
+  - 로그인 정보는 테스트 코드에 두지 않고 환경 변수 → `e2e/.env.e2e`(로컬 재정의, git 제외) → [`e2e/.env.e2e.example`](e2e/.env.e2e.example)(`DataInitializer` 데모 기본값) 순으로 읽습니다(`E2E_ADMIN_EMAIL/E2E_ADMIN_PW`, `E2E_SUPER_EMAIL/E2E_SUPER_PW`). 같은 값이 `DEMO_COMPANYADMIN_PASSWORD`/`DEMO_SUPERADMIN_PASSWORD`로 앱에도 전달돼 데모 계정과 항상 일치합니다.
+  - `E2E_REUSE_SERVER=1`이면 이미 떠 있는 서버를 재사용합니다. 단, 승인 시나리오는 시드의 승인 대기 숙소(2건)를 소비하므로 같은 서버에서 세 번째 실행부터는 실패합니다. 기본값(0)은 매번 새로 띄워 데이터를 초기화합니다.
+  - 설치된 브라우저 리비전이 `@playwright/test`(1.56.1, Chromium 1194)와 다르면 `E2E_CHROMIUM_PATH`로 실행 파일을 지정합니다(`use.launchOptions.executablePath`).
+- **CI**: [GitHub Actions](.github/workflows/ci.yml) — `main` push/PR마다(+ 사용자 저장소 변경을 잡기 위해 매일 1회 예약 실행) `submodules: recursive`로 체크아웃하고(예약·수동 실행은 서브모듈을 사용자 저장소 `main` 최신으로 올려 다음 재고정 대상과의 호환성을 확인) JDK 17로 `./gradlew build` → `./gradlew integrationTest`(`INTEGRATION_REQUIRE_DOCKER=true`로 Docker·마이그레이션 부재 시 skip 대신 실패), 실패 시 테스트 리포트 업로드. 별도 `e2e` 잡이 JDK 17 + Node 22로 `./gradlew classes` → `npm ci` → `npx playwright install --with-deps chromium` → `npx playwright test`를 실행하고, 실패 시 `playwright-report`(+ trace/스크린샷이 든 `test-results`)를 업로드합니다.
 
 ---
 

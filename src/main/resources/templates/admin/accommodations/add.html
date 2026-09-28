@@ -262,11 +262,11 @@
                     <!-- 상태 -->
                     <div class="col-12">
                         <label class="form-label">상태</label>
-                        <select class="form-select" th:field="*{status}">
-                            <option value="">선택</option>
-                            <option value="PENDING">PENDING</option>
-                            <option value="ACTIVE">ACTIVE</option>
+                        <!-- 신규 숙소는 항상 승인 대기(PENDING)로 등록되고, 총관리자 승인 후 ACTIVE 가 된다 -->
+                        <select class="form-select" name="status" disabled>
+                            <option value="PENDING" selected>PENDING (승인 대기)</option>
                         </select>
+                        <div class="form-text">총관리자 승인 후 운영중(ACTIVE)으로 전환됩니다.</div>
                     </div>
                 </div>
 

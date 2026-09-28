@@ -148,6 +148,29 @@ BUILD SUCCESSFUL in 24s
 - 통합 테스트는 `@SpringBootTest` + `@Transactional`로 `support/JpaTestFixtures`가 업체/숙소/객실/사용자/예약을 직접 만들고 롤백한다. 하드코딩 ID·빈 본문 테스트를 없앴다(`ReservationServiceImplTest` 재작성, `OReservationRepositoryStatusQueryTest` 추가 — 상태 포함/제외 페이징 JPQL 4종의 목록과 count 일치 검증).
 - GitHub Actions(`.github/workflows/ci.yml`)가 push/PR(main)마다 JDK 17로 `./gradlew build`를 실행하고, 실패 시 테스트 리포트를 아티팩트로 올린다.
 
+### 11. 숙소 승인 우회 차단과 관리자 E2E — 완료
+
+승인 우회:
+
+- 회사 관리자 숙소 수정 폼(`/admin/accommodations/edit/{id}`)의 `status` 값을 그대로 저장해, `ACTIVE`를 고르면 총관리자 승인 없이 숙소가 노출됐다. 신규 등록도 폼의 `status`(ACTIVE)를 그대로 받았다.
+- `AccommodationStatusPolicy`로 규칙을 고정했다. 회사 관리자는 `PENDING`(승인 요청)·`INACTIVE`(운영 중지)로만 바꿀 수 있고, 현재 상태 그대로 제출(ACTIVE 숙소의 일반 정보 수정)은 변경 없음으로 처리한다. `ACTIVE`·`REJECTED`는 총관리자 `OAccommodationService.approve/reject`(PENDING에서만 전환)로만 만들어진다. 신규 등록은 항상 `PENDING`.
+- 컨트롤러는 이미지 삭제·업로드 같은 부수효과 전에 먼저 검증하고, 서비스 `update`에서도 같은 규칙을 한 번 더 적용한다. 수정 폼은 `PENDING`/`INACTIVE`만 고를 수 있고(기존 `DISABLED` 선택지는 목록 필터와 같은 `INACTIVE`로 통일), 현재 상태가 그 외(ACTIVE 등)이면 그 값은 "현재 상태 유지" 선택지로만 보인다.
+- 총관리자 화면에 승인 버튼이 없어 승인 경로를 쓸 수 없었다. 비활성/대기 목록(`/owner/accommodation/inActive/list`)의 PENDING 행에 승인·거절 버튼을 추가했다.
+
+E2E 작성 중 드러난 문제:
+
+- CSRF 403: STATELESS 설정에서 `SessionManagementFilter`가 JWT로 인증된 매 요청을 새 인증으로 보고 `CsrfAuthenticationStrategy`로 토큰을 교체했다. 교체된 토큰은 큰 화면에서 응답 커밋 후에 읽혀 `Set-Cookie`가 빠졌고, 브라우저에서 객실 등록·예약 완료·숙소 승인 등 폼 POST가 403이 됐다(curl처럼 정적 리소스를 받지 않는 클라이언트에서는 재현이 어려웠다). 토큰 교체를 실제 로그인 요청(POST `/auth/login`)으로 한정했다.
+- 가격 캘린더 진입(`/admin/price/page`) 리다이렉트 URL에 `NotificationInterceptor`가 넣은 `_notifyCancelCount`가 쿼리스트링으로 붙었다. 리다이렉트 응답에는 알림 값을 싣지 않는다.
+- 예약 완료·노쇼·취소·직접 생성 후 존재하지 않는 `/admin/reservations/list(-all)`로 리다이렉트해 500 화면이 떴다. 상세 화면 또는 예약 현황(`/my?q=예약번호`)으로 보내고, 상세 화면에 체크아웃 완료·노쇼 버튼을 추가했다.
+- 객실 등록 후 `/admin/rooms/list` → `list_all` 이중 리다이렉트에서 flash가 소비돼 성공 토스트가 보이지 않았다. `list_all`로 바로 보낸다.
+
+검증:
+
+```text
+./gradlew test            87 tests, 0 failures
+cd e2e && npx playwright test   9 passed (반복 실행 모두 통과)
+```
+
 ## 전체 안정화 순서
 
 1. 기준 상태 기록

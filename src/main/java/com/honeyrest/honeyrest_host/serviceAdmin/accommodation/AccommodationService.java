@@ -28,8 +28,8 @@ public interface AccommodationService {
 
     Page<AccommodationListDTO> search(String q, Integer categoryId, Integer mainRegionId, Pageable pageable);
 
-    // 승인
-    void changeStatus(Long id, String status); // "APPROVED" | "REJECTED" | "ACTIVE" 등
+    // 승인 요청(PENDING 제출) 전용. 승인/거절(ACTIVE/REJECTED)은 OAccommodationService.approve/reject(SUPER_ADMIN)만 수행한다.
+    void changeStatus(Long id, String status);
 
     long count();
     // 회사별 객실 조회

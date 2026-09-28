@@ -126,17 +126,26 @@ public class ReservationController {
     @PostMapping("/{id}/complete")
     @PreAuthorize("@companyAccess.ownsReservation(#id, authentication)")
     public String complete(@PathVariable Long id, RedirectAttributes ra) {
-        reservationService.markCompleted(id);
-        ra.addFlashAttribute("msg","체크아웃 완료 처리");
-        return "redirect:/admin/reservations/list-all";
+        // 과거에는 존재하지 않는 /admin/reservations/list-all 로 보내 처리 후 500 화면이 떴다.
+        try {
+            reservationService.markCompleted(id);
+            ra.addFlashAttribute("msg", "체크아웃 완료 처리");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/reservations/" + id;
     }
 
     @PostMapping("/{id}/no-show")
     @PreAuthorize("@companyAccess.ownsReservation(#id, authentication)")
     public String noShow(@PathVariable Long id, RedirectAttributes ra) {
-        reservationService.markNoShow(id);
-        ra.addFlashAttribute("msg","노쇼 처리 완료");
-        return "redirect:/admin/reservations/list-all";
+        try {
+            reservationService.markNoShow(id);
+            ra.addFlashAttribute("msg", "노쇼 처리 완료");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/reservations/" + id;
     }
 
 
@@ -250,7 +259,8 @@ public class ReservationController {
             return "redirect:/admin/reservations/new";
         }
         ra.addFlashAttribute("msg", "예약이 등록되었습니다. (" + saved.getReservationNumber() + ")");
-        return "redirect:/admin/reservations/list?number=" + saved.getReservationNumber();
+        // 예약 현황(/my)에서 예약번호로 검색한 결과로 이동한다 (/list 매핑은 존재하지 않는다)
+        return "redirect:/admin/reservations/my?q=" + saved.getReservationNumber();
     }
 
     /**
@@ -274,7 +284,7 @@ public class ReservationController {
                          RedirectAttributes ra) {
         reservationService.cancelReservation(reservationId, reason);
         ra.addFlashAttribute("msg", "예약이 취소되었습니다.");
-        return "redirect:/admin/reservations/list";
+        return "redirect:/admin/reservations/" + reservationId;
     }
 
     @GetMapping("/day")

@@ -178,11 +178,15 @@
                                                 <select class="form-select" style="max-width:240px"
                                                         th:field="*{status}">
                                                     <option value="">선택</option>
+                                                    <!-- ACTIVE/REJECTED 는 총관리자 승인 흐름에서만 만들어진다.
+                                                         현재 값일 때만 "유지" 선택지로 보여 주고, 새로 고를 수는 없다. -->
+                                                    <option th:if="${acc.status != null and acc.status != 'PENDING' and acc.status != 'INACTIVE'}"
+                                                            th:value="${acc.status}"
+                                                            th:text="${acc.status + ' (현재 상태 유지)'}">ACTIVE (현재 상태 유지)</option>
                                                     <option value="PENDING">PENDING</option>
-                                                    <option value="ACTIVE">ACTIVE</option>
-                                                    <option value="DISABLED">DISABLED</option>
+                                                    <option value="INACTIVE">INACTIVE</option>
                                                 </select>
-                                                <span class="kv-help">승인대기/운영중/중지</span>
+                                                <span class="kv-help">승인요청/운영중지 — 운영중(ACTIVE) 전환은 총관리자 승인으로만 가능합니다</span>
                                             </div>
                                         </div>
                                     </div>

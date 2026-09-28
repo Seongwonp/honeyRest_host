@@ -213,7 +213,9 @@ public class RoomController {
             }
 
             ra.addFlashAttribute("success", "객실이 등록되었습니다.");
-            return "redirect:/admin/rooms/list";
+            // /admin/rooms/list 는 다시 list_all 로 리다이렉트하는 라우터라 중간 요청에서 flash 가 소비돼
+            // 성공 토스트가 보이지 않았다. 최종 목록으로 바로 보낸다.
+            return "redirect:/admin/rooms/list_all";
 
         } catch (Exception e) {
             log.error("room create error", e);
