@@ -1,0 +1,9 @@
+# 사용자 저장소(honeyrest-domain) 서브모듈이 갱신되면 재고정 PR을 자동 생성
+version: 2
+updates:
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "chore(submodule)"
