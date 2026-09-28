@@ -6,7 +6,7 @@ import com.honeyrest.honeyrest_host.entity.Company;
 import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
 import com.honeyrest.honeyrest_host.serviceAdmin.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
-import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
+import com.honeyrest.honeyrest_host.storage.FileStorage;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -42,7 +42,7 @@ public class RoomController {
     private final UserService userService;
     private final CompanyResourceAccessService resourceAccessService;
 
-    private final FileUploadUtil fileUploadUtil;
+    private final FileStorage fileStorage;
 
     /**
      * 전체 객실 목록 (사이드바 진입)
@@ -186,7 +186,7 @@ public class RoomController {
             // 메인(단일) 파일
             MultipartFile main = form.getFile();
             if (main != null && !main.isEmpty()) {
-                String url = fileUploadUtil.upload(main, "room");
+                String url = fileStorage.upload(main, "room");
                 images.add(RoomImageDTO.builder()
                         .roomId(roomId)
                         .imageUrl(url)
@@ -199,7 +199,7 @@ public class RoomController {
                 int idx = images.isEmpty() ? 0 : 1; // 메인 넣었으면 1부터, 없었으면 0부터
                 for (MultipartFile f : form.getFiles()) {
                     if (f != null && !f.isEmpty()) {
-                        String url = fileUploadUtil.upload(f, "room");
+                        String url = fileStorage.upload(f, "room");
                         images.add(RoomImageDTO.builder()
                                 .roomId(roomId)
                                 .imageUrl(url)
@@ -282,7 +282,7 @@ public class RoomController {
                 List<RoomImageDTO> images = new ArrayList<>();
 
                 if (hasMain) {
-                    String url = fileUploadUtil.upload(form.getFile(), "room");
+                    String url = fileStorage.upload(form.getFile(), "room");
                     images.add(RoomImageDTO.builder()
                             .roomId(roomId)
                             .imageUrl(url)
@@ -294,7 +294,7 @@ public class RoomController {
                     int idx = images.isEmpty() ? 0 : 1;
                     for (MultipartFile f : form.getFiles()) {
                         if (f != null && !f.isEmpty()) {
-                            String url = fileUploadUtil.upload(f, "room");
+                            String url = fileStorage.upload(f, "room");
                             images.add(RoomImageDTO.builder()
                                     .roomId(roomId)
                                     .imageUrl(url)

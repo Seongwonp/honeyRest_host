@@ -104,10 +104,14 @@ public class SecurityConfig {
                         "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico",
                         "/.well-known/**",
                         "/auth/**",
-                        "/error/**"
+                        "/error/**",
+                        // 로컬 스토리지 모드에서 업로드된 이미지(숙소/객실/리뷰)는 공개 URL로 노출된다.
+                        "/uploads/**",
+                        // 헬스 체크(로드밸런서/모니터링)는 인증 없이 접근 가능해야 한다.
+                        "/actuator/health"
                 ).permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").hasRole("SUPER_ADMIN")
-                .requestMatchers("/admin/customers/**", "/api/admin/companies/**").hasRole("SUPER_ADMIN")
+                .requestMatchers("/api/admin/companies/**").hasRole("SUPER_ADMIN")
                 // 회사 관리자(신규 업체) 자가 가입/로그인은 비로그인 상태에서 호출되어야 하므로 명시적으로 공개한다.
                 // AdminAuthService가 role을 항상 COMPANY_ADMIN으로 고정하므로 여기서 권한 상승은 발생하지 않는다.
                 .requestMatchers("/api/admin/auth/**").permitAll()

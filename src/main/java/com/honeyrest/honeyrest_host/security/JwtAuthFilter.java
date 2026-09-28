@@ -31,8 +31,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final AntPathMatcher PM = new AntPathMatcher();
     private static final String[] WHITELIST = {
             "/assets/**", "/css/**", "/js/**", "/images/**", "/favicon.ico",
-            "/swagger-ui/**", "/v3/api-docs/**",
             "/.well-known/**",
+            "/uploads/**", // 로컬 스토리지 업로드 파일 (공개)
             "/auth/**"   // 로그인/로그아웃/페이지
     };
 

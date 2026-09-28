@@ -49,7 +49,9 @@ out/
 src/main/resources/application-secret.properties
 src/main/resources/application-prod.properties
 src/main/resources/application-dev.properties
-application_security.properties
+**/application_security.properties
+# Firebase 서비스 계정 키 (파일명에 프로젝트 ID/키 ID가 붙으므로 패턴으로 차단)
+*firebase-adminsdk*.json
 firebase-service-key.json
 .env
 .env.local
@@ -84,3 +86,9 @@ coverage/
 *.lcov
 
 **/honeyrest-7fb60-*.json
+
+# Jupyter 체크포인트
+.ipynb_checkpoints/
+
+# 로컬 스토리지 모드 업로드 파일
+uploads/

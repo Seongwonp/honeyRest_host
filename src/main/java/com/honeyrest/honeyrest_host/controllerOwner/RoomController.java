@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.serviceOwner.*;
-import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
+import com.honeyrest.honeyrest_host.storage.FileStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
@@ -23,7 +23,7 @@ public class RoomController {
     private final OCompanyService companyService;
     private final OPriceCalendarService priceCalendarService;
     private final OReservationService reservationService;
-    private final FileUploadUtil fileUploadUtil;
+    private final FileStorage fileStorage;
     private final OReviewService reviewService;
 
     @GetMapping({"/room/list", "/accommodation/{accommodationId}/rooms"})
@@ -79,7 +79,7 @@ public class RoomController {
     public String createRoom(@ModelAttribute RoomDTO roomDTO) throws Exception {
         Long roomId = roomService.registerRoom(roomDTO);
 
-        String mainImage = fileUploadUtil.upload(roomDTO.getFile(),"rooms/"+ roomId);
+        String mainImage = fileStorage.upload(roomDTO.getFile(),"rooms/"+ roomId);
         RoomImageDTO roomImageDTO = RoomImageDTO.builder()
                 .roomId(roomId)
                 .imageUrl(mainImage)
@@ -92,7 +92,7 @@ public class RoomController {
             int sortOrder = 1; // MAIN 이미지 다음부터
             for (MultipartFile image : images) {
                 if (!image.isEmpty()) {
-                    String roomImageUrl = fileUploadUtil.upload(image,"rooms/" + roomId + "/images");
+                    String roomImageUrl = fileStorage.upload(image,"rooms/" + roomId + "/images");
                     RoomImageDTO dto = RoomImageDTO.builder()
                             .roomId(roomId)
                             .imageUrl(roomImageUrl)

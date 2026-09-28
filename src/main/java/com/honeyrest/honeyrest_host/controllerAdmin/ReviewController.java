@@ -160,7 +160,7 @@ public class ReviewController {
                                RedirectAttributes ra) {
         requireOwnReview(authentication, id);
         if (files != null && !files.isEmpty()) {
-            reviewImageService.uploadImages(id, files); // 서비스에서 Firebase 업로드 + DB 저장
+            reviewImageService.uploadImages(id, files); // 서비스에서 파일 저장소 업로드 + DB 저장
             ra.addFlashAttribute("success", "이미지를 업로드했습니다.");
         } else {
             ra.addFlashAttribute("error", "업로드할 이미지가 없습니다.");
@@ -177,7 +177,7 @@ public class ReviewController {
                               @PathVariable Long imageId,
                               RedirectAttributes ra) {
         requireOwnReview(authentication, reviewId);
-        reviewImageService.deleteImage(reviewId, imageId, true); // 서비스 내부에서 Firebase 삭제 + DB 삭제
+        reviewImageService.deleteImage(reviewId, imageId, true); // 서비스 내부에서 파일 저장소 삭제 + DB 삭제
         ra.addFlashAttribute("success", "이미지를 삭제했습니다.");
         return "redirect:/admin/reviews/detail/{reviewId}";
     }
