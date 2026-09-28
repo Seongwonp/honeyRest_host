@@ -167,6 +167,20 @@ flowchart LR
 
 로그인: `http://localhost:8081/auth/login` → 역할에 따라 `/admin/dashboard` 또는 `/owner/dashboard`로 이동
 
+### DB 없이 화면만 보기 (`screenshot` 프로필)
+
+MySQL·시크릿 파일 없이 관리자 화면을 둘러볼 수 있는 실행 전용 프로필입니다. 아래 [화면](#화면) 캡처도 이 프로필로 찍었습니다.
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=screenshot,local-demo'   # http://localhost:8081
+```
+
+- [`application-screenshot.properties`](src/main/resources/application-screenshot.properties): H2 인메모리(MySQL 모드) + `create-drop` + 더미 `jwt.secret` + `app.storage.type=local`
+- [`db/screenshot-seed.sql`](src/main/resources/db/screenshot-seed.sql): 업체 3 · 숙소 5(승인 대기 2) · 객실 8 · 요금 캘린더 · 예약(모든 `ReservationStatus` + 지난 6개월 이용 완료분) · 결제 · 리뷰 · 문의 · 에러 로그. 날짜는 실행일 기준 상대값이라 언제 띄워도 대시보드·매출 차트가 채워집니다.
+- 로그인 계정은 `local-demo` 프로필의 `DataInitializer`가 만듭니다(위 5번). 시드의 업체 이메일이 데모 업체 관리자 계정과 같아 로그인하면 바로 해당 업체 화면이 보입니다.
+- 리포트용 네이티브 쿼리의 MySQL 전용 문법(`DATE_ADD(.., INTERVAL 1 DAY)`, `DATE_FORMAT`, `WEEKDAY`, 2-인자 `DATEDIFF`)은 이 프로필에서만 [`H2MySqlCompat`](src/main/java/com/honeyrest/honeyrest_host/config/screenshot/H2MySqlCompat.java)(Hibernate `StatementInspector` + H2 `CREATE ALIAS`)이 H2용으로 바꿔 실행합니다. 운영 쿼리는 그대로입니다.
+- 재시작하면 데이터가 초기화됩니다. 운영·개발 DB에는 쓰지 않습니다.
+
 ---
 
 ## 테스트 & CI
@@ -185,11 +199,35 @@ flowchart LR
 
 ## 화면
 
-관리자 화면 캡처는 이 저장소에 아직 없으며 추후 추가 예정입니다. 같은 데이터를 쓰는 사용자 화면은 React 저장소에서 볼 수 있습니다: [honeyrest_user_react · 화면](https://github.com/Seongwonp/honeyrest_user_react#화면)
+`screenshot` 프로필([DB 없이 화면만 보기](#db-없이-화면만-보기-screenshot-프로필))과 데모 시드로 띄운 실제 관리자 화면입니다(1440×900).
 
-| 사용자 숙소 검색 | 사용자 숙소 상세 · 객실 선택 |
+**업체 관리자 (COMPANY_ADMIN)**
+
+| | |
 |------|------|
-| ![숙소 검색](https://raw.githubusercontent.com/Seongwonp/honeyrest_user_react/master/docs/screenshots/accommodation-list.png) | ![숙소 상세](https://raw.githubusercontent.com/Seongwonp/honeyrest_user_react/master/docs/screenshots/accommodation-detail.png) |
+| ![로그인](docs/screenshots/01-login.png) | ![업체 대시보드](docs/screenshots/02-admin-dashboard.png) |
+| 로그인 — 역할에 따라 업체/총관리자 화면으로 분기 | 대시보드 — 숙소·예약·객실 수, 일별 매출 추이, Top 매출 객실 |
+| ![숙소 관리](docs/screenshots/03-accommodations.png) | ![객실 목록](docs/screenshots/04-rooms.png) |
+| 숙소 관리 — 상태(승인 대기/운영 중) · 검색 · 리스트/카드 보기 | 객실 전체 목록 — 숙소별 그룹 |
+| ![가격/재고 캘린더](docs/screenshots/05-price-calendar.png) | ![예약 목록](docs/screenshots/06-reservations.png) |
+| 가격/재고 캘린더 — 날짜별 요금·잔여 객실 | 예약 현황 — 숙소별 묶음, 상태·기간 필터 |
+| ![취소 요청](docs/screenshots/07-cancel-requests.png) | ![매출 통계](docs/screenshots/08-sales-report.png) |
+| 취소 요청 — 사용자가 요청한 취소 승인/거절 | 매출 통계 — 결제/예약 기준 × 일·주·월·요일 |
+| ![리뷰 관리](docs/screenshots/09-reviews.png) | |
+| 리뷰 관리 — 노출 상태, 운영자 답글 | |
+
+**총관리자 (SUPER_ADMIN)**
+
+| | |
+|------|------|
+| ![총관리자 대시보드](docs/screenshots/10-owner-dashboard.png) | ![숙소 승인](docs/screenshots/11-accommodation-approval.png) |
+| 총관리자 대시보드 — 플랫폼 전체 업체·숙소·객실·예약·회원 수 | 비활성 숙소 목록 — 승인 대기(PENDING) 숙소 승인/거절 |
+| ![회원 관리](docs/screenshots/12-users.png) | ![업체 관리](docs/screenshots/13-companies.png) |
+| 회원 관리 — 상태·포인트·최근 로그인 | 업체 관리 — 사업자 정보·수수료율 |
+| ![에러 로그](docs/screenshots/14-error-log.png) | |
+| 에러 로그 — 서버 500 에러 기록과 해결 처리 | |
+
+같은 데이터를 쓰는 사용자 화면은 React 저장소에서 볼 수 있습니다: [honeyrest_user_react · 화면](https://github.com/Seongwonp/honeyrest_user_react#화면)
 
 - 관리자 시연 영상: 추후 GitHub Release에 첨부 예정
 - 발표 자료: [HoneyRest.pdf](https://github.com/user-attachments/files/22292418/HoneyRest.pdf)

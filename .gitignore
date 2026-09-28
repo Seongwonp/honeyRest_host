@@ -91,4 +91,5 @@ coverage/
 .ipynb_checkpoints/
 
 # 로컬 스토리지 모드 업로드 파일
-uploads/
+/uploads/*
+!/uploads/placeholder/

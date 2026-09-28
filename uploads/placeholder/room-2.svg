@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#CCFBF1"/>
+  <path d="M240 372 L336 252 L416 336 L480 288 L560 372 Z" fill="#14B8A6" opacity="0.6"/>
+  <circle cx="496" cy="192" r="30" fill="#14B8A6" opacity="0.8"/>
+  <text x="50%" y="480" text-anchor="middle" font-family="sans-serif" font-size="36" fill="#14B8A6">HoneyRest · 객실 이미지 2</text>
+</svg>

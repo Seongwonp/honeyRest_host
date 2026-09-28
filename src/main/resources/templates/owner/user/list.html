@@ -57,7 +57,7 @@
                     <td th:text="${u.email}">email@example.com</td>
                     <td class="hide-md" th:text="${u.phone ?: '-'}">010-0000-0000</td>
                     <td class="hide-sm text-end fw-semibold"
-                        th:text="${u.point != null ? #numbers.formatInteger(u.point, 3, 'COMMA') + ' P' : '0 P'}">0 P</td>
+                        th:text="${u.point != null ? #numbers.formatInteger(u.point, 1, 'COMMA') + ' P' : '0 P'}">0 P</td>
                     <td class="text-center">
                         <span class="badge-chip"
                               th:classappend="${#strings.equalsIgnoreCase(u.status,'ACTIVE')} ? ' badge-active' :

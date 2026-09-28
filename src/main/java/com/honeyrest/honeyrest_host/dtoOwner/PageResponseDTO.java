@@ -46,4 +46,12 @@ public class PageResponseDTO<E> {
 
         this.current = pageRequestDTO.getPage();
     }
+
+    /**
+     * 오너 목록 템플릿(accommodation/company/user/room/review list 등)은 {@code ${...total}} 로 전체 건수를 읽는다.
+     * 필드명은 totalCount 라서 getter 가 없으면 SpEL 평가 오류로 목록 화면이 500 이 되던 문제를 막는다.
+     */
+    public int getTotal() {
+        return totalCount;
+    }
 }

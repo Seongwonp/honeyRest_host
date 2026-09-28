@@ -92,7 +92,16 @@ public class OAccommodationServiceImpl implements OAccommodationService {
                 .status(e.getStatus())
                 .minPrice(e.getMinPrice())
                 .rating(e.getRating())
+                .companyName(e.getCompany() != null ? e.getCompany().getName() : null)
+                .regionName(regionLabel(e))
                 .build();
+    }
+
+    private String regionLabel(Accommodation e) {
+        String main = e.getMainRegion() != null ? e.getMainRegion().getName() : null;
+        String sub = e.getSubRegion() != null ? e.getSubRegion().getName() : null;
+        if (main == null) return sub;
+        return sub == null ? main : main + " " + sub;
     }
 
     private String parseAmenitiesToJson(String input) {
@@ -230,15 +239,14 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
         Page<Accommodation> page;
 
+        // 상태 필터를 쿼리에서 적용해야 total(전체 건수)과 목록 건수가 일치한다.
         if (companyId != null && companyId >= 1) {
-            page = accommodationRepository.findByCompany_CompanyId(companyId, pageable); // 쿼리 메서드 필요
+            page = accommodationRepository.findByCompany_CompanyIdAndStatusIgnoreCase(companyId, "ACTIVE", pageable);
         } else {
-            page = accommodationRepository.findAll(pageable);
+            page = accommodationRepository.findByStatusIgnoreCase("ACTIVE", pageable);
         }
 
-        List<AccommodationDTO> list = page.getContent().stream().map(accommodation -> toDTO(accommodation))
-                .filter(a-> a.getStatus().equalsIgnoreCase("ACTIVE"))
-                .toList();
+        List<AccommodationDTO> list = page.getContent().stream().map(this::toDTO).toList();
 
         long total = page.getTotalElements();
 
@@ -259,15 +267,12 @@ public class OAccommodationServiceImpl implements OAccommodationService {
         Page<Accommodation> page;
 
         if (companyId != null && companyId > 0) {
-            page = accommodationRepository.findByCompany_CompanyId(companyId, pageable); // 쿼리 메서드 필요
+            page = accommodationRepository.findByCompany_CompanyIdAndStatusNotIgnoreCase(companyId, "ACTIVE", pageable);
         } else {
-            page = accommodationRepository.findAll(pageable);
+            page = accommodationRepository.findByStatusNotIgnoreCase("ACTIVE", pageable);
         }
 
-        List<AccommodationDTO> list = page.getContent().stream()
-                .map(this::toDTO)
-                .filter(a-> !a.getStatus().equalsIgnoreCase("active"))
-                .toList();
+        List<AccommodationDTO> list = page.getContent().stream().map(this::toDTO).toList();
 
         long total = page.getTotalElements();
 

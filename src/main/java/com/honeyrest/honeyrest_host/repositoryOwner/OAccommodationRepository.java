@@ -24,6 +24,19 @@ public interface OAccommodationRepository extends JpaRepository<Accommodation, L
     @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
     Page<Accommodation> findByCompany_CompanyId(Integer companyId, Pageable pageable);
 
+    // 활성/비활성 목록: 상태 필터를 DB 쿼리에서 적용해 페이지 total 과 목록 건수를 맞춘다.
+    @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
+    Page<Accommodation> findByStatusIgnoreCase(String status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
+    Page<Accommodation> findByStatusNotIgnoreCase(String status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
+    Page<Accommodation> findByCompany_CompanyIdAndStatusIgnoreCase(Integer companyId, String status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
+    Page<Accommodation> findByCompany_CompanyIdAndStatusNotIgnoreCase(Integer companyId, String status, Pageable pageable);
+
     Accommodation findByAccommodationId(Long accommodationId);
 
     @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})

@@ -59,7 +59,7 @@ dependencies {
 
     // DB 드라이버
     runtimeOnly 'com.mysql:mysql-connector-j' // MySQL JDBC 드라이버
-    testRuntimeOnly 'com.h2database:h2' // 테스트 전용 인메모리 DB (MySQL 모드)
+    runtimeOnly 'com.h2database:h2' // 인메모리 DB (MySQL 모드): test 프로필, screenshot 프로필(DB 없이 화면 보기)에서 사용
 
     // 테스트
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -37,4 +37,8 @@ public class AccommodationDTO {
     private BigDecimal rating; // 평균 평점
     private BigDecimal minPrice; // 최저 가격
     private String status; // ACTIVE / INACTIVE
+
+    // 목록 화면 표시용 (owner/accommodation/list.html, inActive.html 이 참조)
+    private String companyName; // 업체명
+    private String regionName;  // "시/도 시/군/구"
 }

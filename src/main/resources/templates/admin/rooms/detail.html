@@ -339,7 +339,7 @@
 
                             <dt class="col-sm-4">기본가</dt>
                             <dd class="col-sm-8"
-                                th:text="${room.price != null ? #numbers.formatInteger(room.price,3,'COMMA') + '원' : '-'}">
+                                th:text="${room.price != null ? #numbers.formatInteger(room.price,1,'COMMA') + '원' : '-'}">
                                 -
                             </dd>
 
@@ -352,7 +352,7 @@
 
                             <dt class="col-sm-4">추가 인원 요금</dt>
                             <dd class="col-sm-8"
-                                th:text="${room.extraPersonFee != null ? #numbers.formatInteger(room.extraPersonFee,3,'COMMA') + '원' : '-'}">
+                                th:text="${room.extraPersonFee != null ? #numbers.formatInteger(room.extraPersonFee,1,'COMMA') + '원' : '-'}">
                                 -
                             </dd>
 
