@@ -1,4 +1,7 @@
 # 🐝 HoneyRest – 감성 숙소 예약 플랫폼 (Admin System)
+
+[![CI](https://github.com/Seongwonp/honeyRest_host/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Seongwonp/honeyRest_host/actions/workflows/ci.yml)
+
 🏨 업체 관리자 (Company Admin) – **김민경**  
 🛡️ 총 관리자 (Super Admin) – **설현오**  
 👤 전체 총괄 / DB 설계 / 기술 방향 결정 – **박성원 (팀장)**

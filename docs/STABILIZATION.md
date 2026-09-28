@@ -139,6 +139,15 @@ BUILD SUCCESSFUL in 24s
 
 검증: `ReservationServiceImplInventoryTest`(6), `OReservationServiceInventoryTest`(5), `ReservationStatusTest`(3) Mockito/단위 테스트 추가.
 
+### 10. 테스트 프로필 H2 전환과 CI — 완료
+
+- `./gradlew test`가 MySQL·`application_security.properties`·Firebase 없이 통과한다(52개 전부 성공, 이전에는 46개 중 10개가 로컬 MySQL 부재로 실패).
+- test 프로필(`src/test/resources/application-test.properties`)은 H2 인메모리 DB를 MySQL 모드로 쓰고 `ddl-auto=create-drop`으로 엔티티 매핑에서 스키마를 만든다. 운영의 `validate`와 달리 실제 MySQL 스키마와의 차이는 잡지 못한다.
+- H2에서 `user`가 예약어라 `NON_KEYWORDS=USER`를 URL에 넣었다. 엔티티의 `TEXT`/`JSON` columnDefinition은 H2에서 그대로 생성된다.
+- 비밀값은 테스트용 더미(`jwt.secret` 32바이트 이상)를 넣고, `app.storage.type=local`로 FirebaseConfig를 끈다. `DataInitializer`는 `local-demo` 프로필 전용이라 테스트에서 실행되지 않는다.
+- 통합 테스트는 `@SpringBootTest` + `@Transactional`로 `support/JpaTestFixtures`가 업체/숙소/객실/사용자/예약을 직접 만들고 롤백한다. 하드코딩 ID·빈 본문 테스트를 없앴다(`ReservationServiceImplTest` 재작성, `OReservationRepositoryStatusQueryTest` 추가 — 상태 포함/제외 페이징 JPQL 4종의 목록과 count 일치 검증).
+- GitHub Actions(`.github/workflows/ci.yml`)가 push/PR(main)마다 JDK 17로 `./gradlew build`를 실행하고, 실패 시 테스트 리포트를 아티팩트로 올린다.
+
 ## 전체 안정화 순서
 
 1. 기준 상태 기록
