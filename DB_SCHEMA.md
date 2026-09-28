@@ -231,4 +231,37 @@
 
 ---
 
+## 6. 호스트 전용 테이블 & V11 정합성 (Host Schema Alignment)
+*관리자 앱(honeyRest_host)은 Flyway 없이 `ddl-auto=validate` 로 기동하므로, 스키마 변경은 모두 사용자 API 저장소의 Flyway 에서 한다. 아래는 호스트 엔티티와 V1~V10 을 비교해 찾은 차이와 그 처리 결과다.*
+
+### `error_log` (호스트 전역 예외 기록, V11 신설)
+| 컬럼명 | 타입 | Nullable | 제약 조건 | 설명 |
+| :--- | :--- | :--- | :--- | :--- |
+| **error_log_id** | bigint | NO | PK | 고유 식별자 |
+| **occurred_at** | datetime(6) | NO | INDEX(resolved, occurred_at) | 발생 일시 |
+| **request_url** | varchar(500) | YES | | 요청 URL |
+| **request_method** | varchar(10) | YES | | HTTP 메서드 |
+| **error_class** | varchar(200) | YES | | 예외 클래스명 |
+| **message** | varchar(2000) | YES | | 예외 메시지 |
+| **stack_trace** | text | YES | | 스택 트레이스 |
+| **resolved** | bit(1) | NO | DEFAULT 0 | 처리 완료 여부 |
+
+### 정적 비교로 찾은 차이와 처리
+| 대상 | 차이 | 영향 | 처리 |
+| :--- | :--- | :--- | :--- |
+| `error_log` | 호스트 `ErrorLog` 엔티티 테이블이 마이그레이션에 없음 | 호스트 기동 실패 (missing table) | **V11** 에서 생성 |
+| `accommodation_tag.icon_name` | 호스트 `AccommodationTag.icon` 이 존재하지 않는 `icon` 컬럼으로 매핑됨 (사용자 엔티티·시드는 `icon_name`) | 호스트 기동 실패 (missing column) | 호스트 매핑을 `@Column(name = "icon_name", length = 50)` 로 수정 (스키마 변경 없음) |
+| `cancellation_policy.days_before`, `refund_rate` | V1 구세대 컬럼이 NOT NULL(기본값 없음)인데 두 엔티티 모두 매핑하지 않음 | validate 는 통과, 호스트 환불 정책 신규 INSERT 가 런타임 실패 | **V11** 에서 NULL 허용으로 완화 (데이터 보존, 컬럼 유지) |
+| `reservation.accommodation_name` | 호스트만 매핑하던 NOT NULL 컬럼 | 호스트 기동 실패 | **V10** 에서 추가 (기존 처리) |
+| `review.rating` | 호스트 `precision=3, scale=1` vs 스키마 `decimal(3,2)` | 없음 (validate 는 정밀도 미검사, 쓰기 값도 수용 가능) | 기록만 |
+| JSON 문자열 컬럼 (`amenities`, `bed_info`, `bank_info`, `cancellation_policy.detail`) | 엔티티 `columnDefinition = "JSON"` vs 스키마 `longtext`/`text` | 없음 (Hibernate 가 문자열 계열로 동등 취급) | 기록만 |
+| `banner.position` | `@Enumerated(STRING)` (MySQL 방언은 enum 타입 기대) vs `varchar(30)` | 없음 (enum ↔ varchar 동등 취급, 두 저장소 `BannerPosition` 값 동일) | 기록만 |
+| `email_verification_token.pending_email`, `user.token_valid_after` | 사용자 API 만 매핑하는 NULL 허용 컬럼 | 없음 (호스트 INSERT 시 NULL) | 기록만 |
+
+### 자동 검증
+- 사용자 API: `./gradlew integrationTest` — Testcontainers MySQL 8.0 에 V1~최신 적용 후 사용자 엔티티 `validate`, `reservation.accommodation_name` NOT NULL, V10/V11 재실행 안전성 확인.
+- 관리자 앱: `./gradlew integrationTest` — 사용자 API 저장소의 마이그레이션을 그대로 적용한 뒤 호스트 엔티티 `validate` (CI 는 두 저장소를 나란히 체크아웃, 매일 예약 실행).
+
+---
+
 *참고: 상세한 전체 테이블 목록(1~39번)은 이미지의 내용을 모두 포함하고 있으며, 데이터 정합성을 위해 어드민 페이지 개발 시 위 타입을 엄격히 준수해야 합니다.*

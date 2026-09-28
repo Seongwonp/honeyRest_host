@@ -86,7 +86,7 @@ flowchart LR
     SVC --> DB[("MySQL 8<br/>공유 스키마")]
     GUARD --> DB
     SVC --> FS["FileStorage<br/>Local 또는 Firebase"]
-    USER["honeyRest_user :8080<br/>Flyway V1~V10"] -. "스키마 마이그레이션" .-> DB
+    USER["honeyRest_user :8080<br/>Flyway V1~V11"] -. "스키마 마이그레이션" .-> DB
 ```
 
 - 사용자 API가 스키마를 만들고(Flyway), 이 앱은 `validate`만 수행합니다. 매핑이 어긋나면 기동 단계에서 바로 실패하므로 두 저장소의 엔티티 차이가 운영 중 데이터 오류로 번지지 않습니다.
@@ -152,7 +152,7 @@ flowchart LR
 
 ## 실행 방법
 
-**필요 환경**: JDK 17, MySQL 8 (`honeyrest_db`). 스키마는 [사용자 API](https://github.com/Seongwonp/honeyRest_user)를 한 번 기동해 Flyway(V1~V10)로 먼저 만들어 둡니다.
+**필요 환경**: JDK 17, MySQL 8 (`honeyrest_db`). 스키마는 [사용자 API](https://github.com/Seongwonp/honeyRest_user)를 한 번 기동해 Flyway(V1~V11)로 먼저 만들어 둡니다.
 
 1. **시크릿 파일**: `src/main/resources/application_security.properties.ex`를 복사해 같은 폴더에 `application_security.properties`를 만들고 `spring.datasource.password`, `jwt.secret`을 채웁니다(gitignore 대상).
 2. **파일 저장소**: 기본값 `app.storage.type=local`(업로드는 `./uploads`, `/uploads/**`로 서빙)이라 Firebase 키 없이 실행됩니다. Firebase를 쓰려면 `--app.storage.type=firebase --app.firebase.credentials=file:/경로/키.json`.
@@ -186,14 +186,17 @@ MySQL·시크릿 파일 없이 관리자 화면을 둘러볼 수 있는 실행 �
 ## 테스트 & CI
 
 ```bash
-./gradlew test     # MySQL·시크릿 파일·Firebase 없이 실행
-./gradlew build    # CI와 동일
+./gradlew test               # MySQL·시크릿 파일·Firebase 없이 실행 (H2)
+./gradlew build              # CI 1단계와 동일
+./gradlew integrationTest    # Docker + 사용자 API 저장소 필요: 공유 스키마 교차 검증 (CI 2단계)
 ```
 
 - **52개 테스트** — 회사 소유권(`CompanyResourceAccessServiceTest`), 권한 상승 차단(`OwnerAuthSignupSecurityTest`), `typ` 검증(`JwtAuthFilterTest`), 재고 가드(`ReservationServiceImplInventoryTest`, `OReservationServiceInventoryTest`), 상태 상수, 예약 수정 컨트롤러, 상태 필터 JPQL 페이지·count 정합
 - **test 프로필**: H2 인메모리(MySQL 모드, `NON_KEYWORDS=USER`) + `create-drop` + 더미 `jwt.secret` + `app.storage.type=local`. 통합 테스트는 `JpaTestFixtures`로 데이터를 만들고 트랜잭션 롤백하므로 하드코딩 ID나 실 DB에 의존하지 않습니다(이전에는 46개 중 10개가 로컬 MySQL 부재로 실패).
-- **트레이드오프**: 스키마를 엔티티 매핑에서 생성하므로 **운영 MySQL 스키마(Flyway)와의 차이는 테스트로 잡지 못합니다.** 운영에서는 `ddl-auto=validate`가 기동 시점에 이를 검출하며, Testcontainers 도입이 후속 과제입니다.
-- **CI**: [GitHub Actions](.github/workflows/ci.yml) — `main` push/PR마다 JDK 17로 `./gradlew build`, 실패 시 테스트 리포트 업로드
+- **트레이드오프**: 스키마를 엔티티 매핑에서 생성하므로 **운영 MySQL 스키마(Flyway)와의 차이는 테스트로 잡지 못합니다.** 이 차이는 아래 스키마 교차 검증 테스트가 따로 잡습니다.
+- **스키마 교차 검증** (`@Tag("integration")`, 기본 `test`에서는 제외): [`HostSchemaAgainstUserMigrationsIntegrationTest`](src/test/java/com/honeyrest/honeyrest_host/schema/HostSchemaAgainstUserMigrationsIntegrationTest.java)가 Testcontainers로 `mysql:8.0`을 띄우고 [사용자 API](https://github.com/Seongwonp/honeyRest_user)의 Flyway 마이그레이션(V1~최신)을 그대로 적용한 뒤, 관리자 엔티티로 `ddl-auto=validate` 기동합니다. 운영 기동 시점에야 드러나던 drift(누락 테이블·컬럼, 타입 불일치)를 CI에서 잡습니다. 지금까지 찾은 차이와 처리는 [DB_SCHEMA.md §6](DB_SCHEMA.md) 참고.
+- **로컬 실행**: Docker를 켜고 두 저장소를 나란히 클론(`../honeyRest_user`)한 뒤 `./gradlew integrationTest`. 다른 위치의 마이그레이션을 쓰려면 `HONEYREST_USER_MIGRATIONS=/path/to/db/migration ./gradlew integrationTest`(지정 시 우선). Docker나 마이그레이션 디렉터리가 없으면 실패가 아니라 skip 됩니다.
+- **CI**: [GitHub Actions](.github/workflows/ci.yml) — `main` push/PR마다(+ 사용자 저장소 변경을 잡기 위해 매일 1회 예약 실행) 두 저장소를 `honeyRest_host`/`honeyRest_user`로 나란히 체크아웃하고 JDK 17로 `./gradlew build` → `./gradlew integrationTest`(`INTEGRATION_REQUIRE_DOCKER=true`로 Docker·마이그레이션 부재 시 skip 대신 실패), 실패 시 테스트 리포트 업로드
 
 ---
 

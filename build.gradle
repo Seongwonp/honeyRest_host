@@ -69,6 +69,14 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
 
+    // 스키마 통합 테스트 (integrationTest 태스크 전용): Docker 로 MySQL 8.0 을 띄우고
+    // 사용자 API 저장소의 Flyway 마이그레이션을 적용한 뒤 호스트 엔티티를 ddl-auto=validate 로 검증한다.
+    // Flyway 는 마이그레이션 적용 도구로 테스트에서만 쓴다 (호스트 앱은 마이그레이션을 소유하지 않는다).
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.flywaydb:flyway-core'
+    testImplementation 'org.flywaydb:flyway-mysql'
+
     // HTML 템플릿 엔진 Thymeleaf
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.1.0'
@@ -89,6 +97,33 @@ configurations {
     }
 }
 
+// 기본 test: H2(test 프로필) 기반의 빠른 테스트만 실행한다. Docker 가 필요한 integration 태그는 제외.
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags 'integration'
+    }
+}
+
+// integrationTest: @Tag("integration") 테스트만 실행한다 (Testcontainers MySQL 8.0).
+// - 사용자 API 마이그레이션 위치: HONEYREST_USER_MIGRATIONS(환경변수 또는 -P 프로퍼티) → 없으면 ../honeyRest_user/...
+// - Docker 가 없으면 해당 테스트는 건너뛴다(skip). CI 에서는 INTEGRATION_REQUIRE_DOCKER=true 로
+//   Docker/마이그레이션 부재를 skip 이 아닌 실패로 만든다.
+// 실행: ./gradlew test integrationTest
+tasks.register('integrationTest', Test) {
+    description = '사용자 API 의 Flyway 마이그레이션으로 만든 MySQL 스키마에 대해 호스트 엔티티 validate 를 검증한다.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'integration'
+    }
+    systemProperty 'integration.requireDocker',
+            providers.environmentVariable('INTEGRATION_REQUIRE_DOCKER').getOrElse('false')
+    def userMigrations = providers.gradleProperty('HONEYREST_USER_MIGRATIONS')
+            .orElse(providers.environmentVariable('HONEYREST_USER_MIGRATIONS'))
+            .getOrElse('')
+    if (userMigrations) {
+        systemProperty 'HONEYREST_USER_MIGRATIONS', userMigrations
+    }
+    shouldRunAfter tasks.named('test')
 }

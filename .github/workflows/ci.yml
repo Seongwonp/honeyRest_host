@@ -1,5 +1,8 @@
 # 호스트 백엔드 CI: main 브랜치 push/PR 마다 빌드 + 테스트 실행
-# 테스트는 test 프로필(H2 인메모리)을 쓰므로 MySQL 등 외부 서비스가 필요 없다.
+# - test: test 프로필(H2 인메모리)을 쓰므로 MySQL 등 외부 서비스가 필요 없다.
+# - integrationTest: 사용자 API 저장소(Seongwonp/honeyRest_user)의 Flyway 마이그레이션을 Testcontainers MySQL 8.0 에
+#   적용한 뒤 호스트 엔티티를 ddl-auto=validate 로 검증한다 (두 저장소 간 스키마 drift 검출).
+#   스키마 원본은 사용자 저장소에 있으므로, 이쪽 코드 변경이 없어도 drift 를 잡도록 매일 1회 예약 실행한다.
 name: CI
 
 on:
@@ -7,13 +10,30 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  schedule:
+    - cron: '17 18 * * *' # 매일 03:17 KST (UTC 18:17)
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        # 두 저장소를 나란히 체크아웃하므로 호스트 저장소 디렉터리에서 명령을 실행한다.
+        working-directory: honeyRest_host
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 호스트 소스 체크아웃
+        uses: actions/checkout@v4
+        with:
+          path: honeyRest_host
+
+      - name: 사용자 API 소스 체크아웃 (Flyway 마이그레이션 원본)
+        uses: actions/checkout@v4
+        with:
+          repository: Seongwonp/honeyRest_user
+          ref: main
+          path: honeyRest_user
 
       - name: JDK 17 설정
         uses: actions/setup-java@v4
@@ -21,16 +41,26 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+          cache-dependency-path: |
+            honeyRest_host/*.gradle*
+            honeyRest_host/gradle/wrapper/gradle-wrapper.properties
 
       - name: gradlew 실행 권한 부여
         run: chmod +x gradlew
 
-      - name: 빌드 및 테스트
+      - name: 빌드 및 테스트 (H2)
         run: ./gradlew build --no-daemon
+
+      - name: 스키마 교차 검증 (사용자 API 마이그레이션 + 호스트 validate, Testcontainers MySQL 8.0)
+        env:
+          HONEYREST_USER_MIGRATIONS: ${{ github.workspace }}/honeyRest_user/src/main/resources/db/migration
+          # Docker/마이그레이션 디렉터리가 없으면 skip 이 아니라 실패하도록 강제한다.
+          INTEGRATION_REQUIRE_DOCKER: 'true'
+        run: ./gradlew integrationTest --no-daemon
 
       - name: 테스트 리포트 업로드 (실패 시)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
-          path: build/reports/tests
+          path: honeyRest_host/build/reports/tests

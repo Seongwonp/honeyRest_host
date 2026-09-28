@@ -24,7 +24,9 @@ public class AccommodationTag {
     @Column(nullable = false, length = 50)
     private String category; // 태그 카테고리
 
-    @Column(nullable = true)
+    // 공유 스키마(사용자 API Flyway V1)의 컬럼명은 icon_name VARCHAR(50) 이다.
+    // 이전 매핑(@Column 기본값 → icon)은 존재하지 않는 컬럼이라 ddl-auto=validate 에서 기동이 실패했다.
+    @Column(name = "icon_name", length = 50)
     private String icon; // 태그 아이콘 (리액트 아이콘 이름 저장)
 
 
