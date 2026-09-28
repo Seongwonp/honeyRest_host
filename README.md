@@ -1,502 +1,226 @@
-# 🐝 HoneyRest – 감성 숙소 예약 플랫폼 (Admin System)
+# HoneyRest – 숙소 예약 플랫폼 · 관리자 시스템
 
 [![CI](https://github.com/Seongwonp/honeyRest_host/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Seongwonp/honeyRest_host/actions/workflows/ci.yml)
+![Java 17](https://img.shields.io/badge/Java-17-007396)
+![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5.4-6DB33F)
+![Thymeleaf](https://img.shields.io/badge/Thymeleaf-SSR-005F0F)
+![MySQL 8](https://img.shields.io/badge/MySQL-8-4479A1)
 
-🏨 업체 관리자 (Company Admin) – **김민경**  
-🛡️ 총 관리자 (Super Admin) – **설현오**  
-👤 전체 총괄 / DB 설계 / 기술 방향 결정 – **박성원 (팀장)**
+**HoneyRest**의 운영자용 서버 렌더링(Thymeleaf) 관리자 앱입니다. 권한을 두 단계로 나눠
+**업체 관리자(COMPANY_ADMIN)** 는 자기 회사의 숙소·객실·가격 캘린더·예약·리뷰·문의·매출만,
+**총관리자(SUPER_ADMIN)** 는 전체 업체·숙소 승인·유저·쿠폰·환불을 관리합니다.
+사용자 API와 **같은 MySQL 스키마를 공유**하므로 예약 상태와 재고 규칙을 두 저장소가 동일하게 적용하도록 맞췄습니다.
 
----
-
-## 🎥 HoneyRest 광고 영상
-
-[![HoneyRest 광고 영상](https://github.com/Seongwonp/honeyRest_user/blob/main/%E1%84%92%E1%85%A5%E1%84%82%E1%85%B5%E1%84%85%E1%85%A6%E1%84%89%E1%85%B3%E1%84%90%E1%85%B3.gif?raw=true)](https://firebasestorage.googleapis.com/v0/b/honeyrest-7fb60.firebasestorage.app/o/video%2F%E1%84%92%E1%85%A5%E1%84%82%E1%85%B5%E1%84%85%E1%85%A6%E1%84%89%E1%85%B3%E1%84%90%E1%85%B3.mp4?alt=media&token=1d89a752-00e0-4c82-b6c0-94723c57cc70)
-
-> 🎬 클릭하면 전체 광고 영상을 볼 수 있습니다.
-
-> - [👤 사용자(User) 페이지 바로가기](https://github.com/Seongwonp/honeyRest_user)
-
----
-
-## 📖 목차
-
-- [📌 프로젝트 개요](#-프로젝트-개요)
-- [🧑‍💻 주요 기능](#-주요-기능)
-  - [🏨 업체 관리자 (Company Admin)](#-업체-관리자-company-admin)
-  - [🛡️ 총 관리자 (Super Admin)](#️-총-관리자-super-admin)
-- [🏗️ 시스템 아키텍처](#️-시스템-아키텍처)
-- [🗃️ 데이터베이스 설계 (ERD)](#️-데이터베이스-설계-erd)
-- [📋 주요 테이블 요약](#-주요-테이블-요약)
-- [📦 기술 스택](#-기술-스택)
-- [⚙️ 실행 전 필수 설정](#️-실행-전-필수-설정)
-- [🖥️ 주요 화면 캡처](#️-주요-화면-캡처)
-- [🎬 관리자 시연 영상](#-관리자-시연-영상)
-- [📝 프로젝트 발표 자료](#-프로젝트-발표-자료)
-- [💭 프로젝트 회고](#-프로젝트-회고)
-- [🙋 개발자 정보](#-개발자-정보)
-- [🔧 프로젝트 완료 후 리팩토링 및 개선](#-프로젝트-완료-후-리팩토링-및-개선-박성원)
-- [🧰 안정화 작업 기록](docs/STABILIZATION.md)
-
----
-
-## 📌 프로젝트 개요
-
-**HoneyRest**는 감성 숙소 예약을 위한 **풀스택 웹 플랫폼**입니다.  
-본 레포지토리는 **업체 관리자(Company Admin)** 와 **총 관리자(Super Admin)** 기능을 포함한  
-**Thymeleaf 기반의 관리자 시스템**입니다.
-
-관리자 권한을 2단계로 구분하여, 실제 숙박업체 운영 현장과 본사 총괄 관리 구조를 반영했습니다.
-
-> "운영 현장(업체)과 본사(총괄)를 분리 관리 → 권한·데이터 보안 강화"
-
-- **프로젝트 기간**: 2025.08.04 ~ 2025.09.04 (총 4주)
-- **팀원 구성**:
-  - 👤 박성원 (팀장) – 사용자(User) 영역 개발 총괄 & 광고 영상 제작 / 전체 DB 설계 및 ERD 작성 / 관리자 시스템 기술 방향 결정 / 전체 시스템 통합 및 코드 리뷰
-  - 🏨 김민경 – 업체 관리자(Company Admin) 시스템 개발
-  - 🛡️ 설현오 – 총 관리자(Super Admin) 시스템 개발
-
-> 전체 서비스 구조에서 본 시스템은 **숙박업체 사업자**와 **플랫폼 운영자**가  
-> 각자의 권한 범위 내에서 숙소, 예약, 매출, 유저를 체계적으로 관리할 수 있도록 설계되었습니다.
-
----
-
-## 🧑‍💻 주요 기능
-
-> ℹ️ **패키지/경로 이름 주의**
-> 코드상의 `*Owner` 패키지(`controllerOwner`, `serviceOwner`, `repositoryOwner`, `dtoOwner`)와 `/owner/**` 경로는 **총관리자(SUPER_ADMIN)** 화면입니다.
-> 반대로 `*Admin` 패키지와 `/admin/**` 경로가 **업체 관리자(COMPANY_ADMIN)** 화면입니다. 이름이 직관과 반대이니 수정 시 유의하세요.
-
-### 🏨 업체 관리자 (Company Admin)
-
-> 자신이 소유 / 운영하는 숙소와 객실만 관리할 수 있는 사업자 전용 관리 시스템
-
-#### 🏠 숙소 & 객실 관리
-- 숙소 등록 / 수정 / 삭제 (이름, 주소, 편의시설, 사진 업로드)
-- 객실 등록 (룸 타입, 침대 구성, 최대 인원, 요금, 재고)
-- **가격/재고 캘린더**: 날짜별 요금 및 재고 자동 수정
-
-#### 📅 예약 현황 관리
-- 전체 예약 목록 조회 및 상태 변경 (`CONFIRMED → COMPLETED → CANCELED`)
-- 예약 상세 내용 및 고객 요청사항 확인
-- 환불 요청 처리 및 환불 완료 영수증 발행
-
-#### 📊 매출 통계 대시보드
-- 기간 선택 (최근 7일 / 최근 30일 / 월별)
-- KPI 지표: 총 매출, 총 주문 수, 평균 주문 금액
-- 막대 + 선 그래프 시각화 (Chart.js)
-
-#### 💬 고객 리뷰 & 문의 관리
-- 고객 1:1 문의 목록 및 상세 답변
-- 리뷰 목록 조회 및 이미지 확인
-- 리뷰 답변 / 숨김 처리
-
-#### 🏢 업체 정보 관리
-- 본인 업체 정보 등록 / 수정 (상호명, 사업자번호, 대표자, 연락처)
-- 업체 비활성화 요청 처리
-
-#### 🎟️ 쿠폰 관리
-- 숙소별 쿠폰 생성 및 목록 조회
-- 할인 유형, 적용 기간, 최소 주문 금액 설정
-
-#### 👥 고객(유저) 조회
-- 예약 고객 목록 페이징 조회
-- 고객 상세 정보 및 예약 이력 확인
-
----
-
-### 🛡️ 총 관리자 (Super Admin)
-
-> 전체 시스템을 모니터링하고 운영 정책을 총괄하는 슈퍼 관리자 시스템
-
-#### 🏢 업체 & 숙소 & 객실 관리
-- 전체 업체 목록 조회 및 상세 정보 확인
-- 숙소 목록 조회, 숙소별 객실 현황 확인
-- 비활성 업체 / 비활성 숙소 / 예약 취소 대기 목록 별도 관리
-- 업체 및 숙소 허용 여부(활성/비활성) 처리
-
-#### 📅 예약 & 매출 관리
-- 전체 예약 리스트 조회 (업체 / 숙소 / 객실 단위)
-- **숙소 캘린더**: 객실별 예약 현황 월간 달력 뷰
-- 업체별 매출 현황 그래프 조회
-
-#### 👥 유저 & 업체 관리자 계정 관리
-- 전체 유저 목록 조회 및 상세 정보 확인
-- 업체 관리자 계정 생성 및 권한 부여
-
-#### 🎟️ 쿠폰 / 이벤트 관리
-- 쿠폰 발행 및 목록 관리
-- 업체별 쿠폰 적용 허용 여부 설정
-
-#### 💬 1:1 문의 관리
-- 전체 유저 1:1 문의 목록 조회 (숙소·답변 여부 필터)
-- 문의 상세 확인 및 답변 처리
-
-#### 💰 포인트 / 환불 관리
-- 전체 결제 내역 조회 및 포인트 적립 현황 확인
-- 환불 요청 목록 및 환불 처리
-
-#### ⭐ 리뷰 관리
-- 전체 리뷰 목록 조회 및 상세 확인
-- 신고된 리뷰 처리 및 숨김 관리
-
----
-
-## 🏗️ 시스템 아키텍처
-
-```
-사용자(user)페이지 (React)      ─┐
-업체관리자(/admin)(Thymeleaf) ─┼──▶ 백엔드 (Spring Boot) ──▶ ORM (JPA/Hibernate) ──▶ DB (MariaDB)
-총관리자(/owner) (Thymeleaf)   ─┘         │                          │
-                                        Spring Cache (인메모리)  FileStorage (로컬 / Firebase)
-                                        OpenAPI (Swagger)
-```
-
-| 레이어 | 기술 |
+| 저장소 | 역할 |
 |--------|------|
-| 사용자 페이지 | React (SPA) |
-| 관리자 페이지 | Thymeleaf (SSR) |
-| 백엔드 | Spring Boot |
-| ORM | JPA (Hibernate) |
-| 캐시 | Spring Cache (simple, 인메모리) |
-| 파일 저장소 | FileStorage 추상화 (로컬 디스크 기본, Firebase Storage 선택) |
-| DB | MariaDB |
-| API 문서화 | Swagger (OpenAPI) |
+| [honeyRest_user](https://github.com/Seongwonp/honeyRest_user) | 사용자 REST API · 스키마(Flyway) 소유 |
+| [honeyrest_user_react](https://github.com/Seongwonp/honeyrest_user_react) | 사용자 화면 · React 19 SPA |
+| **honeyRest_host** (현재) | 업체 관리자 / 총관리자 화면 · Spring Boot + Thymeleaf |
 
 ---
 
-## 🗃️ 데이터베이스 설계 (ERD)
+## 역할
 
-HoneyRest의 데이터베이스는 **숙소 중심**과 **예약/리뷰 중심**의 두 가지 도메인으로 구성된  
-**도메인 중심의 관계형 구조**로 설계되었습니다.  
-확장성과 무결성을 고려해 정규화된 테이블로 구성되어 있으며,  
-JPA 기반 ORM 매핑을 통해 엔티티와 DB가 유기적으로 연결됩니다.
+**팀 프로젝트 (2025.08.04 ~ 2025.09.04, 4주, 3명)**
 
-### 🏠 숙소 중심 ERD 포인트
+| 이름 | 담당 |
+|------|------|
+| 김민경 | **업체 관리자(Company Admin) 총괄** — 시스템 전체 설계 및 개발, 숙소/객실 등록·예약 현황·매출 통계·리뷰 관리 구현, PPT 제작 참여 |
+| 설현오 | **총 관리자(Super Admin) 총괄** — 시스템 전체 설계 및 개발, 업체/숙소/예약/유저 관리 및 쿠폰 시스템 구현, 백엔드 명세서 작성, PPT 제작 참여 |
+| 박성원 (팀장) | 전체 DB 설계 및 ERD 작성 / 사용자(User) 영역 개발 총괄 / 관리자 시스템 기술 방향 결정(Thymeleaf) 및 전체 코드 리뷰 / 광고 영상 제작 |
 
-- `accommodation` 중심 → 객실, 가격, 이미지 등 핵심 정보 통합
-- 객실별 상세 정보 및 날짜별 가격/재고 관리 (`price_calendar`) → 유연한 숙박 운영
-- 태그, 카테고리, 지역 등 다양한 분류 체계 → 필터링 및 검색 기능 강화
-- 숙소 등록 회사(`company`) 및 등록 요청(`accommodation_request_map`) 기능 포함
-- 사용자 위시리스트, 취소 정책 테이블 설계 포함
+**프로젝트 종료 후 단독 고도화 (2025.09 ~ , 박성원)**
 
-### 📋 주요 테이블 요약
-
-| 테이블명 | 설명 |
-|----------|------|
-| `User` | 사용자 정보, 권한, 알림 설정 등 |
-| `Accommodation` | 숙소 정보, 위치, 태그, 이미지 |
-| `Room` | 객실 정보, 재고, 가격, 캘린더 |
-| `price_calendar` | 날짜별 요금 및 재고 관리 |
-| `Reservation` | 예약 내역, 상태, 결제 정보 |
-| `Review` | 리뷰 내용, 평점, 신고 여부 |
-| `Company` | 숙박업체 정보, 계정, 정산 정보 |
-| `Admin` | 관리자 계정, 권한, 통계 |
-| `Coupon` | 할인 쿠폰, 조건, 유저 연결 |
-| `Payment` | 결제 정보 |
-| `payment_detail` | 결제 상세 정보 분리 (보안성 확보) |
-| `WishList` | 관심 숙소 저장 기능 |
-| `Policy` | 취소 정책, 운영 기준 |
+- **권한·테넌트 경계**: SUPER_ADMIN 자가 승격 차단, 고정 비밀번호 초기화를 `local-demo` 프로필로 격리, 회사 소유권 검사 공통화(`CompanyResourceAccessService`), 숙소 승인을 총관리자 전용 워크플로로 분리
+- **인증**: refresh token이 access token처럼 통용되던 문제 차단(`typ` 검증), `ACCESS_TOKEN` 쿠키 HttpOnly·SameSite=Lax·HTTPS 시 Secure
+- **CSRF 재활성화**: 쿠키 기반 토큰 저장소 + 멀티파트 필터 순서 조정, 템플릿 34개에 토큰 적용
+- **예약 재고 통일**: `total_rooms` 직접 증감 제거 → 사용자 API와 같은 객실 락 + 겹침 검사, 예약 상태 상수 통일(`CANCELED` 오타로 취소 집계가 0이던 버그 수정)
+- **성능·정리**: 예약 조회 `JOIN FETCH`·`countQuery` 분리·`@EntityGraph`로 N+1 제거, 미사용 정적 에셋 68MB(6,199 → 186 파일)·템플릿·의존성 제거, 파일 저장소 추상화
+- **운영 UX**: 역할별 테마 분리(업체: 앰버 / 총관리자: 네이비), 반응형 목록 재작성, 취소 요청 알림 배지(`NotificationInterceptor`), `alert()` → Toast
+- **테스트·CI**: H2 test 프로필, 빈 테스트 재작성, GitHub Actions
+- 상세 기록: [docs/STABILIZATION.md](docs/STABILIZATION.md)
 
 ---
 
-## 📦 기술 스택
+## 기술 스택
 
-### 🎨 프론트엔드 (Thymeleaf 기반)
+| 구분 | 기술 |
+|------|------|
+| Language / Framework | Java 17, Spring Boot 3.5.4 (Web, Validation, Actuator) |
+| View | Thymeleaf + Layout Dialect 3.1, Bootstrap 5.3, Mazer 관리자 템플릿, Chart.js |
+| 인증 / 인가 | Spring Security (STATELESS), JJWT 0.12.5 — `ACCESS_TOKEN` HttpOnly 쿠키, CSRF(`CookieCsrfTokenRepository`) |
+| 데이터 | MySQL 8, Spring Data JPA, QueryDSL 5.0, `ddl-auto=validate` (스키마는 사용자 API의 Flyway가 관리) |
+| 매핑 | MapStruct 1.6, ModelMapper 3.2 |
+| 캐시 | Spring Cache (`simple`, 인메모리) |
+| 파일 저장 | `FileStorage` 추상화 — 로컬 디스크(기본) / Firebase Storage(선택) |
+| 문서 | SpringDoc OpenAPI 2.5 (Swagger UI, SUPER_ADMIN 전용) |
+| 테스트 / CI | JUnit 5, Mockito, Spring Boot Test, H2 (MySQL 모드), GitHub Actions |
 
-| 구분 | 기술 / 라이브러리 | 역할 / 설명 | 사용처 / 특징 |
-|------|------------------|-------------|--------------|
-| **프레임워크** | Thymeleaf | 서버사이드 렌더링(SSR) | 관리 페이지 HTML 템플릿 |
-| **CSS / 스타일링** | Bootstrap | UI 컴포넌트, 반응형 디자인 | 버튼, 모달, 테이블 등 모든 스타일 |
-| **템플릿** | Mazer | 대시보드 레이아웃, 사이드바/네비게이션 | 관리 UI 기본 틀 제공 |
-| **차트** | Chart.js | 데이터 시각화 | 매출 통계, 예약 현황 등 |
-| **아이콘** | Iconly | 심플한 아이콘 제공 | 버튼 아이콘 |
-
-### ⚙️ 백엔드 (Spring Boot 기반)
-
-| 구분 | 기술 / 라이브러리 | 역할 / 설명 | 사용처 / 특징 |
-|------|------------------|-------------|--------------|
-| **런타임** | Java 17 | LTS 버전 | Jakarta EE 기반 |
-| **프레임워크** | Spring Boot 3.5.4 | 백엔드 애플리케이션 | REST API, DI, 설정 관리 |
-| **템플릿 엔진** | Thymeleaf + Layout Dialect | View 렌더링 | 관리자/오너 페이지 출력 |
-| **아키텍처 패턴** | MVC 패턴 | Controller-Service-Repository 구조 | 명확한 계층 분리 |
-| **보안 / 인증** | Spring Security + JJWT | 인증/인가 + JWT 토큰 관리 | 세션 기반 로그인, JWT 쿠키 |
-| **DB** | MariaDB | 관계형 DB | 사용자, 숙소, 예약, 쿠폰 등 전체 데이터 |
-| **ORM** | Spring Data JPA (Hibernate) | 엔티티 기반 CRUD | MariaDB 연동, N+1 최적화 |
-| **JWT** | JJWT 0.12.x | JWT 토큰 생성 및 검증 | 쿠키 기반 무상태 인증 |
-| **동적 쿼리** | QueryDSL | 타입 안전 JPQL 생성 | 검색/필터 쿼리 |
-| **객체 매핑** | MapStruct + ModelMapper | DTO ↔ Entity 변환 자동화 | 계층 간 매핑 간소화 |
-| **파일 업로드** | FileStorage (Local / Firebase Storage) | 이미지, 파일 저장 | `app.storage.type` 으로 구현체 선택 |
-| **API 문서화** | SpringDoc OpenAPI / Swagger UI | REST API 문서화 | `/swagger-ui.html` (SUPER_ADMIN 전용) |
-| **모니터링** | Spring Actuator | 애플리케이션 상태·지표 확인 | 헬스체크 엔드포인트 |
-| **환경/보안 관리** | application_security.properties | 민감 정보 분리 | DB 패스워드, JWT 시크릿 등 |
+> 패키지 이름 주의: `*Owner` 패키지와 `/owner/**` 경로가 **총관리자(SUPER_ADMIN)**, `*Admin` 패키지와 `/admin/**` 경로가 **업체 관리자(COMPANY_ADMIN)** 입니다. 이름이 직관과 반대입니다.
 
 ---
 
-## ⚙️ 실행 전 필수 설정
+## 아키텍처
 
-### 1️⃣ 환경 변수 설정 (`application_security.properties`)
+```mermaid
+flowchart LR
+    CA["업체 관리자<br/>/admin/**"]
+    SA["총관리자<br/>/owner/**"]
 
-`application.properties` 가 `spring.config.import=optional:application_security.properties` 로 시크릿 파일을 불러옵니다.
-`src/main/resources/application_security.properties.ex` 를 복사해 같은 폴더에 `application_security.properties` 를 만들고 실제 값을 채워주세요.
+    subgraph HOST["Host Admin · Spring Boot + Thymeleaf :8081"]
+        SEC["SecurityFilterChain<br/>MultipartFilter → CsrfFilter<br/>JwtAuthFilter: ACCESS_TOKEN 쿠키, typ=access"]
+        CTRL["controllerAdmin / controllerOwner"]
+        ACC["CompanyResourceAccessService<br/>URL·폼 ID의 회사 소유권 검사"]
+        SVC["serviceAdmin / serviceOwner"]
+        GUARD["ReservationInventoryGuard<br/>객실 행 락 + 겹침 검사"]
+        VIEW["Thymeleaf 템플릿<br/>Bootstrap · Chart.js"]
+        SEC --> CTRL
+        CTRL --> ACC
+        CTRL --> SVC
+        SVC --> GUARD
+        CTRL --> VIEW
+    end
 
-```properties
-# Database password
-spring.datasource.password=YOUR_DB_PASSWORD
-
-# JWT secret key
-jwt.secret=YOUR_SECURE_JWT_SECRET_KEY
+    CA --> SEC
+    SA --> SEC
+    SVC --> DB[("MySQL 8<br/>공유 스키마")]
+    GUARD --> DB
+    SVC --> FS["FileStorage<br/>Local 또는 Firebase"]
+    USER["honeyRest_user :8080<br/>Flyway V1~V10"] -. "스키마 마이그레이션" .-> DB
 ```
 
-#### 🚨 주의사항
+- 사용자 API가 스키마를 만들고(Flyway), 이 앱은 `validate`만 수행합니다. 매핑이 어긋나면 기동 단계에서 바로 실패하므로 두 저장소의 엔티티 차이가 운영 중 데이터 오류로 번지지 않습니다.
+- 컬럼 명세: [DB_SCHEMA.md](DB_SCHEMA.md) (사용자 저장소와 동일 내용)
 
-- `application_security.properties` 와 Firebase 서비스 계정 키(`*firebase-adminsdk*.json`)는 `.gitignore` 로 차단되어 있습니다.
-- 깃허브 공개 저장소에는 절대 올리지 마세요.
-- 팀 협업 시에는 `application_security.properties.ex` 파일로 형식만 공유하고, 실제 키 값은 각 개발자가 직접 채워넣어야 합니다.
+### 주요 기능
+
+| 업체 관리자 (`/admin/**`) | 총관리자 (`/owner/**`) |
+|---|---|
+| 숙소·객실 등록/수정, 이미지 업로드 | 업체·숙소·객실 계층 탐색, 숙소 승인/거절 |
+| 날짜별 가격·재고 캘린더 일괄 수정 | 전체 예약 조회, 숙소별 월간 예약 캘린더 |
+| 예약 목록·상태 변경·환불 처리 | 업체별 매출 그래프, 결제·포인트·환불 관리 |
+| 매출 KPI 대시보드 (7일 / 30일 / 월별) | 유저 조회, 업체 관리자 계정 생성 |
+| 리뷰 답변·숨김, 1:1 문의 답변, 쿠폰 발행 | 쿠폰·이벤트, 전체 문의·신고 리뷰 처리 |
 
 ---
 
-### 2️⃣ 실행 (로컬 스토리지 모드)
+## 핵심 설계 결정 & 트러블슈팅
 
-업로드 파일 저장소는 `app.storage.type` 프로퍼티로 선택합니다. 기본값은 `local` 이므로 **Firebase 키 없이도 바로 실행**됩니다.
+### 1. STATELESS 앱에서 CSRF 재활성화 — 쿠키 저장소 + 필터 순서
+- **문제**: JWT 쿠키 인증인데 CSRF가 꺼져 있었고, 켜면 ① 세션이 없어 기본 저장소가 동작하지 않고 ② 이미지 업로드(멀티파트) 폼은 바디 파싱 전이라 `_csrf`를 못 읽어 항상 403 ③ 큰 페이지에서 응답 버퍼가 먼저 커밋돼 토큰 `Set-Cookie`가 누락됐습니다.
+- **결정**: `CookieCsrfTokenRepository`로 전환, `MultipartFilter`를 빈으로 등록해 `CsrfFilter` 앞에 배치, 필터 체인 초입에서 지연 로딩되는 `CsrfToken`을 미리 읽는 필터 추가. POST 폼 템플릿 34개(로그인 포함)에 `_csrf` 적용.
+- **결과**: 모든 폼·업로드·fetch 요청이 CSRF 검증을 통과하며, 회귀 테스트는 Spring Security 6의 토큰 마스킹(`XorCsrfTokenRequestAttributeHandler`)에 맞춰 실제 페이지에서 토큰을 읽도록 작성했습니다.
+- 코드: [`SecurityConfig`](src/main/java/com/honeyrest/honeyrest_host/config/SecurityConfig.java)
 
-| 값 | 동작 |
-|----|------|
-| `local` (기본) | `app.storage.local.dir`(기본 `./uploads`)에 저장하고 `/uploads/**` 경로로 서빙 |
-| `firebase` | Firebase Storage 에 저장. `app.firebase.credentials`(서비스 계정 키 경로)와 `app.firebase.bucket` 필요 |
+### 2. 다른 회사 데이터가 보이던 IDOR — 소유권 검사 공통화 + fail-closed
+- **문제**: 가격 캘린더·리뷰·문의 등 핸들러가 URL/폼의 `accommodationId`·`roomId`를 그대로 믿었고, 결제 조회는 principal 타입 버그로 `companyId`가 `null`이 되면 **전체 회사 데이터**를 반환했습니다.
+- **결정**: 로그인 사용자 → 회사를 해석하고 숙소·객실·예약·리뷰·문의가 그 회사 소유인지 확인하는 `CompanyResourceAccessService`를 두고 컨트롤러 6개에서 호출. 입력이 `null`이거나 조회에 실패하면 `false`(거부)로 처리하고 저장소의 `null` 우회 조건을 제거했습니다. 예약 생성 폼은 객실과 숙소가 서로 다른 회사로 섞이지 않는지도 검사합니다.
+- **결과**: 식별자를 바꿔도 타사 리소스는 읽기·쓰기 모두 실패하며, 거부 케이스를 단위 테스트로 고정했습니다.
+- 코드: [`CompanyResourceAccessService`](src/main/java/com/honeyrest/honeyrest_host/serviceAdmin/CompanyResourceAccessService.java) · [테스트](src/test/java/com/honeyrest/honeyrest_host/serviceAdmin/CompanyResourceAccessServiceTest.java)
+
+### 3. 권한 상승과 고정 비밀번호 — 가입 경로 분리 + 프로필 격리
+- **문제**: 업체 관리자가 가입 API로 SUPER_ADMIN을 스스로 발급할 수 있었고, 고정 비밀번호 관리자 계정을 만드는 초기화 코드가 모든 환경에서 실행됐습니다.
+- **결정**: 관리자 생성 API를 SUPER_ADMIN 전용으로 제한하고, `DataInitializer`를 `@Profile("local-demo")` 명시적 opt-in으로 전환(비밀번호는 프로퍼티로 재정의 가능). 숙소 승인·거절도 총관리자 전용 경로로 분리해 업체의 자가 승인을 막았습니다.
+- **결과**: 익명·업체 관리자의 승격 시도는 거부되고, 테스트·일반 실행에서 계정이 생성되지 않습니다.
+- 코드: [`DataInitializer`](src/main/java/com/honeyrest/honeyrest_host/config/DataInitializer.java) · [`OwnerAuthSignupSecurityTest`](src/test/java/com/honeyrest/honeyrest_host/security/OwnerAuthSignupSecurityTest.java)
+
+### 4. refresh token으로도 인증되던 문제 — `typ` 클레임 검증
+- **문제**: 14일짜리 refresh token이 access token과 똑같이 인증에 통용돼, 유출 시 1시간 access token 만료 정책이 무의미했습니다.
+- **결정**: 토큰 발급 시 `typ` 클레임을 넣고 `JwtAuthFilter`는 `typ=access`만 인증에 사용. 로그인 쿠키는 `ResponseCookie`로 HttpOnly·SameSite=Lax, HTTPS 요청이면 Secure를 자동 설정합니다.
+- **결과**: refresh token으로의 인증 시도는 차단·로그됩니다.
+- 코드: [`JwtAuthFilter`](src/main/java/com/honeyrest/honeyrest_host/security/JwtAuthFilter.java) · [`JwtTokenProvider`](src/main/java/com/honeyrest/honeyrest_host/config/JwtTokenProvider.java) · [테스트](src/test/java/com/honeyrest/honeyrest_host/security/JwtAuthFilterTest.java)
+
+### 5. 두 앱이 서로 다른 방식으로 재고를 다루던 문제 — `ReservationInventoryGuard`
+- **문제**: 관리자 예약 생성은 `room.total_rooms`를 1 줄이고 취소 시 1 늘렸지만 사용자 API는 `total_rooms`를 건드리지 않아, 두 방식이 섞이면 객실 수 자체가 오염됐습니다. 상태 철자도 `CANCELED`/`CANCELLED`가 섞여 보고서의 취소 건수가 항상 0이었습니다.
+- **결정**: 재고 = `total_rooms − 겹치는 점유 상태 예약 수`로 통일하고, `RoomRepository.findByIdForUpdate`(`PESSIMISTIC_WRITE`) 후 `countOverlapping`으로 검사하는 가드를 관리자·총관리자 예약 생성/수정 4곳에 적용(수정 시 자기 자신은 `excludeReservationId`로 제외). 상태는 사용자 저장소와 같은 `ReservationStatus` 상수로 통일했고, 공유 스키마에 없는 `@Version`은 제거했습니다.
+- **결과**: 초과 예약은 409로 거절되고 화면에 사유가 표시됩니다. 재고 규칙은 단위 테스트 14건으로 고정했습니다.
+- 코드: [`ReservationInventoryGuard`](src/main/java/com/honeyrest/honeyrest_host/serviceCommon/ReservationInventoryGuard.java) · [`ReservationStatus`](src/main/java/com/honeyrest/honeyrest_host/entity/ReservationStatus.java) · [테스트](src/test/java/com/honeyrest/honeyrest_host/serviceAdmin/ReservationServiceImplInventoryTest.java)
+
+### 6. 예약 목록 N+1과 메모리 페이징 — `JOIN FETCH` + `countQuery` 분리
+- **문제**: 예약 목록에서 객실·숙소 등 연관 엔티티를 지연 로딩하며 행마다 추가 쿼리가 발생했고, 일부 `Page` 쿼리는 Hibernate 메모리 페이징 경고를 냈습니다.
+- **결정**: `ReservationRepository` 조회에 `JOIN FETCH`를 적용하고 `Page` 쿼리는 `value`/`countQuery`를 분리, 총관리자 숙소 조회는 `@EntityGraph`로 연관을 일괄 로딩했습니다. 총관리자 예약 목록은 상태 필터를 DB 쿼리에서 처리해 목록 건수와 `total`을 일치시켰습니다.
+- **결과**: 목록 조회 쿼리 수가 행 수와 무관해졌고, 상태 필터 JPQL 4종의 목록·count 정합성을 테스트로 검증합니다.
+- 코드: [`ReservationRepository`](src/main/java/com/honeyrest/honeyrest_host/repositoryAdmin/ReservationRepository.java) · [`OAccommodationRepository`](src/main/java/com/honeyrest/honeyrest_host/repositoryOwner/OAccommodationRepository.java) · [테스트](src/test/java/com/honeyrest/honeyrest_host/repositoryOwner/OReservationRepositoryStatusQueryTest.java)
+
+### 7. Firebase 키·68MB 정적 에셋 의존 — 저장소 추상화와 정리
+- **문제**: 업로드가 Firebase에 직접 묶여 서비스 계정 키 없이는 실행되지 않았고, 템플릿 원본에서 가져온 미사용 에셋이 저장소에 68MB 남아 있었습니다.
+- **결정**: `FileStorage` 인터페이스 + `LocalFileStorage`(기본) / `FirebaseFileStorage`를 `app.storage.type`으로 선택하고, `FirebaseConfig`는 firebase 모드에서만 로드. 미사용 에셋(6,199 → 186 파일)·템플릿·의존성(oauth2-client, websocket, mail, aop 등)을 제거했습니다.
+- **결과**: 외부 키 없이 로컬 실행·CI가 가능하고 저장소 크기가 크게 줄었습니다.
+- 코드: [`storage/`](src/main/java/com/honeyrest/honeyrest_host/storage)
+
+---
+
+## 실행 방법
+
+**필요 환경**: JDK 17, MySQL 8 (`honeyrest_db`). 스키마는 [사용자 API](https://github.com/Seongwonp/honeyRest_user)를 한 번 기동해 Flyway(V1~V10)로 먼저 만들어 둡니다.
+
+1. **시크릿 파일**: `src/main/resources/application_security.properties.ex`를 복사해 같은 폴더에 `application_security.properties`를 만들고 `spring.datasource.password`, `jwt.secret`을 채웁니다(gitignore 대상).
+2. **파일 저장소**: 기본값 `app.storage.type=local`(업로드는 `./uploads`, `/uploads/**`로 서빙)이라 Firebase 키 없이 실행됩니다. Firebase를 쓰려면 `--app.storage.type=firebase --app.firebase.credentials=file:/경로/키.json`.
+3. **실행**
+   ```bash
+   ./gradlew bootRun                                                # http://localhost:8081
+   ./gradlew bootRun --args='--spring.profiles.active=local-demo'   # 데모 관리자 계정 생성
+   ```
+4. **데이터 시드**: [`db/seed/`](db/seed) — `insert.sql` → `insert_pk_1-20.sql` → `insert_pk_21-30.sql` → `insert_pk_31-33.sql` 순서(FK 의존 순). 로컬 저장소 모드에서 이미지를 보려면 사용자 저장소의 [`scripts/seed-local-images.sql`](https://github.com/Seongwonp/honeyRest_user/blob/main/scripts/seed-local-images.sql)도 실행합니다.
+5. **데모 계정**: `local-demo` 프로필에서 [`DataInitializer`](src/main/java/com/honeyrest/honeyrest_host/config/DataInitializer.java)가 업체 관리자·총관리자 계정을 생성합니다. 이메일·기본 비밀번호는 해당 파일에 정의되어 있으며 `demo.company-admin.password`, `demo.super-admin.password` 프로퍼티로 바꿀 수 있습니다.
+6. **포트**: 관리자 앱 `8081`(`SERVER_PORT`로 변경) · User API `8080` · React `5173`
+
+로그인: `http://localhost:8081/auth/login` → 역할에 따라 `/admin/dashboard` 또는 `/owner/dashboard`로 이동
+
+---
+
+## 테스트 & CI
 
 ```bash
-# 로컬 스토리지 모드 (기본)
-./gradlew bootRun
-
-# Firebase 모드
-./gradlew bootRun --args='--app.storage.type=firebase --app.firebase.credentials=file:/경로/firebase-adminsdk.json'
+./gradlew test     # MySQL·시크릿 파일·Firebase 없이 실행
+./gradlew build    # CI와 동일
 ```
 
-- 데모 계정이 필요하면 `--spring.profiles.active=local-demo` 로 실행하면 `DataInitializer` 가 업체/총관리자 계정을 생성합니다.
-- 목데이터 SQL 은 `db/seed/` 에 있으며 `insert.sql` → `insert_pk_1-20.sql` → `insert_pk_21-30.sql` → `insert_pk_31-33.sql` 순서로 실행합니다.
+- **52개 테스트** — 회사 소유권(`CompanyResourceAccessServiceTest`), 권한 상승 차단(`OwnerAuthSignupSecurityTest`), `typ` 검증(`JwtAuthFilterTest`), 재고 가드(`ReservationServiceImplInventoryTest`, `OReservationServiceInventoryTest`), 상태 상수, 예약 수정 컨트롤러, 상태 필터 JPQL 페이지·count 정합
+- **test 프로필**: H2 인메모리(MySQL 모드, `NON_KEYWORDS=USER`) + `create-drop` + 더미 `jwt.secret` + `app.storage.type=local`. 통합 테스트는 `JpaTestFixtures`로 데이터를 만들고 트랜잭션 롤백하므로 하드코딩 ID나 실 DB에 의존하지 않습니다(이전에는 46개 중 10개가 로컬 MySQL 부재로 실패).
+- **트레이드오프**: 스키마를 엔티티 매핑에서 생성하므로 **운영 MySQL 스키마(Flyway)와의 차이는 테스트로 잡지 못합니다.** 운영에서는 `ddl-auto=validate`가 기동 시점에 이를 검출하며, Testcontainers 도입이 후속 과제입니다.
+- **CI**: [GitHub Actions](.github/workflows/ci.yml) — `main` push/PR마다 JDK 17로 `./gradlew build`, 실패 시 테스트 리포트 업로드
 
 ---
 
-## 🖥️ 주요 화면 캡처
+## 화면
 
-### 🏨 업체 관리자 (Company Admin)
+관리자 화면 캡처는 이 저장소에 아직 없으며 추후 추가 예정입니다. 같은 데이터를 쓰는 사용자 화면은 React 저장소에서 볼 수 있습니다: [honeyrest_user_react · 화면](https://github.com/Seongwonp/honeyrest_user_react#화면)
 
-#### 숙소 & 객실 관리
+| 사용자 숙소 검색 | 사용자 숙소 상세 · 객실 선택 |
+|------|------|
+| ![숙소 검색](https://raw.githubusercontent.com/Seongwonp/honeyrest_user_react/master/docs/screenshots/accommodation-list.png) | ![숙소 상세](https://raw.githubusercontent.com/Seongwonp/honeyrest_user_react/master/docs/screenshots/accommodation-detail.png) |
 
-> 숙소 선택 → 객실 등록 → 가격/재고 캘린더 수정 → 저장
-
-- 숙소 목록에서 등록/수정/삭제 가능
-- 객실별 룸 타입, 침대 구성, 요금, 재고 등록
-- 날짜별 가격/재고 캘린더에서 일괄 수정 지원
-
-#### 예약 현황
-
-> 예약 상태 흐름: `CONFIRMED → COMPLETED → CANCELED`
-
-- 전체 예약 목록 및 상태 변경 기능
-- 예약 상세 / 요청사항 확인
-- 환불 요청 처리 및 환불 완료 영수증 발행
-
-#### 매출 통계
-
-- 기간별(최근 7일 / 30일 / 월별) KPI 대시보드
-- 총 매출, 총 주문 수, 평균 주문 금액
-- 막대 + 선 그래프로 매출 추이 시각화
-
-#### 고객 리뷰 관리
-
-- 고객 1:1 문의 목록 및 상세 답변
-- 리뷰 이미지 확인 및 답변/숨김 처리
-
-#### 업체 정보 관리
-
-- 업체 정보 등록 / 수정 / 비활성화 처리
-
-#### 쿠폰 관리
-
-- 쿠폰 생성 (할인 유형, 적용 숙소, 사용 기간 설정)
-- 발행된 쿠폰 목록 조회
-
-#### 고객 조회
-
-- 예약 고객 페이징 목록 및 상세 정보 확인
+- 관리자 시연 영상: 추후 GitHub Release에 첨부 예정
+- 발표 자료: [HoneyRest.pdf](https://github.com/user-attachments/files/22292418/HoneyRest.pdf)
 
 ---
 
-### 🛡️ 총 관리자 (Super Admin)
+## 회고
 
-#### 업체 & 숙소 & 객실 관리
+### 김민경 – 업체 관리자 (Company Admin) 담당
 
-> 전체 숙소 리스트 → 업체 리스트 → 업체 상세 → 숙소 상세 → 객실 상세
-
-- 전체 업체/숙소/객실을 계층 구조로 탐색
-- 비활성 업체 / 비활성 숙소 / 예약 취소 대기 별도 관리
-
-#### 예약 & 매출 관리
-
-- 전체 예약 리스트 조회
-- 숙소 캘린더 뷰: 객실별 예약 현황을 월간 달력으로 시각화
-- 업체별 매출 현황 그래프
-
-#### 쿠폰 / 유저 / 계정 관리
-
-- 쿠폰 발행 및 적용 허용 여부 처리
-- 전체 유저 목록 조회 및 관리
-- 업체 관리자 계정 생성 및 권한 부여
-
-#### 1:1 문의 관리
-
-- 전체 유저 문의 목록 조회 (숙소·답변 여부 필터)
-- 문의 상세 확인 및 답변 처리
-
-#### 포인트 / 환불 관리
-
-- 전체 결제 내역 및 포인트 조회
-- 환불 요청 처리 및 환불 완료 처리
-
-> 추가 화면은 아래 시연 영상에서 확인 가능합니다.
-
----
-
-## 🎬 관리자 시연 영상
-
-HoneyRest 관리자 시스템의 전체 기능을 실제 화면 기반으로 시연한 영상입니다.  
-**총 관리자(Super Admin) → 업체 관리자(Company Admin)** 순서로 진행됩니다.
-
----
-
-### 📺 총 관리자 + 업체 관리자 전체 흐름 시연
-
-> 총 관리자의 업체/숙소/예약/유저 관리부터 업체 관리자의 숙소 등록, 예약 처리, 매출 확인까지의 전체 흐름을 담은 영상입니다.
-
-🔗 [시연 영상 보러가기](https://firebasestorage.googleapis.com/v0/b/honeyrest-7fb60.firebasestorage.app/o/video%2Fcom_admin.mp4?alt=media&token=43dc80bc-dbaf-4d24-8488-3ce704b3b140)
-
----
-
-## 📝 프로젝트 발표 자료
-
-> HoneyRest의 전체 기획, 기능 흐름, 기술 스택, 시연 화면 등을 담은 발표용 PPT입니다.
-
-📄 [HoneyRest 발표 자료 (PDF)](https://github.com/user-attachments/files/22292418/HoneyRest.pdf)
-
----
-
-## 💭 프로젝트 회고
-
-### 🏨 김민경 – 업체 관리자 (Company Admin) 담당
-
-이번 최종 프로젝트는 설레는 기대감과 함께 긴장도 컸습니다.  
-진행 과정에서 흥미와 성취감을 느끼는 순간도 있었지만, 반복되는 오류와 시행착오로 어려움을 겪기도 했습니다.  
-특히 JPA를 활용한 개발 과정은 새로운 개념을 배우고 적용해 나가는 값진 시간이었으며,  
+이번 최종 프로젝트는 설레는 기대감과 함께 긴장도 컸습니다.
+진행 과정에서 흥미와 성취감을 느끼는 순간도 있었지만, 반복되는 오류와 시행착오로 어려움을 겪기도 했습니다.
+특히 JPA를 활용한 개발 과정은 새로운 개념을 배우고 적용해 나가는 값진 시간이었으며,
 문제 상황에서는 팀원들과의 적극적인 소통을 통해 해결 능력을 넓힐 수 있었습니다.
 
-아쉬운 점이 있다면, 다소 짧게 느껴진 프로젝트 기간으로 인해 구현하지 못한 기능들이 남았다는 것입니다.  
+아쉬운 점이 있다면, 다소 짧게 느껴진 프로젝트 기간으로 인해 구현하지 못한 기능들이 남았다는 것입니다.
 그럼에도 끝까지 협력하며 프로젝트를 완성할 수 있었던 것은 팀원들의 헌신과 지원 덕분입니다.
 
----
+### 설현오 – 총 관리자 (Super Admin) 담당
 
-### 🛡️ 설현오 – 총 관리자 (Super Admin) 담당
-
-이번 프로젝트를 통해 단순히 개발 기술을 익히는 것뿐만 아니라  
-전체적인 흐름을 관리하고 조율하는 역할의 중요성을 깊이 체감할 수 있었습니다.  
+이번 프로젝트를 통해 단순히 개발 기술을 익히는 것뿐만 아니라
+전체적인 흐름을 관리하고 조율하는 역할의 중요성을 깊이 체감할 수 있었습니다.
 프론트와 백엔드까지 종합적으로 고려해야 했기 때문에 부담도 있었지만 그만큼 배운 점도 많았습니다.
 
-특히 프로젝트 초반에 설계와 기획을 얼마나 세밀하게 준비하느냐가  
-이후 진행 속도와 완성도에 큰 영향을 준다는 것을 느꼈습니다.  
+특히 프로젝트 초반에 설계와 기획을 얼마나 세밀하게 준비하느냐가
+이후 진행 속도와 완성도에 큰 영향을 준다는 것을 느꼈습니다.
 팀원들과의 꾸준한 소통이 문제 해결의 핵심이었고, 혼자가 아닌 팀으로서 성장하는 경험을 할 수 있었습니다.
 
-이번 프로젝트는 저에게 큰 도전이자 값진 배움의 시간이었고,  
+이번 프로젝트는 저에게 큰 도전이자 값진 배움의 시간이었고,
 이후 더 나은 개발자로 성장할 수 있는 발판이 되었다고 생각합니다.
 
----
+### 박성원 – 팀장 / 사용자 영역
 
-## 🙋 개발자 정보
-
-### 🏨 김민경 (Minkyung Kim) – 업체 관리자(Company Admin) 총괄
-
-- 숙박 업체 관리자 시스템 전체 설계 및 개발
-- 숙소/객실 등록, 예약 현황, 매출 통계, 리뷰 관리 구현
-- PPT 제작 참여
-
----
-
-### 🛡️ 설현오 (Hyuno Seol) – 총 관리자(Super Admin) 총괄
-
-- 총 관리자 시스템 전체 설계 및 개발
-- 업체/숙소/예약/유저 전체 관리 및 쿠폰 시스템 구현
-- 백엔드 명세서 작성
-- PPT 제작 참여
-
----
-
-> 💛 User API 및 전체 프로젝트 총괄은 **박성원**이 담당했습니다.  
-> 👉 [User API 레포지토리 바로가기](https://github.com/Seongwonp/honeyRest_user)
-
----
-
-### 👤 박성원 (Seongwon Park) – 팀장 / 전체 총괄
-
-- 전체 DB 설계 및 ERD 작성
-- 사용자(User) 페이지 개발 총괄
-- 관리자 시스템 기술 방향 결정 및 전체 코드 리뷰
-- 광고 영상 제작
-
----
-
-## 🔧 프로젝트 완료 후 리팩토링 및 개선 (박성원)
-
-> 프로젝트 제출 이후 코드 품질, 성능, 보안을 전반적으로 개선한 작업입니다.
-
-### ⚡ 백엔드 성능 최적화 (N+1 쿼리 제거)
-
-- `ReservationRepository` 전체 쿼리에 `JOIN FETCH` 적용 → 예약 목록 조회 시 N+1 쿼리 제거
-- `Page<Entity>` 쿼리를 `value` + `countQuery` 분리 구조로 변경 → Hibernate 메모리 페이징 경고 해소
-- `OAccommodationRepository`에 `@EntityGraph` 적용 → 연관 엔티티 일괄 로딩
-- `AccommodationQueryImpl.search()` 생성자 인수 누락 버그 수정 (`regionName` 누락)
-- `AccommodationRepository.findCompanyIdByAccommodationId()` 파생 쿼리 오류 → `@Query`로 교체
-- `ReservationServiceImpl.toDto()` 이중 lazy load 제거 (`r.getRoom().getAccommodation()` → `r.getAccommodation()`)
-
-### 🔒 보안 강화
-
-- JWT 시크릿 키를 `application.properties`에서 분리 → `application_security.properties` (`.gitignore` 적용)
-- JWT 쿠키 `Secure` 플래그를 `false` 하드코딩 → HTTPS 환경 자동 감지로 변경
-- Swagger UI (`/swagger-ui/**`, `/v3/api-docs/**`) 접근을 `SUPER_ADMIN` 전용으로 제한
-- `show-sql=false`, Hibernate `BasicBinder=warn` → SQL 파라미터 값(비밀번호 등) 로그 노출 차단
-- Spring Security·Web 로그 레벨 `debug → warn` → 인증 흐름 상세 정보 노출 차단
-- JWT 필터에서 요청마다 이메일/role이 로그에 찍히던 문제 제거 (PII 노출 방지)
-- 디버그 쓰레기 로그 (`aaaa...`, `bbbb...` 등) 전체 제거
-- **소유권 검증 강화**: `AccommodationController` · `RoomController` detail/edit/delete 등 10개 메서드에 로그인 사용자의 companyId 검증 추가 → 타 업체 리소스 무단 접근 차단
-- **에러 메시지 정보 노출 차단**: `GlobalExceptionHandler`의 `EntityNotFoundException` · `IllegalArgumentException` 핸들러에서 `e.getMessage()` 제거 → 내부 스택 정보 클라이언트 노출 방지
-- **CSRF 방어 강화**: `ACCESS_TOKEN` 쿠키에 `SameSite=Lax` 속성 추가 (`jakarta.servlet.http.Cookie` → `ResponseCookie` 교체)
-- **JWT 시크릿 강화**: 기본값 문자열 → 80자 이상 고강도 랜덤 시크릿으로 교체
-- **로그 파이프라인 개선**: Owner 서비스 3개(`OAccommodationServiceImpl`, `ORoomServiceImpl`, `OCompanyService`)의 `e.printStackTrace()` 6개소 전부 `@Log4j2` + `log.warn()` 으로 교체
-- `spring.jpa.hibernate.ddl-auto=update` → `validate` 변경 → 운영 환경 스키마 자동 변경 사고 방지
-- `logging.level.com.honeyrest=debug` → `info` 변경 → 운영 로그 최적화
-
-### 🗑️ 불필요 파일 정리
-
-- 사용하지 않는 템플릿 80개 이상 삭제 (`application/`, `component/`, `extra-component/`, `ui/`, `form/`, `table/`, `chart/`, 미사용 레이아웃 파일 등)
-- 전체 템플릿 파일 수: 약 150개 → **72개**로 축소
-
-### 🎨 관리자 페이지 테마 분리 및 반응형 개편
-
-- **역할별 테마 분리**: `honey-theme.css`(업체관리자 / 앰버 계열)와 `owner-theme.css`(총관리자 / 네이비+블루 계열)로 분리 → 역할이 시각적으로 명확히 구분
-- `owner-theme.css` 신규 작성: CSS 변수 `--primary: #3B82F6`, 사이드바 `#0F2044` 등 SUPER_ADMIN 전용 팔레트 정의, `honey-theme.css` 호환 별칭(`--honey`, `--honey-soft` 등) 포함
-- `owner/layout/base.html` 레이아웃에서 테마 파일 교체 적용
-- **Owner 목록 페이지 8개 전면 재작성**: 업체·숙소·객실·예약·리뷰·유저 목록 페이지를 `table-responsive` + `hide-md` / `hide-sm` 반응형 컬럼 제어 구조로 통일
-- KPI 카드, 상태 칩(`badge-chip`, `chip-ok`, `chip-wait` 등), 툴바, 페이지네이션 등 공통 컴포넌트 CSS 클래스로 일관화
-- 인라인 `<style>` 블록 제거 후 CSS 변수(`--honey`, `--honey-soft` 등)로 통일
-- 미사용 템플릿 파일 9개 삭제 (`admin/rooms/list.html`, `auth/logout.html`, 빈 레이아웃, 미사용 프래그먼트 등)
-
-### 🔔 알림 시스템 구현
-
-- `NotificationInterceptor` (HandlerInterceptor) 구현 → 모든 admin/owner 페이지에 취소요청 건수 자동 주입
-- 사이드바 예약 취소 메뉴에 뱃지(badge) 표시 → 미처리 취소요청 수 실시간 확인
-- 기존 `alert()` 5개 → Bootstrap Toast 알림으로 교체 (성공: 초록, 정보: 파랑, 오류: 빨강, 3.5초 자동 닫힘)
-- `admin/layout/base.html`, `owner/layout/base.html` 공통 적용 → 개별 페이지 수정 불필요
-
-### 📦 빌드 & 의존성 정리
-
-- `build.gradle` 내 중복 선언 제거: `spring-boot-starter-web` · `security` · `validation` · `data-jpa` · `firebase-admin` 각 2회 선언 → 1회로 통합
-- 미사용 의존성 제거: `mybatis-spring-boot-starter`(코드베이스 미사용), `com.auth0:java-jwt`(실제로는 JJWT 사용), `spring-cloud-starter-aws`(`s3.enabled=false` 비활성, 코드 미사용), `spring-boot-starter-amqp`(RabbitMQ 미사용)
-- 빌드 의존성 정리로 컴파일 시간 단축 및 불필요한 AutoConfiguration 로딩 제거
+- [프로젝트 회고 (honeyRest_user/docs/RETROSPECTIVE.md)](https://github.com/Seongwonp/honeyRest_user/blob/main/docs/RETROSPECTIVE.md)
