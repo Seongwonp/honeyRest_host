@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PaymentDTO;
@@ -41,6 +42,8 @@ public class ReservationServiceImpl implements ReservationService {
     private final ModelMapper modelMapper;
     private final AccommodationRepository accommodationRepository;
     private final ReservationInventoryGuard inventoryGuard;
+    // 예약 점유가 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다 (검색 결과의 남은 객실 수가 바뀜)
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
 
     @Override
@@ -107,8 +110,15 @@ public class ReservationServiceImpl implements ReservationService {
             inventoryGuard.lockRoomAndAssertAvailable(newRoomId, newIn, newOut, reservation.getReservationId());
         }
 
+        boolean leavingOccupying = ReservationStatus.isOccupying(oldStatus)
+                && !ReservationStatus.isOccupying(newStatus);
+
         // 3) 도메인 메서드로 필드 반영 (JPA 변경감지)
         reservation.update(dto, newUser, newRoom, newAccommodation);
+
+        if (enteringOccupying || leavingOccupying || occupyingChanged) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
 
         // 4) 트랜잭션 커밋 시 자동 flush. 여기서 DTO로 변환해 반환
         return toDto(reservation);
@@ -126,6 +136,7 @@ public class ReservationServiceImpl implements ReservationService {
         // 상태 변경만 한다. 재고는 room.total_rooms − 겹치는 점유 예약 수로 계산하므로
         // 취소(CANCELLED, 비점유)되는 순간 자동으로 복구된다. total_rooms 를 늘리지 않는다.
         r.cancel(cancelReason);
+        searchCacheInvalidator.bumpAfterCommit();
     }
 
 
@@ -308,6 +319,9 @@ public class ReservationServiceImpl implements ReservationService {
         entity.validateNew(); // 있으면 유지
 
         Reservation saved = reservationRepository.save(entity);
+        if (ReservationStatus.isOccupying(status)) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
         return toDto(saved);
     }
 
@@ -405,10 +419,17 @@ public class ReservationServiceImpl implements ReservationService {
         if (updated == 0) {
             throw new IllegalStateException("취소요청 상태의 예약만 승인할 수 있습니다. id=" + reservationId);
         }
+        // CANCEL_REQUEST(점유) → CANCELLED(비점유): 객실이 다시 팔 수 있게 되므로 검색 캐시를 버린다.
+        searchCacheInvalidator.bumpAfterCommit();
         log.info("예약 취소 승인 완료: reservationId={}, reason={}", reservationId, reason);
         return null;
     }
 
+    /*
+     * 아래 거부(CANCEL_REQUEST→CONFIRMED)·체크아웃 완료(CONFIRMED→COMPLETED)·노쇼(→NO_SHOW)는
+     * 점유 → 점유 전이라 남은 객실 수가 바뀌지 않으므로 검색 캐시 세대를 올리지 않는다.
+     * (ReservationStatus.OCCUPYING 참고)
+     */
     @Override
     public void rejectCancelRequest(Long reservationId, String reason) {
         int updated = reservationRepository.rejectCancelRequest(

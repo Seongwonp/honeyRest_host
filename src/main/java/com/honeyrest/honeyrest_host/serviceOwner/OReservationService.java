@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
 import jakarta.persistence.EntityNotFoundException;
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
@@ -37,6 +38,8 @@ public class OReservationService {
     private final OUserRepository userRepository;
     private final OAccommodationRepository accommodationRepository;
     private final ReservationInventoryGuard inventoryGuard;
+    // 예약 점유가 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
 
     private Reservation toEntity(ReservationDTO dto) {
@@ -134,6 +137,9 @@ public class OReservationService {
             inventoryGuard.lockRoomAndAssertAvailable(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), null);
         }
         reservationRepository.save(toEntity(dto));
+        if (ReservationStatus.isOccupying(status)) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
     }
 
     /**
@@ -157,11 +163,22 @@ public class OReservationService {
             inventoryGuard.lockRoomAndAssertAvailable(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(),
                     existing.getReservationId());
         }
+        boolean leavingOccupying = ReservationStatus.isOccupying(existing.getStatus())
+                && !ReservationStatus.isOccupying(newStatus);
         reservationRepository.save(toEntity(dto));
+        if (enteringOccupying || leavingOccupying || occupyingChanged) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
     }
 
     public void removeReservation(Long id) {
+        boolean wasOccupying = reservationRepository.findById(id)
+                .map(r -> ReservationStatus.isOccupying(r.getStatus()))
+                .orElse(false);
         reservationRepository.deleteById(id);
+        if (wasOccupying) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
     }
 
     public Map<LocalDate, PriceCalendarDTO> getCalendarData(Long roomId, LocalDate startDate, LocalDate endDate) {

@@ -17,6 +17,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -69,6 +70,8 @@ public class ReservationController {
 
     /**
      * 취소승인 (사유 포함)
+     * fetch(JSON) 호출이라 403 도 JSON 본문으로 돌려줘야 화면 스크립트가 메시지를 띄울 수 있다.
+     * 그래서 이 핸들러만 @PreAuthorize(→ error/403 HTML) 대신 직접 검사한다.
      */
     @PostMapping(value = "/cancel-request/{id}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
@@ -103,14 +106,10 @@ public class ReservationController {
      * 취소거부 (사유 포함)
      */
     @PostMapping("/cancel-request/{id}/reject")
+    @PreAuthorize("@companyAccess.ownsReservation(#id, authentication)")
     public String reject(@PathVariable Long id,
                          @RequestParam(required = false) String reason,
-                         RedirectAttributes rttr,
-                         Authentication authentication) {
-        Integer companyId = resourceAccessService.currentCompanyId(authentication);
-        if (!resourceAccessService.ownsReservation(companyId, id)) {
-            return "redirect:/admin/reservations/cancel-requests";
-        }
+                         RedirectAttributes rttr) {
         try {
             // 예약 상태는 변경하지 않고(서비스도 상태 변경하지 않게!)
             reservationService.rejectCancelRequest(id, reason);
@@ -125,18 +124,16 @@ public class ReservationController {
 
 
     @PostMapping("/{id}/complete")
-    public String complete(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
-        Integer companyId = resourceAccessService.currentCompanyId(authentication);
-        if (!resourceAccessService.ownsReservation(companyId, id)) return "redirect:/admin/reservations/my";
+    @PreAuthorize("@companyAccess.ownsReservation(#id, authentication)")
+    public String complete(@PathVariable Long id, RedirectAttributes ra) {
         reservationService.markCompleted(id);
         ra.addFlashAttribute("msg","체크아웃 완료 처리");
         return "redirect:/admin/reservations/list-all";
     }
 
     @PostMapping("/{id}/no-show")
-    public String noShow(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
-        Integer companyId = resourceAccessService.currentCompanyId(authentication);
-        if (!resourceAccessService.ownsReservation(companyId, id)) return "redirect:/admin/reservations/my";
+    @PreAuthorize("@companyAccess.ownsReservation(#id, authentication)")
+    public String noShow(@PathVariable Long id, RedirectAttributes ra) {
         reservationService.markNoShow(id);
         ra.addFlashAttribute("msg","노쇼 처리 완료");
         return "redirect:/admin/reservations/list-all";
@@ -260,11 +257,8 @@ public class ReservationController {
      * 예약 상세 페이지
      */
     @GetMapping("/{reservationId}")
-    public String detail(@PathVariable Long reservationId, Model model, Authentication authentication) {
-        Integer companyId = resourceAccessService.currentCompanyId(authentication);
-        if (!resourceAccessService.ownsReservation(companyId, reservationId)) {
-            return "redirect:/admin/reservations/my";
-        }
+    @PreAuthorize("@companyAccess.ownsReservation(#reservationId, authentication)")
+    public String detail(@PathVariable Long reservationId, Model model) {
         ReservationDTO reservation = reservationService.getReservationDetail(reservationId);
         model.addAttribute("reservation", reservation); // DTO로 바꾸고 싶으면 매핑해서
         return "admin/reservations/detail";
@@ -274,14 +268,10 @@ public class ReservationController {
      * 예약 취소 – 재고 복구는 서비스에서 처리
      */
     @PostMapping("/{reservationId}/cancel")
+    @PreAuthorize("@companyAccess.ownsReservation(#reservationId, authentication)")
     public String cancel(@PathVariable Long reservationId,
                          @RequestParam(required = false) String reason,
-                         RedirectAttributes ra,
-                         Authentication authentication) {
-        Integer companyId = resourceAccessService.currentCompanyId(authentication);
-        if (!resourceAccessService.ownsReservation(companyId, reservationId)) {
-            return "redirect:/admin/reservations/my";
-        }
+                         RedirectAttributes ra) {
         reservationService.cancelReservation(reservationId, reason);
         ra.addFlashAttribute("msg", "예약이 취소되었습니다.");
         return "redirect:/admin/reservations/list";

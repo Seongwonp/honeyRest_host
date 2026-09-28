@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.Reservation;
 import com.honeyrest.honeyrest_host.entity.ReservationStatus;
@@ -44,6 +45,7 @@ class OReservationServiceInventoryTest {
     @Mock private OAccommodationRepository accommodationRepository;
     @Mock private RoomRepository roomRepository;
     @Mock private ReservationRepository reservationRepository;
+    @Mock private SearchCacheInvalidator searchCacheInvalidator;
 
     private OReservationService service;
     private Room room;
@@ -52,7 +54,7 @@ class OReservationServiceInventoryTest {
     void setUp() {
         ReservationInventoryGuard guard = new ReservationInventoryGuard(roomRepository, reservationRepository);
         service = new OReservationService(oReservationRepository, oRoomRepository, userRepository,
-                accommodationRepository, guard);
+                accommodationRepository, guard, searchCacheInvalidator);
         room = Room.builder().roomId(1L).name("디럭스").totalRooms(1).build();
     }
 

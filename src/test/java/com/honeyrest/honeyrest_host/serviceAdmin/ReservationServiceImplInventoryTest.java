@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoAdmin.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Reservation;
@@ -47,6 +48,7 @@ class ReservationServiceImplInventoryTest {
     @Mock private RoomRepository roomRepository;
     @Mock private UserRepository userRepository;
     @Mock private AccommodationRepository accommodationRepository;
+    @Mock private SearchCacheInvalidator searchCacheInvalidator;
 
     private ReservationServiceImpl service;
     private Accommodation accommodation;
@@ -57,7 +59,7 @@ class ReservationServiceImplInventoryTest {
     void setUp() {
         ReservationInventoryGuard guard = new ReservationInventoryGuard(roomRepository, reservationRepository);
         service = new ReservationServiceImpl(reservationRepository, paymentRepository, roomRepository,
-                userRepository, new ModelMapper(), accommodationRepository, guard);
+                userRepository, new ModelMapper(), accommodationRepository, guard, searchCacheInvalidator);
         accommodation = Accommodation.builder().accommodationId(10L).name("테스트 숙소").build();
         room = Room.builder().roomId(1L).name("디럭스").totalRooms(2).accommodation(accommodation).build();
         user = User.builder().userId(3L).name("홍길동").build();
@@ -102,6 +104,7 @@ class ReservationServiceImplInventoryTest {
 
         assertThat(saved.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
         verify(roomRepository).findByIdForUpdate(1L);
+        verify(searchCacheInvalidator).bumpAfterCommit(); // 점유 예약 생성 → 검색 캐시 세대 증가
     }
 
     @Test
@@ -112,6 +115,7 @@ class ReservationServiceImplInventoryTest {
         service.createReservation(createForm("CANCELLED"));
 
         verify(roomRepository, never()).findByIdForUpdate(anyLong());
+        verify(searchCacheInvalidator, never()).bumpAfterCommit(); // 비점유 → 재고 변화 없음
     }
 
     @Test
@@ -143,6 +147,7 @@ class ReservationServiceImplInventoryTest {
 
         assertThat(pending.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
         verify(reservationRepository, never()).countOverlapping(anyLong(), any(), any(), any(), eq(99L));
+        verify(searchCacheInvalidator, never()).bumpAfterCommit(); // 점유 → 점유, 기간 동일
     }
 
     @Test
@@ -157,5 +162,6 @@ class ReservationServiceImplInventoryTest {
 
         assertThat(confirmed.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
         assertThat(room.getTotalRooms()).isEqualTo(2);
+        verify(searchCacheInvalidator).bumpAfterCommit(); // 취소 → 재고 복구 → 검색 캐시 세대 증가
     }
 }

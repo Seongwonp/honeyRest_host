@@ -41,6 +41,9 @@ dependencies {
 
     // 캐시 및 성능 향상
     implementation 'org.springframework.boot:spring-boot-starter-cache' // 캐시 추상화 (Redis 등과 연동 가능)
+    // 사용자 API 와 공유하는 Redis: 호스트는 검색 캐시 세대 번호(search:recommend:version) INCR 에만 쓴다 (Lettuce).
+    // app.cache.redis.enabled=false(기본값)이면 Redis 에 접속하지 않는다 (SearchCacheConfig 참고).
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     // 시스템 모니터링
     implementation 'org.springframework.boot:spring-boot-starter-actuator' // 애플리케이션 상태 및 지표 확인
@@ -63,6 +66,7 @@ dependencies {
 
     // 테스트
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test' // MockMvc user()/csrf() (메서드 보안 403 테스트)
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // 테스트 런처
 
     // 테스트 환경에서도 Lombok 사용

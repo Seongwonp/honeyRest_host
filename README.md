@@ -164,6 +164,10 @@ flowchart LR
 4. **데이터 시드**: [`db/seed/`](db/seed) — `insert.sql` → `insert_pk_1-20.sql` → `insert_pk_21-30.sql` → `insert_pk_31-33.sql` 순서(FK 의존 순). 로컬 저장소 모드에서 이미지를 보려면 사용자 저장소의 [`scripts/seed-local-images.sql`](https://github.com/Seongwonp/honeyRest_user/blob/main/scripts/seed-local-images.sql)도 실행합니다.
 5. **데모 계정**: `local-demo` 프로필에서 [`DataInitializer`](src/main/java/com/honeyrest/honeyrest_host/config/DataInitializer.java)가 업체 관리자·총관리자 계정을 생성합니다. 이메일·기본 비밀번호는 해당 파일에 정의되어 있으며 `demo.company-admin.password`, `demo.super-admin.password` 프로퍼티로 바꿀 수 있습니다.
 6. **포트**: 관리자 앱 `8081`(`SERVER_PORT`로 변경) · User API `8080` · React `5173`
+7. **Redis (검색 캐시 무효화)**: 사용자 API는 숙소 검색 결과를 Redis에 캐시하고 키에 세대 번호 `search:recommend:version`을 넣습니다. 호스트에서 예약 점유 상태(생성·수정·삭제·취소·취소요청 승인), 객실 `totalRooms`·상태·가격, 숙소 노출 상태·승인·삭제, 요금 캘린더가 바뀌면 **커밋 후** 이 키를 `INCR`해 검색 결과가 즉시 갱신되게 합니다([`SearchCacheInvalidator`](src/main/java/com/honeyrest/honeyrest_host/cache/SearchCacheInvalidator.java)). 키 이름은 사용자 저장소 `SearchCacheVersionService.VERSION_KEY`와 반드시 같아야 합니다.
+   - 기본값: `app.cache.redis.enabled=true`, `localhost:6379`, DB `0` — 사용자 API와 **같은 Redis**를 가리켜야 합니다. 환경변수 `APP_CACHE_REDIS_ENABLED`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_DATABASE`로 바꾸고, 비밀번호는 `application_security.properties`에 `spring.data.redis.password`로 둡니다.
+   - Redis 없이 띄우려면 `--app.cache.redis.enabled=false`(No-op 구현, 검색 캐시는 TTL로만 갱신). `test`·`screenshot` 프로필은 항상 꺼져 있습니다.
+   - Redis가 죽어 있어도 호스트의 변경 자체는 실패하지 않고 경고 로그만 남깁니다(타임아웃 연결 1초·명령 2초).
 
 로그인: `http://localhost:8081/auth/login` → 역할에 따라 `/admin/dashboard` 또는 `/owner/dashboard`로 이동
 

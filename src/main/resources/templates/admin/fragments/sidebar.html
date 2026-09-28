@@ -57,8 +57,8 @@
                             <span>숙소 관리</span>
                         </a>
                         <ul class="submenu">
-                            <li class="submenu-item"><a href="/admin/accommodations/add">숙소 등록</a></li>
-                            <li class="submenu-item"><a href="/admin/accommodations/list">내 숙소 목록</a></li>
+                            <li class="submenu-item"><a class="submenu-link" href="/admin/accommodations/add">숙소 등록</a></li>
+                            <li class="submenu-item"><a class="submenu-link" href="/admin/accommodations/list">내 숙소 목록</a></li>
                         </ul>
                     </li>
 
@@ -68,8 +68,8 @@
                             <span>객실 관리</span>
                         </a>
                         <ul class="submenu">
-                            <li class="submenu-item"><a href="/admin/rooms/add">객실 등록</a></li>
-                            <li class="submenu-item"><a href="/admin/rooms/list_all">내 객실 목록</a></li>
+                            <li class="submenu-item"><a class="submenu-link" href="/admin/rooms/add">객실 등록</a></li>
+                            <li class="submenu-item"><a class="submenu-link" href="/admin/rooms/list_all">내 객실 목록</a></li>
                         </ul>
                     </li>
 
@@ -90,9 +90,9 @@
                                   th:text="${_notifyCancelCount}">0</span>
                         </a>
                         <ul class="submenu">
-                            <li class="submenu-item"><a href="/admin/reservations/my">예약 현황</a></li>
+                            <li class="submenu-item"><a class="submenu-link" href="/admin/reservations/my">예약 현황</a></li>
                             <li class="submenu-item">
-                                <a href="/admin/reservations/cancel-requests">
+                                <a class="submenu-link" href="/admin/reservations/cancel-requests">
                                     취소 요청 목록
                                     <span th:if="${_notifyCancelCount != null and _notifyCancelCount > 0}"
                                           class="badge ms-1"
@@ -100,7 +100,7 @@
                                           th:text="${_notifyCancelCount}">0</span>
                                 </a>
                             </li>
-                            <li class="submenu-item"><a href="/admin/point/refunds">환불/취소 관리</a></li>
+                            <li class="submenu-item"><a class="submenu-link" href="/admin/point/refunds">환불/취소 관리</a></li>
                         </ul>
                     </li>
 

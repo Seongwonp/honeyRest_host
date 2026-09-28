@@ -13,6 +13,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -37,6 +38,10 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+// 컨트롤러의 회사 소유권 검사: @PreAuthorize("@companyAccess.ownsXxx(#id, authentication)")
+// (CompanyResourceAccessService 빈 이름 = companyAccess). 거부 시 AccessDeniedException →
+// GlobalExceptionHandler 가 403(error/403)으로 응답한다.
+@EnableMethodSecurity
 @RequiredArgsConstructor
 @Log4j2
 public class SecurityConfig {

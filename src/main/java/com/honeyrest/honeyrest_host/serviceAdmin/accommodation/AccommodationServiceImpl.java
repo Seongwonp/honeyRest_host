@@ -2,6 +2,7 @@ package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.*;
 import com.honeyrest.honeyrest_host.entity.*;
 import com.honeyrest.honeyrest_host.repositoryAdmin.*;
@@ -35,6 +36,8 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationImageService accommodationImageService;
     private final CancellationPolicyRepository cancellationPolicyRepository;
     private final ReservationRepository reservationRepository;
+    // 숙소 노출 상태(status)·최저가가 바뀌거나 삭제되면 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -357,7 +360,10 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Transactional
     @Override
     public AccommodationCreateRequestDTO update(Long id, AccommodationUpdateRequestDTO req) {
-        getEntityOrThrow(id); // 존재 여부 확인
+        Accommodation before = getEntityOrThrow(id); // 존재 여부 확인
+        // patchUpdateScalars 가 영속성 컨텍스트를 비우므로(clearAutomatically) 비교할 값은 미리 떠 둔다
+        String oldStatus = before.getStatus();
+        BigDecimal oldMinPrice = before.getMinPrice();
 
         // 연관관계: 변경 요청 있을 때만 각각 호출
         if (req.getCompanyId() != null) {
@@ -401,6 +407,13 @@ public class AccommodationServiceImpl implements AccommodationService {
         );
         if (affected == 0) throw new IllegalArgumentException("대상 없음: " + id);
 
+        boolean statusChanged = status != null && !status.equals(oldStatus);
+        boolean minPriceChanged = minPrice != null
+                && (oldMinPrice == null || minPrice.compareTo(oldMinPrice) != 0);
+        if (statusChanged || minPriceChanged) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
+
         // 이미지/태그 덮어쓰기 ...
         return getById(id);
     }
@@ -428,6 +441,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         // 마지막에 숙소 삭제
         accommodationRepository.delete(acc);
+        searchCacheInvalidator.bumpAfterCommit();
     }
 
     @Override
@@ -446,6 +460,8 @@ public class AccommodationServiceImpl implements AccommodationService {
         int affected = accommodationRepository.patchUpdateScalars(
                 id, null, null, null, null, null, null, null, null, null, status, null);
         if (affected == 0) throw new EntityNotFoundException("숙소가 존재하지 않습니다. id=" + id);
+        // 노출 중(ACTIVE)이던 숙소가 PENDING 으로 내려가면 검색에서 빠져야 한다
+        searchCacheInvalidator.bumpAfterCommit();
     }
 
     public long count() {

@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -161,15 +162,13 @@ public class RoomController {
      * 등록 처리
      */
     @PostMapping("/add")
+    @PreAuthorize("@companyAccess.ownsAccommodation(#form.accommodationId, authentication)")
     public String create(@Valid @ModelAttribute("form") RoomDTO form,
                          BindingResult binding,
                          Model model,
                          RedirectAttributes ra,
                          Authentication authentication) {
         Integer companyId = resourceAccessService.currentCompanyId(authentication);
-        if (!resourceAccessService.ownsAccommodation(companyId, form.getAccommodationId())) {
-            return "redirect:/admin/rooms/list_all";
-        }
         if (binding.hasErrors()) {
             // 에러 시 다시 렌더링할 데이터들 채워줌
             model.addAttribute("accommodations", accommodationService.getAllById(companyId));
@@ -226,8 +225,8 @@ public class RoomController {
     /* ========== 수정 ========== */
     // 수정 폼
     @GetMapping("/edit/{roomId}")
+    @PreAuthorize("@companyAccess.ownsRoom(#roomId, authentication)")
     public String editForm(@PathVariable Long roomId, Model model, Authentication authentication) {
-        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
         RoomDTO form = roomService.getByRoomId(roomId);
 
         // 숙소의 체크인/체크아웃을 표시용으로 세팅
@@ -245,21 +244,17 @@ public class RoomController {
     }
 
     /* =============== 저장 =================== */
+    // roomId 소유권만 확인하고 form.accommodationId는 검증하지 않아, 자기 객실을 타사 숙소 소속으로
+    // 옮길 수 있었다(P1-3). 대상 숙소(값이 있으면)도 같은 회사 소유인지 함께 확인한다.
     @PostMapping("/{roomId}")
+    @PreAuthorize("@companyAccess.ownsRoom(#roomId, authentication)"
+            + " and @companyAccess.ownsAccommodationIfPresent(#form.accommodationId, authentication)")
     public String update(@PathVariable Long roomId,
                          @Valid @ModelAttribute("form") RoomDTO form,
                          BindingResult binding,
                          Model model,
                          RedirectAttributes ra,
                          Authentication authentication) throws Exception {
-        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
-        // roomId 소유권만 확인하고 form.accommodationId는 검증하지 않아, 자기 객실을 타사 숙소
-        // 소속으로 옮길 수 있었다(P1-3). 대상 숙소도 같은 회사 소유인지 확인한다.
-        Integer ownerCompanyId = resourceAccessService.currentCompanyId(authentication);
-        if (form.getAccommodationId() != null
-                && !resourceAccessService.ownsAccommodation(ownerCompanyId, form.getAccommodationId())) {
-            return "redirect:/admin/rooms/list_all";
-        }
 //        log.info("[ROOM UPDATE] id={}, checkIn={}, checkOut={}",
 //                roomId, form.getdCheckInTime(), form.getCheckOutTime());
         if (binding.hasErrors()) {
@@ -320,11 +315,10 @@ public class RoomController {
 
     /* ========== 삭제 ========== */
     @PostMapping("/{roomId}/delete")
+    @PreAuthorize("@companyAccess.ownsRoom(#roomId, authentication)")
     public String delete(@PathVariable Long roomId,
                          @RequestParam("accommodationId") Long accommodationId,
-                         RedirectAttributes ra,
-                         Authentication authentication) {
-        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
+                         RedirectAttributes ra) {
         try {
             roomService.removeRoom(roomId);
             ra.addFlashAttribute("success", "객실이 삭제되었습니다.");
@@ -336,8 +330,8 @@ public class RoomController {
     }
 
     @GetMapping("/detail/{roomId}")
-    public String roomDetail(@PathVariable Long roomId, Model model, Authentication authentication) {
-        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
+    @PreAuthorize("@companyAccess.ownsRoom(#roomId, authentication)")
+    public String roomDetail(@PathVariable Long roomId, Model model) {
         RoomDTO room = roomService.findDetailById(roomId);
         if (room == null) {
             return "redirect:/admin/rooms/list_all";
@@ -350,11 +344,6 @@ public class RoomController {
 
 
         return "admin/rooms/detail";
-    }
-
-    private boolean isRoomOwner(Long roomId, Authentication authentication) {
-        Integer companyId = resourceAccessService.currentCompanyId(authentication);
-        return resourceAccessService.ownsRoom(companyId, roomId);
     }
 
     // JSON 배열 문자열(["TV","Wi-Fi"]) 또는 CSV("TV, Wi-Fi")를 List<String>으로 변환
@@ -396,10 +385,9 @@ public class RoomController {
 
     // 상태변화
     @PostMapping("/{roomId}/toggle")
+    @PreAuthorize("@companyAccess.ownsRoom(#roomId, authentication)")
     public String toggle(@PathVariable Long roomId,
-                         RedirectAttributes ra,
-                         Authentication authentication) {
-        if (!isRoomOwner(roomId, authentication)) return "redirect:/admin/rooms/list_all";
+                         RedirectAttributes ra) {
         roomService.toggleStatus(roomId);   // ACTIVE ↔ INACTIVE
         ra.addFlashAttribute("msg", "상태가 변경되었습니다.");
         return "redirect:/admin/rooms/list_all";

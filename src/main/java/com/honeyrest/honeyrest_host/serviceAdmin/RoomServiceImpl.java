@@ -2,6 +2,8 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.honeyrest.honeyrest_host.cache.RoomSearchSnapshot;
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoAdmin.RoomImageDTO;
 import com.honeyrest.honeyrest_host.entity.RoomImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomImageRepository;
@@ -29,6 +31,8 @@ public class RoomServiceImpl implements RoomService {
     private final AccommodationRepository accommodationRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RoomImageRepository roomImageRepository;
+    // 객실 재고(totalRooms)·상태·가격이 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
     private JsonNode stringToJsonNode(String json) {
         try {
@@ -153,7 +157,9 @@ public class RoomServiceImpl implements RoomService {
                 .totalRooms(dto.getTotalRooms())
                 .status(dto.getStatus() == null ? "ACTIVE" : dto.getStatus())
                 .build();
-       return toDTO(roomRepository.save(room));
+        RoomDTO saved = toDTO(roomRepository.save(room));
+        searchCacheInvalidator.bumpAfterCommit(); // 새 객실 = 새 재고
+        return saved;
     }
 
     @Override
@@ -163,6 +169,7 @@ public class RoomServiceImpl implements RoomService {
         }
         Room current = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
+        RoomSearchSnapshot before = RoomSearchSnapshot.of(current); // save(merge) 전에 떠 둔다
 
         Room updated = Room.builder()
                 .roomId(current.getRoomId())
@@ -184,6 +191,9 @@ public class RoomServiceImpl implements RoomService {
                 .build();
 
         roomRepository.save(updated);
+        if (RoomSearchSnapshot.of(updated).differsFrom(before)) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
     }
 
     @Override
@@ -192,6 +202,7 @@ public class RoomServiceImpl implements RoomService {
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
         // 실제 삭제 대신 상태만 변경
        roomRepository.delete(room);
+       searchCacheInvalidator.bumpAfterCommit();
     }
 
     // 회사 전체/ 특정 숙소 커버 동시에 페이징
@@ -280,11 +291,17 @@ public class RoomServiceImpl implements RoomService {
                 .status("INACTIVE")   // ★ 비활성화
                 .build();
 
+        boolean wasActive = !"INACTIVE".equals(room.getStatus());
         roomRepository.save(updated);
+        if (wasActive) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
     }
 
     @Override
     public void toggleStatus(Long roomId) {
-        roomRepository.toggleStatus(roomId);
+        if (roomRepository.toggleStatus(roomId) > 0) {
+            searchCacheInvalidator.bumpAfterCommit(); // ACTIVE ↔ INACTIVE: 검색 노출 여부가 바뀜
+        }
     }
 }

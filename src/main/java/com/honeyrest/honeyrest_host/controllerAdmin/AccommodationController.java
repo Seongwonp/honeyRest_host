@@ -26,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -227,13 +228,10 @@ public class AccommodationController {
      * 상세 보기
      */
     @GetMapping("/detail/{id}")
-    public String detail(@PathVariable Long id, Model model, Authentication authentication) {
+    @PreAuthorize("@companyAccess.ownsAccommodation(#id, authentication)")
+    public String detail(@PathVariable Long id, Model model) {
         AccommodationCreateRequestDTO acc = accommodationService.getById(id);
         if (acc == null) {
-            return "redirect:/admin/accommodations/list";
-        }
-        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
-        if (myCompany == null || !myCompany.getCompanyId().equals(acc.getCompanyId())) {
             return "redirect:/admin/accommodations/list";
         }
 
@@ -346,12 +344,8 @@ public class AccommodationController {
      *  회사 관리자는 PENDING 제출만 할 수 있고, 실제 승인/거절은 SUPER_ADMIN 전용 흐름에서만 이뤄진다.
      */
     @PostMapping("/{id}/request")
-    public String requestApproval(@PathVariable Long id, Authentication authentication) {
-        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
-        AccommodationCreateRequestDTO acc = accommodationService.getById(id);
-        if (acc == null || myCompany == null || !myCompany.getCompanyId().equals(acc.getCompanyId())) {
-            return "redirect:/admin/accommodations/list";
-        }
+    @PreAuthorize("@companyAccess.ownsAccommodation(#id, authentication)")
+    public String requestApproval(@PathVariable Long id) {
         accommodationService.changeStatus(id, "PENDING");
         return "redirect:/admin/accommodations/list?status=PENDING";
     }
@@ -386,13 +380,10 @@ public class AccommodationController {
      * 수정 폼 (GET)
      */
     @GetMapping("/edit/{id}")
-    public String editForm(@PathVariable Long id, Model model, Authentication authentication) {
+    @PreAuthorize("@companyAccess.ownsAccommodation(#id, authentication)")
+    public String editForm(@PathVariable Long id, Model model) {
         AccommodationCreateRequestDTO dto = accommodationService.getById(id);
         if (dto == null) return "redirect:/admin/accommodations/list";
-        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
-        if (myCompany == null || !myCompany.getCompanyId().equals(dto.getCompanyId())) {
-            return "redirect:/admin/accommodations/list";
-        }
         model.addAttribute("dto", dto);
 
 
@@ -452,6 +443,7 @@ public class AccommodationController {
      * 수정 제출
      */
     @PostMapping("/edit/{id}")
+    @PreAuthorize("@companyAccess.ownsAccommodation(#id, authentication)")
     public String editSubmit(@PathVariable Long id,
                              @ModelAttribute("form") AccommodationUpdateRequestDTO form,
                              BindingResult binding,
@@ -460,14 +452,11 @@ public class AccommodationController {
                              @RequestParam(value = "deleteThumbnail", defaultValue = "false") boolean deleteThumbnail,
                              @RequestParam(value = "deleteSubImageIds", required = false) List<Long> deleteSubImageIds,
                              RedirectAttributes ra,
-                             Model model,
-                             Authentication authentication) {
+                             Model model) {
 
-        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
-        AccommodationCreateRequestDTO existing = accommodationService.getById(id);
-        if (existing == null || myCompany == null || !myCompany.getCompanyId().equals(existing.getCompanyId())) {
-            return "redirect:/admin/accommodations/list";
-        }
+        // 소유권은 @PreAuthorize 로 확인했다. 폼의 companyId 는 신뢰하지 않는다
+        // (값을 넣어 보내면 AccommodationService.update 가 숙소를 다른 회사로 옮길 수 있었다).
+        form.setCompanyId(null);
 
         if (binding.hasErrors()) {
             binding.getAllErrors().forEach(err -> log.error("bind err: {}", err));
@@ -565,12 +554,8 @@ public class AccommodationController {
     }
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, RedirectAttributes ra, Authentication authentication) {
-        CompanyDTO myCompany = companyService.getByUserEmail(authentication.getName());
-        AccommodationCreateRequestDTO acc = accommodationService.getById(id);
-        if (acc == null || myCompany == null || !myCompany.getCompanyId().equals(acc.getCompanyId())) {
-            return "redirect:/admin/accommodations/list";
-        }
+    @PreAuthorize("@companyAccess.ownsAccommodation(#id, authentication)")
+    public String delete(@PathVariable Long id, RedirectAttributes ra) {
         try {
             accommodationService.delete(id);
             ra.addAttribute("success", "숙소가 삭제되었습니다.");

@@ -4,6 +4,8 @@ import jakarta.persistence.EntityNotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.honeyrest.honeyrest_host.cache.RoomSearchSnapshot;
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.Room;
@@ -37,6 +39,8 @@ public class ORoomServiceImpl implements ORoomService {
     private final ORoomImageRepository roomImageRepository;
     private final OReviewRepository reviewRepository;
     private final FileStorage fileStorage;
+    // 객실 재고(totalRooms)·상태·가격이 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
     private String parseJson(String input) {
         if (input == null || input.isBlank()) return "[]";
@@ -156,7 +160,9 @@ public class ORoomServiceImpl implements ORoomService {
         Accommodation acc = accommodationRepository.findById(dto.getAccommodationId())
                 .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
         dto.setAccommodationId(acc.getAccommodationId());
-        return roomRepository.save(toEntity(dto)).getRoomId();
+        Long roomId = roomRepository.save(toEntity(dto)).getRoomId();
+        searchCacheInvalidator.bumpAfterCommit(); // 새 객실 = 새 재고
+        return roomId;
 
     }
 
@@ -164,7 +170,12 @@ public class ORoomServiceImpl implements ORoomService {
     public void modifyRoom(RoomDTO dto) {
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
-        roomRepository.save(toEntity(dto));
+        RoomSearchSnapshot before = RoomSearchSnapshot.of(room); // save(merge) 전에 떠 둔다
+        Room updated = toEntity(dto);
+        roomRepository.save(updated);
+        if (RoomSearchSnapshot.of(updated).differsFrom(before)) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
     }
 
     @Override
@@ -172,6 +183,7 @@ public class ORoomServiceImpl implements ORoomService {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
         roomRepository.delete(room); // RoomImage는 orphanRemoval=true로 함께 삭제
+        searchCacheInvalidator.bumpAfterCommit();
     }
 
     @Override

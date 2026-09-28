@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoAdmin.*;
 import com.honeyrest.honeyrest_host.dtoAdmin.reports.SalesStatDTO;
 import com.honeyrest.honeyrest_host.entity.PriceCalendar;
@@ -32,6 +33,8 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     private final RoomRepository roomRepository;
     private final EntityManager em;
     private final ReservationRepository reservationRepository;
+    // 가격 캘린더 변경 시 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
     // 예약 수량 맵: (roomId -> (date -> 예약수량))
     private Map<Long, Map<LocalDate, Integer>> buildBookedQtyMap(
@@ -187,6 +190,8 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     @Override
     @Transactional
     public boolean upsert(Long roomId, LocalDate date, BigDecimal price, Integer available) {
+        // 날짜별 가격/판매 가능 수가 바뀌면 사용자 API 검색 결과(가격·재고)가 달라진다
+        searchCacheInvalidator.bumpAfterCommit();
         int updated = priceCalendarRepository.updateValues(roomId, date, price, available);
         if (updated > 0) return false; // updated
         priceCalendarRepository.upsert(roomId, date, price, available);
@@ -198,6 +203,9 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     public void bulkUpsert(List<BulkItem> items) {
         for (BulkItem it : items) {
             priceCalendarRepository.upsert(it.getRoomId(), it.getDate(), it.getPrice(), it.getAvailable());
+        }
+        if (!items.isEmpty()) {
+            searchCacheInvalidator.bumpAfterCommit();
         }
     }
 

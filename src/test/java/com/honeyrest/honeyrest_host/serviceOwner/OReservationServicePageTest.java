@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
@@ -39,6 +40,7 @@ class OReservationServicePageTest {
     @Mock private OUserRepository userRepository;
     @Mock private OAccommodationRepository accommodationRepository;
     @Mock private ReservationInventoryGuard guard;
+    @Mock private SearchCacheInvalidator searchCacheInvalidator;
 
     private OReservationService service;
     private PageRequestDTO pageRequest;
@@ -46,7 +48,7 @@ class OReservationServicePageTest {
     @BeforeEach
     void setUp() {
         service = new OReservationService(reservationRepository, roomRepository, userRepository,
-                accommodationRepository, guard);
+                accommodationRepository, guard, searchCacheInvalidator);
         pageRequest = new PageRequestDTO();
     }
 

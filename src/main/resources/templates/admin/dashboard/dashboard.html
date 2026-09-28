@@ -218,7 +218,7 @@
 </th:block>
 
 <th:block layout:fragment="script">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js 는 admin/layout/base.html 에서 한 번만 로드한다 -->
     <script th:inline="javascript">
         (() => {
             // ===== 서버 모델 데이터 =====

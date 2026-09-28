@@ -13,10 +13,21 @@ import org.springframework.stereotype.Service;
 
 /**
  * 회사 관리자 요청에서 URL/form의 리소스 ID가 로그인 회사 소유인지 확인한다.
+ * <p>
+ * 빈 이름을 {@value #BEAN_NAME} 로 고정해 컨트롤러에서 메서드 보안 SpEL 로 바로 쓴다.
+ * <pre>
+ * &#64;PreAuthorize("&#64;companyAccess.ownsAccommodation(#id, authentication)")
+ * </pre>
+ * 검사에 실패하면 AuthorizationDeniedException(AccessDeniedException 하위)이 나고
+ * GlobalExceptionHandler 가 403(error/403) 화면으로 응답한다. 존재하지 않는 ID 도 false(403)로 처리해
+ * 다른 회사 리소스의 존재 여부를 드러내지 않는다(fail-closed).
  */
-@Service
+@Service(CompanyResourceAccessService.BEAN_NAME)
 @RequiredArgsConstructor
 public class CompanyResourceAccessService {
+
+    /** SpEL({@code @companyAccess})에서 참조하는 빈 이름. 바꾸면 모든 @PreAuthorize 식을 함께 바꿔야 한다. */
+    public static final String BEAN_NAME = "companyAccess";
 
     private final CompanyService companyService;
     private final AccommodationService accommodationService;
@@ -81,6 +92,33 @@ public class CompanyResourceAccessService {
         } catch (RuntimeException ignored) {
             return false;
         }
+    }
+
+    /* ===== @PreAuthorize SpEL 용: 로그인 사용자(authentication)의 회사 기준 ===== */
+
+    public boolean ownsAccommodation(Long accommodationId, Authentication authentication) {
+        return ownsAccommodation(currentCompanyId(authentication), accommodationId);
+    }
+
+    public boolean ownsRoom(Long roomId, Authentication authentication) {
+        return ownsRoom(currentCompanyId(authentication), roomId);
+    }
+
+    public boolean ownsReservation(Long reservationId, Authentication authentication) {
+        return ownsReservation(currentCompanyId(authentication), reservationId);
+    }
+
+    public boolean ownsReview(Long reviewId, Authentication authentication) {
+        return ownsReview(currentCompanyId(authentication), reviewId);
+    }
+
+    public boolean ownsInquiry(Long inquiryId, Authentication authentication) {
+        return ownsInquiry(currentCompanyId(authentication), inquiryId);
+    }
+
+    /** 선택(optional) 파라미터용: 값이 없으면 통과, 있으면 소유 숙소여야 한다. */
+    public boolean ownsAccommodationIfPresent(Long accommodationId, Authentication authentication) {
+        return accommodationId == null || ownsAccommodation(accommodationId, authentication);
     }
 
     public boolean canCreateReservation(Integer companyId, ReservationDTO form) {

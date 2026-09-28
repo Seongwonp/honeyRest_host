@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.AccommodationImageDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
@@ -39,6 +40,8 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     private final ObjectMapper objectMapper;
     private final FileStorage fileStorage;
     private final ORoomRepository roomRepository;
+    // 숙소 승인·노출 상태·최저가가 바뀌거나 삭제되면 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
 
     //    private String parseAmenitiesToJson(String json) {
@@ -194,8 +197,11 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     public Long registerAccommodation(AccommodationDTO dto) throws JsonProcessingException {
         Accommodation acc = toEntity(dto);
 
-
-        return accommodationRepository.save(acc).getAccommodationId();
+        Long id = accommodationRepository.save(acc).getAccommodationId();
+        if ("ACTIVE".equals(acc.getStatus())) {
+            searchCacheInvalidator.bumpAfterCommit(); // 바로 노출되는 숙소
+        }
+        return id;
     }
 
     @Override
@@ -213,9 +219,18 @@ public class OAccommodationServiceImpl implements OAccommodationService {
             dto.setThumbnailUrl(acc.getThumbnail());
         }
 
+        // save(merge)가 영속 엔티티를 덮어쓰기 전에 검색 관련 값을 떠 둔다
+        String oldStatus = acc.getStatus();
+        java.math.BigDecimal oldMinPrice = acc.getMinPrice();
+
         // Entity로 변환 후 저장
         Accommodation updated = toEntity(dto);
         accommodationRepository.save(updated);
+        boolean minPriceChanged = (oldMinPrice == null) != (updated.getMinPrice() == null)
+                || (oldMinPrice != null && oldMinPrice.compareTo(updated.getMinPrice()) != 0);
+        if (!java.util.Objects.equals(oldStatus, updated.getStatus()) || minPriceChanged) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
     }
 
 
@@ -225,6 +240,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
                 .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
 
         accommodationRepository.deleteById(id);
+        searchCacheInvalidator.bumpAfterCommit();
     }
 
     @Override
@@ -356,6 +372,8 @@ public class OAccommodationServiceImpl implements OAccommodationService {
         if (updated == 0) {
             throw new IllegalStateException("승인 대기(PENDING) 상태의 숙소만 승인할 수 있습니다.");
         }
+        // PENDING → ACTIVE: 검색 결과에 새로 노출된다. (거절 PENDING → REJECTED 는 노출 변화가 없어 올리지 않는다)
+        searchCacheInvalidator.bumpAfterCommit();
     }
 
     @Override

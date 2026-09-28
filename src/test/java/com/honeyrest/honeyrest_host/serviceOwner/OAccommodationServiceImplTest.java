@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.repositoryOwner.OAccommodationCategoryRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OAccommodationImageRepository;
@@ -16,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -34,6 +37,7 @@ class OAccommodationServiceImplTest {
     @Mock private ObjectMapper objectMapper;
     @Mock private FileStorage fileStorage;
     @Mock private ORoomRepository roomRepository;
+    @Mock private SearchCacheInvalidator searchCacheInvalidator;
 
     private OAccommodationServiceImpl service;
 
@@ -42,7 +46,7 @@ class OAccommodationServiceImplTest {
         service = new OAccommodationServiceImpl(
                 accommodationRepository, companyRepository, regionRepository,
                 accommodationCategoryRepository, accommodationImageRepository,
-                objectMapper, fileStorage, roomRepository);
+                objectMapper, fileStorage, roomRepository, searchCacheInvalidator);
     }
 
     @Test
@@ -50,6 +54,7 @@ class OAccommodationServiceImplTest {
         when(accommodationRepository.updateStatusIfCurrent(1L, "PENDING", "ACTIVE")).thenReturn(1);
 
         assertThatCode(() -> service.approve(1L)).doesNotThrowAnyException();
+        verify(searchCacheInvalidator).bumpAfterCommit(); // 승인 → 검색에 새로 노출
     }
 
     @Test
@@ -59,6 +64,7 @@ class OAccommodationServiceImplTest {
         assertThatThrownBy(() -> service.approve(1L))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("승인 대기");
+        verify(searchCacheInvalidator, never()).bumpAfterCommit();
     }
 
     @Test
