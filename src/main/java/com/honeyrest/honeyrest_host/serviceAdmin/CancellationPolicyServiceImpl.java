@@ -3,7 +3,7 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.honeyrest.honeyrest_host.entity.CancellationPolicy;
+import com.honeyrest.domain.entity.CancellationPolicy;
 import com.honeyrest.honeyrest_host.repositoryAdmin.CancellationPolicyRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
 import lombok.RequiredArgsConstructor;

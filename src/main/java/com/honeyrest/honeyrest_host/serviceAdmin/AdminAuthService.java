@@ -5,7 +5,7 @@ import com.honeyrest.honeyrest_host.config.JwtTokenProvider;
 import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.AdminSignupRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.TokenResponseDTO;
-import com.honeyrest.honeyrest_host.entity.User;
+import com.honeyrest.domain.entity.User;
 import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

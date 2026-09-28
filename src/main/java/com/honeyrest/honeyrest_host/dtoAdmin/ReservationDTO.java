@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.dtoAdmin;
 
+import com.honeyrest.domain.entity.ReservationChanges;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +15,9 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReservationDTO {
+// 공유 엔티티 Reservation.update(ReservationChanges, ...) 에 그대로 넘길 수 있도록 부분 변경 인터페이스를 구현한다
+// (필요한 getter 는 Lombok @Data 가 만든다).
+public class ReservationDTO implements ReservationChanges {
 
     private Long reservationId; // 예약 고유 아이디(식별자)
     private String reservationNumber; // 예약 번호

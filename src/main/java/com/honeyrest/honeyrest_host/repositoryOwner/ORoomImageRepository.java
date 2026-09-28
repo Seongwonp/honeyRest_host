@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.repositoryOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.RoomImageDTO;
-import com.honeyrest.honeyrest_host.entity.RoomImage;
+import com.honeyrest.domain.entity.RoomImage;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;

@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin;
 
-import com.honeyrest.honeyrest_host.entity.Payment;
+import com.honeyrest.domain.entity.Payment;
 import com.honeyrest.honeyrest_host.repositoryAdmin.projection.DailySalesProjection;
 import com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection.SalesStatRow;
 import org.springframework.data.domain.Page;

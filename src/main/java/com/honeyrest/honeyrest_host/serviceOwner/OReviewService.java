@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.entity.Review;
+import com.honeyrest.domain.entity.Review;
 import com.honeyrest.honeyrest_host.repositoryOwner.OReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OReviewRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;

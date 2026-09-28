@@ -2,8 +2,8 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.ReviewImageDTO;
-import com.honeyrest.honeyrest_host.entity.Review;
-import com.honeyrest.honeyrest_host.entity.ReviewImage;
+import com.honeyrest.domain.entity.Review;
+import com.honeyrest.domain.entity.ReviewImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReviewImageRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReviewRepository;
 import com.honeyrest.honeyrest_host.storage.FileStorage;

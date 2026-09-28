@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin.accommodation;
 
-import com.honeyrest.honeyrest_host.entity.AccommodationTagMap;
+import com.honeyrest.domain.entity.AccommodationTagMap;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.transaction.annotation.Transactional;

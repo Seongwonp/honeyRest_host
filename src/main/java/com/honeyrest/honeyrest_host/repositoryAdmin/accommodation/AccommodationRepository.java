@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.repositoryAdmin.accommodation;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationListDTO;
-import com.honeyrest.honeyrest_host.entity.*;
+import com.honeyrest.domain.entity.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;

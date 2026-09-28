@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.*;
-import com.honeyrest.honeyrest_host.entity.Company;
+import com.honeyrest.domain.entity.Company;
 import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
 import com.honeyrest.honeyrest_host.serviceAdmin.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;

@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationImageDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.entity.AccommodationImage;
+import com.honeyrest.domain.entity.Accommodation;
+import com.honeyrest.domain.entity.AccommodationImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationImageRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
 import com.honeyrest.honeyrest_host.storage.FileStorage;

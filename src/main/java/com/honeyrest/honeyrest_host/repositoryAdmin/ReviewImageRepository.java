@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.repositoryAdmin;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.ReviewImageDTO;
-import com.honeyrest.honeyrest_host.entity.ReviewImage;
+import com.honeyrest.domain.entity.ReviewImage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;

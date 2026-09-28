@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin.price;
 
-import com.honeyrest.honeyrest_host.entity.PriceCalendar;
+import com.honeyrest.domain.entity.PriceCalendar;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
-import com.honeyrest.honeyrest_host.entity.ReservationStatus;
+import com.honeyrest.domain.type.ReservationStatus;
 import com.honeyrest.honeyrest_host.dtoOwner.DaySalesDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.MonthSalesDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;

@@ -4,9 +4,9 @@ import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO;
 
-import com.honeyrest.honeyrest_host.entity.Reservation;
-import com.honeyrest.honeyrest_host.entity.Review;
-import com.honeyrest.honeyrest_host.entity.User;
+import com.honeyrest.domain.entity.Reservation;
+import com.honeyrest.domain.entity.Review;
+import com.honeyrest.domain.entity.User;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReviewImageRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReviewRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomRepository;

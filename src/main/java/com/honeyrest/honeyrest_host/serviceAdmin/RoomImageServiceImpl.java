@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
 import com.honeyrest.honeyrest_host.dtoAdmin.RoomImageDTO;
-import com.honeyrest.honeyrest_host.entity.Room;
-import com.honeyrest.honeyrest_host.entity.RoomImage;
+import com.honeyrest.domain.entity.Room;
+import com.honeyrest.domain.entity.RoomImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomImageRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomRepository;
 import lombok.RequiredArgsConstructor;

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.*;
-import com.honeyrest.honeyrest_host.entity.*;
+import com.honeyrest.domain.entity.*;
 import com.honeyrest.honeyrest_host.repositoryAdmin.*;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.CancellationPolicyService;

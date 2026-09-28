@@ -2,9 +2,9 @@ package com.honeyrest.honeyrest_host.serviceOwner;
 
 import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
-import com.honeyrest.honeyrest_host.entity.Reservation;
-import com.honeyrest.honeyrest_host.entity.ReservationStatus;
-import com.honeyrest.honeyrest_host.entity.Room;
+import com.honeyrest.domain.entity.Reservation;
+import com.honeyrest.domain.type.ReservationStatus;
+import com.honeyrest.domain.entity.Room;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OAccommodationRepository;

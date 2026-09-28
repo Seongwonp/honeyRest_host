@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin;
 
-import com.honeyrest.honeyrest_host.entity.RoomImage;
+import com.honeyrest.domain.entity.RoomImage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

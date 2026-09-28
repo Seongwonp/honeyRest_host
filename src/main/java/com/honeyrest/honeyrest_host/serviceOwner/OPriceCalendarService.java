@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
-import com.honeyrest.honeyrest_host.entity.PriceCalendar;
+import com.honeyrest.domain.entity.PriceCalendar;
 import com.honeyrest.honeyrest_host.repositoryOwner.OPriceCalendarRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORoomRepository;

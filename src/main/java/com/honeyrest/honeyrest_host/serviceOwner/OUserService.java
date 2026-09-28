@@ -3,7 +3,7 @@ package com.honeyrest.honeyrest_host.serviceOwner;
 import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.UserDTO;
-import com.honeyrest.honeyrest_host.entity.User;
+import com.honeyrest.domain.entity.User;
 import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

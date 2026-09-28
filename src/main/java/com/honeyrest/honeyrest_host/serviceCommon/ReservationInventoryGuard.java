@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceCommon;
 
-import com.honeyrest.honeyrest_host.entity.ReservationStatus;
-import com.honeyrest.honeyrest_host.entity.Room;
+import com.honeyrest.domain.type.ReservationStatus;
+import com.honeyrest.domain.entity.Room;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomRepository;
 import jakarta.persistence.EntityNotFoundException;

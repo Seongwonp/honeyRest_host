@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.dtoOwner;
 
-import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.entity.AccommodationTag;
+import com.honeyrest.domain.entity.Accommodation;
+import com.honeyrest.domain.entity.AccommodationTag;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * 호스트 엔티티 ↔ 사용자 API 저장소 Flyway 마이그레이션 스키마의 교차 검증.
+ * 호스트가 쓰는 엔티티(공유 도메인 모듈 + 호스트 전용 ErrorLog) ↔ 사용자 API 저장소 Flyway 마이그레이션 스키마의 교차 검증.
  *
  * <p>호스트 앱은 마이그레이션 없이 운영에서 {@code ddl-auto=validate} 로 기동하고, 기본 test 태스크는 H2 + create-drop 이라
  * 두 저장소 사이의 스키마 차이(drift)는 지금까지 운영 기동 시점에야 드러났다. 이 테스트는
@@ -40,7 +40,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * <p>마이그레이션 위치 결정 순서:
  * <ol>
  *   <li>시스템 프로퍼티 또는 환경변수 {@code HONEYREST_USER_MIGRATIONS} (명시적으로 지정하면 우선)</li>
- *   <li>형제 디렉터리 {@code ../honeyRest_user/src/main/resources/db/migration} (로컬에서 두 저장소를 나란히 클론한 경우)</li>
+ *   <li>git submodule {@code libs/honeyrest-user/src/main/resources/db/migration}
+ *       (공유 도메인 모듈과 같은 커밋이므로 엔티티와 마이그레이션 버전이 항상 짝이 맞는다.
+ *       Gradle 에서 {@code -PhoneyrestUserDir} 로 사용자 저장소 위치를 바꾸면 build.gradle 이 1번 값을 그 경로로 채운다.)</li>
  * </ol>
  * 둘 다 없으면 로컬에서는 건너뛰고, {@code integration.requireDocker=true}(CI)에서는 실패한다.
  * Docker 가 없으면 클래스 전체를 건너뛴다. 실행: {@code ./gradlew integrationTest}
@@ -52,7 +54,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class HostSchemaAgainstUserMigrationsIntegrationTest {
 
     static final String MIGRATIONS_KEY = "HONEYREST_USER_MIGRATIONS";
-    static final Path SIBLING_MIGRATIONS = Path.of("..", "honeyRest_user", "src", "main", "resources", "db", "migration");
+    static final Path SUBMODULE_MIGRATIONS = Path.of("libs", "honeyrest-user", "src", "main", "resources", "db", "migration");
 
     @Container
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"))
@@ -68,7 +70,8 @@ class HostSchemaAgainstUserMigrationsIntegrationTest {
         Path migrations = resolveUserMigrations().orElse(null);
         if (migrations == null) {
             String message = "사용자 API 마이그레이션 디렉터리를 찾지 못했다: " + MIGRATIONS_KEY
-                    + " 를 지정하거나 " + SIBLING_MIGRATIONS.toAbsolutePath().normalize() + " 에 honeyRest_user 를 클론하라.";
+                    + " 를 지정하거나 서브모듈을 초기화하라 (git submodule update --init --recursive → "
+                    + SUBMODULE_MIGRATIONS.toAbsolutePath().normalize() + ").";
             if (Boolean.getBoolean("integration.requireDocker")) {
                 fail(message);
             }
@@ -109,7 +112,7 @@ class HostSchemaAgainstUserMigrationsIntegrationTest {
             }
             return Optional.of(path);
         }
-        return Files.isDirectory(SIBLING_MIGRATIONS) ? Optional.of(SIBLING_MIGRATIONS) : Optional.empty();
+        return Files.isDirectory(SUBMODULE_MIGRATIONS) ? Optional.of(SUBMODULE_MIGRATIONS) : Optional.empty();
     }
 
     @Autowired
@@ -132,7 +135,7 @@ class HostSchemaAgainstUserMigrationsIntegrationTest {
     void 호스트가_쓰는_공유_스키마_항목이_존재한다() {
         assertThat(tableCount("error_log")).as("ErrorLog 엔티티 테이블 (V11)").isEqualTo(1);
         assertThat(columnNullable("reservation", "accommodation_name")).as("V10").isEqualTo("NO");
-        assertThat(columnNullable("accommodation_tag", "icon_name")).as("AccommodationTag.icon 매핑 컬럼").isNotNull();
+        assertThat(columnNullable("accommodation_tag", "icon_name")).as("AccommodationTag.iconName 매핑 컬럼").isNotNull();
         // 호스트 CancellationPolicyServiceImpl 은 policy_name/detail 만 INSERT 한다 → 구세대 NOT NULL 컬럼은 완화돼 있어야 한다 (V11)
         assertThat(columnNullable("cancellation_policy", "days_before")).isEqualTo("YES");
         assertThat(columnNullable("cancellation_policy", "refund_rate")).isEqualTo("YES");

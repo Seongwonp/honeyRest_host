@@ -1,0 +1,4 @@
+[submodule "libs/honeyrest-user"]
+	path = libs/honeyrest-user
+	url = https://github.com/Seongwonp/honeyRest_user
+	branch = main

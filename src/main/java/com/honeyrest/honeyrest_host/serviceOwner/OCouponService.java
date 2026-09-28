@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.serviceOwner;
 
 import jakarta.persistence.EntityNotFoundException;
 import com.honeyrest.honeyrest_host.dtoOwner.CouponDTO;
-import com.honeyrest.honeyrest_host.entity.Coupon;
+import com.honeyrest.domain.entity.Coupon;
 import com.honeyrest.honeyrest_host.repositoryOwner.OCouponRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

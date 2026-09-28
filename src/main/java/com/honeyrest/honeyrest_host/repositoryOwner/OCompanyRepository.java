@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.repositoryOwner;
 
-import com.honeyrest.honeyrest_host.entity.Company;
+import com.honeyrest.domain.entity.Company;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

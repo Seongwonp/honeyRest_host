@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.support;
 
-import com.honeyrest.honeyrest_host.entity.*;
+import com.honeyrest.domain.entity.*;
 import jakarta.persistence.EntityManager;
 
 import java.math.BigDecimal;

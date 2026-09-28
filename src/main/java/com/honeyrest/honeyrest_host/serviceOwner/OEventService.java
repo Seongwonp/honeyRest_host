@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.serviceOwner;
 
 import jakarta.persistence.EntityNotFoundException;
 import com.honeyrest.honeyrest_host.dtoOwner.EventDTO;
-import com.honeyrest.honeyrest_host.entity.Event;
+import com.honeyrest.domain.entity.Event;
 import com.honeyrest.honeyrest_host.repositoryOwner.OEventRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

@@ -2,9 +2,9 @@ package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationTagDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.entity.AccommodationTag;
-import com.honeyrest.honeyrest_host.entity.AccommodationTagMap;
+import com.honeyrest.domain.entity.Accommodation;
+import com.honeyrest.domain.entity.AccommodationTag;
+import com.honeyrest.domain.entity.AccommodationTagMap;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationTagMapRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationTagRepository;

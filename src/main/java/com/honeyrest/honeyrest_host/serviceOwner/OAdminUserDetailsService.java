@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
-import com.honeyrest.honeyrest_host.entity.User;
+import com.honeyrest.domain.entity.User;
 import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

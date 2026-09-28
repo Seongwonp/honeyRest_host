@@ -1,9 +1,9 @@
 package com.honeyrest.honeyrest_host.config;
 
 import com.honeyrest.honeyrest_host.dtoAdmin.InquiryDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.entity.Inquiry;
-import com.honeyrest.honeyrest_host.entity.User;
+import com.honeyrest.domain.entity.Accommodation;
+import com.honeyrest.domain.entity.Inquiry;
+import com.honeyrest.domain.entity.User;
 import org.springframework.stereotype.Component;
 
 @Component

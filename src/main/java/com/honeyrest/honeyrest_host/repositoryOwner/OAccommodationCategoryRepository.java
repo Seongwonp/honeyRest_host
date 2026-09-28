@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.repositoryOwner;
 
-import com.honeyrest.honeyrest_host.entity.AccommodationCategory;
+import com.honeyrest.domain.entity.AccommodationCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OAccommodationCategoryRepository extends JpaRepository<AccommodationCategory, Integer> {

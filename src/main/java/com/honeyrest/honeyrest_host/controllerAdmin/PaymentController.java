@@ -1,7 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
-import com.honeyrest.honeyrest_host.entity.ReservationStatus;
+import com.honeyrest.domain.type.ReservationStatus;
 import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PaymentDTO;

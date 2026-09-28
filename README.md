@@ -87,9 +87,23 @@ flowchart LR
     GUARD --> DB
     SVC --> FS["FileStorage<br/>Local 또는 Firebase"]
     USER["honeyRest_user :8080<br/>Flyway V1~V11"] -. "스키마 마이그레이션" .-> DB
+    DOM["honeyrest-domain<br/>공유 JPA 엔티티<br/>(libs/honeyrest-user 서브모듈)"]
+    SVC -. "엔티티" .-> DOM
+    USER -. "같은 모듈 사용" .-> DOM
 ```
 
-- 사용자 API가 스키마를 만들고(Flyway), 이 앱은 `validate`만 수행합니다. 매핑이 어긋나면 기동 단계에서 바로 실패하므로 두 저장소의 엔티티 차이가 운영 중 데이터 오류로 번지지 않습니다.
+- 사용자 API가 스키마를 만들고(Flyway), 이 앱은 `validate`만 수행합니다. 매핑이 어긋나면 기동 단계에서 바로 실패하므로 엔티티와 스키마 차이가 운영 중 데이터 오류로 번지지 않습니다.
+- **공유 도메인 모듈**: JPA 엔티티는 더 이상 이 저장소에 복사해 두지 않습니다. 사용자 API 저장소의 Gradle 서브프로젝트 `honeyrest-domain`(패키지 `com.honeyrest.domain.entity`, `com.honeyrest.domain.type` — `ReservationStatus`, `BannerPosition`)을 **git submodule `libs/honeyrest-user` + Gradle composite build**로 가져옵니다.
+  ```groovy
+  // settings.gradle
+  includeBuild('libs/honeyrest-user') {
+      dependencySubstitution { substitute module('com.honeyrest:honeyrest-domain') using project(':honeyrest-domain') }
+  }
+  // build.gradle
+  implementation 'com.honeyrest:honeyrest-domain'
+  ```
+  호스트 전용 엔티티는 `ErrorLog` 하나만 `com.honeyrest.honeyrest_host.entity`에 남아 있고, `@EntityScan({"com.honeyrest.domain", "com.honeyrest.honeyrest_host.entity"})`로 둘 다 스캔합니다. 두 사본의 차이와 통합 결정: [DOMAIN_MODULE.md](https://github.com/Seongwonp/honeyRest_user/blob/main/docs/DOMAIN_MODULE.md)
+- 엔티티·마이그레이션은 사용자 저장소에서 같은 커밋으로 바뀌고, 이 저장소는 서브모듈 커밋(재고정)으로 어느 버전을 쓸지 정합니다. 서브모듈 하나에서 엔티티와 마이그레이션을 함께 가져오므로 스키마 교차 검증도 항상 짝이 맞는 버전으로 돕니다.
 - 컬럼 명세: [DB_SCHEMA.md](DB_SCHEMA.md) (사용자 저장소와 동일 내용)
 
 ### 주요 기능
@@ -132,9 +146,9 @@ flowchart LR
 
 ### 5. 두 앱이 서로 다른 방식으로 재고를 다루던 문제 — `ReservationInventoryGuard`
 - **문제**: 관리자 예약 생성은 `room.total_rooms`를 1 줄이고 취소 시 1 늘렸지만 사용자 API는 `total_rooms`를 건드리지 않아, 두 방식이 섞이면 객실 수 자체가 오염됐습니다. 상태 철자도 `CANCELED`/`CANCELLED`가 섞여 보고서의 취소 건수가 항상 0이었습니다.
-- **결정**: 재고 = `total_rooms − 겹치는 점유 상태 예약 수`로 통일하고, `RoomRepository.findByIdForUpdate`(`PESSIMISTIC_WRITE`) 후 `countOverlapping`으로 검사하는 가드를 관리자·총관리자 예약 생성/수정 4곳에 적용(수정 시 자기 자신은 `excludeReservationId`로 제외). 상태는 사용자 저장소와 같은 `ReservationStatus` 상수로 통일했고, 공유 스키마에 없는 `@Version`은 제거했습니다.
+- **결정**: 재고 = `total_rooms − 겹치는 점유 상태 예약 수`로 통일하고, `RoomRepository.findByIdForUpdate`(`PESSIMISTIC_WRITE`) 후 `countOverlapping`으로 검사하는 가드를 관리자·총관리자 예약 생성/수정 4곳에 적용(수정 시 자기 자신은 `excludeReservationId`로 제외). 상태는 사용자 저장소와 같은 `ReservationStatus` 상수로 통일했고(현재는 공유 도메인 모듈의 단일 클래스), 공유 스키마에 없는 `@Version`은 제거했습니다.
 - **결과**: 초과 예약은 409로 거절되고 화면에 사유가 표시됩니다. 재고 규칙은 단위 테스트 14건으로 고정했습니다.
-- 코드: [`ReservationInventoryGuard`](src/main/java/com/honeyrest/honeyrest_host/serviceCommon/ReservationInventoryGuard.java) · [`ReservationStatus`](src/main/java/com/honeyrest/honeyrest_host/entity/ReservationStatus.java) · [테스트](src/test/java/com/honeyrest/honeyrest_host/serviceAdmin/ReservationServiceImplInventoryTest.java)
+- 코드: [`ReservationInventoryGuard`](src/main/java/com/honeyrest/honeyrest_host/serviceCommon/ReservationInventoryGuard.java) · [`ReservationStatus`](https://github.com/Seongwonp/honeyRest_user/blob/main/honeyrest-domain/src/main/java/com/honeyrest/domain/type/ReservationStatus.java) · [테스트](src/test/java/com/honeyrest/honeyrest_host/serviceAdmin/ReservationServiceImplInventoryTest.java)
 
 ### 6. 예약 목록 N+1과 메모리 페이징 — `JOIN FETCH` + `countQuery` 분리
 - **문제**: 예약 목록에서 객실·숙소 등 연관 엔티티를 지연 로딩하며 행마다 추가 쿼리가 발생했고, 일부 `Page` 쿼리는 Hibernate 메모리 페이징 경고를 냈습니다.
@@ -153,6 +167,14 @@ flowchart LR
 ## 실행 방법
 
 **필요 환경**: JDK 17, MySQL 8 (`honeyrest_db`). 스키마는 [사용자 API](https://github.com/Seongwonp/honeyRest_user)를 한 번 기동해 Flyway(V1~V11)로 먼저 만들어 둡니다.
+
+0. **클론 (서브모듈 포함 필수)**: 공유 엔티티 모듈이 서브모듈에 있어, 서브모듈 없이는 Gradle 설정 단계에서 실패합니다.
+   ```bash
+   git clone --recurse-submodules https://github.com/Seongwonp/honeyRest_host.git
+   # 이미 클론했다면
+   git submodule update --init --recursive
+   ```
+   서브모듈은 특정 커밋에 고정돼 있습니다. 사용자 저장소의 최신 엔티티로 올리려면 `git submodule update --remote libs/honeyrest-user` 후 테스트하고 `libs/honeyrest-user` 변경을 커밋합니다. 사용자 저장소를 옆에 두고 커밋 전 변경을 바로 쓰려면 `./gradlew <task> -PhoneyrestUserDir=../honeyRest_user`(또는 환경변수 `HONEYREST_USER_DIR`).
 
 1. **시크릿 파일**: `src/main/resources/application_security.properties.ex`를 복사해 같은 폴더에 `application_security.properties`를 만들고 `spring.datasource.password`, `jwt.secret`을 채웁니다(gitignore 대상).
 2. **파일 저장소**: 기본값 `app.storage.type=local`(업로드는 `./uploads`, `/uploads/**`로 서빙)이라 Firebase 키 없이 실행됩니다. Firebase를 쓰려면 `--app.storage.type=firebase --app.firebase.credentials=file:/경로/키.json`.
@@ -192,15 +214,15 @@ MySQL·시크릿 파일 없이 관리자 화면을 둘러볼 수 있는 실행 �
 ```bash
 ./gradlew test               # MySQL·시크릿 파일·Firebase 없이 실행 (H2)
 ./gradlew build              # CI 1단계와 동일
-./gradlew integrationTest    # Docker + 사용자 API 저장소 필요: 공유 스키마 교차 검증 (CI 2단계)
+./gradlew integrationTest    # Docker 필요: 서브모듈의 마이그레이션으로 공유 스키마 교차 검증 (CI 2단계)
 ```
 
-- **52개 테스트** — 회사 소유권(`CompanyResourceAccessServiceTest`), 권한 상승 차단(`OwnerAuthSignupSecurityTest`), `typ` 검증(`JwtAuthFilterTest`), 재고 가드(`ReservationServiceImplInventoryTest`, `OReservationServiceInventoryTest`), 상태 상수, 예약 수정 컨트롤러, 상태 필터 JPQL 페이지·count 정합
+- **68개 테스트** — 회사 소유권(`CompanyResourceAccessServiceTest`), 권한 상승 차단(`OwnerAuthSignupSecurityTest`), `typ` 검증(`JwtAuthFilterTest`), 재고 가드(`ReservationServiceImplInventoryTest`, `OReservationServiceInventoryTest`), 상태 상수, 예약 수정 컨트롤러, 상태 필터 JPQL 페이지·count 정합
 - **test 프로필**: H2 인메모리(MySQL 모드, `NON_KEYWORDS=USER`) + `create-drop` + 더미 `jwt.secret` + `app.storage.type=local`. 통합 테스트는 `JpaTestFixtures`로 데이터를 만들고 트랜잭션 롤백하므로 하드코딩 ID나 실 DB에 의존하지 않습니다(이전에는 46개 중 10개가 로컬 MySQL 부재로 실패).
 - **트레이드오프**: 스키마를 엔티티 매핑에서 생성하므로 **운영 MySQL 스키마(Flyway)와의 차이는 테스트로 잡지 못합니다.** 이 차이는 아래 스키마 교차 검증 테스트가 따로 잡습니다.
-- **스키마 교차 검증** (`@Tag("integration")`, 기본 `test`에서는 제외): [`HostSchemaAgainstUserMigrationsIntegrationTest`](src/test/java/com/honeyrest/honeyrest_host/schema/HostSchemaAgainstUserMigrationsIntegrationTest.java)가 Testcontainers로 `mysql:8.0`을 띄우고 [사용자 API](https://github.com/Seongwonp/honeyRest_user)의 Flyway 마이그레이션(V1~최신)을 그대로 적용한 뒤, 관리자 엔티티로 `ddl-auto=validate` 기동합니다. 운영 기동 시점에야 드러나던 drift(누락 테이블·컬럼, 타입 불일치)를 CI에서 잡습니다. 지금까지 찾은 차이와 처리는 [DB_SCHEMA.md §6](DB_SCHEMA.md) 참고.
-- **로컬 실행**: Docker를 켜고 두 저장소를 나란히 클론(`../honeyRest_user`)한 뒤 `./gradlew integrationTest`. 다른 위치의 마이그레이션을 쓰려면 `HONEYREST_USER_MIGRATIONS=/path/to/db/migration ./gradlew integrationTest`(지정 시 우선). Docker나 마이그레이션 디렉터리가 없으면 실패가 아니라 skip 됩니다.
-- **CI**: [GitHub Actions](.github/workflows/ci.yml) — `main` push/PR마다(+ 사용자 저장소 변경을 잡기 위해 매일 1회 예약 실행) 두 저장소를 `honeyRest_host`/`honeyRest_user`로 나란히 체크아웃하고 JDK 17로 `./gradlew build` → `./gradlew integrationTest`(`INTEGRATION_REQUIRE_DOCKER=true`로 Docker·마이그레이션 부재 시 skip 대신 실패), 실패 시 테스트 리포트 업로드
+- **스키마 교차 검증** (`@Tag("integration")`, 기본 `test`에서는 제외): [`HostSchemaAgainstUserMigrationsIntegrationTest`](src/test/java/com/honeyrest/honeyrest_host/schema/HostSchemaAgainstUserMigrationsIntegrationTest.java)가 Testcontainers로 `mysql:8.0`을 띄우고 서브모듈 `libs/honeyrest-user`에 들어 있는 [사용자 API](https://github.com/Seongwonp/honeyRest_user)의 Flyway 마이그레이션(V1~최신)을 그대로 적용한 뒤, 공유 엔티티 + `ErrorLog`로 `ddl-auto=validate` 기동합니다. 운영 기동 시점에야 드러나던 drift(누락 테이블·컬럼, 타입 불일치)를 CI에서 잡습니다. 지금까지 찾은 차이와 처리는 [DB_SCHEMA.md §6](DB_SCHEMA.md) 참고.
+- **로컬 실행**: Docker를 켜고 서브모듈을 초기화한 상태에서 `./gradlew integrationTest` (기본 경로 `libs/honeyrest-user/src/main/resources/db/migration`). 다른 위치의 마이그레이션을 쓰려면 `HONEYREST_USER_MIGRATIONS=/path/to/db/migration ./gradlew integrationTest`(지정 시 우선), `-PhoneyrestUserDir=../honeyRest_user`를 주면 그 저장소의 마이그레이션을 씁니다. Docker나 마이그레이션 디렉터리가 없으면 실패가 아니라 skip 됩니다.
+- **CI**: [GitHub Actions](.github/workflows/ci.yml) — `main` push/PR마다(+ 사용자 저장소 변경을 잡기 위해 매일 1회 예약 실행) `submodules: recursive`로 체크아웃하고(예약·수동 실행은 서브모듈을 사용자 저장소 `main` 최신으로 올려 다음 재고정 대상과의 호환성을 확인) JDK 17로 `./gradlew build` → `./gradlew integrationTest`(`INTEGRATION_REQUIRE_DOCKER=true`로 Docker·마이그레이션 부재 시 skip 대신 실패), 실패 시 테스트 리포트 업로드
 
 ---
 

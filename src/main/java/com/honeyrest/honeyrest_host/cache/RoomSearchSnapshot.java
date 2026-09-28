@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.cache;
 
-import com.honeyrest.honeyrest_host.entity.Room;
+import com.honeyrest.domain.entity.Room;
 
 import java.math.BigDecimal;
 

@@ -18,6 +18,10 @@ repositories {
 }
 
 dependencies {
+    // 공유 도메인 모듈 (JPA 엔티티, ReservationStatus 등 — com.honeyrest.domain.*).
+    // settings.gradle 의 includeBuild(libs/honeyrest-user) 가 사용자 API 저장소의 :honeyrest-domain 프로젝트로 치환한다.
+    implementation 'com.honeyrest:honeyrest-domain'
+
     // Spring Boot 기본 웹 애플리케이션 구성
     implementation 'org.springframework.boot:spring-boot-starter-web' // REST API 및 MVC 웹 기능
     implementation 'org.springframework.boot:spring-boot-starter-validation' // Bean Validation (예: @Valid)
@@ -109,7 +113,9 @@ tasks.named('test') {
 }
 
 // integrationTest: @Tag("integration") 테스트만 실행한다 (Testcontainers MySQL 8.0).
-// - 사용자 API 마이그레이션 위치: HONEYREST_USER_MIGRATIONS(환경변수 또는 -P 프로퍼티) → 없으면 ../honeyRest_user/...
+// - 사용자 API 마이그레이션 위치: HONEYREST_USER_MIGRATIONS(환경변수 또는 -P 프로퍼티)
+//   → 없으면 -PhoneyrestUserDir/HONEYREST_USER_DIR 로 지정한 사용자 저장소의 마이그레이션
+//   → 없으면 서브모듈 libs/honeyrest-user/src/main/resources/db/migration
 // - Docker 가 없으면 해당 테스트는 건너뛴다(skip). CI 에서는 INTEGRATION_REQUIRE_DOCKER=true 로
 //   Docker/마이그레이션 부재를 skip 이 아닌 실패로 만든다.
 // 실행: ./gradlew test integrationTest
@@ -126,6 +132,15 @@ tasks.register('integrationTest', Test) {
     def userMigrations = providers.gradleProperty('HONEYREST_USER_MIGRATIONS')
             .orElse(providers.environmentVariable('HONEYREST_USER_MIGRATIONS'))
             .getOrElse('')
+    if (!userMigrations) {
+        // settings.gradle 과 같은 규칙으로 사용자 저장소 위치를 정한다 (재정의가 없으면 테스트가 서브모듈 경로를 기본값으로 쓴다).
+        def userDir = providers.gradleProperty('honeyrestUserDir')
+                .orElse(providers.environmentVariable('HONEYREST_USER_DIR'))
+                .getOrElse('')
+        if (userDir) {
+            userMigrations = file("${userDir}/src/main/resources/db/migration").absolutePath
+        }
+    }
     if (userMigrations) {
         systemProperty 'HONEYREST_USER_MIGRATIONS', userMigrations
     }

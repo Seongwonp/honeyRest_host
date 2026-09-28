@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.security;
 
-import com.honeyrest.honeyrest_host.entity.*;
+import com.honeyrest.domain.entity.*;
+import com.honeyrest.domain.type.*;
 import com.honeyrest.honeyrest_host.support.JpaTestFixtures;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;

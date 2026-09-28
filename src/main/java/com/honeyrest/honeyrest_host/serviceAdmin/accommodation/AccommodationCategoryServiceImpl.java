@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationCategoryDTO;
 
-import com.honeyrest.honeyrest_host.entity.AccommodationCategory;
+import com.honeyrest.domain.entity.AccommodationCategory;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationCategoryRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;

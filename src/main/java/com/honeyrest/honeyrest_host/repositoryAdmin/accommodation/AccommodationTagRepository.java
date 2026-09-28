@@ -1,6 +1,6 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin.accommodation;
 
-import com.honeyrest.honeyrest_host.entity.AccommodationTag;
+import com.honeyrest.domain.entity.AccommodationTag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

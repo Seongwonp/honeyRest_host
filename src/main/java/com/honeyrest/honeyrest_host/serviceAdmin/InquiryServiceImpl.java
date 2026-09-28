@@ -3,9 +3,9 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 
 import com.honeyrest.honeyrest_host.config.InquiryMapper;
 import com.honeyrest.honeyrest_host.dtoAdmin.InquiryDTO;
-import com.honeyrest.honeyrest_host.entity.Accommodation;
-import com.honeyrest.honeyrest_host.entity.Inquiry;
-import com.honeyrest.honeyrest_host.entity.User;
+import com.honeyrest.domain.entity.Accommodation;
+import com.honeyrest.domain.entity.Inquiry;
+import com.honeyrest.domain.entity.User;
 import com.honeyrest.honeyrest_host.repositoryAdmin.InquiryRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;

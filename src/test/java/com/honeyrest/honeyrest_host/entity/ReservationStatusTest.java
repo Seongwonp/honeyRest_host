@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.entity;
 
+import com.honeyrest.domain.type.ReservationStatus;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
@@ -8,9 +9,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 호스트 예약 상태 상수가 사용자 저장소(honeyRest_user)의 entity.ReservationStatus 와 같은지 고정한다.
- * 두 저장소는 같은 reservation.status 컬럼을 쓰므로 값이 어긋나면 재고 계산이 달라진다.
- * 사용자 저장소 값이 바뀌면 이 기대값과 호스트 상수를 함께 수정해야 한다.
+ * 호스트가 기대하는 예약 상태 값을 고정한다.
+ * ReservationStatus 는 이제 공유 도메인 모듈(com.honeyrest.domain.type)의 단일 클래스라 두 앱 사이 불일치는 생길 수 없지만,
+ * 서브모듈을 재고정(re-pin)했을 때 호스트 화면/쿼리가 가정하는 값이 바뀌었는지 여기서 드러나게 한다.
  */
 class ReservationStatusTest {
 

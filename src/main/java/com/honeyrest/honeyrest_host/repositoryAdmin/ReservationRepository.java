@@ -1,8 +1,8 @@
 package com.honeyrest.honeyrest_host.repositoryAdmin;
 
 
-import com.honeyrest.honeyrest_host.entity.Reservation;
-import com.honeyrest.honeyrest_host.entity.ReservationStatus;
+import com.honeyrest.domain.entity.Reservation;
+import com.honeyrest.domain.type.ReservationStatus;
 import com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection.SalesStatRow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

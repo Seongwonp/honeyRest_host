@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.RegionDTO;
-import com.honeyrest.honeyrest_host.entity.Region;
+import com.honeyrest.domain.entity.Region;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RegionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

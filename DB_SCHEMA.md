@@ -253,14 +253,19 @@
 | `accommodation_tag.icon_name` | 호스트 `AccommodationTag.icon` 이 존재하지 않는 `icon` 컬럼으로 매핑됨 (사용자 엔티티·시드는 `icon_name`) | 호스트 기동 실패 (missing column) | 호스트 매핑을 `@Column(name = "icon_name", length = 50)` 로 수정 (스키마 변경 없음) |
 | `cancellation_policy.days_before`, `refund_rate` | V1 구세대 컬럼이 NOT NULL(기본값 없음)인데 두 엔티티 모두 매핑하지 않음 | validate 는 통과, 호스트 환불 정책 신규 INSERT 가 런타임 실패 | **V11** 에서 NULL 허용으로 완화 (데이터 보존, 컬럼 유지) |
 | `reservation.accommodation_name` | 호스트만 매핑하던 NOT NULL 컬럼 | 호스트 기동 실패 | **V10** 에서 추가 (기존 처리) |
-| `review.rating` | 호스트 `precision=3, scale=1` vs 스키마 `decimal(3,2)` | 없음 (validate 는 정밀도 미검사, 쓰기 값도 수용 가능) | 기록만 |
-| JSON 문자열 컬럼 (`amenities`, `bed_info`, `bank_info`, `cancellation_policy.detail`) | 엔티티 `columnDefinition = "JSON"` vs 스키마 `longtext`/`text` | 없음 (Hibernate 가 문자열 계열로 동등 취급) | 기록만 |
+| `review.rating` | 호스트 `precision=3, scale=1` vs 스키마 `decimal(3,2)` | 없음 (validate 는 정밀도 미검사, 쓰기 값도 수용 가능) | **해소**: 공유 엔티티가 스키마와 같은 `precision=3, scale=2` |
+| JSON 문자열 컬럼 (`amenities`, `bed_info`, `bank_info`, `cancellation_policy.detail`) | 엔티티 `columnDefinition = "JSON"` vs 스키마 `longtext`/`text` | 없음 (Hibernate 가 문자열 계열로 동등 취급) | 기록만. `cancellation_policy.detail` 은 공유 엔티티에서 스키마(V6)와 같은 `TEXT` 로 통일 |
 | `banner.position` | `@Enumerated(STRING)` (MySQL 방언은 enum 타입 기대) vs `varchar(30)` | 없음 (enum ↔ varchar 동등 취급, 두 저장소 `BannerPosition` 값 동일) | 기록만 |
-| `email_verification_token.pending_email`, `user.token_valid_after` | 사용자 API 만 매핑하는 NULL 허용 컬럼 | 없음 (호스트 INSERT 시 NULL) | 기록만 |
+| `email_verification_token.pending_email`, `user.token_valid_after` | 사용자 API 만 매핑하는 NULL 허용 컬럼 | 없음 (호스트 INSERT 시 NULL) | **해소**: 공유 엔티티가 매핑하므로 두 앱 모두 같은 컬럼을 본다 |
+| `reservation.price` | 사용자 엔티티에 `precision/scale` 누락 (스키마 `decimal(10,2)`) | 없음 (validate 는 정밀도 미검사) | **해소**: 공유 엔티티 `precision = 10, scale = 2` |
 
 ### 자동 검증
 - 사용자 API: `./gradlew integrationTest` — Testcontainers MySQL 8.0 에 V1~최신 적용 후 사용자 엔티티 `validate`, `reservation.accommodation_name` NOT NULL, V10/V11 재실행 안전성 확인.
-- 관리자 앱: `./gradlew integrationTest` — 사용자 API 저장소의 마이그레이션을 그대로 적용한 뒤 호스트 엔티티 `validate` (CI 는 두 저장소를 나란히 체크아웃, 매일 예약 실행).
+- 관리자 앱: `./gradlew integrationTest` — 서브모듈(`libs/honeyrest-user`)에 들어 있는 이 저장소의 마이그레이션을 그대로 적용한 뒤 공유 엔티티 + 호스트 전용 `ErrorLog` 를 `validate` (CI 는 `submodules: recursive` 체크아웃, 매일 예약 실행 시에는 서브모듈을 main 최신으로 올려 검증).
+
+### 공유 도메인 모듈 통합 (컬럼 변경 없음)
+두 저장소의 엔티티 사본을 `honeyrest-domain` 모듈 하나로 합쳤다. 기준은 이 문서와 Flyway V1~V11 이며, **스키마(컬럼) 자체는 바뀌지 않았다** (새 마이그레이션 없음).
+위 표의 "해소" 항목처럼 매핑 쪽 차이만 스키마에 맞췄다. 엔티티별 상세는 [docs/DOMAIN_MODULE.md](https://github.com/Seongwonp/honeyRest_user/blob/main/docs/DOMAIN_MODULE.md) 참고.
 
 ---
 
