@@ -130,7 +130,7 @@ public interface ReportRepository extends JpaRepository <Accommodation, Long> {
           (SELECT COUNT(*) FROM reservation r
            WHERE r.updated_at >= :from
              AND r.updated_at < DATE_ADD(:to, INTERVAL 1 DAY)
-             AND r.status = 'CANCELED') AS canceled
+             AND r.status = 'CANCELLED') AS canceled
     """, nativeQuery = true)
     CancelSummaryRow findCancelSummary(
             @Param("from") LocalDate from,

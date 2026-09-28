@@ -1,6 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
+import com.honeyrest.honeyrest_host.entity.ReservationStatus;
 import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PaymentDTO;
@@ -152,7 +153,7 @@ public class PaymentController {
         // 미결제 취소 포함: 예약 기준
         if (includeUnpaidCancels) {
             PageRequestDTO pr = PageRequestDTO.builder().page(page).size(size).build();
-            PageResponseDTO<ReservationDTO> unpaid = reservationService.getCompanyReservations(companyId, "CANCELLED", q, pr);
+            PageResponseDTO<ReservationDTO> unpaid = reservationService.getCompanyReservations(companyId, ReservationStatus.CANCELLED, q, pr);
             model.addAttribute("unpaidList", unpaid.getDtoList());
             model.addAttribute("unpaidTotal",  unpaid.getTotal());
         }

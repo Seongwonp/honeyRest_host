@@ -4,6 +4,7 @@ import com.honeyrest.honeyrest_host.dtoAdmin.*;
 import com.honeyrest.honeyrest_host.dtoAdmin.reports.SalesStatDTO;
 import com.honeyrest.honeyrest_host.entity.PriceCalendar;
 import com.honeyrest.honeyrest_host.entity.Reservation;
+import com.honeyrest.honeyrest_host.entity.ReservationStatus;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repositoryAdmin.price.PriceCalendarRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository;
@@ -39,7 +40,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
             LocalDate start,
             LocalDate end
     ) {
-        // 회사(+선택 숙소) 범위의 겹치는 예약들 (CANCELLED 제외는 쿼리에서 이미 처리됨)
+        // 회사(+선택 숙소) 범위의 겹치는 예약들 (점유 상태 ReservationStatus.OCCUPYING 만 쿼리에서 조회)
         List<Reservation> rs = reservationRepository.findOverlappedReservationsForMonth(
                 companyId, accommodationId, start, end);
 
@@ -253,6 +254,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
 
             // 예약 1건 = 1객실 (수량 컬럼 없으므로)
             int booked = (int) reservations.stream()
+                    .filter(r -> ReservationStatus.isOccupying(r.getStatus())) // 취소 등 비점유 상태 제외
                     .filter(r -> r.getCheckInDate().isBefore(cellEnd)   // in < d+1
                                  && r.getCheckOutDate().isAfter(cellStart) // out > d
                     )

@@ -1,6 +1,8 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
+import com.honeyrest.honeyrest_host.serviceCommon.ReservationConflictException;
+import com.honeyrest.honeyrest_host.entity.ReservationStatus;
 import com.honeyrest.honeyrest_host.dtoAdmin.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
@@ -190,7 +192,7 @@ public class ReservationController {
         model.addAttribute("hasPrevBlock", hasPrevBlock);
         model.addAttribute("hasNextBlock", hasNextBlock);
 
-        model.addAttribute("statuses", List.of("CONFIRMED", "PENDING", "COMPLETED", "CANCEL_REQUEST", "NO_SHOW"));
+        model.addAttribute("statuses", ReservationStatus.ALL);
         model.addAttribute("selectedStatus", status);
         model.addAttribute("q", q == null ? "" : q);
 
@@ -222,6 +224,7 @@ public class ReservationController {
         // 드롭다운 데이터(회사 기준)
         model.addAttribute("accomodations", accommodationService.getAllById(companyId));
         model.addAttribute("rooms", roomService.findAllByCompanyId(companyId));
+        model.addAttribute("reservationStatuses", ReservationStatus.ALL);
 
 
         return "admin/reservations/new";
@@ -241,7 +244,14 @@ public class ReservationController {
         }
         RoomDTO room = roomService.getByRoomId(form.getRoomId());
         form.setAccommodationId(room.getAccommodationId());
-        ReservationDTO saved = reservationService.createReservation(form);
+        ReservationDTO saved;
+        try {
+            saved = reservationService.createReservation(form);
+        } catch (ReservationConflictException | IllegalArgumentException e) {
+            // 재고 부족(겹침) 또는 잘못된 입력: 폼으로 돌아가 사유를 토스트로 보여준다.
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/admin/reservations/new";
+        }
         ra.addFlashAttribute("msg", "예약이 등록되었습니다. (" + saved.getReservationNumber() + ")");
         return "redirect:/admin/reservations/list?number=" + saved.getReservationNumber();
     }

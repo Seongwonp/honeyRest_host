@@ -6,11 +6,13 @@ import com.honeyrest.honeyrest_host.dtoOwner.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PriceCalendarDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
 import com.honeyrest.honeyrest_host.entity.Reservation;
+import com.honeyrest.honeyrest_host.entity.ReservationStatus;
 import com.honeyrest.honeyrest_host.entity.Room;
 import com.honeyrest.honeyrest_host.repositoryOwner.OAccommodationRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORoomRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
+import com.honeyrest.honeyrest_host.serviceCommon.ReservationInventoryGuard;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,6 +36,7 @@ public class OReservationService {
     private final ORoomRepository roomRepository;
     private final OUserRepository userRepository;
     private final OAccommodationRepository accommodationRepository;
+    private final ReservationInventoryGuard inventoryGuard;
 
 
     private Reservation toEntity(ReservationDTO dto) {
@@ -53,7 +56,7 @@ public class OReservationService {
                 .price(dto.getPrice())
                 .originalPrice(dto.getOriginalPrice())
                 .discountAmount(dto.getDiscountAmount())
-                .status(dto.getStatus() == null ? "PENDING" : dto.getStatus()) // 기본값
+                .status(ReservationStatus.normalize(dto.getStatus(), ReservationStatus.PENDING)) // 기본값 PENDING
                 .cancelReason(dto.getCancelReason())
                 .specialRequest(dto.getSpecialRequest())
                 .build();
@@ -103,7 +106,7 @@ public class OReservationService {
     public List<ReservationDTO> getReservationsByActive() {
         return reservationRepository.findAll()
                 .stream()
-                .filter(reservation -> !"CANCEL".equalsIgnoreCase(reservation.getStatus()))
+                .filter(reservation -> !ReservationStatus.CANCELLED.equalsIgnoreCase(reservation.getStatus()))
                 .map(this::toDTO)
                 .toList();
     }
@@ -119,10 +122,41 @@ public class OReservationService {
     }
 
 
-    public void registerReservation(ReservationDTO dto) { reservationRepository.save(toEntity(dto));
+    /**
+     * 예약 등록 (기본 상태 PENDING).
+     * 점유 상태면 객실 행을 잠그고 겹치는 점유 예약 수가 totalRooms 이상이면 ReservationConflictException.
+     */
+    public void registerReservation(ReservationDTO dto) {
+        dto.setReservationId(null);
+        String status = ReservationStatus.normalize(dto.getStatus(), ReservationStatus.PENDING);
+        dto.setStatus(status);
+        if (ReservationStatus.isOccupying(status)) {
+            inventoryGuard.lockRoomAndAssertAvailable(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), null);
+        }
+        reservationRepository.save(toEntity(dto));
     }
 
+    /**
+     * 예약 수정. 비점유 → 점유 상태 전환(예: CANCELLED → CONFIRMED)이거나
+     * 점유 상태에서 객실/기간이 바뀌면 등록과 같은 재고 검사를 한다(자기 자신은 제외).
+     */
     public void modifyReservation(ReservationDTO dto) {
+        Reservation existing = reservationRepository.findById(dto.getReservationId())
+                .orElseThrow(() -> new EntityNotFoundException("해당 예약이 존재하지 않습니다. id=" + dto.getReservationId()));
+        String newStatus = ReservationStatus.normalize(dto.getStatus(), existing.getStatus());
+        dto.setStatus(newStatus);
+
+        Long oldRoomId = existing.getRoom() != null ? existing.getRoom().getRoomId() : null;
+        boolean enteringOccupying = ReservationStatus.isOccupying(newStatus)
+                && !ReservationStatus.isOccupying(existing.getStatus());
+        boolean occupyingChanged = ReservationStatus.isOccupying(newStatus)
+                && (!java.util.Objects.equals(oldRoomId, dto.getRoomId())
+                    || !java.util.Objects.equals(existing.getCheckInDate(), dto.getCheckInDate())
+                    || !java.util.Objects.equals(existing.getCheckOutDate(), dto.getCheckOutDate()));
+        if (enteringOccupying || occupyingChanged) {
+            inventoryGuard.lockRoomAndAssertAvailable(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(),
+                    existing.getReservationId());
+        }
         reservationRepository.save(toEntity(dto));
     }
 
@@ -147,7 +181,7 @@ public class OReservationService {
             // 해당 날짜에 걸려 있는 예약 리스트 필터링
             List<Reservation> reservationsOnDate = reservations.stream()
                     .filter(r -> !r.getCheckInDate().isAfter(finalDate) && r.getCheckOutDate().isAfter(finalDate))
-                    .filter(r -> !r.getStatus().equalsIgnoreCase("cancel"))
+                    .filter(r -> ReservationStatus.isOccupying(r.getStatus())) // 재고 점유 상태만
                     .toList();
 
             // 예약 수 계산
@@ -186,8 +220,8 @@ public class OReservationService {
         List<ReservationDTO> list = page.getContent().stream()
                 .map(this::toDTO)
                 .filter(reservation ->
-                        !reservation.getStatus().equalsIgnoreCase("cancel") &&
-                                !reservation.getStatus().equalsIgnoreCase("cancel_request")
+                        !ReservationStatus.CANCELLED.equalsIgnoreCase(reservation.getStatus()) &&
+                                !ReservationStatus.CANCEL_REQUEST.equalsIgnoreCase(reservation.getStatus())
                 )
                 .toList();
 
@@ -212,7 +246,7 @@ public class OReservationService {
 
         List<ReservationDTO> list = page.getContent().stream()
                 .map(this::toDTO)
-                .filter(reservation -> reservation.getStatus().equalsIgnoreCase("cancel_request"))
+                .filter(reservation -> ReservationStatus.CANCEL_REQUEST.equalsIgnoreCase(reservation.getStatus()))
                 .toList();
 
         long total = list.size();
@@ -237,8 +271,8 @@ public class OReservationService {
         List<ReservationDTO> list = page.getContent().stream()
                 .map(this::toDTO)
                 .filter(reservation ->
-                        !reservation.getStatus().equalsIgnoreCase("cancel") &&
-                                !reservation.getStatus().equalsIgnoreCase("cancel_request")
+                        !ReservationStatus.CANCELLED.equalsIgnoreCase(reservation.getStatus()) &&
+                                !ReservationStatus.CANCEL_REQUEST.equalsIgnoreCase(reservation.getStatus())
                 )
                 .toList();
 
@@ -262,7 +296,7 @@ public class OReservationService {
 
         List<ReservationDTO> list = page.getContent().stream()
                 .map(this::toDTO)
-                .filter(reservation -> reservation.getStatus().equalsIgnoreCase("cancel_request")
+                .filter(reservation -> ReservationStatus.CANCEL_REQUEST.equalsIgnoreCase(reservation.getStatus())
                 )
                 .toList();
 

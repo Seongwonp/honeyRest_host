@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
+import com.honeyrest.honeyrest_host.entity.ReservationStatus;
 import com.honeyrest.honeyrest_host.dtoOwner.DaySalesDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.MonthSalesDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.ReservationDTO;
@@ -23,7 +24,7 @@ public class OSalesService {
     public List<DaySalesDTO> getDaySales(LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservations()
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
+                .filter(r -> ReservationStatus.COMPLETED.equals(r.getStatus()) || ReservationStatus.CONFIRMED.equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return date.isAfter(startDate) && date.isBefore(endDate);
@@ -65,7 +66,7 @@ public class OSalesService {
     public List<MonthSalesDTO> getMonthSales(LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservations()
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
+                .filter(r -> ReservationStatus.COMPLETED.equals(r.getStatus()) || ReservationStatus.CONFIRMED.equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);
@@ -105,7 +106,7 @@ public class OSalesService {
     public List<DaySalesDTO> getCompanyDaySales(Integer companyId, LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByCompanyId(companyId)
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
+                .filter(r -> ReservationStatus.COMPLETED.equals(r.getStatus()) || ReservationStatus.CONFIRMED.equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);
@@ -147,7 +148,7 @@ public class OSalesService {
     public List<MonthSalesDTO> getCompanyMonthSales(Integer companyId,LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByCompanyId(companyId)
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
+                .filter(r -> ReservationStatus.COMPLETED.equals(r.getStatus()) || ReservationStatus.CONFIRMED.equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);
@@ -187,7 +188,7 @@ public class OSalesService {
     public List<DaySalesDTO> getAccommodationDaySales(Long accommodationId, LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByAccommodationId(accommodationId)
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
+                .filter(r -> ReservationStatus.COMPLETED.equals(r.getStatus()) || ReservationStatus.CONFIRMED.equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);
@@ -229,7 +230,7 @@ public class OSalesService {
     public List<MonthSalesDTO> getAccommodationMonthSales(Long accommodationId,LocalDate startDate, LocalDate endDate) {
         List<ReservationDTO> reservations = reservationService.getReservationsByAccommodationId(accommodationId)
                 .stream()
-                .filter(r -> "COMPLETED".equals(r.getStatus()) || "CONFIRMED".equals(r.getStatus()))
+                .filter(r -> ReservationStatus.COMPLETED.equals(r.getStatus()) || ReservationStatus.CONFIRMED.equals(r.getStatus()))
                 .filter(r -> {
                     LocalDate date = r.getCheckOutDate();
                     return !date.isBefore(startDate) && date.isBefore(endDate);

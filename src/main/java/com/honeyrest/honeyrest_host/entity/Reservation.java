@@ -78,8 +78,8 @@ public class Reservation extends BaseEntity{
     @Column(name = "special_requests", columnDefinition = "TEXT")
     private String specialRequest; // 특별 요청 사항
 
-    @Version
-    private Long version; //  낙관적 락
+    // 공유 스키마(사용자 저장소 Flyway)에 version 컬럼이 없어 @Version 필드를 두지 않는다.
+    // 동시성은 예약 생성/점유 전환 시 room 행 비관적 락(ReservationInventoryGuard)으로 제어한다.
 
     // -------- 생성 시 필수값 검증 (엔티티 내부) --------
     public void validateNew() {
@@ -135,10 +135,10 @@ public class Reservation extends BaseEntity{
 
     // 도메인 메서드
     public void cancel(String reason) {
-        if ("CANCELLED".equalsIgnoreCase(this.status)) {
+        if (ReservationStatus.CANCELLED.equalsIgnoreCase(this.status)) {
             throw new IllegalStateException("이미 취소된 예약입니다.");
         }
-        this.status ="CANCELLED";
+        this.status = ReservationStatus.CANCELLED;
         this.cancelReason = reason;
     }
 

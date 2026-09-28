@@ -97,6 +97,48 @@ BUILD SUCCESSFUL in 24s
 
 검증은 다른 회사 리소스 거부, 객실-숙소 혼합 제출 거부, 정상 소유 리소스 허용을 단위 테스트로 고정했다. 실제 로컬 DB를 변경하는 공격 요청은 수행하지 않았다.
 
+### 9. 예약 상태·재고 규칙을 사용자 저장소와 통일 — 완료
+
+사용자 저장소(`honeyRest_user`)가 예약 생성 시 객실 행 락 + 겹침 검사(409)를 도입했다. 두 저장소는 같은 `reservation` 테이블을 쓰므로 호스트도 같은 규칙으로 맞췄다.
+
+상태 이름:
+
+- 호스트에 `entity/ReservationStatus`를 추가했다. 값은 사용자 저장소와 동일하다: `PENDING`, `CONFIRMED`, `CANCEL_REQUEST`, `COMPLETED`, `NO_SHOW`, `CANCELLED`.
+- 재고 점유 상태 `OCCUPYING` = `PENDING`, `CONFIRMED`, `CANCEL_REQUEST`, `COMPLETED`, `NO_SHOW` (`CANCELLED`는 비점유).
+- 보고서/대시보드 취소 집계 쿼리의 오타 `'CANCELED'`를 `'CANCELLED'`로 고쳤다(기존에는 취소 건수가 항상 0).
+- 오너 서비스의 `"cancel"`/`"CANCEL"` 비교(실제로 존재하지 않는 값)를 `CANCELLED`로 고쳤다.
+- 관리자 `getCompanyReservations`의 `validStatuses`는 `ReservationStatus.ALL`로 바꿨다. 기존 목록에 `CANCELLED`가 없어 결제 화면의 미결제(취소) 목록 조회가 예외로 실패했다.
+- `db/seed` SQL에는 예약 데이터가 없어 수정할 것이 없었다.
+- 상태 값이 바뀌면 `ReservationStatusTest`의 기대값과 양쪽 저장소를 함께 수정한다.
+
+재고(겹침) 검사:
+
+- 재고의 기준은 `room.total_rooms − [checkIn, checkOut)과 겹치는 점유 상태 예약 수`다. 겹침 조건은 `checkIn < 요청 checkOut AND checkOut > 요청 checkIn`(체크아웃 당일 비점유, 예약 1건 = 객실 1개).
+- `ReservationInventoryGuard`가 `RoomRepository.findByIdForUpdate`(`PESSIMISTIC_WRITE`)로 객실 행을 잠근 뒤 `ReservationRepository.countOverlapping`으로 세고, `>= totalRooms`이면 `ReservationConflictException`을 던진다.
+- 적용 위치: 관리자 예약 생성(기본 `CONFIRMED`), 관리자 예약 수정(비점유 → 점유 전환 또는 점유 중 객실/기간 변경), 오너 예약 등록(기본 `PENDING`), 오너 예약 수정. `CANCEL_REQUEST → CONFIRMED`(취소 거부), `→ COMPLETED`, `→ NO_SHOW`는 점유 상태끼리의 전환이라 검사하지 않는다.
+- 관리자 예약 생성이 `room.total_rooms`를 1 줄이고 취소 시 1 늘리던 `decreaseStock`/`increaseStock`을 제거했다. 사용자 저장소는 `total_rooms`를 바꾸지 않으므로 두 방식이 섞이면 객실 수가 오염된다.
+- 화면 처리: 생성 컨트롤러가 예외를 잡아 flash `error`로 등록 화면에 토스트를 띄운다. 잡지 못한 경우 `GlobalExceptionHandler`가 409와 사유 메시지를 오류 화면에 보여준다.
+
+`@Version` 제거:
+
+- 호스트 `Reservation`에 `@Version version` 필드가 있었지만 사용자 저장소 Flyway(V1~V9)와 `DB_SCHEMA.md`의 `reservation` 테이블에는 `version` 컬럼이 없다(`VERSION`은 Spring Batch 테이블에만 있다).
+- 호스트는 `ddl-auto=validate`이므로 Flyway로 새로 만든 DB에서는 검증에 실패한다. 기존 로컬 DB에서 기동된 것은 과거 `ddl-auto=update` 등으로 Flyway 밖에서 컬럼이 생긴 것으로 본다.
+- 동시성은 객실 행 비관적 락이 담당하므로 `@Version`을 제거했다. 기존 DB에 남은 `version` 컬럼은 매핑되지 않을 뿐 동작에 영향이 없다.
+
+`price_calendar.available_room`:
+
+- `available_room`은 화면 표시용 스냅샷이다. 월간 캘린더를 저장(`bulkUpsert`)할 때의 계산값이 기록될 뿐, 예약 가능 여부를 판단하는 기준이 아니다.
+- 재고의 진실은 항상 `room.total_rooms − 겹치는 점유 예약 수`이며, 사용자/호스트 예약 생성은 이 값만 본다.
+- 스냅샷 계산도 같은 기준을 쓰도록 월간 캘린더 조회(`findOverlappedReservationsForMonth`)와 일별 캘린더(`getCalendarData`, 관리자/오너)를 `OCCUPYING` 상태만 세도록 맞췄다. 관리자 일별 캘린더는 기존에 취소 예약까지 세고 있었다.
+
+남은 불일치:
+
+- 호스트 `Reservation.accommodationName`(`accommodation_name`, NOT NULL)도 사용자 저장소 Flyway 스키마와 `DB_SCHEMA.md`에 없다. Flyway로 만든 DB에서는 호스트 스키마 검증이 여전히 실패하므로 사용자 저장소에 컬럼 추가 마이그레이션을 두거나 호스트 매핑을 제거하는 결정이 필요하다.
+- 오너 예약 수정 화면(`owner/reservation/modify.html`)은 `POST /owner/reservation/modify`로 제출하지만 해당 매핑이 없다. `modifyReservation`에 재고 검사는 넣었으나 화면 흐름은 연결되어 있지 않다.
+- 저장소 JPQL의 상태 문자열(`'CANCELLED'`, `in ('CONFIRMED', ...)`)은 철자만 맞춘 문자열 그대로다.
+
+검증: `ReservationServiceImplInventoryTest`(6), `OReservationServiceInventoryTest`(5), `ReservationStatusTest`(3) Mockito/단위 테스트 추가.
+
 ## 전체 안정화 순서
 
 1. 기준 상태 기록

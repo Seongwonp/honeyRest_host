@@ -61,7 +61,7 @@ public interface DashboardReportRepository  extends JpaRepository<Reservation, L
       (SELECT COUNT(*) FROM reservation r
         WHERE r.accommodation_id IN (:accIds)
           AND r.check_in_date >= :from AND r.check_in_date < DATE_ADD(:to, INTERVAL 1 DAY)
-          AND r.status = 'CANCELED'
+          AND r.status = 'CANCELLED'
       ) AS canceledCnt
     """, nativeQuery = true)
     List<Object[]> cancelSummary(@Param("accIds") List<Long> accommodationIds,

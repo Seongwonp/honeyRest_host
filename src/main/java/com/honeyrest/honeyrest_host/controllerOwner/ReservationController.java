@@ -211,7 +211,13 @@ public class ReservationController {
                 .cancelReason(form.getCancelReason())
                 .build();
 
-        reservationService.registerReservation(reservation);
+        try {
+            reservationService.registerReservation(reservation);
+        } catch (com.honeyrest.honeyrest_host.serviceCommon.ReservationConflictException | IllegalArgumentException e) {
+            // 재고 부족(겹침) 또는 잘못된 입력: 등록 화면으로 돌아가 사유를 토스트로 보여준다.
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/owner/reservation/create";
+        }
         return "redirect:/owner/reservation/list";
     }
 //    @GetMapping("/userName/search")

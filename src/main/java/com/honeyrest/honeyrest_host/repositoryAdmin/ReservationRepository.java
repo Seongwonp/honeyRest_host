@@ -2,6 +2,7 @@ package com.honeyrest.honeyrest_host.repositoryAdmin;
 
 
 import com.honeyrest.honeyrest_host.entity.Reservation;
+import com.honeyrest.honeyrest_host.entity.ReservationStatus;
 import com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection.SalesStatRow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -96,6 +98,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     // 회사(or 숙소) 객실의 월 범위에 걸친 예약들 싸그리
     // 체크인/ 체크아웃 날짜가 그달과 겹치는 모든 예약 포함. -> 월단위 캘린더 재고/예약 표시
+    // 재고 계산과 같은 기준을 쓰도록 점유 상태(ReservationStatus.OCCUPYING)만 포함한다.
+    default List<Reservation> findOverlappedReservationsForMonth(Integer companyId,
+                                                                 Long accommodationId,
+                                                                 LocalDate startDate,
+                                                                 LocalDate endDate) {
+        return findOverlappedReservationsForMonthByStatuses(
+                companyId, accommodationId, startDate, endDate, ReservationStatus.OCCUPYING);
+    }
+
     @Query("""
                 select r
                 from Reservation r
@@ -103,16 +114,37 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                 join fetch rm.accommodation a
                 where a.company.companyId = :companyId
                   and (:accommodationId is null or a.accommodationId = :accommodationId)
-                  and r.status <> 'CANCELLED'
+                  and r.status in :statuses
                   and (
                        r.checkInDate <= :endDate
                    and r.checkOutDate >  :startDate
                   )
             """)
-    List<Reservation> findOverlappedReservationsForMonth(@Param("companyId") Integer companyId,
-                                                         @Param("accommodationId") Long accommodationId,
-                                                         @Param("startDate") LocalDate startDate,
-                                                         @Param("endDate") LocalDate endDate);
+    List<Reservation> findOverlappedReservationsForMonthByStatuses(@Param("companyId") Integer companyId,
+                                                                   @Param("accommodationId") Long accommodationId,
+                                                                   @Param("startDate") LocalDate startDate,
+                                                                   @Param("endDate") LocalDate endDate,
+                                                                   @Param("statuses") Collection<String> statuses);
+
+    /**
+     * [checkIn, checkOut) 구간과 숙박일이 겹치는 예약 수 (checkIn < reqOut AND checkOut > reqIn).
+     * 체크아웃 당일은 점유하지 않으며 예약 1건 = 객실 1개로 계산한다.
+     * 사용자 저장소 ReservationRepository.countOverlapping 과 같은 규칙이며,
+     * 기존 예약 수정 시 자기 자신을 빼기 위해 excludeId 를 받는다 (null 이면 제외 없음).
+     */
+    @Query("""
+                select count(r) from Reservation r
+                 where r.room.roomId = :roomId
+                   and r.status in :statuses
+                   and r.checkInDate < :checkOut
+                   and r.checkOutDate > :checkIn
+                   and (:excludeId is null or r.reservationId <> :excludeId)
+            """)
+    long countOverlapping(@Param("roomId") Long roomId,
+                          @Param("checkIn") LocalDate checkIn,
+                          @Param("checkOut") LocalDate checkOut,
+                          @Param("statuses") Collection<String> statuses,
+                          @Param("excludeId") Long excludeId);
 
 
 

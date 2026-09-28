@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.web;
 
+import com.honeyrest.honeyrest_host.serviceCommon.ReservationConflictException;
 import com.honeyrest.honeyrest_host.serviceAdmin.ErrorLogService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,6 +42,15 @@ public class GlobalExceptionHandler {
         log.warn("EntityNotFound: {}", e.getMessage());
         model.addAttribute("message", "데이터를 찾을 수 없습니다.");
         return "error/404";
+    }
+
+    /** 재고 부족으로 예약 생성/점유 전환이 거절된 경우. 컨트롤러가 잡지 못했을 때의 기본 화면. */
+    @ExceptionHandler(ReservationConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public String handleReservationConflict(ReservationConflictException e, Model model) {
+        log.info("ReservationConflict: {}", e.getMessage());
+        model.addAttribute("message", e.getMessage());
+        return "error/500";
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -74,6 +74,7 @@
                         <option th:value="CANCEL_REQUEST" th:selected="${selectedStatus == 'CANCEL_REQUEST'}">취소요청</option>
                         <option th:value="COMPLETED"      th:selected="${selectedStatus == 'COMPLETED'}">완료</option>
                         <option th:value="NO_SHOW"        th:selected="${selectedStatus == 'NO_SHOW'}">노쇼</option>
+                        <option th:value="CANCELLED"      th:selected="${selectedStatus == 'CANCELLED'}">취소</option>
                     </select>
                 </div>
 
@@ -166,13 +167,15 @@
                                                (st == 'CONFIRMED' ? '확정' :
                                                (st == 'PENDING' ? '대기' :
                                                (st == 'COMPLETED' ? '완료' :
-                                               (st == 'NO_SHOW' ? '노쇼' : 'UNKNOWN'))))}"
+                                               (st == 'NO_SHOW' ? '노쇼' :
+                                               (st == 'CANCELLED' ? '취소' : 'UNKNOWN')))))}"
                                       th:classappend="${
                                           st=='CONFIRMED' ? ' chip-ok' :
                                           (st=='PENDING' ? ' chip-wait' :
                                           (st=='COMPLETED' ? ' chip-done' :
                                           (st=='CANCEL_REQUEST' ? ' chip-cancel' :
-                                          (st=='NO_SHOW' ? ' chip-noshow' : ' chip-unk'))))}">
+                                          (st=='NO_SHOW' ? ' chip-noshow' :
+                                          (st=='CANCELLED' ? ' chip-cancel' : ' chip-unk')))))}">
                                 </span>
                             </td>
 

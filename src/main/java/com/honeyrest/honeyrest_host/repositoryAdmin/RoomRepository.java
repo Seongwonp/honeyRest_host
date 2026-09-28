@@ -4,7 +4,9 @@ import com.honeyrest.honeyrest_host.entity.Room;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,15 +25,15 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     void deleteByAccommodation_AccommodationId(Long accommodationId);
 
-    // 재고 차감: 재고가 0 초과일 때만 1 감소. 성공 시 1 반환, 실패 시 0
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update Room r set r.totalRooms = r.totalRooms - 1 where r.roomId = :roomId and r.totalRooms > 0")
-    int decreaseStock(@Param("roomId") Long roomId);
-
-    // 재고 복구: 무조건 1 증가 (취소 시)
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update Room r set r.totalRooms = r.totalRooms + 1 where r.roomId = :roomId")
-    int increaseStock(@Param("roomId") Long roomId);
+    /**
+     * 예약 생성/점유 상태 전환 시 객실 행을 잠근다 (SELECT ... FOR UPDATE).
+     * 사용자 저장소 RoomRepository.findByIdForUpdate 와 같은 용도.
+     * 재고는 total_rooms 를 차감하지 않고 겹치는 점유 예약 수로 계산한다
+     * (과거 decreaseStock/increaseStock 는 total_rooms 자체를 바꿔 객실 수를 오염시켜 제거했다).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Room r where r.roomId = :roomId")
+    Optional<Room> findByIdForUpdate(@Param("roomId") Long roomId);
 
     // companyId는 accommodation → company 로 타고 감 (엔티티 매핑 기준)
     @Query("""
