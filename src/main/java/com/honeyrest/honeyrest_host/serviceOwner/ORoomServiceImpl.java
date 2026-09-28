@@ -12,8 +12,7 @@ import com.honeyrest.honeyrest_host.repositoryOwner.OAccommodationRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OReviewRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORoomImageRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORoomRepository;
-import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
-import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
+import com.honeyrest.honeyrest_host.storage.FileStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -37,7 +36,7 @@ public class ORoomServiceImpl implements ORoomService {
     private final ObjectMapper objectMapper;
     private final ORoomImageRepository roomImageRepository;
     private final OReviewRepository reviewRepository;
-    private final FileUploadUtil fileUploadUtil;
+    private final FileStorage fileStorage;
 
     private String parseJson(String input) {
         if (input == null || input.isBlank()) return "[]";
@@ -237,7 +236,7 @@ public class ORoomServiceImpl implements ORoomService {
 
         for (MultipartFile image : images) {
             if (!image.isEmpty()) {
-                String subImageUrl = fileUploadUtil.upload(image, "rooms");
+                String subImageUrl = fileStorage.upload(image, "rooms");
 
                 RoomImageDTO imageDTO = RoomImageDTO.builder()
                         .imageUrl(subImageUrl)

@@ -6,7 +6,7 @@ import com.honeyrest.honeyrest_host.entity.Review;
 import com.honeyrest.honeyrest_host.entity.ReviewImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReviewImageRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.ReviewRepository;
-import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
+import com.honeyrest.honeyrest_host.storage.FileStorage;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
@@ -23,9 +23,9 @@ public class ReviewImageServiceImpl implements ReviewImageService {
 
     private final ReviewImageRepository reviewImageRepository;
     private final ReviewRepository reviewRepository;
-    private final FileUploadUtil fileUploadUtil;
+    private final FileStorage fileStorage;
 
-    private static final String FOLDER = "reviews";          // Firebase 상의 폴더명
+    private static final String FOLDER = "reviews";          // 파일 저장소 상의 폴더명
 
 
     private ReviewImageDTO toDTO(ReviewImage reviewImage) {
@@ -71,7 +71,7 @@ public class ReviewImageServiceImpl implements ReviewImageService {
             if (f == null || f.isEmpty()) continue;
 
             try {
-                String url = fileUploadUtil.upload(f, FOLDER); // ★ Firebase 업로드 → 공개 URL
+                String url = fileStorage.upload(f, FOLDER); // ★ 파일 저장소 업로드 → 공개 URL
                 ReviewImage saved = reviewImageRepository.save(
                         ReviewImage.builder()
                                 .review(review)
@@ -105,7 +105,7 @@ public class ReviewImageServiceImpl implements ReviewImageService {
         ReviewImage img = reviewImageRepository.findById(imageId)
                 .orElseThrow(() -> new IllegalArgumentException("이미지 없음: " + imageId));
         try {
-            fileUploadUtil.delete(FOLDER, img.getImageUrl()); // ★ Firebase에서 파일 삭제
+            fileStorage.delete(FOLDER, img.getImageUrl()); // ★ 파일 저장소에서 파일 삭제
         } catch (Exception ignore) {
             // 파일이 이미 없을 수도 있으니, DB 삭제는 계속 진행
         }

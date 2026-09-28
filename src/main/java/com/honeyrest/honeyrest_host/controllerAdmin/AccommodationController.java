@@ -17,7 +17,7 @@ import com.honeyrest.honeyrest_host.serviceAdmin.CompanyResourceAccessService;
 import com.honeyrest.honeyrest_host.serviceAdmin.UserService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationTagService;
 import com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser;
-import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
+import com.honeyrest.honeyrest_host.storage.FileStorage;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -50,7 +50,7 @@ public class AccommodationController {
     private final AccommodationService accommodationService;
     private final AccommodationImageService accommodationImageService;
     private final CompanyService companyService;
-    private final FileUploadUtil fileUploadUtil;
+    private final FileStorage fileStorage;
     private final UserService userService;
     private final CompanyResourceAccessService resourceAccessService;
     private final AccommodationTagService accommodationTagService;
@@ -102,7 +102,7 @@ public class AccommodationController {
 
             // (1) 대표 썸네일
             if (form.getFile() != null && !form.getFile().isEmpty()) {
-                String url = fileUploadUtil.upload(form.getFile(), "accommodations");
+                String url = fileStorage.upload(form.getFile(), "accommodations");
                 form.setThumbnail(url);
             }
 
@@ -139,7 +139,7 @@ public class AccommodationController {
                 int order = 1;
                 for (MultipartFile f : subImages) {
                     if (f.isEmpty()) continue;
-                    String url = fileUploadUtil.upload(f, "accommodations/" + accId + "/images");
+                    String url = fileStorage.upload(f, "accommodations/" + accId + "/images");
                     accommodationImageService.saveOrUpload(
                             accId,
                             AccommodationImageDTO.builder()
@@ -497,7 +497,7 @@ public class AccommodationController {
             }
             if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
                 // 파일 업로드한 경우 → 새 URL을 DTO에 넣어 엔티티 필드에도 반영되게
-                newMainUrl = fileUploadUtil.upload(thumbnailFile, "accommodations");
+                newMainUrl = fileStorage.upload(thumbnailFile, "accommodations");
                 form.setThumbnail(newMainUrl);
             } else if (form.getThumbnail() != null && !form.getThumbnail().isBlank()) {
                 // 파일 업로드 없이 URL만 입력/유지하는 경우
@@ -529,7 +529,7 @@ public class AccommodationController {
                 int sortSeed = 1; // MAIN=0 다음
                 for (MultipartFile file : subImages) {
                     if (file == null || file.isEmpty()) continue;
-                    String url = fileUploadUtil.upload(file, "accommodations/" + id + "/images");
+                    String url = fileStorage.upload(file, "accommodations/" + id + "/images");
                     accommodationImageService.saveOrUpload(
                             id,
                             AccommodationImageDTO.builder()

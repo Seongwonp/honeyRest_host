@@ -107,11 +107,19 @@
 </section>
 
 <th:block layout:fragment="scripts">
-<script>
+<script th:inline="javascript">
+// CSRF 토큰: SecurityConfig가 CSRF 보호를 켜 두었으므로 fetch POST에도 토큰 헤더를 실어야 403이 나지 않는다.
+// (헤더 이름은 CookieCsrfTokenRepository 기본값인 X-XSRF-TOKEN을 _csrf.headerName으로 받아 사용)
+const csrfHeaderName = /*[[${_csrf != null ? _csrf.headerName : null}]]*/ null;
+const csrfToken = /*[[${_csrf != null ? _csrf.token : null}]]*/ null;
+
 document.querySelectorAll('.resolve-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
-        const res = await fetch(`/owner/system/errors/${id}/resolve`, { method: 'POST' });
+        const res = await fetch(`/owner/system/errors/${id}/resolve`, {
+            method: 'POST',
+            headers: csrfHeaderName && csrfToken ? { [csrfHeaderName]: csrfToken } : {}
+        });
         if (res.ok) location.reload();
     });
 });

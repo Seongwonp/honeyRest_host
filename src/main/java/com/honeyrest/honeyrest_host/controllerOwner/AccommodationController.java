@@ -2,7 +2,7 @@ package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.serviceOwner.*;
-import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
+import com.honeyrest.honeyrest_host.storage.FileStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
@@ -23,7 +23,7 @@ public class AccommodationController {
     private final OCompanyService companyService;
     private final OAccommodationCategory accommodationCategory;
     private final ORegionService regionService;
-    private final FileUploadUtil fileUploadUtil;
+    private final FileStorage fileStorage;
     private final ORoomService roomService;
 
     @GetMapping({"/accommodation/list", "/company/{companyId}/accommodations"})
@@ -76,9 +76,9 @@ public class AccommodationController {
     @PostMapping("/accommodation/create")
     public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO, Model model) {
         try {
-            // Firebase 업로드
+            // 파일 저장소(FileStorage) 업로드
             MultipartFile file = accommodationDTO.getFile();
-            String imageUrl = fileUploadUtil.upload(file, "accommodation");
+            String imageUrl = fileStorage.upload(file, "accommodation");
             accommodationDTO.setThumbnailUrl(imageUrl);
 
             Long accommodationId = accommodationService.registerAccommodation(accommodationDTO);

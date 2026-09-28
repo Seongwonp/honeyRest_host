@@ -5,7 +5,7 @@ import com.honeyrest.honeyrest_host.entity.Accommodation;
 import com.honeyrest.honeyrest_host.entity.AccommodationImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationImageRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
-import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
+import com.honeyrest.honeyrest_host.storage.FileStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +21,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
 
     private final AccommodationRepository accommodationRepository;
     private final AccommodationImageRepository accommodationImageRepository;
-    private final FileUploadUtil fileUploadUtil;
+    private final FileStorage fileStorage;
 
     private AccommodationImageDTO toDTO(AccommodationImage e) {
         return AccommodationImageDTO.builder().
@@ -43,7 +43,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
         if (dto.getFile() != null && !dto.getFile().isEmpty()) {
             try {
                 String folder = "accommodations/" + accommodationId + "/images";
-                imageUrl = fileUploadUtil.upload(dto.getFile(), folder);
+                imageUrl = fileStorage.upload(dto.getFile(), folder);
             } catch (Exception e) {
                 throw new IllegalArgumentException("이미지 업로드 실패", e);
             }
@@ -89,7 +89,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
         AccommodationImage image = accommodationImageRepository.findById(imageId).orElseThrow(() -> new IllegalArgumentException("이미지를 찾을 수 없습니다."));
         // 폴더 안전장치
         String folder = "accommodations/" + image.getAccommodation().getAccommodationId() + "/images";
-        fileUploadUtil.delete(folder, image.getImageUrl());
+        fileStorage.delete(folder, image.getImageUrl());
         accommodationImageRepository.delete(image);
 
     }
@@ -124,7 +124,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
         if (dto.getFile() != null && !dto.getFile().isEmpty()) {
             String folder = "accommodations/" + accommodationId + "/thumbnail";
             try {
-                imageUrl = fileUploadUtil.upload(dto.getFile(), folder);
+                imageUrl = fileStorage.upload(dto.getFile(), folder);
             } catch (Exception e) {
                 throw new IllegalStateException("썸네일 업로드 실패", e);
             }

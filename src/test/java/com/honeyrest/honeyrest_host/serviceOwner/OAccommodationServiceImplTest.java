@@ -7,7 +7,7 @@ import com.honeyrest.honeyrest_host.repositoryOwner.OAccommodationRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OCompanyRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORegionRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORoomRepository;
-import com.honeyrest.honeyrest_host.utilAdmin.FileUploadUtil;
+import com.honeyrest.honeyrest_host.storage.FileStorage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +32,7 @@ class OAccommodationServiceImplTest {
     @Mock private OAccommodationCategoryRepository accommodationCategoryRepository;
     @Mock private OAccommodationImageRepository accommodationImageRepository;
     @Mock private ObjectMapper objectMapper;
-    @Mock private FileUploadUtil fileUploadUtil;
+    @Mock private FileStorage fileStorage;
     @Mock private ORoomRepository roomRepository;
 
     private OAccommodationServiceImpl service;
@@ -42,7 +42,7 @@ class OAccommodationServiceImplTest {
         service = new OAccommodationServiceImpl(
                 accommodationRepository, companyRepository, regionRepository,
                 accommodationCategoryRepository, accommodationImageRepository,
-                objectMapper, fileUploadUtil, roomRepository);
+                objectMapper, fileStorage, roomRepository);
     }
 
     @Test

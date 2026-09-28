@@ -19,7 +19,7 @@
 
 - [📌 프로젝트 개요](#-프로젝트-개요)
 - [🧑‍💻 주요 기능](#-주요-기능)
-  - [🏨 업체 관리자 (Owner)](#-업체-관리자-owner)
+  - [🏨 업체 관리자 (Company Admin)](#-업체-관리자-company-admin)
   - [🛡️ 총 관리자 (Super Admin)](#️-총-관리자-super-admin)
 - [🏗️ 시스템 아키텍처](#️-시스템-아키텍처)
 - [🗃️ 데이터베이스 설계 (ERD)](#️-데이터베이스-설계-erd)
@@ -59,7 +59,11 @@
 
 ## 🧑‍💻 주요 기능
 
-### 🏨 업체 관리자 (Owner)
+> ℹ️ **패키지/경로 이름 주의**
+> 코드상의 `*Owner` 패키지(`controllerOwner`, `serviceOwner`, `repositoryOwner`, `dtoOwner`)와 `/owner/**` 경로는 **총관리자(SUPER_ADMIN)** 화면입니다.
+> 반대로 `*Admin` 패키지와 `/admin/**` 경로가 **업체 관리자(COMPANY_ADMIN)** 화면입니다. 이름이 직관과 반대이니 수정 시 유의하세요.
+
+### 🏨 업체 관리자 (Company Admin)
 
 > 자신이 소유 / 운영하는 숙소와 객실만 관리할 수 있는 사업자 전용 관리 시스템
 
@@ -138,9 +142,9 @@
 
 ```
 사용자(user)페이지 (React)      ─┐
-호스트(owner)페이지 (Thymeleaf) ─┼──▶ 백엔드 (Spring Boot) ──▶ ORM (JPA/Hibernate) ──▶ DB (MariaDB)
-총관리자(admin)페이지(Thymeleaf)─┘         │                          │
-                                        Redis (캐시)          Firebase Storage (파일)
+업체관리자(/admin)(Thymeleaf) ─┼──▶ 백엔드 (Spring Boot) ──▶ ORM (JPA/Hibernate) ──▶ DB (MariaDB)
+총관리자(/owner) (Thymeleaf)   ─┘         │                          │
+                                        Spring Cache (인메모리)  FileStorage (로컬 / Firebase)
                                         OpenAPI (Swagger)
 ```
 
@@ -150,8 +154,8 @@
 | 관리자 페이지 | Thymeleaf (SSR) |
 | 백엔드 | Spring Boot |
 | ORM | JPA (Hibernate) |
-| 캐시 | Redis |
-| 파일 저장소 | Firebase Storage |
+| 캐시 | Spring Cache (simple, 인메모리) |
+| 파일 저장소 | FileStorage 추상화 (로컬 디스크 기본, Firebase Storage 선택) |
 | DB | MariaDB |
 | API 문서화 | Swagger (OpenAPI) |
 
@@ -218,82 +222,55 @@ JPA 기반 ORM 매핑을 통해 엔티티와 DB가 유기적으로 연결됩니�
 | **JWT** | JJWT 0.12.x | JWT 토큰 생성 및 검증 | 쿠키 기반 무상태 인증 |
 | **동적 쿼리** | QueryDSL | 타입 안전 JPQL 생성 | 검색/필터 쿼리 |
 | **객체 매핑** | MapStruct + ModelMapper | DTO ↔ Entity 변환 자동화 | 계층 간 매핑 간소화 |
-| **파일 업로드** | Firebase Storage | 이미지, 파일 저장 | 숙소·룸·배너 이미지 업로드 |
+| **파일 업로드** | FileStorage (Local / Firebase Storage) | 이미지, 파일 저장 | `app.storage.type` 으로 구현체 선택 |
 | **API 문서화** | SpringDoc OpenAPI / Swagger UI | REST API 문서화 | `/swagger-ui.html` (SUPER_ADMIN 전용) |
-| **AOP** | Spring AOP | 공통 관심사 처리 | 로깅, 인증 공통 처리 |
 | **모니터링** | Spring Actuator | 애플리케이션 상태·지표 확인 | 헬스체크 엔드포인트 |
-| **환경/보안 관리** | application-secret.properties | 민감 정보 분리 | DB 패스워드, Firebase 키 등 |
+| **환경/보안 관리** | application_security.properties | 민감 정보 분리 | DB 패스워드, JWT 시크릿 등 |
 
 ---
 
 ## ⚙️ 실행 전 필수 설정
 
-### 1️⃣ Redis 설치 및 실행
+### 1️⃣ 환경 변수 설정 (`application_security.properties`)
 
-HoneyRest는 Redis를 캐싱 서버로 사용합니다.
-
-#### 📌 macOS (Homebrew)
-
-```bash
-brew install redis
-brew services start redis   # Redis 실행
-brew services stop redis    # Redis 중지
-```
-
-#### 📌 Ubuntu / Linux
-
-```bash
-sudo apt update
-sudo apt install redis-server
-sudo systemctl enable redis-server.service
-sudo systemctl start redis-server
-```
-
-#### 📌 Windows
-- Redis for Windows (예: Memurai) 설치 후 실행
-- 실행 후 기본 포트 6379 사용
-
-#### 설치 확인
-```bash
-redis-cli ping
-# PONG 이 출력되면 정상 실행
-```
-
----
-
-### 2️⃣ 환경 변수 설정 (`application-secret.properties`)
-
-본 프로젝트 실행을 위해서는 민감 정보가 담긴 설정 파일을 반드시 직접 작성해야 합니다.  
-아래 항목들을 실제 서비스 키 값으로 교체해주세요.
+`application.properties` 가 `spring.config.import=optional:application_security.properties` 로 시크릿 파일을 불러옵니다.
+`src/main/resources/application_security.properties.ex` 를 복사해 같은 폴더에 `application_security.properties` 를 만들고 실제 값을 채워주세요.
 
 ```properties
 # Database password
 spring.datasource.password=YOUR_DB_PASSWORD
 
 # JWT secret key
-jwt.secret-key-value=YOUR_SECURE_JWT_SECRET_KEY
-
-# Firebase secretKey.json
-fire.base.secretKey=YOUR_SECRET_KEY
-
-# Google OAuth2
-google.client-id=YOUR_GOOGLE_CLIENT_ID
-google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
-
-# Kakao OAuth2
-kakao.client-id=YOUR_KAKAO_CLIENT_ID
-kakao.client-secret=YOUR_KAKAO_CLIENT_SECRET
-
-# Gmail SMTP
-gmail.username=YOUR_GMAIL_ADDRESS
-gmail.access-token=YOUR_GMAIL_APP_PASSWORD
+jwt.secret=YOUR_SECURE_JWT_SECRET_KEY
 ```
 
 #### 🚨 주의사항
 
-- `application-secret.properties`는 반드시 `.gitignore`에 포함해야 합니다.
+- `application_security.properties` 와 Firebase 서비스 계정 키(`*firebase-adminsdk*.json`)는 `.gitignore` 로 차단되어 있습니다.
 - 깃허브 공개 저장소에는 절대 올리지 마세요.
-- 팀 협업 시에는 `application-secret.properties.example` 파일로 형식만 공유하고, 실제 키 값은 각 개발자가 직접 채워넣어야 합니다.
+- 팀 협업 시에는 `application_security.properties.ex` 파일로 형식만 공유하고, 실제 키 값은 각 개발자가 직접 채워넣어야 합니다.
+
+---
+
+### 2️⃣ 실행 (로컬 스토리지 모드)
+
+업로드 파일 저장소는 `app.storage.type` 프로퍼티로 선택합니다. 기본값은 `local` 이므로 **Firebase 키 없이도 바로 실행**됩니다.
+
+| 값 | 동작 |
+|----|------|
+| `local` (기본) | `app.storage.local.dir`(기본 `./uploads`)에 저장하고 `/uploads/**` 경로로 서빙 |
+| `firebase` | Firebase Storage 에 저장. `app.firebase.credentials`(서비스 계정 키 경로)와 `app.firebase.bucket` 필요 |
+
+```bash
+# 로컬 스토리지 모드 (기본)
+./gradlew bootRun
+
+# Firebase 모드
+./gradlew bootRun --args='--app.storage.type=firebase --app.firebase.credentials=file:/경로/firebase-adminsdk.json'
+```
+
+- 데모 계정이 필요하면 `--spring.profiles.active=local-demo` 로 실행하면 `DataInitializer` 가 업체/총관리자 계정을 생성합니다.
+- 목데이터 SQL 은 `db/seed/` 에 있으며 `insert.sql` → `insert_pk_1-20.sql` → `insert_pk_21-30.sql` → `insert_pk_31-33.sql` 순서로 실행합니다.
 
 ---
 
@@ -478,7 +455,7 @@ HoneyRest 관리자 시스템의 전체 기능을 실제 화면 기반으로 시
 
 ### 🔒 보안 강화
 
-- JWT 시크릿 키를 `application.properties`에서 분리 → `application-secret.properties` (`.gitignore` 적용)
+- JWT 시크릿 키를 `application.properties`에서 분리 → `application_security.properties` (`.gitignore` 적용)
 - JWT 쿠키 `Secure` 플래그를 `false` 하드코딩 → HTTPS 환경 자동 감지로 변경
 - Swagger UI (`/swagger-ui/**`, `/v3/api-docs/**`) 접근을 `SUPER_ADMIN` 전용으로 제한
 - `show-sql=false`, Hibernate `BasicBinder=warn` → SQL 파라미터 값(비밀번호 등) 로그 노출 차단
