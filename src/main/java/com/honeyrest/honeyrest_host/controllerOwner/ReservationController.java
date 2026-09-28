@@ -2,11 +2,13 @@ package com.honeyrest.honeyrest_host.controllerOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.serviceOwner.*;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 @Controller("ownerReservationController")
@@ -151,6 +153,31 @@ public class ReservationController {
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         model.addAttribute("rooms", roomService.getAllRooms());
         return "owner/reservation/modify";
+    }
+
+    /**
+     * 예약 수정 저장 (owner/reservation/modify.html 폼 POST 대상).
+     * 재고 검사는 OReservationService.modifyReservation 에서 한다.
+     * 성공 시 목록으로, 실패(재고 부족/잘못된 입력/없는 예약) 시 수정 화면으로 돌아가 토스트로 사유를 보여준다.
+     */
+    @PostMapping("/reservation/modify")
+    public String modifyReservation(@ModelAttribute ReservationDTO form, RedirectAttributes ra) {
+        if (form.getReservationId() == null) {
+            ra.addFlashAttribute("error", "예약 ID가 없습니다.");
+            return "redirect:/owner/reservation/list";
+        }
+        try {
+            reservationService.modifyReservation(form);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            // ReservationConflictException(재고 부족)은 IllegalStateException 하위 타입이라 여기서 함께 처리된다.
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/owner/reservation/" + form.getReservationId() + "/modify";
+        } catch (EntityNotFoundException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/owner/reservation/list";
+        }
+        ra.addFlashAttribute("success", "예약이 수정되었습니다.");
+        return "redirect:/owner/reservation/list";
     }
 
 

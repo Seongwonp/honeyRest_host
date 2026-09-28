@@ -9,24 +9,25 @@
 ### `user` (사용자 정보 테이블)
 | 컬럼명 | 타입 | Nullable | 제약 조건 | 설명 |
 | :--- | :--- | :--- | :--- | :--- |
-| **user_id** | bigint | NO | PK | 생성 일시 |
-| **created_at** | datetime(6) | YES | | 수정 일시 |
-| **updated_at** | datetime(6) | YES | | 생년월일 |
-| **birth_date** | date | YES | | 이메일 |
-| **email** | varchar(100) | NO | UNIQUE | 성별 |
-| **gender** | varchar(10) | YES | | 이메일 인증 여부 |
-| **is_verified** | bit(1) | NO | | 마지막 로그인 일시 |
-| **last_login** | datetime(6) | YES | | 마케팅 수신 동의 여부 |
-| **marketing_agree** | bit(1) | YES | | 이름 |
-| **name** | varchar(50) | NO | | 비밀번호 해시 |
-| **password_hash** | varchar(255) | YES | | 휴대폰 번호 |
-| **phone** | varchar(20) | YES | | 현재 포인트 |
-| **point** | int | NO | | 프로필 이미지 URL |
-| **profile_image** | varchar(500) | YES | | 권한 (USER, ADMIN 등) |
-| **role** | varchar(20) | YES | | 소셜 고유 ID |
-| **social_id** | varchar(100) | YES | | 소셜 로그인 타입 |
-| **social_type** | varchar(20) | YES | | 계정 상태 (ACTIVE 등) |
-| **status** | varchar(20) | YES | | |
+| **user_id** | bigint | NO | PK | 고유 식별자 |
+| **created_at** | datetime(6) | YES | | 생성 일시 |
+| **updated_at** | datetime(6) | YES | | 수정 일시 |
+| **birth_date** | date | YES | | 생년월일 |
+| **email** | varchar(100) | NO | UNIQUE | 이메일 |
+| **gender** | varchar(10) | YES | | 성별 |
+| **is_verified** | bit(1) | NO | | 이메일 인증 여부 |
+| **last_login** | datetime(6) | YES | | 마지막 로그인 일시 |
+| **marketing_agree** | bit(1) | YES | | 마케팅 수신 동의 여부 |
+| **name** | varchar(50) | NO | | 이름 |
+| **password_hash** | varchar(255) | YES | | 비밀번호 해시 |
+| **phone** | varchar(20) | YES | | 휴대폰 번호 |
+| **point** | int | NO | | 현재 포인트 |
+| **profile_image** | varchar(500) | YES | | 프로필 이미지 URL |
+| **role** | varchar(20) | YES | | 권한 (USER, ADMIN 등) |
+| **social_id** | varchar(100) | YES | | 소셜 고유 ID |
+| **social_type** | varchar(20) | YES | | 소셜 로그인 타입 |
+| **status** | varchar(20) | YES | | 계정 상태 (ACTIVE 등) |
+| **token_valid_after** | datetime(6) | YES | | 이 시각 이전에 발급된 토큰 무효화 기준 (V9) |
 
 ### `accommodation` (숙소 정보 테이블)
 | 컬럼명 | 타입 | Nullable | 제약 조건 | 설명 |
@@ -88,6 +89,7 @@
 | **original_price** | decimal(10,2) | YES | | 할인 전 원가 |
 | **price** | decimal(10,2) | NO | | 최종 결제 금액 |
 | **reservation_number** | varchar(50) | NO | UNIQUE | 고유 예약 번호 |
+| **accommodation_name** | varchar(255) | NO | | 숙소명 (예약 시점 스냅샷, V10) |
 | **room_name** | varchar(255) | NO | | 객실명 |
 | **special_requests** | text | YES | | 특별 요청 사항 |
 | **status** | varchar(20) | NO | | 예약 상태 |

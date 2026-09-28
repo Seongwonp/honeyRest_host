@@ -29,6 +29,9 @@
                         <select name="status" class="form-select" required>
                             <option value="PENDING" th:selected="${reservation.status == 'PENDING'}">대기</option>
                             <option value="CONFIRMED" th:selected="${reservation.status == 'CONFIRMED'}">확정</option>
+                            <option value="CANCEL_REQUEST" th:selected="${reservation.status == 'CANCEL_REQUEST'}">취소 요청</option>
+                            <option value="COMPLETED" th:selected="${reservation.status == 'COMPLETED'}">이용 완료</option>
+                            <option value="NO_SHOW" th:selected="${reservation.status == 'NO_SHOW'}">노쇼</option>
                             <option value="CANCELLED" th:selected="${reservation.status == 'CANCELLED'}">취소</option>
                         </select>
                     </div>
@@ -117,7 +120,7 @@
                 <div class="row g-3">
                     <div class="col-md-12">
                         <label class="form-label">요청 사항</label>
-                        <textarea name="specialRequests" class="form-control" rows="2" th:text="${reservation.specialRequest}"></textarea>
+                        <textarea name="specialRequest" class="form-control" rows="2" th:text="${reservation.specialRequest}"></textarea>
                     </div>
                     <div class="col-md-12">
                         <label class="form-label">취소 사유</label>
