@@ -164,6 +164,15 @@ flowchart LR
 
 ---
 
+## 배포
+
+- **라이브**: 관리자 `https://admin.<IP>.sslip.io` · 사용자 `https://<IP>.sslip.io` _(배포 후 실제 주소로 교체)_
+- 사용자 API 저장소의 `deploy/` 번들로 세 저장소를 VM 한 대에 Docker Compose 로 올립니다. 이 저장소는 루트 [`Dockerfile`](Dockerfile)(서브모듈 `libs/honeyrest-user` 포함 빌드)로 이미지가 만들어지고, 사용자 API 가 Flyway 마이그레이션을 마친 뒤(healthy) 기동합니다(`ddl-auto=validate`).
+- **운영 프로필**: [`application-prod.properties`](src/main/resources/application-prod.properties) — 비밀값은 환경변수. 데모 계정은 `prod,local-demo` + `DEMO_COMPANY_PASSWORD` / `DEMO_ADMIN_PASSWORD` 로만 생성되며, 비밀번호가 비어 있으면 만들지 않습니다(코드 기본값 미사용).
+- 상세 절차: [honeyRest_user · docs/DEPLOY.md](https://github.com/Seongwonp/honeyRest_user/blob/main/docs/DEPLOY.md)
+
+---
+
 ## 실행 방법
 
 **필요 환경**: JDK 17, MySQL 8 (`honeyrest_db`). 스키마는 [사용자 API](https://github.com/Seongwonp/honeyRest_user)를 한 번 기동해 Flyway(V1~V11)로 먼저 만들어 둡니다.
@@ -217,7 +226,7 @@ MySQL·시크릿 파일 없이 관리자 화면을 둘러볼 수 있는 실행 �
 ./gradlew integrationTest    # Docker 필요: 서브모듈의 마이그레이션으로 공유 스키마 교차 검증 (CI 2단계)
 ```
 
-- **87개 테스트** — 회사 소유권(`CompanyResourceAccessServiceTest`), 권한 상승 차단(`OwnerAuthSignupSecurityTest`), `typ` 검증(`JwtAuthFilterTest`), 재고 가드(`ReservationServiceImplInventoryTest`, `OReservationServiceInventoryTest`), 숙소 승인 우회 차단(`AccommodationStatusGuardTest`), CSRF 토큰 비교체(`CsrfTokenStabilityTest`), 알림 값 리다이렉트 누출(`NotificationInterceptorTest`), 상태 상수, 예약 수정 컨트롤러, 상태 필터 JPQL 페이지·count 정합
+- **90개 테스트** — 회사 소유권(`CompanyResourceAccessServiceTest`), 권한 상승 차단(`OwnerAuthSignupSecurityTest`), `typ` 검증(`JwtAuthFilterTest`), 재고 가드(`ReservationServiceImplInventoryTest`, `OReservationServiceInventoryTest`), 숙소 승인 우회 차단(`AccommodationStatusGuardTest`), CSRF 토큰 비교체(`CsrfTokenStabilityTest`), 알림 값 리다이렉트 누출(`NotificationInterceptorTest`), 상태 상수, 예약 수정 컨트롤러, 상태 필터 JPQL 페이지·count 정합, 운영(prod) 프로필 기동·데모 계정 비밀번호(`ProdProfileStartupTest`)
 - **test 프로필**: H2 인메모리(MySQL 모드, `NON_KEYWORDS=USER`) + `create-drop` + 더미 `jwt.secret` + `app.storage.type=local`. 통합 테스트는 `JpaTestFixtures`로 데이터를 만들고 트랜잭션 롤백하므로 하드코딩 ID나 실 DB에 의존하지 않습니다(이전에는 46개 중 10개가 로컬 MySQL 부재로 실패).
 - **트레이드오프**: 스키마를 엔티티 매핑에서 생성하므로 **운영 MySQL 스키마(Flyway)와의 차이는 테스트로 잡지 못합니다.** 이 차이는 아래 스키마 교차 검증 테스트가 따로 잡습니다.
 - **스키마 교차 검증** (`@Tag("integration")`, 기본 `test`에서는 제외): [`HostSchemaAgainstUserMigrationsIntegrationTest`](src/test/java/com/honeyrest/honeyrest_host/schema/HostSchemaAgainstUserMigrationsIntegrationTest.java)가 Testcontainers로 `mysql:8.0`을 띄우고 서브모듈 `libs/honeyrest-user`에 들어 있는 [사용자 API](https://github.com/Seongwonp/honeyRest_user)의 Flyway 마이그레이션(V1~최신)을 그대로 적용한 뒤, 공유 엔티티 + `ErrorLog`로 `ddl-auto=validate` 기동합니다. 운영 기동 시점에야 드러나던 drift(누락 테이블·컬럼, 타입 불일치)를 CI에서 잡습니다. 지금까지 찾은 차이와 처리는 [DB_SCHEMA.md §6](DB_SCHEMA.md) 참고.

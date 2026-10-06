@@ -1,0 +1,47 @@
+# 호스트 관리자 이미지 빌드 컨텍스트에서 제외할 파일 (빌드 속도·이미지 크기·비밀값 유출 방지)
+# 주의: libs/honeyrest-user(서브모듈)의 settings.gradle·build.gradle·honeyrest-domain 은 빌드에 필요하므로 제외하지 않는다.
+
+# Git / IDE / OS
+.git
+.github
+.idea
+.vscode
+**/.DS_Store
+*.iml
+
+# Gradle 산출물 (이미지 안에서 새로 빌드한다)
+.gradle
+**/.gradle
+build
+**/build
+out
+bin
+
+# 비밀값: 로컬 개발용 시크릿 파일·Firebase 키는 절대 이미지에 넣지 않는다 (prod 는 환경변수 사용)
+**/application_security.properties
+**/application-secret.properties
+**/application-dev.properties
+**/*firebase-adminsdk*.json
+**/honeyrest-7fb60-*.json
+**/firebase-service-key.json
+.env
+.env.*
+
+# 런타임에 불필요한 것들
+logs
+uploads
+db
+docs
+e2e
+*.md
+
+# 서브모듈(사용자 API 저장소) 중 도메인 모듈 빌드에 쓰지 않는 부분
+libs/honeyrest-user/.git
+libs/honeyrest-user/src
+libs/honeyrest-user/docs
+libs/honeyrest-user/scripts
+libs/honeyrest-user/uploads
+libs/honeyrest-user/deploy
+libs/honeyrest-user/*.md
+libs/honeyrest-user/*.mp4
+libs/honeyrest-user/*.gif

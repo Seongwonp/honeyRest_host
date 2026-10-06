@@ -47,7 +47,7 @@ out/
 ### 민감 정보 파일 (보안 필수) ###
 # 시크릿 설정 파일 - 절대 커밋 금지
 src/main/resources/application-secret.properties
-src/main/resources/application-prod.properties
+# application-prod.properties 는 비밀값 없이 환경변수만 참조하므로 커밋한다 (단일 서버 Docker 배포용)
 src/main/resources/application-dev.properties
 **/application_security.properties
 # Firebase 서비스 계정 키 (파일명에 프로젝트 ID/키 ID가 붙으므로 패턴으로 차단)
