@@ -22,11 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
  * {@code DEMO_COMPANY_PASSWORD} / {@code DEMO_ADMIN_PASSWORD} 로 준다 (application-prod.properties).
  * 비밀번호가 비어 있으면 해당 계정 묶음은 만들지 않는다 → 빈 비밀번호·코드 기본값 계정이 생기지 않는다.
  * 이미 있는 계정은 건드리지 않으므로(비밀번호 변경 없음) 재기동해도 안전하다.
+ * <p>
+ * demo 프로필(Render 무료 데모, H2 인메모리)에서도 실행된다. 비밀번호는 render.yaml 의 DEMO_COMPANY_PASSWORD /
+ * DEMO_ADMIN_PASSWORD 로 주며(application-demo.properties), 로그인 화면에 같은 값이 안내된다.
  */
 @Component
 @RequiredArgsConstructor
 @Log4j2
-@Profile("local-demo")
+@Profile({"local-demo", "demo"})
 public class DataInitializer implements CommandLineRunner {
 
     private final OUserRepository oUserRepository;
@@ -82,7 +85,7 @@ public class DataInitializer implements CommandLineRunner {
             created++;
         }
 
-        log.info("DataInitializer(local-demo): created {} accounts", created);
+        log.info("DataInitializer(local-demo/demo): created {} accounts", created);
     }
 
     private static boolean hasText(String password, String property) {

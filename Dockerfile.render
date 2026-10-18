@@ -1,0 +1,82 @@
+# syntax=docker/dockerfile:1
+# =============================================================================
+# Render 무료 데모 이미지 — 관리자 사이트 "honeyrest-admin" (honeyRest_user 저장소 render.yaml 의 honeyrest-admin 서비스)
+#   SPRING_PROFILES_ACTIVE=demo: H2 인메모리 + screenshot 시드 + 데모 계정(DataInitializer) — application-demo.properties
+#   (운영 배포는 Dockerfile 을 쓴다. 이 파일은 데모 전용이며 운영 이미지와 무관하다.)
+#
+# 공유 도메인 모듈(libs/honeyrest-user, git submodule) 처리
+#   Render 가 서브모듈을 받아 오지 않을 수도 있으므로 두 경우 모두 동작하게 한다.
+#   - 서브모듈이 채워져 있으면(libs/honeyrest-user/settings.gradle 존재) 그대로 쓴다.
+#   - 비어 있으면 빌드 중에 사용자 API 저장소를 git clone 해 채운다 (USER_REF 로 브랜치/태그 고정, 기본 main).
+#
+# 로컬 확인:
+#   docker build -f Dockerfile.render -t honeyrest-admin-demo .
+#   docker run --rm -p 8081:8081 --memory=512m --cpus=0.1 \
+#     -e DEMO_COMPANY_PASSWORD='Demo1234!' -e DEMO_ADMIN_PASSWORD='Demo1234!' honeyrest-admin-demo
+# =============================================================================
+
+# 서브모듈이 비어 있을 때 쓸 사용자 API 저장소 (git 이 들어 있는 작은 이미지에서 clone 만 한다)
+FROM alpine/git:2.49.1 AS user-src
+ARG USER_REPO=https://github.com/Seongwonp/honeyRest_user
+ARG USER_REF=main
+RUN git clone --depth 1 --branch "${USER_REF}" "${USER_REPO}" /honeyrest-user \
+ && git -C /honeyrest-user log -1 --format='honeyRest_user commit: %h %s' \
+ && rm -rf /honeyrest-user/.git
+
+# -----------------------------------------------------------------------------
+FROM eclipse-temurin:17-jdk AS build
+WORKDIR /workspace
+ENV GRADLE_OPTS="-Xmx512m -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx1g -Dorg.gradle.workers.max=2 -Dorg.gradle.welcome=never"
+
+# 빌드 컨텍스트 전체 (.dockerignore 가 build/·logs/·비밀값·서브모듈의 불필요한 부분을 제외한다)
+COPY . .
+COPY --from=user-src /honeyrest-user /tmp/honeyrest-user
+
+RUN if [ -f libs/honeyrest-user/settings.gradle ] && [ -f libs/honeyrest-user/honeyrest-domain/build.gradle ]; then \
+        echo "서브모듈 libs/honeyrest-user 사용"; \
+    else \
+        echo "서브모듈이 비어 있어 clone 한 사용자 API 저장소를 사용합니다"; \
+        rm -rf libs/honeyrest-user && mkdir -p libs && cp -a /tmp/honeyrest-user libs/honeyrest-user; \
+    fi \
+ && rm -rf /tmp/honeyrest-user \
+ && chmod +x gradlew && sed -i 's/\r$//' gradlew
+
+# 테스트는 CI 에서 실행하므로 생략. jarmode=tools extract: 풀어 둔 클래스패스로 실행 (기동이 조금 빠르다).
+RUN ./gradlew --no-daemon bootJar -x test \
+ && find build/libs -name '*.jar' ! -name '*-plain.jar' -exec cp {} /workspace/app.jar \; \
+ && test -s /workspace/app.jar \
+ && java -Djarmode=tools -jar /workspace/app.jar extract --destination /workspace/extracted
+
+# -----------------------------------------------------------------------------
+FROM eclipse-temurin:17-jre AS runtime
+
+ARG APP_UID=10001
+RUN groupadd --system --gid ${APP_UID} honeyrest \
+ && useradd --system --uid ${APP_UID} --gid honeyrest --home-dir /app --shell /usr/sbin/nologin honeyrest \
+ && mkdir -p /app/uploads \
+ && chown -R honeyrest:honeyrest /app
+
+WORKDIR /app
+COPY --from=build --chown=honeyrest:honeyrest /workspace/extracted/ /app/
+COPY --chown=honeyrest:honeyrest uploads/placeholder /app/uploads/placeholder
+
+# JAVA_TOOL_OPTIONS: 512MB / 0.1 CPU 용 JVM 옵션 (render.yaml 에서 덮어쓸 수 있다)
+#   실측(--memory=512m --cpus=0.1): 힙 사용 ~90MB, 메타스페이스 ~120MB, 컨테이너 메모리 ~350~380MB
+#   → 힙 상한은 50%(256MB)로 두고 나머지를 메타스페이스·CDS·스레드 스택에 남긴다.
+ENV TZ=Asia/Seoul \
+    SPRING_PROFILES_ACTIVE=demo \
+    APP_STORAGE_LOCAL_DIR=/app/uploads \
+    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=50 -XX:+UseSerialGC -Xss512k -XX:MaxMetaspaceSize=160m -XX:TieredStopAtLevel=1 -XX:+ExitOnOutOfMemoryError"
+
+# CDS(클래스 데이터 공유) 아카이브: 빌드 중에 컨텍스트를 한 번 띄웠다가(onRefresh 에서 종료) 로딩한 클래스를 저장 →
+# 0.1 CPU 에서 기동 시간이 크게 준다. 실패해도 JVM 이 아카이브 없이 평소처럼 기동하므로 빌드는 계속한다.
+RUN java -XX:ArchiveClassesAtExit=/app/app.jsa -Dspring.context.exit=onRefresh -jar /app/app.jar > /tmp/cds-training.log 2>&1 \
+ ; if [ -s /app/app.jsa ]; then chown honeyrest:honeyrest /app/app.jsa && echo "CDS archive: $(du -h /app/app.jsa | cut -f1)"; \
+   else echo "CDS 아카이브 생성 실패 (기동은 가능, 느릴 뿐)" >&2; tail -20 /tmp/cds-training.log >&2; fi \
+ ; rm -f /tmp/cds-training.log
+
+USER honeyrest
+EXPOSE 8081
+
+# Render 는 PORT 를 넘겨 준다 (application-demo.properties: server.port=${PORT:8081})
+ENTRYPOINT ["java", "-XX:SharedArchiveFile=/app/app.jsa", "-Xlog:cds=off", "-Xlog:cds+dynamic=off", "-jar", "/app/app.jar"]

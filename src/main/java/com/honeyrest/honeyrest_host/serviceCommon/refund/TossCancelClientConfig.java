@@ -14,7 +14,7 @@ import java.time.Duration;
 
 /**
  * 토스 결제 취소 클라이언트 선택.
- * {@code toss.secret-key}(환경변수 TOSS_SECRET_KEY)가 비어 있거나 screenshot 프로필이면 {@link NoOpTossCancelClient},
+ * {@code toss.secret-key}(환경변수 TOSS_SECRET_KEY)가 비어 있거나 screenshot·demo 프로필이면 {@link NoOpTossCancelClient},
  * 그 외에는 {@link HttpTossCancelClient} 를 등록한다. 시크릿 키는 사용자 API 와 같은 토스 상점 키를 쓴다.
  */
 @Log4j2
@@ -26,8 +26,8 @@ public class TossCancelClientConfig {
                                              Environment environment,
                                              RestClient.Builder restClientBuilder,
                                              ObjectMapper objectMapper) {
-        if (secretKey == null || secretKey.isBlank() || environment.acceptsProfiles(Profiles.of("screenshot"))) {
-            log.warn("토스 결제 취소 클라이언트: No-op (toss.secret-key 미설정 또는 screenshot 프로필). 예약 취소 시 PG 환불은 호출되지 않습니다.");
+        if (secretKey == null || secretKey.isBlank() || environment.acceptsProfiles(Profiles.of("screenshot | demo"))) {
+            log.warn("토스 결제 취소 클라이언트: No-op (toss.secret-key 미설정 또는 screenshot/demo 프로필). 예약 취소 시 PG 환불은 호출되지 않습니다.");
             return new NoOpTossCancelClient();
         }
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();

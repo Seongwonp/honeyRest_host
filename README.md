@@ -19,6 +19,21 @@
 
 ---
 
+## 라이브 데모
+
+> Render 무료 플랜의 **보여주기용 데모**입니다. 15분 동안 접속이 없으면 잠들어 **첫 접속에 1~3분** 걸리고(콜드 스타트), 깨어날 때마다 데이터가 초기화됩니다.
+> 결제는 **"테스트 결제(데모)"** 로 진행되어 실제로 청구되지 않습니다. 주소에 접미사가 붙었다면 아래 링크를 실제 주소로 바꿔 주세요.
+
+| 사이트 | 주소 | 데모 계정 (공개용) |
+|--------|------|-------------------|
+| 사용자 | https://honeyrest.onrender.com | `demo@honeyrest.app` / `Demo1234!` — 로그인 화면의 "데모 계정으로 로그인" |
+| 관리자 | https://honeyrest-admin.onrender.com | 업체 관리자 `contact@honeyrest.com` / `Demo1234!` · 최고 관리자 `admin@honeyrest.com` / `Demo1234!` |
+
+- 두 사이트는 데모에서 **DB 가 분리**되어 있어(각자 H2 인메모리) 관리자에서 바꾼 내용이 사용자 사이트에 보이지 않습니다.
+- 구성·배포 절차: [honeyRest_user · docs/DEPLOY_RENDER.md](https://github.com/Seongwonp/honeyRest_user/blob/main/docs/DEPLOY_RENDER.md)
+
+---
+
 ## 역할
 
 **팀 프로젝트 (2025.08.04 ~ 2025.09.04, 4주, 3명)**
@@ -170,6 +185,7 @@ flowchart LR
 - 사용자 API 저장소의 `deploy/` 번들로 세 저장소를 VM 한 대에 Docker Compose 로 올립니다. 이 저장소는 루트 [`Dockerfile`](Dockerfile)(서브모듈 `libs/honeyrest-user` 포함 빌드)로 이미지가 만들어지고, 사용자 API 가 Flyway 마이그레이션을 마친 뒤(healthy) 기동합니다(`ddl-auto=validate`).
 - **운영 프로필**: [`application-prod.properties`](src/main/resources/application-prod.properties) — 비밀값은 환경변수. 데모 계정은 `prod,local-demo` + `DEMO_COMPANY_PASSWORD` / `DEMO_ADMIN_PASSWORD` 로만 생성되며, 비밀번호가 비어 있으면 만들지 않습니다(코드 기본값 미사용).
 - 상세 절차: [honeyRest_user · docs/DEPLOY.md](https://github.com/Seongwonp/honeyRest_user/blob/main/docs/DEPLOY.md)
+- **무료 데모(Render)**: [`Dockerfile.render`](Dockerfile.render) + `demo` 프로필([`application-demo.properties`](src/main/resources/application-demo.properties)) — screenshot 프로필과 같은 H2 + 시드에 데모 계정(`DataInitializer`, 비밀번호는 환경변수)과 로그인 화면 계정 안내를 더했다. 서브모듈이 비어 있으면 빌드 중에 honeyRest_user 를 clone 한다. Blueprint 는 honeyRest_user 의 `render.yaml` → [DEPLOY_RENDER.md](https://github.com/Seongwonp/honeyRest_user/blob/main/docs/DEPLOY_RENDER.md)
 
 ---
 
