@@ -17,6 +17,7 @@ import com.honeyrest.honeyrest_host.repositoryOwner.OReviewRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORoomImageRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORoomRepository;
 import com.honeyrest.honeyrest_host.storage.FileStorage;
+import com.honeyrest.honeyrest_host.utilAdmin.RoomEntityCopy;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -86,13 +87,21 @@ public class ORoomServiceImpl implements ORoomService {
         List<String> list = parseList(jsonInput);
         return String.join(", ", list);
     }
+    /** 신규 객실 엔티티 (등록용) */
     private Room toEntity(RoomDTO d) {
+        return applyForm(Room.builder(), d).build();
+    }
+
+    /**
+     * 객실 폼 값을 빌더에 채운다. 등록은 빈 빌더에, 수정은 관리 중인 Room 에서 시작한 빌더(RoomEntityCopy.of)에 쓴다.
+     * 수정 폼은 모든 항목을 보내므로 값은 폼 그대로 덮어쓰고(기존 동작), 이미지 컬렉션·roomId 는 빌더에 남은 값을 쓴다.
+     */
+    private Room.RoomBuilder applyForm(Room.RoomBuilder b, RoomDTO d) {
         // 편의시설과 침대 정보를 각각 변환한다. 과거에는 편의시설이 비어 있으면 침대 정보까지 "[]" 로 버려졌고,
         // 공백 기준으로도 쪼개 "더블 침대" 가 ["더블","침대"] 로 저장됐다.
         String amenitiesJson = com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.normalizeToJson(d.getAmenities());
         String bedInfoJson = com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.normalizeToJson(d.getBedInfo());
-        return Room.builder()
-                .roomId(d.getRoomId())
+        return b
                 .accommodation(accommodationRepository.getReferenceById(d.getAccommodationId()))
                 .name(d.getName())
                 .type(d.getType())
@@ -100,13 +109,11 @@ public class ORoomServiceImpl implements ORoomService {
                 .maxOccupancy(d.getMaxOccupancy())
                 .standardOccupancy(d.getStandardOccupancy())
                 .extraPersonFee(d.getExtraPersonFee())
-                .maxOccupancy(d.getMaxOccupancy())
                 .bedInfo(bedInfoJson)
                 .amenities(amenitiesJson)
                 .description(d.getDescription())
                 .totalRooms(d.getTotalRooms())
-                .status(d.getStatus() == null ? RoomStatus.ACTIVE : d.getStatus())
-                .build();
+                .status(d.getStatus() == null ? RoomStatus.ACTIVE : d.getStatus());
     }
 
     private RoomImage toRoomImageEntity(RoomImageDTO d) {
@@ -161,7 +168,9 @@ public class ORoomServiceImpl implements ORoomService {
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
         RoomSearchSnapshot before = RoomSearchSnapshot.of(room); // save(merge) 전에 떠 둔다
-        Room updated = toEntity(dto);
+        // 관리 중인 Room(이미지 컬렉션 포함)에서 시작한다. 과거에는 toEntity(dto) 로 새 Room 을 만들어 merge 해
+        // 영속 Room 의 이미지 컬렉션이 빈 리스트로 바뀌었다 (Room.images cascade=ALL, RoomEntityCopy 참고).
+        Room updated = applyForm(RoomEntityCopy.of(room), dto).build();
         roomRepository.save(updated);
         if (RoomSearchSnapshot.of(updated).differsFrom(before)) {
             searchCacheInvalidator.bumpAfterCommit();
@@ -187,9 +196,8 @@ public class ORoomServiceImpl implements ORoomService {
     private void changeStatus(Long id, String status) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
-        RoomDTO dto = toDTO(room);
-        dto.setStatus(status);
-        roomRepository.save(toEntity(dto));
+        // 상태만 바꾼다. 과거에는 DTO(침대·편의시설을 "a, b" 문자열로 바꾼 값)를 거쳐 새 Room 을 만들어 merge 했다.
+        roomRepository.save(RoomEntityCopy.of(room).status(status).build());
         searchCacheInvalidator.bumpAfterCommit();
         if (room.getAccommodation() != null) {
             searchCacheInvalidator.evictAccommodationAfterCommit(room.getAccommodation().getAccommodationId());

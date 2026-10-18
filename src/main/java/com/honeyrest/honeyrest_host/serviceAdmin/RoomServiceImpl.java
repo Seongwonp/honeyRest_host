@@ -15,6 +15,7 @@ import com.honeyrest.domain.entity.Accommodation;
 import com.honeyrest.domain.entity.Room;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomRepository;
+import com.honeyrest.honeyrest_host.utilAdmin.RoomEntityCopy;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -112,25 +113,6 @@ public class RoomServiceImpl implements RoomService {
                 .build();
     }
 
-    private Room toEntity(RoomDTO d) {
-        return Room.builder()
-                .roomId(d.getRoomId())
-                .accommodation(accommodationRepository.getReferenceById(d.getAccommodationId()))
-                .name(d.getRoomName())
-                .type(d.getType())
-                .price(d.getPrice())
-                .maxOccupancy(d.getMaxOccupancy())
-                .standardOccupancy(d.getStandardOccupancy())
-                .extraPersonFee(d.getExtraPersonFee())
-                .bedInfo(d.getBedInfo())
-                .amenities(d.getAmenities())
-                .description(d.getDescription())
-                .totalRooms(d.getTotalRooms())
-                .status(d.getStatus() == null ? RoomStatus.ACTIVE : d.getStatus())
-                .build();
-
-    }
-
     @Override
     @Transactional
     public RoomDTO getByRoomId(Long id) {
@@ -178,24 +160,22 @@ public class RoomServiceImpl implements RoomService {
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
         RoomSearchSnapshot before = RoomSearchSnapshot.of(current); // save(merge) 전에 떠 둔다
 
-        Room updated = Room.builder()
-                .roomId(current.getRoomId())
-                .accommodation(dto.getAccommodationId() != null
-                        ? accommodationRepository.getReferenceById(dto.getAccommodationId())
-                        : current.getAccommodation())
-                .name(dto.getRoomName() != null ? dto.getRoomName() : current.getName())
-                .type(dto.getType() != null ? dto.getType() : current.getType())
-                .price(dto.getPrice() != null ? dto.getPrice() : current.getPrice())
-                .maxOccupancy(dto.getMaxOccupancy() != null ? dto.getMaxOccupancy() : current.getMaxOccupancy())
-                .standardOccupancy(dto.getStandardOccupancy() != null ? dto.getStandardOccupancy() : current.getStandardOccupancy())
-                .extraPersonFee(dto.getExtraPersonFee() != null ? dto.getExtraPersonFee() : current.getExtraPersonFee())
-                .bedInfo(dto.getBedInfo() != null ? jsonNodeToString(stringToJsonNode(dto.getBedInfo())) : current.getBedInfo())
-                .amenities(dto.getAmenities() != null ? jsonNodeToString(stringToJsonNode(dto.getAmenities())) : current.getAmenities())
-                .description(dto.getDescription() != null ? dto.getDescription() : current.getDescription())
-                .totalRooms(dto.getTotalRooms() != null ? dto.getTotalRooms() : current.getTotalRooms())
-
-                .status(dto.getStatus() != null ? dto.getStatus() : current.getStatus())
-                .build();
+        // 관리 중인 Room 의 값(이미지 컬렉션 포함)에서 시작해 들어온 값만 덮어쓴다 (RoomEntityCopy 참고).
+        // 과거에는 빌더의 images 가 빈 리스트라 merge 뒤 영속 Room 의 이미지 컬렉션이 비었다.
+        Room.RoomBuilder b = RoomEntityCopy.of(current);
+        if (dto.getAccommodationId() != null) b.accommodation(accommodationRepository.getReferenceById(dto.getAccommodationId()));
+        if (dto.getRoomName() != null) b.name(dto.getRoomName());
+        if (dto.getType() != null) b.type(dto.getType());
+        if (dto.getPrice() != null) b.price(dto.getPrice());
+        if (dto.getMaxOccupancy() != null) b.maxOccupancy(dto.getMaxOccupancy());
+        if (dto.getStandardOccupancy() != null) b.standardOccupancy(dto.getStandardOccupancy());
+        if (dto.getExtraPersonFee() != null) b.extraPersonFee(dto.getExtraPersonFee());
+        if (dto.getBedInfo() != null) b.bedInfo(jsonNodeToString(stringToJsonNode(dto.getBedInfo())));
+        if (dto.getAmenities() != null) b.amenities(jsonNodeToString(stringToJsonNode(dto.getAmenities())));
+        if (dto.getDescription() != null) b.description(dto.getDescription());
+        if (dto.getTotalRooms() != null) b.totalRooms(dto.getTotalRooms());
+        if (dto.getStatus() != null) b.status(dto.getStatus());
+        Room updated = b.build();
 
         roomRepository.save(updated);
         if (RoomSearchSnapshot.of(updated).differsFrom(before)) {
@@ -291,22 +271,8 @@ public class RoomServiceImpl implements RoomService {
     public void deactivateRoom(Long roomId) { // 객실 삭제 말고 비활성화 하기
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
-        // 상태만 INACTIVE 로 변경
-        Room updated = Room.builder()
-                .roomId(room.getRoomId())
-                .accommodation(room.getAccommodation())
-                .name(room.getName())
-                .type(room.getType())
-                .price(room.getPrice())
-                .maxOccupancy(room.getMaxOccupancy())
-                .standardOccupancy(room.getStandardOccupancy())
-                .extraPersonFee(room.getExtraPersonFee())
-                .bedInfo(room.getBedInfo())
-                .amenities(room.getAmenities())
-                .description(room.getDescription())
-                .totalRooms(room.getTotalRooms())
-                .status(RoomStatus.INACTIVE)   // ★ 비활성화
-                .build();
+        // 상태만 INACTIVE 로 변경 (나머지 값·이미지 컬렉션은 그대로)
+        Room updated = RoomEntityCopy.of(room).status(RoomStatus.INACTIVE).build();
 
         boolean wasActive = !RoomStatus.INACTIVE.equals(room.getStatus());
         roomRepository.save(updated);

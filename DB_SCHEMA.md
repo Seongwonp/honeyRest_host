@@ -254,18 +254,27 @@
 | `cancellation_policy.days_before`, `refund_rate` | V1 구세대 컬럼이 NOT NULL(기본값 없음)인데 두 엔티티 모두 매핑하지 않음 | validate 는 통과, 호스트 환불 정책 신규 INSERT 가 런타임 실패 | **V11** 에서 NULL 허용으로 완화 (데이터 보존, 컬럼 유지) |
 | `reservation.accommodation_name` | 호스트만 매핑하던 NOT NULL 컬럼 | 호스트 기동 실패 | **V10** 에서 추가 (기존 처리) |
 | `review.rating` | 호스트 `precision=3, scale=1` vs 스키마 `decimal(3,2)` | 없음 (validate 는 정밀도 미검사, 쓰기 값도 수용 가능) | **해소**: 공유 엔티티가 스키마와 같은 `precision=3, scale=2` |
-| JSON 문자열 컬럼 (`amenities`, `bed_info`, `bank_info`, `cancellation_policy.detail`) | 엔티티 `columnDefinition = "JSON"` vs 스키마 `longtext`/`text` | 없음 (Hibernate 가 문자열 계열로 동등 취급) | 기록만. `cancellation_policy.detail` 은 공유 엔티티에서 스키마(V6)와 같은 `TEXT` 로 통일 |
+| JSON 문자열 컬럼 (`amenities`, `bed_info`, `bank_info`, `cancellation_policy.detail`) | 엔티티 `columnDefinition = "JSON"` vs 스키마 `longtext`/`text` | MySQL 은 없음 (Hibernate 가 문자열 계열로 동등 취급). **H2(demo/e2e/test) 는 JSON 타입 컬럼이 생겨 저장할 때마다 따옴표가 누적** | **해소**: 공유 엔티티를 스키마(V1)와 같은 `LONGTEXT` 로 맞춤(아래 V12 절). `cancellation_policy.detail` 은 스키마(V6)와 같은 `TEXT` |
 | `banner.position` | `@Enumerated(STRING)` (MySQL 방언은 enum 타입 기대) vs `varchar(30)` | 없음 (enum ↔ varchar 동등 취급, 두 저장소 `BannerPosition` 값 동일) | 기록만 |
 | `email_verification_token.pending_email`, `user.token_valid_after` | 사용자 API 만 매핑하는 NULL 허용 컬럼 | 없음 (호스트 INSERT 시 NULL) | **해소**: 공유 엔티티가 매핑하므로 두 앱 모두 같은 컬럼을 본다 |
 | `reservation.price` | 사용자 엔티티에 `precision/scale` 누락 (스키마 `decimal(10,2)`) | 없음 (validate 는 정밀도 미검사) | **해소**: 공유 엔티티 `precision = 10, scale = 2` |
 
 ### 자동 검증
-- 사용자 API: `./gradlew integrationTest` — Testcontainers MySQL 8.0 에 V1~최신 적용 후 사용자 엔티티 `validate`, `reservation.accommodation_name` NOT NULL, V10/V11 재실행 안전성 확인.
+- 사용자 API: `./gradlew integrationTest` — Testcontainers MySQL 8.0 에 V1~최신 적용 후 사용자 엔티티 `validate`, `reservation.accommodation_name` NOT NULL, V10/V11/V12 재실행 안전성, V12 리뷰 상태 정규화 확인.
 - 관리자 앱: `./gradlew integrationTest` — 서브모듈(`libs/honeyrest-user`)에 들어 있는 이 저장소의 마이그레이션을 그대로 적용한 뒤 공유 엔티티 + 호스트 전용 `ErrorLog` 를 `validate` (CI 는 `submodules: recursive` 체크아웃, 매일 예약 실행 시에는 서브모듈을 main 최신으로 올려 검증).
 
 ### 공유 도메인 모듈 통합 (컬럼 변경 없음)
-두 저장소의 엔티티 사본을 `honeyrest-domain` 모듈 하나로 합쳤다. 기준은 이 문서와 Flyway V1~V11 이며, **스키마(컬럼) 자체는 바뀌지 않았다** (새 마이그레이션 없음).
+두 저장소의 엔티티 사본을 `honeyrest-domain` 모듈 하나로 합쳤다. 기준은 이 문서와 Flyway V1~V11 이며, **스키마(컬럼) 자체는 바뀌지 않았다** (새 마이그레이션 없음. 이후 데이터 정규화용 V12 추가).
 위 표의 "해소" 항목처럼 매핑 쪽 차이만 스키마에 맞췄다. 엔티티별 상세는 [docs/DOMAIN_MODULE.md](https://github.com/Seongwonp/honeyRest_user/blob/main/docs/DOMAIN_MODULE.md) 참고.
+
+### V12 · 리뷰 상태 정규화와 공유 엔티티 매핑 보강
+| 대상 | 문제 | 처리 |
+| :--- | :--- | :--- |
+| `review.status` | 호스트가 과거 노출 상태로 `VISIBLE` 을 저장했다. 사용자 API 는 `PUBLISHED` 만 노출·평점 집계에 써서 해당 리뷰가 사용자 사이트에서 사라졌다 | **V12** (`V12__normalize_review_status.sql`): `VISIBLE`(대소문자·공백 무관) → `PUBLISHED`, 허용 값의 대소문자·공백 변형을 대문자로 정규화. 재실행 안전 |
+| `review.status` 허용 값 | 두 앱이 문자열을 따로 썼다 | 공유 `com.honeyrest.domain.type.ReviewStatus`: 저장 값은 `PUBLISHED`(노출) / `HIDDEN`(숨김) / `DELETED`(삭제). `VISIBLE` 은 요청 호환용으로만 받아 `PUBLISHED` 로 저장. 사용자 API 는 `PUBLISHED` 만 읽는다(상세·검색 리뷰 수·평점) |
+| `Review` 답변/상태 변경 | 호스트가 빌더로 Review 를 다시 만들어 merge → 빌더에 빠진 필드가 null 로 덮어써질 위험 | 공유 엔티티 메서드 `reply(text)` / `editReply(text)` / `deleteReply()` / `changeStatus(status)` (createdAt·likeCount·본문 보존, 허용 상태만) |
+| `Room.images` (`room_image.room_id`) | 객실 삭제 시 `room_image` FK 로 실패할 수 있었다 | `@OneToMany(mappedBy = "room", cascade = ALL)` + `@OrderBy("sortOrder ASC")`. **orphanRemoval 은 끔**: 호스트가 빌더로 만든 Room 을 merge 해 객실을 수정하므로 켜면 수정할 때마다 이미지가 전부 삭제된다. 컬럼 변경 없음 |
+| JSON 문자열 컬럼 (`room.bed_info`, `room.amenities`, `accommodation.amenities`, `company.bank_info`) | 엔티티 `columnDefinition = "JSON"` 때문에 H2 가 JSON 타입 컬럼을 만들고 문자열 파라미터를 JSON 문자열 값으로 감싸 저장 → 리뷰 작성(숙소 평점 갱신)·호스트 저장 때마다 따옴표 누적 | 엔티티를 실제 스키마와 같은 `columnDefinition = "LONGTEXT"` 로 변경. MySQL 컬럼 타입은 그대로(Flyway 관리, `validate` 통과). 시드의 `'...' FORMAT JSON` 은 그대로 텍스트로 들어간다 |
 
 ---
 

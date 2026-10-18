@@ -87,12 +87,6 @@
                 border-color: #cfe7ff
             }
 
-            .chip-pending {
-                background: var(--lemon);
-                color: #7a5a00;
-                border-color: #f6e7a2
-            }
-
             .chip-hidden {
                 background: #f1f2f6;
                 color: #4b5563;
@@ -187,9 +181,8 @@
                 <!-- 상태 배지: 맵 리터럴로 안전하게 클래스 선택 -->
                 <span class="chip"
                       th:classappend="(*{status}=='PUBLISHED' or *{status}=='VISIBLE') ? ' chip-visible' :
-                      (*{status}=='PENDING' ? ' chip-pending' :
-                      (*{status}=='HIDDEN'  ? ' chip-hidden'  : ' chip-lav'))">
-  상태: <strong th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '노출' : (review.status=='HIDDEN' ? '숨김' : (review.status=='PENDING' ? '검토중' : review.status))}">노출</strong>
+                      (*{status}=='HIDDEN'  ? ' chip-hidden'  : ' chip-lav')">
+  상태: <strong th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '노출' : (review.status=='HIDDEN' ? '숨김' : (review.status=='DELETED' ? '삭제' : review.status))}">노출</strong>
 </span>
 
                 <span class="chip chip-mint">
@@ -271,7 +264,6 @@
                         <label class="form-label"><i class="bi bi-shield-check me-1"></i>상태</label>
                         <select class="form-select" th:field="*{status}">
                             <option value="PUBLISHED">노출</option>
-                            <option value="PENDING">검토중</option>
                             <option value="HIDDEN">숨김</option>
                         </select>
                         <div class="text-danger small" th:errors="*{status}"></div>

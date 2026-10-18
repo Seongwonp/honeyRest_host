@@ -7,6 +7,7 @@ import com.honeyrest.domain.entity.RoomImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomImageRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.RoomRepository;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,27 @@ public class RoomImageServiceImpl implements RoomImageService {
         roomRepository.findById(roomId)
                 .map(Room::getAccommodation)
                 .ifPresent(acc -> searchCacheInvalidator.evictAccommodationAfterCommit(acc.getAccommodationId()));
+    }
+
+    /**
+     * 이미지를 명시적으로 지우기 전에, 같은 영속성 컨텍스트에 로딩된 Room 의 images 컬렉션에서도 빼 둔다.
+     * Room.images 가 cascade=ALL 이라, 컬렉션이 로딩된 채로(예: 같은 트랜잭션의 객실 수정 merge) 이미지만 지우면
+     * flush 때 Room 쪽 PERSIST cascade 가 삭제 예정 이미지를 다시 살려 삭제가 무시된다.
+     * 컬렉션이 로딩되지 않았으면 아무것도 하지 않는다(추가 조회 없음).
+     */
+    private static void detachFromLoadedRoom(RoomImage image) {
+        Room room = image.getRoom();
+        if (room != null && Hibernate.isInitialized(room) && Hibernate.isInitialized(room.getImages())) {
+            room.getImages().remove(image);
+        }
+    }
+
+    /** 객실의 이미지 행을 모두 지운다 (로딩된 Room 컬렉션에서도 제거) */
+    private void deleteImagesOfRoom(Long roomId) {
+        List<RoomImage> images = roomImageRepository.findByRoomRoomIdOrderBySortOrderAsc(roomId);
+        images.forEach(RoomImageServiceImpl::detachFromLoadedRoom);
+        roomImageRepository.deleteAll(images);
+        roomImageRepository.flush(); // 이어지는 새 이미지 저장보다 삭제가 먼저 반영되게 한다 (기존 deleteBy... 의 flush 와 같은 순서)
     }
 
     // dto -> 엔티티
@@ -67,7 +89,7 @@ public class RoomImageServiceImpl implements RoomImageService {
     public void replaceAll(Long roomId, List<RoomImageDTO> images) {
         // 정렬/인덱스 보정: 가장 앞을 메인(0), 이후 1..N
         List<RoomImageDTO> normalized = normalize(images);
-        roomImageRepository.deleteByRoomRoomId(roomId);
+        deleteImagesOfRoom(roomId);
         List<RoomImage> entities = normalized.stream()
                 .map(dto -> toEntity(roomId, dto))
                 .toList();
@@ -97,15 +119,16 @@ public class RoomImageServiceImpl implements RoomImageService {
 
     @Override
     public void deleteImage(Long imageId) {
-        roomImageRepository.findById(imageId)
-                .map(img -> img.getRoom().getRoomId())
-                .ifPresent(this::evictAccommodationOfRoom);
-        roomImageRepository.deleteById(imageId);
+        roomImageRepository.findById(imageId).ifPresent(img -> {
+            evictAccommodationOfRoom(img.getRoom().getRoomId());
+            detachFromLoadedRoom(img);
+            roomImageRepository.delete(img);
+        });
     }
 
     @Override
     public void deleteAllOfRoom(Long roomId) {
-        roomImageRepository.deleteByRoomRoomId(roomId);
+        deleteImagesOfRoom(roomId);
         evictAccommodationOfRoom(roomId);
     }
 

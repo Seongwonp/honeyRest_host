@@ -13,14 +13,10 @@ CREATE ALIAS IF NOT EXISTS MYSQL_DATEDIFF    FOR 'com.honeyrest.honeyrest_host.c
 CREATE ALIAS IF NOT EXISTS MYSQL_WEEKDAY     FOR 'com.honeyrest.honeyrest_host.config.screenshot.H2MySqlCompat.weekday';
 CREATE ALIAS IF NOT EXISTS MYSQL_DATE_FORMAT FOR 'com.honeyrest.honeyrest_host.config.screenshot.H2MySqlCompat.dateFormat';
 
--- ---- H2 의 JSON 컬럼 보정 ----
--- H2 는 JSON 컬럼에 일반 문자열 파라미터를 넣으면 JSON "문자열 값"으로 감싸 저장한다('["a"]' → "\"[\\\"a\\\"]\"").
--- 화면에서 저장할 때마다(편의시설·침대 정보·계좌 정보) 따옴표가 한 겹씩 늘어났다. MySQL JSON 컬럼은 텍스트를 그대로 받으므로
--- H2 에서는 문자 컬럼으로 바꿔 같은 동작을 맞춘다 (아래 시드의 '...' FORMAT JSON 도 문자열로 들어간다).
-ALTER TABLE accommodation ALTER COLUMN amenities SET DATA TYPE VARCHAR(4000);
-ALTER TABLE room ALTER COLUMN bed_info SET DATA TYPE VARCHAR(4000);
-ALTER TABLE room ALTER COLUMN amenities SET DATA TYPE VARCHAR(4000);
-ALTER TABLE company ALTER COLUMN bank_info SET DATA TYPE VARCHAR(4000);
+-- ---- JSON 텍스트 컬럼 ----
+-- amenities·bed_info·bank_info 는 엔티티 매핑이 실제 스키마(Flyway V1)와 같은 LONGTEXT 라 H2 에서도 문자 컬럼으로 만들어진다.
+-- (과거 매핑이 JSON 이던 때는 저장할 때마다 따옴표가 쌓여 여기서 VARCHAR 로 바꾸는 ALTER 를 두었으나 이제 필요 없다.)
+-- 아래 시드는 JSON 텍스트를 일반 문자열로 넣는다.
 
 -- ---- 지역 / 카테고리 ----
 INSERT INTO region (region_id, parent_id, name, level, is_popular, image_url) VALUES
@@ -39,10 +35,10 @@ INSERT INTO accommodation_category (category_id, name, icon_url, sort_order) VAL
 -- ---- 업체 ----
 INSERT INTO company (company_id, name, business_number, owner_name, phone, email, address, bank_info, commission_rate, status, created_at, updated_at) VALUES
  (1, '허니레스트 스테이', '123-45-67890', '박성원', '02-1234-5678', 'contact@honeyrest.com', '서울특별시 종로구 북촌로 12',
-     '{"bank":"국민은행","account":"123-456-789012","holder":"허니레스트 스테이"}' FORMAT JSON, 10.00, 'ACTIVE',
+     '{"bank":"국민은행","account":"123-456-789012","holder":"허니레스트 스테이"}', 10.00, 'ACTIVE',
      DATEADD('DAY', -400, CURRENT_TIMESTAMP), DATEADD('DAY', -30, CURRENT_TIMESTAMP)),
  (2, '씨사이드 호텔', '234-56-78901', '김바다', '051-987-6543', 'info@seasidehotel.com', '부산광역시 해운대구 해운대해변로 30',
-     '{"bank":"부산은행","account":"101-2020-3030-04","holder":"씨사이드 호텔"}' FORMAT JSON, 12.00, 'ACTIVE',
+     '{"bank":"부산은행","account":"101-2020-3030-04","holder":"씨사이드 호텔"}', 12.00, 'ACTIVE',
      DATEADD('DAY', -300, CURRENT_TIMESTAMP), DATEADD('DAY', -10, CURRENT_TIMESTAMP)),
  (3, '어반스테이', '345-67-89012', '이도시', '02-555-7788', 'info@urbanstay.com', '서울특별시 마포구 양화로 45',
      NULL, 10.00, 'PENDING', DATEADD('DAY', -3, CURRENT_TIMESTAMP), DATEADD('DAY', -3, CURRENT_TIMESTAMP));
@@ -51,19 +47,19 @@ INSERT INTO company (company_id, name, business_number, owner_name, phone, email
 INSERT INTO accommodation (accommodation_id, company_id, category_id, main_region_id, sub_region_id, name, address, latitude, longitude,
                            thumbnail, description, amenities, check_in_time, check_out_time, rating, min_price, status) VALUES
  (1, 1, 1, 1, 5, '허니레스트 제주 오션뷰', '제주특별자치도 제주시 애월읍 애월해안로 100', 33.462100, 126.309500,
-     '/uploads/placeholder/room-1.svg', '애월 바다가 한눈에 보이는 오션뷰 호텔입니다.', '["WiFi","주차","수영장","조식"]' FORMAT JSON,
+     '/uploads/placeholder/room-1.svg', '애월 바다가 한눈에 보이는 오션뷰 호텔입니다.', '["WiFi","주차","수영장","조식"]',
      TIMESTAMP '2025-01-01 15:00:00', TIMESTAMP '2025-01-01 11:00:00', 4.7, 120000, 'ACTIVE'),
  (2, 1, 3, 2, 6, '허니레스트 북촌 한옥', '서울특별시 종로구 북촌로 12', 37.582600, 126.983600,
-     '/uploads/placeholder/room-2.svg', '북촌 골목 안 전통 한옥 스테이.', '["WiFi","조식","정원"]' FORMAT JSON,
+     '/uploads/placeholder/room-2.svg', '북촌 골목 안 전통 한옥 스테이.', '["WiFi","조식","정원"]',
      TIMESTAMP '2025-01-01 16:00:00', TIMESTAMP '2025-01-01 11:00:00', 4.8, 180000, 'ACTIVE'),
  (3, 1, 2, 3, 7, '허니레스트 강릉 솔숲 펜션', '강원특별자치도 강릉시 창해로 350', 37.795100, 128.915600,
-     '/uploads/placeholder/room-1.svg', '송정 해변 솔숲 옆 독채 펜션 (신규 등록, 승인 대기).', '["WiFi","주차","바비큐"]' FORMAT JSON,
+     '/uploads/placeholder/room-1.svg', '송정 해변 솔숲 옆 독채 펜션 (신규 등록, 승인 대기).', '["WiFi","주차","바비큐"]',
      TIMESTAMP '2025-01-01 15:00:00', TIMESTAMP '2025-01-01 11:00:00', NULL, 150000, 'PENDING'),
  (4, 2, 1, 4, 8, '씨사이드 해운대 호텔', '부산광역시 해운대구 해운대해변로 30', 35.158700, 129.160400,
-     '/uploads/placeholder/room-2.svg', '해운대 해변 앞 비즈니스 호텔.', '["WiFi","주차","피트니스"]' FORMAT JSON,
+     '/uploads/placeholder/room-2.svg', '해운대 해변 앞 비즈니스 호텔.', '["WiFi","주차","피트니스"]',
      TIMESTAMP '2025-01-01 15:00:00', TIMESTAMP '2025-01-01 12:00:00', 4.5, 110000, 'ACTIVE'),
  (5, 2, 4, 4, 8, '씨사이드 기장 리조트', '부산광역시 기장군 기장읍 기장해안로 268', 35.188400, 129.223000,
-     '/uploads/placeholder/room-1.svg', '기장 바다 앞 가족형 리조트 (승인 대기).', '["WiFi","주차","키즈풀"]' FORMAT JSON,
+     '/uploads/placeholder/room-1.svg', '기장 바다 앞 가족형 리조트 (승인 대기).', '["WiFi","주차","키즈풀"]',
      TIMESTAMP '2025-01-01 15:00:00', TIMESTAMP '2025-01-01 11:00:00', NULL, 160000, 'PENDING');
 
 INSERT INTO accommodation_image (accommodation_id, image_url, image_type, sort_order, created_at, updated_at) VALUES
@@ -76,15 +72,15 @@ INSERT INTO accommodation_image (accommodation_id, image_url, image_type, sort_o
 -- ---- 객실 ----
 INSERT INTO room (room_id, accommodation_id, name, type, price, max_occupancy, standard_occupancy, extra_person_fee,
                   bed_info, amenities, description, total_rooms, status, created_at, updated_at) VALUES
- (1, 1, '디럭스 오션뷰 더블', '디럭스', 120000, 3, 2, 20000, '["더블 침대 1개"]' FORMAT JSON, '["WiFi","욕조"]' FORMAT JSON, '오션뷰 더블룸', 8, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (2, 1, '프리미어 트윈',       '프리미어', 150000, 4, 2, 20000, '["싱글 침대 2개"]' FORMAT JSON, '["WiFi"]' FORMAT JSON, '트윈 베드 객실', 5, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (3, 1, '오션 스위트',         '스위트', 280000, 4, 2, 30000, '["킹 침대 1개"]' FORMAT JSON, '["WiFi","욕조","라운지"]' FORMAT JSON, '거실 분리형 스위트', 2, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (4, 2, '사랑채 온돌방',       '온돌', 180000, 2, 2, 0, '["요 2채"]' FORMAT JSON, '["WiFi"]' FORMAT JSON, '전통 온돌방', 3, 'ACTIVE', DATEADD('DAY', -180, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (5, 2, '안채 가족실',         '패밀리', 240000, 5, 4, 25000, '["요 4채"]' FORMAT JSON, '["WiFi","주방"]' FORMAT JSON, '4인 가족실', 2, 'ACTIVE', DATEADD('DAY', -180, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (6, 3, '솔숲 독채',           '독채', 150000, 6, 4, 20000, '["퀸 침대 2개"]' FORMAT JSON, '["WiFi","바비큐"]' FORMAT JSON, '독채 펜션', 4, 'ACTIVE', DATEADD('DAY', -5, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (7, 4, '스탠다드 더블',       '스탠다드', 110000, 2, 2, 15000, '["더블 침대 1개"]' FORMAT JSON, '["WiFi"]' FORMAT JSON, '비즈니스 더블', 20, 'ACTIVE', DATEADD('DAY', -250, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (8, 4, '오션 디럭스 트윈',    '디럭스', 160000, 3, 2, 20000, '["싱글 침대 2개"]' FORMAT JSON, '["WiFi","욕조"]' FORMAT JSON, '해변 전망 트윈', 10, 'ACTIVE', DATEADD('DAY', -250, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (9, 4, '리모델링 중 스위트',  '스위트', 260000, 4, 2, 30000, '["킹 침대 1개"]' FORMAT JSON, '["WiFi","욕조"]' FORMAT JSON, '리모델링으로 판매 중지된 객실(비활성 목록 확인용)', 2, 'INACTIVE', DATEADD('DAY', -300, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
+ (1, 1, '디럭스 오션뷰 더블', '디럭스', 120000, 3, 2, 20000, '["더블 침대 1개"]', '["WiFi","욕조"]', '오션뷰 더블룸', 8, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (2, 1, '프리미어 트윈',       '프리미어', 150000, 4, 2, 20000, '["싱글 침대 2개"]', '["WiFi"]', '트윈 베드 객실', 5, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (3, 1, '오션 스위트',         '스위트', 280000, 4, 2, 30000, '["킹 침대 1개"]', '["WiFi","욕조","라운지"]', '거실 분리형 스위트', 2, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (4, 2, '사랑채 온돌방',       '온돌', 180000, 2, 2, 0, '["요 2채"]', '["WiFi"]', '전통 온돌방', 3, 'ACTIVE', DATEADD('DAY', -180, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (5, 2, '안채 가족실',         '패밀리', 240000, 5, 4, 25000, '["요 4채"]', '["WiFi","주방"]', '4인 가족실', 2, 'ACTIVE', DATEADD('DAY', -180, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (6, 3, '솔숲 독채',           '독채', 150000, 6, 4, 20000, '["퀸 침대 2개"]', '["WiFi","바비큐"]', '독채 펜션', 4, 'ACTIVE', DATEADD('DAY', -5, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (7, 4, '스탠다드 더블',       '스탠다드', 110000, 2, 2, 15000, '["더블 침대 1개"]', '["WiFi"]', '비즈니스 더블', 20, 'ACTIVE', DATEADD('DAY', -250, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (8, 4, '오션 디럭스 트윈',    '디럭스', 160000, 3, 2, 20000, '["싱글 침대 2개"]', '["WiFi","욕조"]', '해변 전망 트윈', 10, 'ACTIVE', DATEADD('DAY', -250, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (9, 4, '리모델링 중 스위트',  '스위트', 260000, 4, 2, 30000, '["킹 침대 1개"]', '["WiFi","욕조"]', '리모델링으로 판매 중지된 객실(비활성 목록 확인용)', 2, 'INACTIVE', DATEADD('DAY', -300, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
 
 INSERT INTO room_image (room_id, image_url, sort_order, created_at, updated_at)
 SELECT room_id, CASE WHEN MOD(room_id, 2) = 1 THEN '/uploads/placeholder/room-1.svg' ELSE '/uploads/placeholder/room-2.svg' END, 1,

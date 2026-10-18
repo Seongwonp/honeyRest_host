@@ -5,12 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
 import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecificationExecutor<Review> {
@@ -18,17 +15,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecif
     // [기본 조회]
     // Pageable을 넘기면 페이징/정렬 모두 처리가능 (기본 findAll(Pageable)도 있음)
 
-    // 상태 단일 필터 (사용자가 status 선택했을 때)
+    // 상태 필터. V12 에서 과거 노출 값 VISIBLE 을 PUBLISHED 로 정규화했으므로 단일 값(=)으로 조회한다
+    // (저장 값: com.honeyrest.domain.type.ReviewStatus.ALL = PUBLISHED/HIDDEN/DELETED)
     Page<Review> findByStatus(String status, Pageable pageable);
-
-    // 노출 상태는 PUBLISHED(사용자 API)와 과거 VISIBLE 을 함께 조회해야 해서 IN 으로 거른다 (ReviewStatus.expand)
-    Page<Review> findByStatusIn(Collection<String> statuses, Pageable pageable);
-
-    Page<Review> findByAccommodationIdAndStatusIn(Long accommodationId, Collection<String> statuses, Pageable pageable);
-
-    Page<Review> findByRoomIdAndStatusIn(Long roomId, Collection<String> statuses, Pageable pageable);
-
-    Page<Review> findByAccommodationIdInAndStatusIn(List<Long> accommodationIds, Collection<String> statuses, Pageable pageable);
 
     // [조건 조회 1] 숙소 기준 + 상태 필터
     Page<Review> findByAccommodationIdAndStatus(Long accommodationId, String status, Pageable pageable);
@@ -43,24 +32,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecif
     Page<Review> findByRoomId(Long roomId, Pageable pageable);
 
     // [통계] 숙소별 평균 평점
-    @Query("select avg(r.rating) from Review r where r.accommodationId = :accId and r.status in ('PUBLISHED', 'VISIBLE')")
+    @Query("select avg(r.rating) from Review r where r.accommodationId = :accId and r.status = 'PUBLISHED'")
     Double findAverageRatingByAccommodation(@Param("accId") Long accommodationId);
 
     // [통계] 객실별 평균 평점
-    @Query("select avg(r.rating) from Review r where r.roomId = :roomId and r.status in ('PUBLISHED', 'VISIBLE')")
+    @Query("select avg(r.rating) from Review r where r.roomId = :roomId and r.status = 'PUBLISHED'")
     Double findAverageRatingByRoom(@Param("roomId") Long roomId);
-
-    // [소프트 삭제] status만 바꾸는 업데이트 (하드 삭제를 피하고 싶을 때)
-    @Transactional
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update Review r set r.status = 'HIDDEN' where r.reviewId = :id")
-    int softHide(@Param("id") Long reviewId);
-
-    // 리뷰 상태 변경
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Transactional
-    @Query("update Review r set r.status = :status where r.reviewId = :id")
-    int updateStatus(@Param("id") Long id, @Param("status") String status);
 
     long countByAccommodationIdAndStatus(Long accommodationId, String status);
 

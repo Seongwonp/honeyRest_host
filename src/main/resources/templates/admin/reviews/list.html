@@ -53,8 +53,8 @@
             }
             .badge-visible { background:#DCFCE7; color:#166534; border-color:#BBF7D0; }
             .badge-hidden  { background:#F1F5F9; color:#334155; border-color:#E2E8F0; }
-            .badge-reported{ background:#FEE2E2; color:#991B1B; border-color:#FECACA; }
-            .badge-pending { background:#FEF3C7; color:#7C2D12; border-color:#FDE68A; }
+            .badge-deleted { background:#FEE2E2; color:#991B1B; border-color:#FECACA; }
+            .badge-unknown { background:#FEF3C7; color:#7C2D12; border-color:#FDE68A; }
 
             /* 상단 툴바 */
             .toolbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
@@ -172,8 +172,7 @@
                     <option value="">전체 상태</option>
                     <option value="PUBLISHED"  th:selected="${status=='PUBLISHED' or status=='VISIBLE'}">노출</option>
                     <option value="HIDDEN"   th:selected="${status=='HIDDEN'}">숨김</option>
-                    <option value="REPORTED" th:selected="${status=='REPORTED'}">신고</option>
-                    <option value="PENDING"  th:selected="${status=='PENDING'}">검토중</option>
+                    <option value="DELETED"  th:selected="${status=='DELETED'}">삭제</option>
                 </select>
                 <select name="sort" class="form-select form-select-sm" style="width:auto">
                     <option value="latest"     th:selected="${sort=='latest'}">최신순</option>
@@ -310,10 +309,10 @@
                               th:classappend="${
                                 (review.status=='PUBLISHED' or review.status=='VISIBLE') ? ' badge-visible'  :
                                 review.status=='HIDDEN'   ? ' badge-hidden'   :
-                                review.status=='REPORTED' ? ' badge-reported' :
-                                                            ' badge-pending'
+                                review.status=='DELETED'  ? ' badge-deleted'  :
+                                                            ' badge-unknown'
                               }"
-                              th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '노출' : (review.status=='HIDDEN' ? '숨김' : (review.status=='REPORTED' ? '신고' : (review.status=='PENDING' ? '검토중' : review.status)))}">노출</span>
+                              th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '노출' : (review.status=='HIDDEN' ? '숨김' : (review.status=='DELETED' ? '삭제' : review.status))}">노출</span>
                     </td>
 
                     <!-- 작성일 -->
@@ -400,9 +399,9 @@
                                   th:classappend="${
                 (review.status=='PUBLISHED' or review.status=='VISIBLE') ? ' badge-visible' :
                 review.status=='HIDDEN'   ? ' badge-hidden'  :
-                review.status=='REPORTED' ? ' badge-reported':
-                                            ' badge-pending'}"
-                                  th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '노출' : (review.status=='HIDDEN' ? '숨김' : (review.status=='REPORTED' ? '신고' : (review.status=='PENDING' ? '검토중' : review.status)))}">노출</span>
+                review.status=='DELETED'  ? ' badge-deleted' :
+                                            ' badge-unknown'}"
+                                  th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '노출' : (review.status=='HIDDEN' ? '숨김' : (review.status=='DELETED' ? '삭제' : review.status))}">노출</span>
                         </div>
 
                         <div class="text-muted small mb-1 fw-700 ellipsis"

@@ -53,7 +53,7 @@ public class ReviewDTO {
 
     private Integer likeCount; // 좋아요 수
 
-    private String status; //VISIBLE 노출, HIDDEN 숨김(소프트 삭제),REPORTED 신고,PENDING 임시저장/검토 전
+    private String status; // 공유 ReviewStatus: PUBLISHED 노출, HIDDEN 숨김(소프트 삭제), DELETED 삭제
 
     // BaseEntity 타임스탬프 매핑용
     private LocalDateTime createdAt;

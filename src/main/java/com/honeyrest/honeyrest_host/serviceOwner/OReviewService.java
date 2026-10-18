@@ -2,7 +2,6 @@ package com.honeyrest.honeyrest_host.serviceOwner;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.domain.entity.Review;
-import com.honeyrest.honeyrest_host.repositoryOwner.OReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OReviewRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import jakarta.transaction.Transactional;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OReviewService {
     private final OReviewRepository reviewRepository;
-    private final OReservationRepository reservationRepository;
     private final OUserRepository userRepository;
     private final com.honeyrest.honeyrest_host.serviceAdmin.ReviewService adminReviewService;
 
@@ -48,29 +46,8 @@ public class OReviewService {
                 .build();
     }
 
-    private Review toEntity(ReviewDTO r) {
-        return Review.builder()
-                .reviewId(r.getReviewId())
-                .reservation(reservationRepository.getReferenceById(r.getReservationId()))
-                .user(userRepository.getReferenceById(r.getUserId()))
-                .accommodationId(r.getAccommodationId())
-                .roomId(r.getRoomId())
-                .rating(r.getRating())
-                .cleanlinessRating(r.getCleanlinessRating())
-                .serviceRating(r.getServiceRating())
-                .facilitiesRating(r.getFacilitiesRating())
-                .locationRating(r.getLocationRating())
-                .content(r.getContent())
-                .reply(r.getReply())
-                .likeCount(r.getLikeCount())
-                .status(r.getStatus())
-                .build();
-    }
-
-    public void create(ReviewDTO reviewDTO) {
-        reviewRepository.save(toEntity(reviewDTO));
-    }
-
+    // 과거의 toEntity/create(빌더로 Review 를 만들어 save) 는 호출하는 곳이 없고, 리뷰 작성은 사용자 API 의 몫이라 제거했다.
+    // 업체 화면의 리뷰 변경(답변·상태·숨김)은 아래 saveReply/hide 가 관리자 서비스의 도메인 메서드 경로를 쓴다.
 
     public PageResponseDTO<ReviewDTO> getReviewsByAccommodationIdWithPageable(Long accommodationId, PageRequestDTO pageRequestDTO) {
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
@@ -185,7 +162,7 @@ public class OReviewService {
         }
         com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO patch = com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO.builder()
                 .reply(reply == null ? "" : reply.trim())
-                .status(com.honeyrest.honeyrest_host.type.ReviewStatus.normalize(status))
+                .status(status) // 비어 있으면 유지, 값은 Review.changeStatus 가 공유 ReviewStatus 로 검증·정규화
                 .build();
         adminReviewService.patch(reviewId, patch);
     }
