@@ -44,20 +44,6 @@ public class ORoomServiceImpl implements ORoomService {
     // 객실 재고(totalRooms)·상태·가격이 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다
     private final SearchCacheInvalidator searchCacheInvalidator;
 
-    private String parseJson(String input) {
-        if (input == null || input.isBlank()) return "[]";
-        try {
-            List<String> amenitiesList = Arrays.stream(input.split("[,\\s]+"))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
-
-            return objectMapper.writeValueAsString(amenitiesList);
-        } catch (JsonProcessingException e) {
-            log.warn("JSON parse error", e);
-            return "[]"; // 실패 시 빈 배열 반환
-        }
-    }
     // ===== Mapper =====
     private RoomDTO toDTO(Room e) {
         return RoomDTO.builder()
@@ -74,7 +60,16 @@ public class ORoomServiceImpl implements ORoomService {
                 .description(e.getDescription())
                 .totalRooms(e.getTotalRooms())
                 .status(e.getStatus())
+                .accommodationName(e.getAccommodation().getName())
                 .build();
+    }
+
+    /** 목록 썸네일: 정렬 순서가 가장 앞선 객실 이미지 */
+    private RoomDTO withThumbnail(RoomDTO dto) {
+        roomImageRepository.findByRoom_RoomId(dto.getRoomId()).stream()
+                .min(Comparator.comparing(i -> i.getSortOrder() == null ? Integer.MAX_VALUE : i.getSortOrder()))
+                .ifPresent(i -> dto.setThumbnailUrl(i.getImageUrl()));
+        return dto;
     }
 
     /**
@@ -83,27 +78,19 @@ public class ORoomServiceImpl implements ORoomService {
     private List<String> parseList(String jsonInput) {
         if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
 
-        try {
-            // JSON 배열 문자열을 List<String>으로 역직렬화
-            return objectMapper.readValue(jsonInput, new TypeReference<List<String>>() {});
-        } catch (JsonProcessingException e) {
-            log.warn("JSON parse error", e);
-            return Collections.emptyList(); // 실패 시 빈 리스트 반환
-        }
+        // JSON 배열/CSV/여러 줄 모두 허용. 과거에는 JSON 배열만 읽어 bed_info 처럼 형식이 다른 값마다
+        // 스택트레이스 경고를 남기고 빈 값을 보여 줬다.
+        return com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.toList(jsonInput);
     }
     private String parseString(String jsonInput) {
         List<String> list = parseList(jsonInput);
         return String.join(", ", list);
     }
     private Room toEntity(RoomDTO d) {
-        String amenitiesJson = "[]"; // 기본값
-        String bedInfoJson = "[]"; // 기본값
-
-
-        if (d.getAmenities() != null && !d.getAmenities().isBlank()) {
-            amenitiesJson = (parseJson(d.getAmenities()));
-            bedInfoJson = (parseJson(d.getBedInfo()));
-        }
+        // 편의시설과 침대 정보를 각각 변환한다. 과거에는 편의시설이 비어 있으면 침대 정보까지 "[]" 로 버려졌고,
+        // 공백 기준으로도 쪼개 "더블 침대" 가 ["더블","침대"] 로 저장됐다.
+        String amenitiesJson = com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.normalizeToJson(d.getAmenities());
+        String bedInfoJson = com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.normalizeToJson(d.getBedInfo());
         return Room.builder()
                 .roomId(d.getRoomId())
                 .accommodation(accommodationRepository.getReferenceById(d.getAccommodationId()))
@@ -183,15 +170,52 @@ public class ORoomServiceImpl implements ORoomService {
         searchCacheInvalidator.evictAccommodationAfterCommit(RoomSearchSnapshot.of(updated).accommodationId());
     }
 
+    /**
+     * 객실 판매 중지(INACTIVE). 예약·가격 캘린더가 객실을 참조하므로 행을 지우면 FK 오류가 난다.
+     * 비활성 객실 목록에서 다시 활성화할 수 있다.
+     */
     @Override
     public void removeRoom(Long id) {
+        changeStatus(id, RoomStatus.INACTIVE);
+    }
+
+    @Override
+    public void activateRoom(Long id) {
+        changeStatus(id, RoomStatus.ACTIVE);
+    }
+
+    private void changeStatus(Long id, String status) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
-        roomRepository.delete(room); // RoomImage는 orphanRemoval=true로 함께 삭제
+        RoomDTO dto = toDTO(room);
+        dto.setStatus(status);
+        roomRepository.save(toEntity(dto));
         searchCacheInvalidator.bumpAfterCommit();
         if (room.getAccommodation() != null) {
             searchCacheInvalidator.evictAccommodationAfterCommit(room.getAccommodation().getAccommodationId());
         }
+    }
+
+    @Override
+    public PageResponseDTO<RoomDTO> getRoomsByStatusWithPageable(Long accommodationId, boolean active, PageRequestDTO pageRequestDTO) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
+                pageRequestDTO.getSize(), Sort.by("roomId").descending());
+        Page<Room> page;
+        if (accommodationId != null && accommodationId > 0) {
+            page = active
+                    ? roomRepository.findByAccommodation_AccommodationIdAndStatusIgnoreCase(accommodationId, RoomStatus.ACTIVE, pageable)
+                    : roomRepository.findByAccommodation_AccommodationIdAndStatusNotIgnoreCase(accommodationId, RoomStatus.ACTIVE, pageable);
+        } else {
+            page = active
+                    ? roomRepository.findByStatusIgnoreCase(RoomStatus.ACTIVE, pageable)
+                    : roomRepository.findByStatusNotIgnoreCase(RoomStatus.ACTIVE, pageable);
+        }
+        List<RoomDTO> list = page.getContent().stream().map(this::toDTO).map(this::withThumbnail).toList();
+        return PageResponseDTO.<RoomDTO>withAll()
+                .dtoList(list)
+                .pageRequestDTO(pageRequestDTO)
+                .totalCount(page.getTotalElements())
+                .build();
     }
 
     @Override
@@ -257,11 +281,13 @@ public class ORoomServiceImpl implements ORoomService {
     @Override
     public void modifyRoomImage(Long roomId, List<MultipartFile> images) throws Exception {
         if (images == null || images.isEmpty()) return;
-        int sortOrder = 0; // MAIN 이미지 다음부터 시작
+        // 기존 이미지 뒤에 붙인다 (매번 0부터 매겨 대표 이미지와 순서가 겹쳤다)
+        int sortOrder = roomImageRepository.findByRoom_RoomId(roomId).stream()
+                .map(RoomImage::getSortOrder).filter(Objects::nonNull).max(Integer::compare).orElse(-1) + 1;
 
         for (MultipartFile image : images) {
-            if (!image.isEmpty()) {
-                String subImageUrl = fileStorage.upload(image, "rooms");
+            if (image != null && !image.isEmpty()) {
+                String subImageUrl = fileStorage.upload(image, "rooms/" + roomId + "/images");
 
                 RoomImageDTO imageDTO = RoomImageDTO.builder()
                         .imageUrl(subImageUrl)
@@ -273,6 +299,25 @@ public class ORoomServiceImpl implements ORoomService {
             }
         }
 
+    }
+
+    @Override
+    public void replaceMainImage(Long roomId, String imageUrl) {
+        // 대표 이미지(정렬 순서가 가장 앞선 이미지)의 URL 을 바꾼다. 없으면 0번으로 추가한다.
+        Optional<RoomImage> current = roomImageRepository.findByRoom_RoomId(roomId).stream()
+                .min(Comparator.comparing(i -> i.getSortOrder() == null ? Integer.MAX_VALUE : i.getSortOrder()));
+        // merge 뒤에는 영속 엔티티의 URL 도 새 값으로 바뀌므로 지울 옛 URL 은 먼저 떠 둔다
+        // (과거 순서대로면 방금 올린 새 파일을 지워 대표 이미지가 404 였다)
+        String oldUrl = current.map(RoomImage::getImageUrl).orElse(null);
+        updateRoomImage(RoomImageDTO.builder()
+                .imageId(current.map(RoomImage::getImageId).orElse(null))
+                .roomId(roomId)
+                .imageUrl(imageUrl)
+                .sortOrder(current.map(RoomImage::getSortOrder).orElse(0))
+                .build());
+        if (oldUrl != null && !oldUrl.equals(imageUrl)) {
+            fileStorage.delete(oldUrl);
+        }
     }
 
     @Override

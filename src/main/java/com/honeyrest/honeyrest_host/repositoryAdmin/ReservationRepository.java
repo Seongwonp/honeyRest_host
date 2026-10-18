@@ -231,6 +231,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     boolean existsByRoom_Accommodation_AccommodationId(Long accommodationId);
 
+    boolean existsByRoom_RoomId(Long roomId);
+
     @Query("""
         select count(r) from Reservation r
         join r.accommodation a

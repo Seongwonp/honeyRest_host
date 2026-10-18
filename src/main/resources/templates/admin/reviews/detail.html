@@ -186,10 +186,10 @@
 
                 <!-- 상태 배지: 맵 리터럴로 안전하게 클래스 선택 -->
                 <span class="chip"
-                      th:classappend="*{status}=='VISIBLE' ? ' chip-visible' :
+                      th:classappend="(*{status}=='PUBLISHED' or *{status}=='VISIBLE') ? ' chip-visible' :
                       (*{status}=='PENDING' ? ' chip-pending' :
                       (*{status}=='HIDDEN'  ? ' chip-hidden'  : ' chip-lav'))">
-  상태: <strong th:text="*{status}">VISIBLE</strong>
+  상태: <strong th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '노출' : (review.status=='HIDDEN' ? '숨김' : (review.status=='PENDING' ? '검토중' : review.status))}">노출</strong>
 </span>
 
                 <span class="chip chip-mint">
@@ -270,9 +270,9 @@
                     <div class="col-md-3">
                         <label class="form-label"><i class="bi bi-shield-check me-1"></i>상태</label>
                         <select class="form-select" th:field="*{status}">
-                            <option value="VISIBLE">VISIBLE</option>
-                            <option value="PENDING">PENDING</option>
-                            <option value="HIDDEN">HIDDEN</option>
+                            <option value="PUBLISHED">노출</option>
+                            <option value="PENDING">검토중</option>
+                            <option value="HIDDEN">숨김</option>
                         </select>
                         <div class="text-danger small" th:errors="*{status}"></div>
                     </div>
@@ -306,15 +306,6 @@
         </div>
 </th:block>
 
-<th:block layout:fragment="body-end">
-    <script th:inline="javascript">
-        (function () {
-            var s = /*[[${success}]]*/ null;
-            var e = /*[[${error}]]*/   null;
-            if (s) alert(s);
-            if (e) alert(e);
-        })();
-    </script>
-</th:block>
+<!-- (토스트와 중복되는 alert 스크립트 제거 — 레이아웃에 없는 body-end 슬롯이라 원래 렌더링되지 않던 코드) -->
 </body>
 </html>

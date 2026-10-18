@@ -68,50 +68,49 @@
                 </div>
             </div>
 
-            <!-- 숙소 및 객실 정보 -->
+            <!-- 숙소 및 객실 정보: ID 를 직접 입력하던 칸을 객실 선택으로 바꿨다 (숙소 ID 는 선택한 객실에서 자동으로 채운다) -->
             <div class="card shadow-sm mb-4 p-4">
                 <h5 class="mb-3">숙소 및 객실 정보</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">숙소 ID</label>
-                        <input type="number" name="accommodationId" class="form-control" th:value="${reservation.accommodationId}" required>
+                        <label class="form-label" for="roomSelect">객실</label>
+                        <select id="roomSelect" name="roomId" class="form-select" required>
+                            <option th:each="r : ${rooms}"
+                                    th:value="${r.roomId}"
+                                    th:attr="data-accommodation-id=${r.accommodationId}"
+                                    th:text="${r.accommodationName + ' · ' + r.name}"
+                                    th:selected="${r.roomId == reservation.roomId}">숙소 · 객실</option>
+                        </select>
+                        <input type="hidden" id="accommodationId" name="accommodationId" th:value="${reservation.accommodationId}">
+                        <div class="form-text">객실을 바꾸면 해당 기간 재고를 다시 확인합니다.</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">숙소 이름</label>
-                        <input type="text" name="accommodationName" class="form-control" th:value="${reservation.accommodationName}" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">객실 ID</label>
-                        <input type="number" name="roomId" class="form-control" th:value="${reservation.roomId}" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">객실 이름</label>
-                        <input type="text" name="roomName" class="form-control" th:value="${reservation.roomName}" required>
+                        <label class="form-label">예약 당시 숙소 / 객실명</label>
+                        <input type="text" class="form-control" th:value="${reservation.accommodationName + ' / ' + reservation.roomName}" readonly>
                     </div>
                 </div>
             </div>
 
-            <!-- 가격 정보 -->
+            <!-- 가격 정보: 예약 시점 결제 스냅샷이라 수정되지 않는다 (서버도 저장하지 않음) -->
             <div class="card shadow-sm mb-4 p-4">
-                <h5 class="mb-3">가격 정보</h5>
+                <h5 class="mb-3">가격 정보 <small class="text-muted fw-normal" style="font-size:.8rem;">결제 시점 금액 (읽기 전용)</small></h5>
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">원래 가격</label>
-                        <input type="number" name="originalPrice" class="form-control" id="originalPrice"
-                               th:value="${reservation.originalPrice}" step="100">
+                        <input type="text" class="form-control" readonly
+                               th:value="${reservation.originalPrice != null ? #numbers.formatInteger(reservation.originalPrice, 1, 'COMMA') + '원' : '-'}">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">할인 금액</label>
-                        <input type="number" name="discountAmount" class="form-control" id="discountAmount"
-                               th:value="${reservation.discountAmount}" step="100">
+                        <input type="text" class="form-control" readonly
+                               th:value="${reservation.discountAmount != null ? #numbers.formatInteger(reservation.discountAmount, 1, 'COMMA') + '원' : '-'}">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">최종 가격</label>
-                        <input type="number" name="price" class="form-control" id="price"
-                               th:value="${reservation.price}" step="100" required readonly>
+                        <input type="text" class="form-control" readonly
+                               th:value="${reservation.price != null ? #numbers.formatInteger(reservation.price, 1, 'COMMA') + '원' : '-'}">
                     </div>
                 </div>
-
             </div>
 
             <!-- 기타 -->
@@ -140,28 +139,19 @@
         </form>
     </div>
 </th:block>
+<th:block layout:fragment="script">
+<script>
+    // 선택한 객실의 숙소 ID 를 함께 보낸다
+    (function () {
+        const roomSelect = document.getElementById("roomSelect");
+        const accInput = document.getElementById("accommodationId");
+        if (!roomSelect || !accInput) return;
+        roomSelect.addEventListener("change", function () {
+            const opt = roomSelect.options[roomSelect.selectedIndex];
+            if (opt && opt.dataset.accommodationId) accInput.value = opt.dataset.accommodationId;
+        });
+    })();
+</script>
+</th:block>
 </body>
 </html>
-<script>
-    // 가격 계산 함수
-    function calculatePrice() {
-        const original = parseFloat(document.getElementById("originalPrice").value) || 0;
-        const discount = parseFloat(document.getElementById("discountAmount").value) || 0;
-
-        if (discount > original) {
-            alert("할인 금액은 원래 가격보다 클 수 없습니다!");
-            document.getElementById("discountAmount").value = original; // 할인 금액을 원래 가격으로 맞춤
-            document.getElementById("price").value = 0;
-        } else {
-            const result = original - discount;
-            document.getElementById("price").value = result;
-        }
-    }
-
-    // 이벤트 연결
-    document.getElementById("originalPrice").addEventListener("input", calculatePrice);
-    document.getElementById("discountAmount").addEventListener("input", calculatePrice);
-
-    // 페이지 로드시 초기 계산
-    window.addEventListener("DOMContentLoaded", calculatePrice);
-</script>

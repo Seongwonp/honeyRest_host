@@ -45,14 +45,16 @@
                                     <tr th:each="c : ${coupons}" class="text-center">
                                         <td th:text="${c.couponId}"></td>
                                         <td th:text="${c.name}"></td>
-                                        <td th:text="${c.code}"></td>
+                                        <td th:text="${c.code ?: '-'}"></td>
                                         <td>
-                                        <span th:text="${c.discountType == 'PERCENT' ? c.discountValue + '%'
-                                                       : #numbers.formatDecimal(c.discountValue, 1, 'COMMA', 2, 'POINT') + '원'}"></span>
+                                        <!-- 정률 별칭(RATE/PERCENT/PERCENTAGE) 모두 % 로 표시 (PERCENTAGE 쿠폰이 "10.00원"으로 보였다) -->
+                                        <span th:text="${c.discountType == 'PERCENT' or c.discountType == 'PERCENTAGE' or c.discountType == 'RATE'
+                                                       ? #numbers.formatDecimal(c.discountValue, 1, 0) + '%'
+                                                       : #numbers.formatDecimal(c.discountValue, 1, 'COMMA', 0, 'POINT') + '원'}"></span>
                                         </td>
                                         <td th:text="${c.maxDiscountAmount != null ? #numbers.formatDecimal(c.maxDiscountAmount, 1, 'COMMA', 0, 'POINT') + '원' : '-'}"></td>
                                         <td th:text="${c.minOrderAmount != null ? #numbers.formatDecimal(c.minOrderAmount, 1, 'COMMA', 0, 'POINT') + '원' : '-'}"></td>
-                                        <td th:text="${c.targetType}"></td>
+                                        <td th:text="${c.targetType == 'ALL' ? '전체 숙소' : (c.targetType == 'ACCOMMODATION' ? '특정 숙소 #' + c.targetId : c.targetType)}"></td>
                                         <td>
                                             <span th:text="${#temporals.format(c.startDate, 'yyyy-MM-dd')}"></span> ~
                                             <span th:text="${#temporals.format(c.endDate, 'yyyy-MM-dd')}"></span>

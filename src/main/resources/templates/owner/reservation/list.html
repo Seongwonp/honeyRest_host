@@ -21,7 +21,7 @@
                 th:text="${company != null ? company.name + ' 예약 목록' : '전체 예약 목록'}">예약 목록</h3>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <form id="searchForm" class="d-flex gap-2 align-items-center flex-wrap">
+            <form id="searchForm" class="d-flex gap-2 align-items-center flex-wrap" method="get" th:action="@{/owner/reservation/list}">
                 <select id="companySelect" name="companyId" class="form-select form-select-sm" style="width:auto">
                     <option value="">전체 업체</option>
                 </select>
@@ -53,6 +53,7 @@
                     <th class="hide-sm">체크인</th>
                     <th class="hide-sm">체크아웃</th>
                     <th class="hide-sm text-end">가격</th>
+                    <th class="text-center">상태</th>
                     <th class="text-center">액션</th>
                 </tr>
                 </thead>
@@ -71,22 +72,22 @@
                     <td class="hide-sm" th:text="${res.checkInDate}">2025-01-01</td>
                     <td class="hide-sm" th:text="${res.checkOutDate}">2025-01-02</td>
                     <td class="hide-sm text-end fw-semibold"
-                        th:text="${res.price != null ? #numbers.formatInteger(res.price, 3, 'COMMA') + '원' : '-'}">-</td>
+                        th:text="${res.price != null ? #numbers.formatInteger(res.price, 1, 'COMMA') + '원' : '-'}">-</td>
                     <td class="text-center">
-                        <div class="d-inline-flex gap-1">
-                            <a class="btn btn-ghost btn-chip"
-                               th:href="@{'/owner/reservation/' + ${res.reservationId} + '/modify'}">수정</a>
-                            <form th:action="@{'/owner/reservation/' + ${res.reservationId} + '/delete'}"
-                                  method="post" class="d-inline"
-                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
-                            </form>
-                        </div>
+                        <!-- 상태 표시 (목록에 상태가 없어 대기/확정/완료를 구분할 수 없었다) -->
+                        <span class="badge-chip"
+                              th:classappend="${res.status == 'CONFIRMED' or res.status == 'COMPLETED'} ? ' badge-active' :
+                                             (${res.status == 'PENDING'} ? ' badge-pending' : ' badge-inactive')"
+                              th:text="${res.status == 'PENDING' ? '대기' : (res.status == 'CONFIRMED' ? '확정' : (res.status == 'COMPLETED' ? '이용 완료' : (res.status == 'NO_SHOW' ? '노쇼' : (res.status == 'CANCEL_REQUEST' ? '취소 요청' : (res.status == 'CANCELLED' ? '취소' : res.status)))))}">확정</span>
+                    </td>
+                    <td class="text-center">
+                        <!-- 예약 삭제 버튼은 없는 경로(/delete)를 가리켰다. 상태 변경·취소는 수정 화면에서 한다. -->
+                        <a class="btn btn-ghost btn-chip"
+                           th:href="@{'/owner/reservation/' + ${res.reservationId} + '/modify'}">수정</a>
                     </td>
                 </tr>
                 <tr th:if="${reservations == null or #lists.isEmpty(reservations)}">
-                    <td colspan="9" class="text-center py-5 text-muted">
+                    <td colspan="10" class="text-center py-5 text-muted">
                         <i class="bi bi-journal-bookmark d-block fs-2 mb-2"></i>
                         예약 내역이 없습니다.
                     </td>
@@ -99,24 +100,24 @@
         <div class="card-footer d-flex justify-content-between align-items-center"
              th:if="${reservationPage != null}">
             <div class="text-muted" style="font-size:.85rem;">
-                페이지 <span th:text="${reservationPage.current}">1</span>
+                총 <span th:text="${reservationPage.total}">0</span>건
             </div>
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item" th:classappend="${!reservationPage.prev} ? 'disabled'">
                         <a class="page-link"
-                           th:href="@{/owner/reservation/list(page=${reservationPage.prevPage}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId})}">&laquo;</a>
+                           th:href="@{/owner/reservation/list(page=${reservationPage.prevPage}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId}, accommodationId=${accommodationId}, roomId=${roomId})}">&laquo;</a>
                     </li>
                     <li class="page-item"
                         th:each="num : ${reservationPage.pageNumList}"
                         th:classappend="${num == reservationPage.current} ? 'active'">
                         <a class="page-link"
-                           th:href="@{/owner/reservation/list(page=${num}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId})}"
+                           th:href="@{/owner/reservation/list(page=${num}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId}, accommodationId=${accommodationId}, roomId=${roomId})}"
                            th:text="${num}">1</a>
                     </li>
                     <li class="page-item" th:classappend="${!reservationPage.next} ? 'disabled'">
                         <a class="page-link"
-                           th:href="@{/owner/reservation/list(page=${reservationPage.nextPage}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId})}">&raquo;</a>
+                           th:href="@{/owner/reservation/list(page=${reservationPage.nextPage}, size=${reservationPage.pageRequestDTO.size}, companyId=${companyId}, accommodationId=${accommodationId}, roomId=${roomId})}">&raquo;</a>
                     </li>
                 </ul>
             </nav>
@@ -176,16 +177,6 @@ loadCompanyOptions();
 loadAccommodationOptions(selectedCompanyId);
 loadRoomOptions(selectedAccommodationId);
 
-document.getElementById('searchForm').addEventListener('submit', function (e) {
-    const cId = companySelect.value;
-    const aId = accommodationSelect.value;
-    const rId = roomSelect.value;
-    let url = "/owner/reservation/list";
-    if (rId) url = `/owner/reservation/room/${rId}?companyId=${cId}&accommodationId=${aId}&roomId=${rId}`;
-    else if (aId) url = `/owner/reservation/accommodation/${aId}?companyId=${cId}&accommodationId=${aId}`;
-    else if (cId) url = `/owner/reservation/company/${cId}?companyId=${cId}`;
-    this.action = url;
-});
 /*]]>*/
 </script>
 </th:block>

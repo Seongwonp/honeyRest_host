@@ -63,6 +63,11 @@ public class LocalFileStorage implements FileStorage {
         if (key == null) {
             return;
         }
+        // 시드 데이터가 여러 숙소·객실에서 함께 쓰는 공용 자리표시 이미지(uploads/placeholder)는 지우지 않는다.
+        // 한 객실의 이미지를 교체·삭제하면 다른 모든 숙소의 이미지가 깨지던 문제
+        if (key.startsWith("placeholder/")) {
+            return;
+        }
         try {
             Files.deleteIfExists(resolveInsideBase(key));
         } catch (IOException | IllegalArgumentException e) {

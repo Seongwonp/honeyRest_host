@@ -170,7 +170,7 @@
                 <input type="hidden" name="view" th:value="${view != null ? view : 'list'}"/>
                 <select name="status" class="form-select form-select-sm" style="width:auto">
                     <option value="">전체 상태</option>
-                    <option value="VISIBLE"  th:selected="${status=='VISIBLE'}">노출</option>
+                    <option value="PUBLISHED"  th:selected="${status=='PUBLISHED' or status=='VISIBLE'}">노출</option>
                     <option value="HIDDEN"   th:selected="${status=='HIDDEN'}">숨김</option>
                     <option value="REPORTED" th:selected="${status=='REPORTED'}">신고</option>
                     <option value="PENDING"  th:selected="${status=='PENDING'}">검토중</option>
@@ -308,12 +308,12 @@
                     <td>
                         <span class="badge-status"
                               th:classappend="${
-                                review.status=='VISIBLE'  ? ' badge-visible'  :
+                                (review.status=='PUBLISHED' or review.status=='VISIBLE') ? ' badge-visible'  :
                                 review.status=='HIDDEN'   ? ' badge-hidden'   :
                                 review.status=='REPORTED' ? ' badge-reported' :
                                                             ' badge-pending'
                               }"
-                              th:text="${review.status}">VISIBLE</span>
+                              th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '노출' : (review.status=='HIDDEN' ? '숨김' : (review.status=='REPORTED' ? '신고' : (review.status=='PENDING' ? '검토중' : review.status)))}">노출</span>
                     </td>
 
                     <!-- 작성일 -->
@@ -337,7 +337,7 @@
                                 <input type="hidden" name="page"   th:value="${pageRequestDTO.page}">
                                 <input type="hidden" name="size"   th:value="${pageRequestDTO.size}">
                                 <button type="submit" class="btn btn-pill btn-pill-toggle"
-                                        th:text="${review.status=='VISIBLE' ? '숨김' : '노출'}"></button>
+                                        th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '숨김' : '노출'}"></button>
                             </form>
                         </div>
                     </td>
@@ -398,11 +398,11 @@
                                  th:text="${review.accommodationName != null ? review.accommodationName : '숙소ID: ' + review.accommodationId}">숙소명</div>
                             <span class="badge-status"
                                   th:classappend="${
-                review.status=='VISIBLE'  ? ' badge-visible' :
+                (review.status=='PUBLISHED' or review.status=='VISIBLE') ? ' badge-visible' :
                 review.status=='HIDDEN'   ? ' badge-hidden'  :
                 review.status=='REPORTED' ? ' badge-reported':
                                             ' badge-pending'}"
-                                  th:text="${review.status}">VISIBLE</span>
+                                  th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '노출' : (review.status=='HIDDEN' ? '숨김' : (review.status=='REPORTED' ? '신고' : (review.status=='PENDING' ? '검토중' : review.status)))}">노출</span>
                         </div>
 
                         <div class="text-muted small mb-1 fw-700 ellipsis"
@@ -444,7 +444,7 @@
                                 <input type="hidden" name="page"   th:value="${pageRequestDTO.page}">
                                 <input type="hidden" name="size"   th:value="${pageRequestDTO.size}">
                                 <button type="submit" class="btn btn-pill btn-pill-toggle"
-                                        th:text="${review.status=='VISIBLE' ? '숨김' : '노출'}"></button>
+                                        th:text="${(review.status=='PUBLISHED' or review.status=='VISIBLE') ? '숨김' : '노출'}"></button>
                             </form>
                         </div>
                     </div>
@@ -473,15 +473,6 @@
 
 </th:block>
 
-<th:block layout:fragment="body-end">
-    <script th:inline="javascript">
-        (function () {
-            var s = /*[[${success}]]*/ null;
-            var e = /*[[${error}]]*/   null;
-            if (s) alert(s);
-            if (e) alert(e);
-        })();
-    </script>
-</th:block>
+<!-- (토스트와 중복되는 alert 스크립트 제거 — 레이아웃에 없는 body-end 슬롯이라 원래 렌더링되지 않던 코드) -->
 </body>
 </html>

@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
 @Controller("ownerDashboardController")
@@ -50,11 +51,23 @@ public class DashboardController {
 
     @GetMapping("/coupon/create")
     public String createCoupon(Model model) {
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         return "owner/coupon/create";
     }
+
     @PostMapping("/coupon/create")
-    public String createCoupon(@ModelAttribute CouponDTO couponDTO) {
-        couponService.registerCoupon(couponDTO);
+    public String createCoupon(@ModelAttribute CouponDTO couponDTO, RedirectAttributes ra) {
+        try {
+            couponService.registerCoupon(couponDTO);
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/owner/coupon/create";
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // 쿠폰 코드는 unique — 중복이면 500 대신 안내
+            ra.addFlashAttribute("error", "이미 사용 중인 쿠폰 코드입니다.");
+            return "redirect:/owner/coupon/create";
+        }
+        ra.addFlashAttribute("success", "쿠폰을 등록했습니다.");
         return "redirect:/owner/coupon/list";
     }
 

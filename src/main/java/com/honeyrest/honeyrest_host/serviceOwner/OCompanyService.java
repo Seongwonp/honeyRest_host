@@ -3,7 +3,7 @@ package com.honeyrest.honeyrest_host.serviceOwner;
 import com.honeyrest.honeyrest_host.type.CompanyStatus;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.dtoOwner.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.PageRequestDTO;
@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 @Service
@@ -34,22 +35,56 @@ public class OCompanyService {
     private final ObjectMapper objectMapper;
     private final OAccommodationRepository accommodationRepository;
 
-    private List<String> parseBankInfoToList(String jsonInput) {
-        if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
-
+    /**
+     * company.bank_info 는 JSON 객체 {"bank","account","holder"} 로 저장된다(사용자 API·시드와 같은 형식).
+     * 과거 코드는 JSON 배열(List&lt;String&gt;)로 읽으려다 매번 파싱 실패 경고를 남기고 빈 값을 보여 줬고,
+     * 저장할 때는 JSON 이 아닌 "a, b, c" 문자열을 JSON 컬럼에 넣었다.
+     * 화면에서는 "은행, 계좌번호, 예금주" 한 줄로 보여 주고 같은 형식으로 입력받는다.
+     */
+    String bankInfoToText(String json) {
+        if (json == null || json.isBlank()) return "";
         try {
-            // JSON 배열 문자열을 List<String>으로 역직렬화
-            return objectMapper.readValue(jsonInput, new TypeReference<List<String>>() {});
+            JsonNode node = objectMapper.readTree(json);
+            if (node.isObject()) {
+                return Stream.of("bank", "account", "holder")
+                        .map(k -> node.path(k).asText(""))
+                        .filter(v -> !v.isBlank())
+                        .collect(Collectors.joining(", "));
+            }
+            if (node.isArray()) {
+                List<String> parts = new ArrayList<>();
+                node.forEach(n -> parts.add(n.asText()));
+                return String.join(", ", parts);
+            }
+            return node.asText();
         } catch (JsonProcessingException e) {
-            log.warn("JSON parse error", e);
-            return Collections.emptyList(); // 실패 시 빈 리스트 반환
+            // JSON 이 아닌 과거 값은 그대로 보여 준다
+            return json;
         }
     }
-    private String parseBankInfoToString(String jsonInput) {
-        List<String> list = parseBankInfoToList(jsonInput);
-        return String.join(", ", list);
-    }
 
+    String bankInfoToJson(String text) {
+        if (text == null || text.isBlank()) return null;
+        String trimmed = text.trim();
+        // 이미 JSON 객체면 그대로 저장 (형식 검증만)
+        if (trimmed.startsWith("{")) {
+            try {
+                return objectMapper.writeValueAsString(objectMapper.readTree(trimmed));
+            } catch (JsonProcessingException e) {
+                throw new IllegalArgumentException("은행 정보 JSON 형식이 올바르지 않습니다.");
+            }
+        }
+        String[] parts = trimmed.split("\\s*,\\s*");
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("bank", parts.length > 0 ? parts[0] : "");
+        map.put("account", parts.length > 1 ? parts[1] : "");
+        map.put("holder", parts.length > 2 ? String.join(", ", Arrays.copyOfRange(parts, 2, parts.length)) : "");
+        try {
+            return objectMapper.writeValueAsString(map);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     private CompanyDTO toDTO(Company company) {
         return CompanyDTO.builder()
@@ -60,44 +95,24 @@ public class OCompanyService {
                 .email(company.getEmail())
                 .status(company.getStatus())
                 .ownerName(company.getOwnerName())
-                .bankInfo(parseBankInfoToString(company.getBankInfo()))
+                .bankInfo(bankInfoToText(company.getBankInfo()))
                 .businessNumber(company.getBusinessNumber())
                 .commissionRate(company.getCommissionRate())
                 .createdAt(company.getCreatedAt())
                 .build();
     }
-    private String parseBankInfoToJson(String input) {
-        if (input == null || input.isBlank()) return "[]";
-        try {
-            List<String> amenitiesList = Arrays.stream(input.split("[,\\s]+"))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
 
-            return objectMapper.writeValueAsString(amenitiesList);
-        } catch (JsonProcessingException e) {
-            log.warn("JSON parse error", e);
-            return "[]"; // 실패 시 빈 배열 반환
-        }
-    }
     private Company toEntity(CompanyDTO dto) {
-        String BankInfoJson = "[]"; // 기본값
-
-        try {
-            if (dto.getBankInfo() != null && !dto.getBankInfo().isBlank()) {
-                BankInfoJson = parseBankInfoToString(dto.getBankInfo());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        String status = dto.getStatus() == null || dto.getStatus().isBlank()
+                ? CompanyStatus.ACTIVE : dto.getStatus().trim().toUpperCase(Locale.ROOT);
         return Company.builder()
                 .name(dto.getName())
                 .email(dto.getEmail())
                 .phone(dto.getPhone())
                 .address(dto.getAddress())
                 .companyId(dto.getCompanyId())
-                .status(dto.getStatus())
-                .bankInfo(BankInfoJson)
+                .status(status)
+                .bankInfo(bankInfoToJson(dto.getBankInfo()))
                 .businessNumber(dto.getBusinessNumber())
                 .commissionRate(dto.getCommissionRate())
                 .ownerName(dto.getOwnerName())
@@ -105,6 +120,15 @@ public class OCompanyService {
     }
 
     public void registerCompany(CompanyDTO dto) {
+        companyRepository.save(toEntity(dto));
+    }
+
+    /** 비활성 업체를 다시 활성화한다 (비활성 업체 목록의 "활성화" 버튼) */
+    public void activateCompany(Integer id) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("업체가 존재하지 않습니다."));
+        CompanyDTO dto = toDTO(company);
+        dto.setStatus(CompanyStatus.ACTIVE);
         companyRepository.save(toEntity(dto));
     }
 
@@ -132,19 +156,25 @@ public class OCompanyService {
 
     public CompanyDTO getCompany(Integer companyId) {
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("업체가 존재하지 않습니다."));
         return toDTO(company);
     }
 
     public PageResponseDTO<CompanyDTO> getCompaniesWithPage(PageRequestDTO requestDTO){
+        return getCompaniesWithPage(requestDTO, null);
+    }
+
+    /** 활성 업체 목록. keyword 는 업체명·대표자명 부분 일치 (목록 상단 검색창) */
+    public PageResponseDTO<CompanyDTO> getCompaniesWithPage(PageRequestDTO requestDTO, String keyword){
+        String kw = keyword == null || keyword.isBlank() ? null : keyword.trim();
 
         Pageable pageable = PageRequest.of(requestDTO.getPage() - 1, requestDTO.getSize(), Sort.by("companyId").descending());
 
-        Page<Company> page = companyRepository.findAll(pageable);
+        // 상태 조건을 쿼리에 넣는다. 페이지를 읽은 뒤 메모리에서 거르면 "총 N개"와 페이지 수가 실제 행과 어긋났다.
+        Page<Company> page = companyRepository.findActive(kw, pageable);
 
         List<CompanyDTO> dtoList = page.getContent().stream()
-                .map(this::toDTO) // Company -> CompanyDTO 변환 메서드 필요
-                .filter(c -> CompanyStatus.isActive(c.getStatus()))
+                .map(this::toDTO)
                 .toList();
 
         return PageResponseDTO.<CompanyDTO>withAll()
@@ -159,11 +189,10 @@ public class OCompanyService {
 
         Pageable pageable = PageRequest.of(requestDTO.getPage() - 1, requestDTO.getSize(), Sort.by("companyId").descending());
 
-        Page<Company> page = companyRepository.findAll(pageable);
+        Page<Company> page = companyRepository.findInactive(pageable);
 
         List<CompanyDTO> dtoList = page.getContent().stream()
-                .map(this::toDTO) // Company -> CompanyDTO 변환 메서드 필요
-                .filter(c -> !CompanyStatus.isActive(c.getStatus()))
+                .map(this::toDTO)
                 .toList();
 
         return PageResponseDTO.<CompanyDTO>withAll()
@@ -184,7 +213,9 @@ public class OCompanyService {
 
     public List<CompanyDTO> searchByNameContaining(String keyword) {
         return companyRepository.findAll().stream()
-                .filter(c -> c.getName().contains(keyword))
+                .filter(c -> keyword == null || keyword.isBlank()
+                        || (c.getName() != null && c.getName().contains(keyword))
+                        || (c.getOwnerName() != null && c.getOwnerName().contains(keyword)))
                 .map(this::toDTO)// 부분 일치
                 .toList();
     }

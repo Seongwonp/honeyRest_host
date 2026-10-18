@@ -152,7 +152,7 @@
                                 최대: <span th:text="${room.maxOccupancy}">4</span>
                             </div>
                             <div class="fw-semibold"
-                                 th:text="${room.price != null ? #numbers.formatInteger(room.price, 3, 'COMMA') + '원' : '-'}">0원</div>
+                                 th:text="${room.price != null ? #numbers.formatInteger(room.price, 1, 'COMMA') + '원' : '-'}">0원</div>
 
                             <hr class="card-divider">
 

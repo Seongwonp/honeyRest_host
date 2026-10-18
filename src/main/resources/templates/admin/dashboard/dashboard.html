@@ -134,7 +134,7 @@
                             </div>
 
                             <!-- 일별 전용 기간 선택 -->
-                            <div id="dailyRangeControls" class="d-flex align-items-center gap-1">
+                            <div id="dailyRangeControls" class="d-flex flex-wrap align-items-center gap-1">
                                 <input id="from" type="date" autocomplete="off"/>
                                 <span> ~ </span>
                                 <input id="to" type="date" autocomplete="off"/>
@@ -166,9 +166,8 @@
                                 <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>숙소</th>
-                                    <th>방</th>
-                                    <th class="text-end">주문 수</th>
+                                    <th>객실 / 숙소</th>
+                                    <th class="text-end" style="white-space:nowrap">주문</th>
                                     <th class="text-end">매출</th>
                                 </tr>
                                 </thead>
@@ -235,6 +234,8 @@
             const fmtCurrency = n => new Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW',maximumFractionDigits:0}).format(Number(n||0));
             const fmtNumber   = n => new Intl.NumberFormat('ko-KR').format(Number(n||0));
             const z2          = n => String(n).padStart(2,'0');
+            // 숙소·객실명은 업체가 입력한 값이라 HTML 로 해석하지 않는다
+            const esc         = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
             const toIso       = d => `${d.getFullYear()}-${z2(d.getMonth()+1)}-${z2(d.getDate())}`;
             const parseIso    = s => { const [y,m,d] = (s||'').split('-').map(Number); return new Date(y,(m||1)-1,d||1); };
 
@@ -299,15 +300,14 @@
                     tbTop.insertAdjacentHTML('beforeend', `
           <tr>
             <td>${i+1}</td>
-            <td>${r.accommodationName??''}</td>
-            <td>${r.roomName??''}</td>
-            <td class="text-end">${fmtNumber(r.totalOrders||0)}</td>
-            <td class="text-end">${fmtCurrency(r.totalSales||0)}</td>
+            <td><div class="fw-semibold">${esc(r.roomName)}</div><small class="text-muted">${esc(r.accommodationName)}</small></td>
+            <td class="text-end" style="white-space:nowrap">${fmtNumber(r.totalOrders||0)}</td>
+            <td class="text-end" style="white-space:nowrap">${fmtCurrency(r.totalSales||0)}</td>
           </tr>
         `);
                 });
                 if(topRooms.length===0){
-                    tbTop.innerHTML = `<tr><td colspan="5" class="text-center text-muted">데이터가 없습니다.</td></tr>`;
+                    tbTop.innerHTML = `<tr><td colspan="4" class="text-center text-muted">데이터가 없습니다.</td></tr>`;
                 }
             }
 
@@ -333,11 +333,11 @@
                     ulUpcoming.insertAdjacentHTML('beforeend', `
           <li class="list-group-item d-flex justify-content-between">
             <div>
-              <div class="fw-semibold">${u.guestName ?? '-'}</div>
-              <small class="text-muted">${u.accommodationName ?? ''} · ${u.roomName ?? ''}</small>
+              <div class="fw-semibold">${esc(u.guestName ?? '-')}</div>
+              <small class="text-muted">${esc(u.accommodationName)} · ${esc(u.roomName)}</small>
             </div>
             <div class="text-end">
-              <div>${dateStr}</div>
+              <div style="white-space:nowrap">${dateStr}</div>
               <small class="text-muted">${u.nights ?? 0}박</small>
             </div>
           </li>
@@ -346,21 +346,23 @@
             }
 
             // ===== 일/월 데이터 그리기 =====
+            // 기간의 모든 날짜를 라벨로 쓰고 매출이 없는 날은 0 으로 채운다.
+            // (과거: 매출 있는 날만 그려 기본값 "오늘"이면 점 하나/빈 차트였다)
             function drawDailyByRange(fromStr, toStr){
                 const from = parseIso(fromStr);
                 const to   = parseIso(toStr);
-                const rows = daily30.filter(r=>{
-                    const d =
-                        (typeof r.date === 'string') ? parseIso(r.date)
-                            : (r.date?.year ? new Date(r.date.year, (r.date.monthValue||r.date.month)-1, r.date.dayOfMonth||r.date.day||1) : null);
-                    return d && d >= from && d <= to;
+                const byDate = {};
+                daily30.forEach(r => {
+                    const key = (typeof r.date === 'string') ? r.date.slice(0, 10)
+                        : (r.date?.year ? `${r.date.year}-${z2(r.date.monthValue||r.date.month)}-${z2(r.date.dayOfMonth||r.date.day||1)}` : null);
+                    if (key) byDate[key] = Number(r.totalSales||0);
                 });
-                const labels = rows.map(r =>
-                    (typeof r.date === 'string')
-                        ? r.date
-                        : `${r.date.year}-${z2(r.date.monthValue||r.date.month)}-${z2(r.date.dayOfMonth||r.date.day||1)}`
-                );
-                const data   = rows.map(r => Number(r.totalSales||0));
+                const labels = [], data = [];
+                for (let d = new Date(from); d <= to && labels.length < 400; d.setDate(d.getDate() + 1)) {
+                    const key = toIso(d);
+                    labels.push(key.slice(5));
+                    data.push(byDate[key] || 0);
+                }
                 renderLineChart(labels, data, '일별 매출(원)');
             }
 
@@ -395,12 +397,9 @@
                 renderOpsKpis();
                 renderUpcoming();
 
-                // 초기: 일별 + 오늘
-                setToday();
+                // 초기: 일별 최근 30일 (오늘 하루만 보여 주면 대부분 빈 차트였다)
+                setRange(30);
                 drawDailyByRange(elFrom.value, elTo.value);
-
-                // bfcache 복귀 시 오늘로 리셋
-                window.addEventListener('pageshow', () => setToday());
 
                 // 버튼
                 btnApply ?.addEventListener('click', () => drawDailyByRange(elFrom.value, elTo.value));

@@ -79,9 +79,10 @@ public class InquiryController {
                         @RequestParam(defaultValue = "10") int size) {
         try {
             inquiryService.reply(inquiryId, replyText);
-            ra.addAttribute("msg", "답변이 저장되었습니다.");
+            // addAttribute 는 쿼리스트링으로 붙어 토스트가 뜨지 않았다 → flash
+            ra.addFlashAttribute("success", "답변이 저장되었습니다.");
         } catch (Exception e) {
-            ra.addAttribute("msg", "답변 저장 실패하셨습니다." + e.getMessage());
+            ra.addFlashAttribute("error", "답변 저장에 실패했습니다: " + e.getMessage());
         }
         return "redirect:/admin/inquiries/list?accommodationId=" +(accommodationId == null ? "" : accommodationId)
                + "&q=" + (q == null ? "" : q)

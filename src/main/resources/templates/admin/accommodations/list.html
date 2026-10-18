@@ -75,7 +75,7 @@
             <span class="count-badge" th:text="'총 ' + ${page.totalElements} + '개'">총 0개</span>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
             <!-- 필터/검색 -->
             <form class="search-wrap" method="get" th:action="@{/admin/accommodations/list}">
                 <input type="hidden" name="view" th:value="${v}">

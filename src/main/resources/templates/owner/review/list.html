@@ -18,7 +18,7 @@
     <!-- 헤더 -->
     <div class="toolbar">
         <div class="d-flex align-items-center gap-2">
-            <h3 class="mb-0">리뷰 관리</h3>
+            <h3 class="mb-0" th:text="${room != null ? room.name + ' 리뷰' : (accommodation != null ? accommodation.name + ' 리뷰' : '리뷰 관리')}">리뷰 관리</h3>
             <span class="count-badge"
                   th:text="'총 ' + ${pageResponse != null ? pageResponse.total : 0} + '개'">총 0개</span>
         </div>
@@ -57,10 +57,10 @@
                 <tr th:each="r : ${reviews}">
                     <td class="ps-3 text-center text-muted" style="font-size:.85rem;" th:text="${r.reviewId}">1</td>
                     <td>
-                        <div class="fw-semibold" style="font-size:.9rem;" th:text="${r.accommodationId ?: '-'}">숙소ID</div>
-                        <div class="text-muted" style="font-size:.78rem;" th:text="${r.roomId != null ? '객실 #' + r.roomId : ''}"></div>
+                        <div class="fw-semibold" style="font-size:.9rem;" th:text="${r.accommodationName ?: '-'}">숙소명</div>
+                        <div class="text-muted" style="font-size:.78rem;" th:text="${r.roomName ?: ''}"></div>
                     </td>
-                    <td class="hide-md" th:text="${r.userId ?: '-'}">user123</td>
+                    <td class="hide-md" th:text="${r.userName ?: '-'}">홍길동</td>
                     <td class="text-center">
                         <span class="fw-bold" style="color:#F59E0B;" th:text="${r.rating != null ? r.rating + '★' : '-'}">5★</span>
                     </td>
@@ -75,21 +75,22 @@
                     </td>
                     <td class="text-center">
                         <span class="badge-chip"
-                              th:classappend="${#strings.equalsIgnoreCase(r.status,'VISIBLE')} ? ' badge-active' :
+                              th:classappend="${#strings.equalsIgnoreCase(r.status,'PUBLISHED') or #strings.equalsIgnoreCase(r.status,'VISIBLE')} ? ' badge-active' :
                                              (${#strings.equalsIgnoreCase(r.status,'HIDDEN')} ? ' badge-inactive' : ' chip-unk')"
-                              th:text="${r.status}">VISIBLE</span>
+                              th:text="${#strings.equalsIgnoreCase(r.status,'PUBLISHED') or #strings.equalsIgnoreCase(r.status,'VISIBLE')} ? '노출' : (${#strings.equalsIgnoreCase(r.status,'HIDDEN')} ? '숨김' : ${r.status})">노출</span>
                     </td>
                     <td class="hide-sm text-muted" style="font-size:.82rem;"
                         th:text="${r.createdAt != null ? #temporals.format(r.createdAt,'yyyy-MM-dd') : '-'}">2025-01-01</td>
                     <td class="text-center">
                         <div class="d-inline-flex gap-1">
                             <a class="btn btn-ghost btn-chip"
-                               th:href="@{'/owner/review/' + ${r.reviewId} + '/modify'}">수정</a>
+                               th:href="@{'/owner/review/' + ${r.reviewId} + '/modify'}">답글</a>
                             <form th:action="@{'/owner/review/' + ${r.reviewId} + '/delete'}"
                                   method="post" class="d-inline"
-                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                  th:if="${#strings.equalsIgnoreCase(r.status,'PUBLISHED') or #strings.equalsIgnoreCase(r.status,'VISIBLE')}"
+                                  onsubmit="return confirm('이 리뷰를 숨기시겠습니까? 사용자 사이트에서 보이지 않게 됩니다.');">
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
+                                <button type="submit" class="btn btn-danger-soft btn-chip">숨김</button>
                             </form>
                         </div>
                     </td>
@@ -115,20 +116,20 @@
                     <li class="page-item" th:classappend="${!pageResponse.prev} ? 'disabled'">
                         <a class="page-link"
                            th:href="@{/owner/review/list(page=${pageResponse.prevPage}, size=${pageResponse.pageRequestDTO.size},
-                                       accommodationId=${selectedAccommodationId})}">&laquo;</a>
+                                       accommodationId=${selectedAccommodationId}, roomId=${selectedRoomId})}">&laquo;</a>
                     </li>
                     <li class="page-item"
                         th:each="num : ${pageResponse.pageNumList}"
                         th:classappend="${num == pageResponse.current} ? 'active'">
                         <a class="page-link"
                            th:href="@{/owner/review/list(page=${num}, size=${pageResponse.pageRequestDTO.size},
-                                       accommodationId=${selectedAccommodationId})}"
+                                       accommodationId=${selectedAccommodationId}, roomId=${selectedRoomId})}"
                            th:text="${num}">1</a>
                     </li>
                     <li class="page-item" th:classappend="${!pageResponse.next} ? 'disabled'">
                         <a class="page-link"
                            th:href="@{/owner/review/list(page=${pageResponse.nextPage}, size=${pageResponse.pageRequestDTO.size},
-                                       accommodationId=${selectedAccommodationId})}">&raquo;</a>
+                                       accommodationId=${selectedAccommodationId}, roomId=${selectedRoomId})}">&raquo;</a>
                     </li>
                 </ul>
             </nav>

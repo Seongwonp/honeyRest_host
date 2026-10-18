@@ -132,7 +132,7 @@
                         </td>
                         <td class="text-center" th:text="${r.guestCount}">2</td>
                         <td class="text-end"
-                            th:text="${r.price != null ? #numbers.formatInteger(r.price.intValue(), 3, 'COMMA') : '0'}">
+                            th:text="${r.price != null ? #numbers.formatInteger(r.price.intValue(), 1, 'COMMA') : '0'}">
                             0
                         </td>
                         <td class="text-center">

@@ -49,18 +49,18 @@
                     <td th:text="${c.ownerName}">홍길동</td>
                     <td class="hide-md" th:text="${c.businessNumber}">123-45-67890</td>
                     <td class="hide-md" th:text="${c.phone}">010-0000-0000</td>
-                    <td class="hide-sm" th:text="${c.commissionRate + '%'}">10%</td>
+                    <td class="hide-sm" th:text="${c.commissionRate != null ? c.commissionRate + '%' : '-'}">10%</td>
                     <td class="hide-sm text-muted" style="font-size:.84rem;"
                         th:text="${c.createdAt != null ? #temporals.format(c.createdAt,'yyyy-MM-dd') : '-'}">2025-01-01</td>
                     <td class="text-center">
                         <div class="d-inline-flex gap-1">
                             <a class="btn btn-ghost btn-chip"
                                th:href="@{'/owner/company/' + ${c.companyId} + '/modify'}">수정</a>
-                            <form th:action="@{'/owner/company/' + ${c.companyId} + '/delete'}"
+                            <form th:action="@{'/owner/company/' + ${c.companyId} + '/activate'}"
                                   method="post" class="d-inline"
-                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                  onsubmit="return confirm('업체를 다시 활성화하시겠습니까?');">
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
+                                <button type="submit" class="btn btn-soft btn-chip">활성화</button>
                             </form>
                         </div>
                     </td>

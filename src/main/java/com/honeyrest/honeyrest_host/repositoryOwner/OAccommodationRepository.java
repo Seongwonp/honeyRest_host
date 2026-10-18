@@ -18,6 +18,11 @@ public interface OAccommodationRepository extends JpaRepository<Accommodation, L
     @Query("UPDATE Accommodation a SET a.status = :newStatus WHERE a.accommodationId = :id AND a.status = :expectedStatus")
     int updateStatusIfCurrent(@Param("id") Long id, @Param("expectedStatus") String expectedStatus, @Param("newStatus") String newStatus);
 
+    /** 상태 직접 변경 (운영 중지 등). 승인 흐름의 PENDING→ACTIVE 는 updateStatusIfCurrent 를 쓴다. */
+    @Modifying
+    @Query("UPDATE Accommodation a SET a.status = :status WHERE a.accommodationId = :id")
+    int updateStatus(@Param("id") Long id, @Param("status") String status);
+
     @EntityGraph(attributePaths = {"company", "category", "mainRegion", "subRegion"})
     List<Accommodation> findByCompany_CompanyId(Integer companyCompanyId);
 

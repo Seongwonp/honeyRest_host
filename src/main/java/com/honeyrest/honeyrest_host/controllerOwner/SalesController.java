@@ -35,7 +35,16 @@ public class SalesController {
     public String dailySales(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(required = false) Integer companyId,
+            @RequestParam(required = false) Long accommodationId,
             Model model) {
+        // 스크립트 없이 제출된 필터(?companyId=&accommodationId=)도 같은 화면으로 처리한다
+        if (accommodationId != null && accommodationId > 0) {
+            return accommodationDailySales(accommodationId, startDate, endDate, model);
+        }
+        if (companyId != null && companyId > 0) {
+            return companyDailySales(companyId, startDate, endDate, null, model);
+        }
 
         if (startDate == null || endDate == null) {
             LocalDate now = LocalDate.now();
@@ -57,7 +66,7 @@ public class SalesController {
 
         // 합계 등 추가 모델 속성 추가
 
-        return "/owner/sales/day";
+        return "owner/sales/day";
     }
 
 
@@ -66,7 +75,15 @@ public class SalesController {
     public String monthSales(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+            @RequestParam(required = false) Integer companyId,
+            @RequestParam(required = false) Long accommodationId,
             Model model) {
+        if (accommodationId != null && accommodationId > 0) {
+            return accommodationMonthlySales(accommodationId, startDate, endDate, model);
+        }
+        if (companyId != null && companyId > 0) {
+            return companyMonthSales(companyId, startDate, endDate, null, model);
+        }
 
         if (startDate == null || endDate == null) {
             // 올해 전체: 1월 1일 ~ 12월 31일
@@ -122,7 +139,7 @@ public class SalesController {
         // 추가: 검색 조건 모델에 담기 (현재 선택값 유지용)
         model.addAttribute("selectedCompanyId", companyId);
         model.addAttribute("selectedAccommodationId", accommodationId);
-        return "/owner/sales/day";
+        return "owner/sales/day";
     }
 
     @GetMapping("/sales/month/company/{companyId}")
@@ -188,7 +205,7 @@ public class SalesController {
         // 추가: 검색 조건 모델에 담기 (현재 선택값 유지용)
         model.addAttribute("selectedCompanyId", companyId);
         model.addAttribute("selectedAccommodationId", accommodationId);
-        return "/owner/sales/day";
+        return "owner/sales/day";
     }
 
     @GetMapping("/sales/month/accommodation/{accommodationId}")

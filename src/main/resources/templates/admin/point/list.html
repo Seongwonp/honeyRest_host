@@ -206,7 +206,7 @@
 
                     <!-- 금액 -->
                     <td class="text-end fw-bold"
-                        th:text="${#numbers.formatInteger(p.amount != null ? p.amount.longValue() : 0, 3, 'COMMA')} + '원'">0원</td>
+                        th:text="${#numbers.formatInteger(p.amount != null ? p.amount.longValue() : 0, 1, 'COMMA')} + '원'">0원</td>
 
                     <!-- 결제일 -->
                     <td class="text-center"

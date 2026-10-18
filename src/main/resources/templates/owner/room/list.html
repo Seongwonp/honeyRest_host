@@ -31,6 +31,7 @@
                   th:text="${accommodation.address ?: ''}"></span>
         </div>
         <a th:href="@{/owner/room/list}" class="btn btn-soft btn-chip ms-auto">전체 보기</a>
+        <a th:href="@{'/owner/accommodation/' + ${accommodation.accommodationId} + '/modify'}" class="btn btn-ghost btn-chip">숙소 수정</a>
     </div>
 
     <!-- 헤더 -->
@@ -53,7 +54,7 @@
                             th:selected="${accommodationId != null and accommodationId == acc.accommodationId}">숙소명</option>
                 </select>
             </form>
-            <a th:href="@{/owner/room/create}" class="btn btn-primary btn-chip">
+            <a th:href="@{/owner/room/create(accommodationId=${accommodationId})}" class="btn btn-primary btn-chip">
                 <i class="bi bi-plus-lg me-1"></i>객실 등록
             </a>
         </div>
@@ -69,7 +70,7 @@
                     <th class="hide-sm text-center">이미지</th>
                     <th>객실명</th>
                     <th class="hide-md">숙소</th>
-                    <th class="hide-sm">유형</th>
+                    <th class="hide-sm">객실 수</th>
                     <th class="hide-sm text-center">최대인원</th>
                     <th class="hide-sm text-end">가격</th>
                     <th class="text-center">상태</th>
@@ -81,7 +82,8 @@
                     <td class="ps-3 hide-md text-center text-muted" style="font-size:.85rem;"
                         th:text="${room.roomId}">1</td>
                     <td class="hide-sm text-center">
-                        <div class="thumb-empty mx-auto">이미지</div>
+                        <img th:if="${room.thumbnailUrl != null}" th:src="${room.thumbnailUrl}" alt="객실 이미지" class="thumb">
+                        <div th:unless="${room.thumbnailUrl != null}" class="thumb-empty mx-auto">없음</div>
                     </td>
                     <td>
                         <div class="fw-semibold" th:text="${room.name}">객실명</div>
@@ -91,11 +93,11 @@
                     <td class="hide-md text-muted" style="font-size:.88rem;"
                         th:text="${room.accommodationName ?: '-'}">숙소명</td>
                     <td class="hide-sm text-muted" style="font-size:.88rem;"
-                        th:text="${room.type ?: '-'}">유형</td>
+                        th:text="${room.totalRooms != null ? room.totalRooms + '실' : '-'}">5실</td>
                     <td class="hide-sm text-center"
                         th:text="${room.maxOccupancy != null ? room.maxOccupancy + '명' : '-'}">4명</td>
                     <td class="hide-sm text-end fw-semibold"
-                        th:text="${room.price != null ? #numbers.formatInteger(room.price, 3, 'COMMA') + '원' : '-'}">-</td>
+                        th:text="${room.price != null ? #numbers.formatInteger(room.price, 1, 'COMMA') + '원' : '-'}">-</td>
                     <td class="text-center">
                         <span class="badge-chip"
                               th:classappend="${#strings.equalsIgnoreCase(room.status,'ACTIVE')}   ? ' badge-active'  :
@@ -105,12 +107,14 @@
                     <td class="text-center">
                         <div class="d-inline-flex gap-1">
                             <a class="btn btn-ghost btn-chip"
+                               th:href="@{'/owner/room/' + ${room.roomId} + '/reviews'}">리뷰</a>
+                            <a class="btn btn-ghost btn-chip"
                                th:href="@{'/owner/room/' + ${room.roomId} + '/modify'}">수정</a>
                             <form th:action="@{'/owner/room/' + ${room.roomId} + '/delete'}"
                                   method="post" class="d-inline"
-                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                  onsubmit="return confirm('객실 판매를 중지(비활성)하시겠습니까?');">
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
+                                <button type="submit" class="btn btn-danger-soft btn-chip">판매 중지</button>
                             </form>
                         </div>
                     </td>

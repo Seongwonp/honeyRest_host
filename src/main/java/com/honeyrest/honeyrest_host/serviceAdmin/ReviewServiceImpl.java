@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
+import com.honeyrest.honeyrest_host.type.ReviewStatus;
+
 import com.honeyrest.honeyrest_host.dtoAdmin.PageRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PageResponseDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO;
@@ -85,10 +87,10 @@ public class ReviewServiceImpl implements ReviewService {
     /* 상태 normalize 및 허용값 체크 */
     private String normalizeStatusOrNull(String status) {
         if (status == null || status.isBlank()) {
-            return "VISIBLE"; // 기본 조회는 노출된 것만
+            return ReviewStatus.PUBLISHED; // 기본 조회는 노출된 것만
         }
-        String st = status.toUpperCase();
-        List<String> allowed = List.of("VISIBLE", "HIDDEN", "DELETED");
+        String st = ReviewStatus.normalize(status);
+        List<String> allowed = List.of(ReviewStatus.PUBLISHED, ReviewStatus.HIDDEN, "DELETED");
         if (!allowed.contains(st)) throw new IllegalArgumentException("유효하지 않은 리뷰 상태: " + status);
         return st;
     }
@@ -170,20 +172,20 @@ public class ReviewServiceImpl implements ReviewService {
             if (all) {
                 page = reviewRepository.findByRoomId(roomId, pageable);                 // 모든 상태
             } else {
-                page = reviewRepository.findByRoomIdAndStatus(roomId, status, pageable); // 특정 상태만
+                page = reviewRepository.findByRoomIdAndStatusIn(roomId, ReviewStatus.expand(status), pageable); // 특정 상태만
             }
         } else if (accommodationId != null) {
             if (all) {
                 page = reviewRepository.findByAccommodationId(accommodationId, pageable);
             } else {
-                page = reviewRepository.findByAccommodationIdAndStatus(accommodationId, status, pageable);
+                page = reviewRepository.findByAccommodationIdAndStatusIn(accommodationId, ReviewStatus.expand(status), pageable);
             }
         } else {
             if (all) {
                 page = reviewRepository.findAll(pageable);                               // ★ 전체 상태
                 // (기존처럼 HIDDEN 빼고 보이고 싶다면: findByStatusNot("HIDDEN", pageable))
             } else {
-                page = reviewRepository.findByStatus(status, pageable);                  // 특정 상태만
+                page = reviewRepository.findByStatusIn(ReviewStatus.expand(status), pageable);                  // 특정 상태만
             }
         }
 
@@ -233,19 +235,19 @@ public class ReviewServiceImpl implements ReviewService {
             if (all) {
                 page = reviewRepository.findByRoomId(roomId, pageable);
             } else {
-                page = reviewRepository.findByRoomIdAndStatus(roomId, status, pageable);
+                page = reviewRepository.findByRoomIdAndStatusIn(roomId, ReviewStatus.expand(status), pageable);
             }
         } else if (accommodationId != null) {
             if (all) {
                 page = reviewRepository.findByAccommodationId(accommodationId, pageable);
             } else {
-                page = reviewRepository.findByAccommodationIdAndStatus(accommodationId, status, pageable);
+                page = reviewRepository.findByAccommodationIdAndStatusIn(accommodationId, ReviewStatus.expand(status), pageable);
             }
         } else {
             if (all) {
                 page = reviewRepository.findByAccommodationIdIn(accommodationIds, pageable);
             } else {
-                page = reviewRepository.findByAccommodationIdInAndStatus(accommodationIds, status, pageable);
+                page = reviewRepository.findByAccommodationIdInAndStatusIn(accommodationIds, ReviewStatus.expand(status), pageable);
             }
         }
 
@@ -280,7 +282,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         // 상태 기본값
         if (dto.getStatus() == null || dto.getStatus().isBlank()) {
-            dto.setStatus("VISIBLE");
+            dto.setStatus(ReviewStatus.PUBLISHED);
         }
 
         // 연관관계 영속 참조 (필드가 not null 제약이라면 반드시 세팅)
@@ -371,7 +373,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .content(dto.getContent() != null ? dto.getContent() : review.getContent())
                 .reply(dto.getReply() != null ? dto.getReply() : review.getReply())
                 .likeCount(dto.getLikeCount() != null ? dto.getLikeCount() : review.getLikeCount())
-                .status(dto.getStatus() != null ? dto.getStatus() : review.getStatus())
+                .status(dto.getStatus() != null ? ReviewStatus.normalize(dto.getStatus()) : review.getStatus())
                 .build();
 
         Review saved = reviewRepository.save(updated);
@@ -403,7 +405,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .content(dto.getContent() != null ? dto.getContent() : review.getContent())
                 .reply(dto.getReply() != null ? dto.getReply() : review.getReply())
                 .likeCount(dto.getLikeCount() != null ? dto.getLikeCount() : review.getLikeCount())
-                .status(dto.getStatus() != null ? dto.getStatus() : review.getStatus())
+                .status(dto.getStatus() != null ? ReviewStatus.normalize(dto.getStatus()) : review.getStatus())
                 .build();
 
         Review saved = reviewRepository.save(patched);
@@ -423,8 +425,9 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional
     @Override
     public void changeStatus(Long reviewId, String status) {
-        // 허용값만 통과
-        Set<String> allowed = Set.of("VISIBLE", "HIDDEN", "PENDING", "REPORTED");
+        // 허용값만 통과 (VISIBLE 은 PUBLISHED 로 정규화)
+        status = ReviewStatus.normalize(status);
+        Set<String> allowed = Set.of(ReviewStatus.PUBLISHED, ReviewStatus.HIDDEN, "PENDING", "REPORTED");
         if (!allowed.contains(status)) {
             throw new IllegalArgumentException("허용되지 않는 상태: " + status);
         }
@@ -437,9 +440,9 @@ public class ReviewServiceImpl implements ReviewService {
         Review r = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("리뷰를 찾을 수 없습니다. id=" + reviewId));
 
-        String before = (r.getStatus() == null) ? "HIDDEN" : r.getStatus().toUpperCase();
-        // 규칙: VISIBLE이면 HIDDEN으로, 그 외(HIDDEN/REPORTED/PENDING/기타)는 VISIBLE로
-        String after  = "VISIBLE".equals(before) ? "HIDDEN" : "VISIBLE";
+        // 규칙: 노출(PUBLISHED/과거 VISIBLE)이면 HIDDEN 으로, 그 외(HIDDEN/REPORTED/PENDING/기타)는 PUBLISHED 로.
+        // 과거에는 VISIBLE 로 되돌려 사용자 사이트(PUBLISHED 만 노출)에서 리뷰가 사라졌다.
+        String after  = ReviewStatus.isVisible(r.getStatus()) ? ReviewStatus.HIDDEN : ReviewStatus.PUBLISHED;
 
         Review patched = Review.builder()
                 .reviewId(r.getReviewId())

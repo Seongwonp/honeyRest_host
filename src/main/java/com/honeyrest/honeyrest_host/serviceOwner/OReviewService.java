@@ -23,6 +23,7 @@ public class OReviewService {
     private final OReviewRepository reviewRepository;
     private final OReservationRepository reservationRepository;
     private final OUserRepository userRepository;
+    private final com.honeyrest.honeyrest_host.serviceAdmin.ReviewService adminReviewService;
 
     private ReviewDTO toDTO(Review r) {
         return ReviewDTO.builder()
@@ -40,6 +41,10 @@ public class OReviewService {
                 .reply(r.getReply())
                 .likeCount(r.getLikeCount())
                 .status(r.getStatus())
+                .createdAt(r.getCreatedAt())
+                .accommodationName(r.getReservation().getAccommodationName())
+                .roomName(r.getReservation().getRoomName())
+                .userName(r.getUser().getName())
                 .build();
     }
 
@@ -170,11 +175,31 @@ public class OReviewService {
         return responseDTO;
     }
 
-    public void saveReply(Long reviewId, String reply){
-        Review review= reviewRepository.findByReviewId(reviewId);
-        ReviewDTO dto = toDTO(review);
-        dto.setReply(reply);
+    /**
+     * 답글·노출 상태 저장. 과거에는 빌더로 만든 새 엔티티를 merge 해 작성일이 비고(같은 이유로 도메인에 updateContent 가 생김),
+     * 컨트롤러 매핑도 /owner/owner/... 로 잘못돼 저장 자체가 불가능했다. 업체 관리자 화면과 같은 부분 수정 로직을 쓴다.
+     */
+    public void saveReply(Long reviewId, String reply, String status) {
+        if (reviewRepository.findByReviewId(reviewId) == null) {
+            throw new jakarta.persistence.EntityNotFoundException("리뷰를 찾을 수 없습니다. id=" + reviewId);
+        }
+        com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO patch = com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO.builder()
+                .reply(reply == null ? "" : reply.trim())
+                .status(com.honeyrest.honeyrest_host.type.ReviewStatus.normalize(status))
+                .build();
+        adminReviewService.patch(reviewId, patch);
+    }
 
-        reviewRepository.save(toEntity(dto));
+    /** 숨김(소프트 삭제) */
+    public void hide(Long reviewId) {
+        adminReviewService.delete(reviewId);
+    }
+
+    /** 숙소·객실 조건으로 리뷰 목록 (둘 다 없으면 전체) */
+    public PageResponseDTO<ReviewDTO> getReviews(Long accommodationId, Long roomId, PageRequestDTO pageRequestDTO) {
+        if (roomId != null && roomId > 0) {
+            return getReviewsByRoomID(roomId, pageRequestDTO);
+        }
+        return getReviewsByAccommodationIdWithPageable(accommodationId, pageRequestDTO);
     }
 }

@@ -15,6 +15,13 @@
     var sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
+    // 템플릿은 #sidebar 에 active 를 고정으로 붙여 둔다(데스크톱에서 펼침).
+    // Mazer 는 좁은 화면에서 이를 걷어 내지 않아 휴대폰으로 열면 메뉴가 화면을 덮은 채로 시작했다.
+    // 데스크톱 기준(1200px, Mazer 와 같은 값) 미만이면 접힌 상태로 시작한다 (햄버거 버튼으로 연다).
+    if (window.innerWidth < 1200) {
+        sidebar.classList.remove('active');
+    }
+
     function segments(path) {
         return (path || '').split('?')[0].split('#')[0].split('/').filter(function (s) { return s.length > 0; });
     }

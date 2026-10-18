@@ -83,16 +83,17 @@ public class PaymentController {
         List<String> fixedStatus = normalizeStatuses(status);
         List<String> fixedMethod = (method == null) ? null :
                 method.stream().filter(Objects::nonNull)
-                        .map(s -> s.trim().toUpperCase()).distinct().toList();
+                        .map(s -> s.trim().toUpperCase()).filter(s -> !s.isEmpty()).distinct().toList();
 
         // 정렬: 결제일 최신 우선, 결제일 null이면 createdAt로 보조 정렬
         Sort sort = Sort.by(Sort.Direction.DESC, "paymentDate")
                 .and(Sort.by(Sort.Direction.DESC, "createdAt"));
-        Pageable pageable = PageRequest.of(page, size, sort);
+        // 이전 버튼의 page=-1 로 400 이 나던 문제
+        Pageable pageable = PageRequest.of(Math.max(page, 0), size <= 0 ? 10 : Math.min(size, 100), sort);
 
-        // 서비스 호출
+        // 서비스 호출 (정규화한 상태/수단을 넘긴다 — 원본을 넘겨 소문자·허용 외 값이 그대로 쿼리에 들어갔다)
         Page<PaymentDTO> result = paymentService.listForCompanyUser
-                (email, accommodationId, status, method, q, from, to, pageable);
+                (email, accommodationId, fixedStatus, fixedMethod, q, from, to, pageable);
 
         // 모델 -> 뷰 전달
         model.addAttribute("page", result); // page 객체

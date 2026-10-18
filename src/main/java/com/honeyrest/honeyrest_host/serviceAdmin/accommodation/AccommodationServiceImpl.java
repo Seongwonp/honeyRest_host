@@ -47,6 +47,8 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final CancellationPolicyService cancellationPolicyService;
     private final AccommodationTagService accommodationTagService;
     private final RoomRepository roomRepository;
+    private final com.honeyrest.honeyrest_host.repositoryAdmin.RoomImageRepository roomImageRepository;
+    private final com.honeyrest.honeyrest_host.repositoryAdmin.price.PriceCalendarRepository priceCalendarRepository;
 
     /* ---------------------- JSON 헬퍼 ---------------------- */
     private String normalizeJsonList(String raw) {
@@ -444,6 +446,12 @@ public class AccommodationServiceImpl implements AccommodationService {
         accommodationImageRepository.deleteByAccommodation_AccommodationId(id);
         accommodationTagMapRepository.deleteByAccommodation_AccommodationId(id);
         cancellationPolicyRepository.deleteByAccommodation_AccommodationId(id);
+        // 객실의 이미지·요금 캘린더 행이 객실을 FK 로 참조하므로 먼저 지운다 (객실이 있는 숙소는 삭제가 항상 실패했다)
+        roomRepository.findByAccommodation_AccommodationId(id, org.springframework.data.domain.Pageable.unpaged())
+                .forEach(room -> {
+                    roomImageRepository.deleteByRoomRoomId(room.getRoomId());
+                    priceCalendarRepository.deleteByRoomId(room.getRoomId());
+                });
         roomRepository.deleteByAccommodation_AccommodationId(id);
 
         // 마지막에 숙소 삭제

@@ -21,6 +21,12 @@ public interface ORoomService {
 
     void removeRoom(Long id);
 
+    /** 비활성 객실을 다시 판매 가능(ACTIVE)으로 */
+    void activateRoom(Long id);
+
+    /** 활성(active=true) 또는 비활성 객실 페이지. accommodationId 가 없으면 전체 */
+    PageResponseDTO<RoomDTO> getRoomsByStatusWithPageable(Long accommodationId, boolean active, PageRequestDTO pageRequestDTO);
+
     PageResponseDTO<RoomDTO> getRoomsByAccommodationIdWithPageable(Long accommodationId, PageRequestDTO pageRequestDTO);
 
     void updateRoomImage(RoomImageDTO dto);
@@ -36,4 +42,7 @@ public interface ORoomService {
     void modifyRoomImage(Long roomId, List<MultipartFile> images) throws Exception;
 
     List<RoomImageDTO> getAllImages();
+
+    /** 객실 대표 이미지 교체 (수정 화면의 대표 이미지 입력 — 과거에는 업로드해도 무시됐다) */
+    void replaceMainImage(Long roomId, String imageUrl);
 }

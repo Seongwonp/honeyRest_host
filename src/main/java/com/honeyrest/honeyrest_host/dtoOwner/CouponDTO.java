@@ -25,6 +25,19 @@ public class CouponDTO {
     private String targetType; // 적용대상
     private Long targetId; // 특정 숙소, 카테고리 ID(null 가능)
     private boolean isActive; // 활성 여부
+
+    /**
+     * 폼 체크박스 name="isActive" 바인딩용. Lombok 은 boolean isActive 의 setter 를 setActive 로 만들어
+     * 요청 파라미터 isActive 가 바인딩되지 않았고, 등록한 쿠폰이 항상 비활성으로 저장됐다.
+     */
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    /** 템플릿(c.isActive())용. 위 setter 때문에 Lombok 이 getter 생성을 건너뛰므로 직접 둔다. */
+    public boolean isActive() {
+        return isActive;
+    }
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 

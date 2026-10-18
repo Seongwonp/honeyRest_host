@@ -319,8 +319,10 @@ public class RoomController {
         try {
             roomService.removeRoom(roomId);
             ra.addFlashAttribute("success", "객실이 삭제되었습니다.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
         } catch (DataIntegrityViolationException e) {
-            ra.addFlashAttribute("error", "해당 객실에 예약 이력이 있어 삭제할 수 없습니다. "
+            ra.addFlashAttribute("error", "다른 데이터가 이 객실을 참조하고 있어 삭제할 수 없습니다. "
                                           + "대신 객실 상태를 'INACTIVE'로 변경하세요.");
         }
         return "redirect:/admin/rooms/list_all"; // 전체 객실 목록으로 이동

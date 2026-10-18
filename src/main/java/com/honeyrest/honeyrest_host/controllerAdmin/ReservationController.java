@@ -288,7 +288,8 @@ public class ReservationController {
     @GetMapping("/day")
     public String day(@RequestParam(required = false) Integer companyId,
                       @RequestParam(required = false) Long accommodationId,
-                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+                      // 날짜 없이 열면 오늘로 보여 준다 (필수 파라미터라 400 이었다)
+                      @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
                       Model model,
                       Authentication authentication) {
 

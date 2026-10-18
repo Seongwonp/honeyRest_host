@@ -97,7 +97,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">편의시설 (JSON)</label>
+                    <label class="form-label">편의시설 (쉼표로 구분)</label>
                     <textarea name="amenities" class="form-control" rows="3" th:text="${accommodation.amenities}"></textarea>
                 </div>
             </div>
@@ -126,9 +126,12 @@
 
                     <div class="col-md-6">
                         <label class="form-label">상태</label>
+                        <!-- ACTIVE 전환은 승인 대기 목록의 '승인' 버튼으로만 한다 (현재 ACTIVE 일 때만 유지 선택지로 보인다) -->
                         <select name="status" class="form-select" required>
-                            <option value="ACTIVE" th:selected="${accommodation.status == 'ACTIVE'}">활성</option>
-                            <option value="INACTIVE" th:selected="${accommodation.status == 'INACTIVE'}">비활성</option>
+                            <option value="ACTIVE" th:if="${#strings.equalsIgnoreCase(accommodation.status,'ACTIVE')}" selected>활성 (현재 상태 유지)</option>
+                            <option value="PENDING" th:selected="${#strings.equalsIgnoreCase(accommodation.status,'PENDING')}">승인 대기</option>
+                            <option value="INACTIVE" th:selected="${#strings.equalsIgnoreCase(accommodation.status,'INACTIVE')}">비활성</option>
+                            <option value="REJECTED" th:if="${#strings.equalsIgnoreCase(accommodation.status,'REJECTED')}" selected>거절됨 (현재 상태 유지)</option>
                         </select>
                     </div>
                 </div>
@@ -142,8 +145,8 @@
         </form>
     </div>
 </th:block>
-</body>
-</html>
+<!-- 레이아웃 프래그먼트 밖의 스크립트는 layout dialect 가 버린다 → 지역 선택 연동이 동작하지 않았다 -->
+<th:block layout:fragment="script">
 <script th:inline="javascript">
     let regions = [[${regions}]];
     const mainSelect = document.getElementById("mainRegionId");
@@ -161,3 +164,6 @@
             });
     });
 </script>
+</th:block>
+</body>
+</html>

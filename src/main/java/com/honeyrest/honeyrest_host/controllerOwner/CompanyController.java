@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -26,12 +27,12 @@ public class CompanyController {
     public String companyList(
             @RequestParam(required = false) Integer companyId,
             @RequestParam(required = false) Long accommodationId,
+            @RequestParam(required = false) String keyword,
             @ModelAttribute PageRequestDTO pageRequestDTO,
             Model model) {
-        if (pageRequestDTO.getPage() <= 0) pageRequestDTO.setPage(1);
-        if (pageRequestDTO.getSize() <= 0) pageRequestDTO.setSize(10);
-
-        PageResponseDTO<CompanyDTO> responseDTO = companyService.getCompaniesWithPage(pageRequestDTO);
+        // 검색창(keyword)이 전달돼도 무시되던 문제 수정
+        PageResponseDTO<CompanyDTO> responseDTO = companyService.getCompaniesWithPage(pageRequestDTO, keyword);
+        model.addAttribute("keyword", keyword);
 
         model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         model.addAttribute("responseDTO", responseDTO);
@@ -58,8 +59,9 @@ public class CompanyController {
     }
 
     @PostMapping("/company/create")
-    public String createCompany(@ModelAttribute CompanyDTO companyDTO) {
+    public String createCompany(@ModelAttribute CompanyDTO companyDTO, RedirectAttributes ra) {
         companyService.registerCompany(companyDTO);
+        ra.addFlashAttribute("success", "업체를 등록했습니다.");
         return "redirect:/owner/company/list";
     }
 
@@ -71,15 +73,26 @@ public class CompanyController {
     }
 
     @PostMapping("/company/modify")
-    public String modifyCompany(@ModelAttribute CompanyDTO companyDTO) {
+    public String modifyCompany(@ModelAttribute CompanyDTO companyDTO, RedirectAttributes ra) {
         companyService.modifyCompany(companyDTO);
-        return "redirect:/owner/company/list";
+        ra.addFlashAttribute("success", "업체 정보를 수정했습니다.");
+        return CompanyStatus.isActive(companyDTO.getStatus())
+                ? "redirect:/owner/company/list" : "redirect:/owner/company/inActive/list";
     }
 
     @PostMapping("/company/{companyId}/delete")
-    public String deleteCompany(@PathVariable Integer companyId) {
+    public String deleteCompany(@PathVariable Integer companyId, RedirectAttributes ra) {
         companyService.removeCompany(companyId);
+        ra.addFlashAttribute("success", "업체를 비활성화했습니다.");
         return "redirect:/owner/company/list";
+    }
+
+    /** 비활성 업체 재활성화 (비활성 목록에서 "삭제"를 다시 누르면 아무 변화가 없던 자리를 대신한다) */
+    @PostMapping("/company/{companyId}/activate")
+    public String activateCompany(@PathVariable Integer companyId, RedirectAttributes ra) {
+        companyService.activateCompany(companyId);
+        ra.addFlashAttribute("success", "업체를 다시 활성화했습니다.");
+        return "redirect:/owner/company/inActive/list";
     }
 
     // 회사 검색 API (자동완성용)

@@ -165,7 +165,7 @@
                                 <div class="kv">
                                     <dt>결제 금액</dt>
                                     <dd>
-                                        <span th:text="${reservation.price != null ? #numbers.formatInteger(reservation.price.intValue(), 3, 'COMMA') : '0'}">0</span> 원
+                                        <span th:text="${reservation.price != null ? #numbers.formatInteger(reservation.price.intValue(), 1, 'COMMA') : '0'}">0</span> 원
                                     </dd>
                                 </div>
                                 <div class="kv"><dt>결제 방법</dt>
@@ -236,7 +236,7 @@
                                 <span th:text="${#temporals.format(reservation.checkOutDate, 'MM/dd')}">-</span>
                             </li>
                             <li class="mb-2"><i class="bi bi-currency-exchange"></i>
-                                <strong th:text="${reservation.price != null ? #numbers.formatInteger(reservation.price.intValue(), 3, 'COMMA') : '0'}">0</strong> 원
+                                <strong th:text="${reservation.price != null ? #numbers.formatInteger(reservation.price.intValue(), 1, 'COMMA') : '0'}">0</strong> 원
                             </li>
                             <li class="mb-2"><i class="bi bi-credit-card"></i>
                                 <span th:text="${reservation.payment != null && reservation.payment.paymentMethod != null ? reservation.payment.paymentMethod : '-'}">-</span>

@@ -7,33 +7,33 @@
 <th:block layout:fragment="content">
     <div class="page-heading mb-4">
         <h3>예약 등록</h3>
-        <p class="text-subtitle text-muted">새로운 예약을 등록합니다.</p>
+        <p class="text-subtitle text-muted">회원과 객실을 고르면 결제 금액은 객실 요금 × 박 수로 계산됩니다.</p>
     </div>
 
     <div class="page-content">
-        <form th:action="@{/owner/reservation/create}" method="post" class="needs-validation">
+        <form th:action="@{/owner/reservation/create}" method="post" class="needs-validation" id="reservationForm">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
-            <!-- 기본 정보 카드 -->
             <div class="card shadow-sm mb-4 p-4">
                 <h5 class="mb-3">예약 정보</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="reservationNumber" class="form-label">예약 번호</label>
-                        <input type="text" name="reservationNumber" class="form-control" id="reservationNumber"
-                               required>
+                        <label for="roomSelect" class="form-label">객실</label>
+                        <select class="form-select" id="roomSelect" name="roomId" required>
+                            <option value="">객실을 선택하세요</option>
+                            <option th:each="r : ${rooms}" th:if="${r.status == 'ACTIVE'}"
+                                    th:value="${r.roomId}"
+                                    th:attr="data-price=${r.price}, data-max=${r.maxOccupancy}"
+                                    th:text="${r.accommodationName + ' · ' + r.name}">숙소 · 객실</option>
+                        </select>
                     </div>
                     <div class="col-md-6">
                         <label for="status" class="form-label">예약 상태</label>
                         <select name="status" id="status" class="form-select" required>
-                            <option value="PENDING">대기</option>
                             <option value="CONFIRMED">확정</option>
-                            <option value="CANCELLED">취소</option>
+                            <option value="PENDING">대기</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="row g-3 mt-3">
                     <div class="col-md-6">
                         <label for="checkInDate" class="form-label">체크인 날짜</label>
                         <input type="date" name="checkInDate" class="form-control" id="checkInDate" required>
@@ -42,83 +42,58 @@
                         <label for="checkOutDate" class="form-label">체크아웃 날짜</label>
                         <input type="date" name="checkOutDate" class="form-control" id="checkOutDate" required>
                     </div>
-                </div>
-            </div>
-
-            <!-- 숙소 & 객실 선택 카드 -->
-            <div class="card shadow-sm mb-4 p-4">
-                <h5 class="mb-3">숙소 및 객실 선택</h5>
-                <div class="row g-3">
-                    <div class="col-md-6 position-relative">
-                        <label for="accommodationSearchInput" class="form-label">숙소 이름</label>
-                        <input type="text" name="accommodationName" class="form-control" id="accommodationSearchInput" placeholder="숙소명을 입력하세요"
-                               required>
-                        <input type="hidden" id="accommodationIdInput" name="accommodationId">
-                        <div id="accommodationSearchResult" class="list-group position-absolute w-100 z-3"
-                             style="max-height: 200px; overflow-y: auto; display: none;"></div>
-                    </div>
-
                     <div class="col-md-6">
-                        <label for="roomSelect" class="form-label">객실 선택</label>
-                        <select class="form-select" id="roomSelect" name="roomName" required>
-                            <option value="">숙소를 먼저 선택하세요</option>
-                        </select>
+                        <label for="reservationNumber" class="form-label">예약 번호 <small class="text-muted">(비우면 자동 생성)</small></label>
+                        <input type="text" name="reservationNumber" class="form-control" id="reservationNumber">
                     </div>
                 </div>
             </div>
 
-            <!-- 고객 정보 카드 -->
             <div class="card shadow-sm mb-4 p-4">
                 <h5 class="mb-3">고객 정보</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="guestName" class="form-label">고객 이름</label>
+                        <label for="userSelect" class="form-label">회원</label>
+                        <select class="form-select" id="userSelect" name="userId" required>
+                            <option value="">회원을 선택하세요</option>
+                            <option th:each="u : ${users}" th:value="${u.userId}"
+                                    th:attr="data-name=${u.name}, data-phone=${u.phone}"
+                                    th:text="${u.name + ' (' + (u.email ?: '-') + ')'}">홍길동</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="guestCount" class="form-label">투숙 인원</label>
+                        <input type="number" name="guestCount" class="form-control" id="guestCount" min="1" value="2" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="guestName" class="form-label">투숙객 이름</label>
                         <input type="text" name="guestName" class="form-control" id="guestName" required>
                     </div>
                     <div class="col-md-6">
-                        <label for="guestPhone" class="form-label">고객 전화번호</label>
+                        <label for="guestPhone" class="form-label">투숙객 전화번호</label>
                         <input type="text" name="guestPhone" class="form-control" id="guestPhone" required>
                     </div>
-                </div>
-
-                <div class="row g-3 mt-3">
-                    <div class="col-md-6">
-                        <label for="guestCount" class="form-label">투숙 인원</label>
-                        <input type="number" name="guestCount" class="form-control" id="guestCount" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="specialRequests" class="form-label">요청 사항</label>
-                        <textarea name="specialRequests" class="form-control" id="specialRequests" rows="2"></textarea>
+                    <div class="col-12">
+                        <label for="specialRequest" class="form-label">요청 사항</label>
+                        <textarea name="specialRequest" class="form-control" id="specialRequest" rows="2"></textarea>
                     </div>
                 </div>
             </div>
 
-            <!-- 가격 정보 카드 -->
             <div class="card shadow-sm mb-4 p-4">
                 <h5 class="mb-3">가격 정보</h5>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label for="originalPrice" class="form-label">원래 가격</label>
-                        <input type="number" name="originalPrice" class="form-control" id="originalPrice" step="100" readonly>
+                        <label for="originalPrice" class="form-label">객실 요금 × 박 수</label>
+                        <input type="text" class="form-control" id="originalPrice" readonly>
                     </div>
                     <div class="col-md-4">
                         <label for="discountAmount" class="form-label">할인 금액</label>
-                        <input type="number" name="discountAmount" class="form-control" id="discountAmount" step="100">
+                        <input type="number" name="discountAmount" class="form-control" id="discountAmount" min="0" step="100" value="0">
                     </div>
                     <div class="col-md-4">
-                        <label for="price" class="form-label">최종 가격</label>
-                        <input type="number" name="price" class="form-control" id="price" step="100" readonly>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 취소 사유 -->
-            <div class="card shadow-sm mb-4 p-4">
-                <h5 class="mb-3">기타</h5>
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label for="cancelReason" class="form-label">취소 사유</label>
-                        <textarea name="cancelReason" class="form-control" id="cancelReason" rows="2"></textarea>
+                        <label for="price" class="form-label">최종 결제 금액</label>
+                        <input type="text" class="form-control" id="price" readonly>
                     </div>
                 </div>
             </div>
@@ -131,132 +106,50 @@
         </form>
     </div>
 </th:block>
+<!-- 스크립트는 반드시 layout:fragment 안에 둔다 (밖에 두면 layout dialect 가 버려 객실을 고를 수 없었다) -->
+<th:block layout:fragment="script">
+<script>
+    (function () {
+        const roomSelect = document.getElementById("roomSelect");
+        const userSelect = document.getElementById("userSelect");
+        const checkIn = document.getElementById("checkInDate");
+        const checkOut = document.getElementById("checkOutDate");
+        const guestCount = document.getElementById("guestCount");
+        const discount = document.getElementById("discountAmount");
+        const original = document.getElementById("originalPrice");
+        const price = document.getElementById("price");
+        const fmt = n => n.toLocaleString("ko-KR") + "원";
+
+        function nights() {
+            if (!checkIn.value || !checkOut.value) return 0;
+            const d = (new Date(checkOut.value) - new Date(checkIn.value)) / 86400000;
+            return d > 0 ? d : 0;
+        }
+        function recalc() {
+            const opt = roomSelect.selectedOptions[0];
+            const rate = opt && opt.dataset.price ? parseFloat(opt.dataset.price) : 0;
+            const total = rate * nights();
+            const dc = Math.min(Math.max(parseFloat(discount.value) || 0, 0), total);
+            original.value = total ? fmt(total) + " (" + nights() + "박)" : "";
+            price.value = total ? fmt(total - dc) : "";
+            if (opt && opt.dataset.max) guestCount.max = opt.dataset.max;
+        }
+        userSelect.addEventListener("change", function () {
+            const opt = userSelect.selectedOptions[0];
+            if (!opt || !opt.value) return;
+            document.getElementById("guestName").value = opt.dataset.name || "";
+            document.getElementById("guestPhone").value = opt.dataset.phone || "";
+        });
+        [roomSelect, checkIn, checkOut, discount].forEach(el => el.addEventListener("input", recalc));
+        roomSelect.addEventListener("change", recalc);
+        document.getElementById("reservationForm").addEventListener("submit", function (e) {
+            if (!nights()) {
+                e.preventDefault();
+                alert("체크아웃 날짜는 체크인 날짜 이후여야 합니다.");
+            }
+        });
+    })();
+</script>
+</th:block>
 </body>
 </html>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    document.addEventListener("DOMContentLoaded", function () {
-        let roomPrice = 0;
-        let maxGuest = 0;
-
-        const accommodationSearchInput = document.getElementById("accommodationSearchInput");
-        const accommodationSearchResult = document.getElementById("accommodationSearchResult");
-        const accommodationIdInput = document.getElementById("accommodationIdInput");
-        const roomSelect = document.getElementById("roomSelect");
-        const form = document.querySelector("form");
-
-        // 숙소 자동완성
-        accommodationSearchInput.addEventListener("input", function () {
-            const keyword = this.value.trim();
-            if (keyword.length < 1) {
-                accommodationSearchResult.style.display = "none";
-                return;
-            }
-
-            fetch(`/owner/accommodation/search?keyword=${keyword}`)
-                .then(res => res.json())
-                .then(data => {
-                    accommodationSearchResult.innerHTML = '';
-                    if (!data || data.length === 0) {
-                        accommodationSearchResult.style.display = "none";
-                        return;
-                    }
-
-                    data.forEach(a => {
-                        const item = document.createElement("button");
-                        item.type = "button";
-                        item.className = "list-group-item list-group-item-action";
-                        item.textContent = a.name;
-                        item.onclick = () => {
-                            accommodationSearchInput.value = a.name;
-                            accommodationIdInput.value = a.accommodationId;
-                            accommodationSearchResult.style.display = "none";
-                            loadRooms(a.accommodationId);
-                        };
-                        accommodationSearchResult.appendChild(item);
-                    });
-
-                    accommodationSearchResult.style.display = "block";
-                });
-        });
-
-
-        const checkInDateInput = document.getElementById("checkInDate");
-        const checkOutDateInput = document.getElementById("checkOutDate");
-
-        function validateDates() {
-            const checkInDate = new Date(checkInDateInput.value);
-            const checkOutDate = new Date(checkOutDateInput.value);
-
-            if (checkOutDate < checkInDate) {
-                alert("체크아웃 날짜는 체크인 날짜보다 이후여야 합니다.");
-                // 체크아웃 날짜를 체크인 날짜와 같거나 이후로 맞춤
-                checkOutDateInput.value = checkInDateInput.value;
-            }
-        }
-
-        checkInDateInput.addEventListener("change", validateDates);
-        checkOutDateInput.addEventListener("change", validateDates);
-        // 객실 목록 로드
-        function loadRooms(accommodationId) {
-            fetch(`/owner/accommodation/${accommodationId}/rooms/json`)
-                .then(res => res.json())
-                .then(data => {
-                    roomSelect.innerHTML = '<option value="">객실을 선택하세요</option>';
-                    data.forEach(r => {
-                        const option = document.createElement("option");
-                        option.value = r.roomId;
-                        option.textContent = r.name;
-                        option.dataset.maxOccupancy = r.maxOccupancy;
-                        option.dataset.price = r.price;
-                        roomSelect.appendChild(option);
-                    });
-                });
-        }
-
-        // 객실 선택 시 가격과 최대 투숙 인원 세팅
-        roomSelect.addEventListener("change", function () {
-            const selected = this.selectedOptions[0];
-            if (!selected) return;
-
-            roomPrice = parseFloat(selected.dataset.price);
-            maxGuest = parseInt(selected.dataset.maxOccupancy);
-
-            document.getElementById("originalPrice").value = roomPrice;
-            calculatePrice(); // 선택 시에도 가격 계산 실행
-        });
-
-
-        // 투숙 인원 제한
-        document.getElementById("guestCount").addEventListener("input", function () {
-            const guestCount = parseInt(this.value);
-            if (guestCount > maxGuest) {
-                alert(`이 객실은 최대 ${maxGuest}명까지만 수용할 수 있습니다.`);
-                this.value = maxGuest;
-            }
-        });
-        // 가격 계산 함수
-        function calculatePrice() {
-            const original = parseFloat(document.getElementById("originalPrice").value) || 0;
-            const discount = parseFloat(document.getElementById("discountAmount").value) || 0;
-
-            if (discount > original) {
-                alert("할인 금액은 원래 가격보다 클 수 없습니다!");
-                document.getElementById("discountAmount").value = original; // 할인 금액을 원래 가격으로 맞춤
-                document.getElementById("price").value = 0;
-            } else {
-                const result = original - discount;
-                document.getElementById("price").value = result;
-            }
-        }
-
-        // 이벤트 연결
-        document.getElementById("originalPrice").addEventListener("input", calculatePrice);
-        document.getElementById("discountAmount").addEventListener("input", calculatePrice);
-
-        // 페이지 로드시 초기 계산
-        window.addEventListener("DOMContentLoaded", calculatePrice);
-
-    });
-
-</script>

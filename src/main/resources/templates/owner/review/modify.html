@@ -3,119 +3,72 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{owner/layout/base}">
-
+<head>
+    <title>리뷰 답글</title>
+</head>
 <body>
+<!--
+  총관리자 리뷰 답글·노출 관리.
+  과거 폼은 리뷰 작성자의 평점·본문·예약 ID·작성자 ID 까지 고치게 돼 있었고, 존재하지 않는 /owner/review/modify 로 제출됐다.
+  리뷰 본문은 작성자 소유이므로 읽기 전용으로 보여 주고, 답글과 노출 상태만 저장한다.
+-->
 <th:block layout:fragment="content">
-    <div class="page-heading mb-4">
-        <h3>리뷰 수정</h3>
-        <p class="text-subtitle text-muted">리뷰 정보를 수정합니다.</p>
+    <div class="toolbar">
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="mb-0">리뷰 답글</h3>
+            <span class="count-badge" th:text="'#' + ${review.reviewId}">#1</span>
+        </div>
+        <a th:href="@{/owner/review/list(accommodationId=${review.accommodationId})}" class="btn btn-soft btn-chip">목록으로</a>
     </div>
 
-    <div class="page-content">
-        <form th:action="@{/owner/review/modify}" method="post" class="needs-validation" >
-            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-            <input type="hidden" name="reviewId" th:value="${review.reviewId}" />
-
-            <div class="card shadow-sm mb-4 p-4">
-                <h5 class="mb-3">리뷰 정보</h5>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">숙소</label>
-                        <select name="accommodationId" class="form-select" required>
-                            <option value="">숙소 선택</option>
-                            <option th:each="a : ${accommodations}"
-                                    th:value="${a.accommodationId}"
-                                    th:text="${a.name}"
-                                    th:selected="${a.accommodationId == review.accommodationId}"></option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">객실</label>
-                        <select name="roomId" class="form-select" required>
-                            <option value="">객실 선택</option>
-                            <option th:each="r : ${rooms}"
-                                    th:value="${r.roomId}"
-                                    th:text="${r.name}"
-                                    th:selected="${r.roomId == review.roomId}"></option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">예약 ID</label>
-                        <input type="number" name="reservationId" class="form-control" th:value="${review.reservationId}" required />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">작성자 (User ID)</label>
-                        <input type="number" name="userId" class="form-control" th:value="${review.userId}" required />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">상태</label>
-                        <select name="status" class="form-select" required>
-                            <option value="ACTIVE" th:selected="${review.status == 'ACTIVE'}">활성</option>
-                            <option value="DELETED" th:selected="${review.status == 'DELETED'}">삭제됨</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">총 평점</label>
-                        <input type="number" step="0.01" name="rating" class="form-control"
-                               th:value="${review.rating}" required />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">청결도</label>
-                        <input type="number" step="0.01" name="cleanlinessRating" class="form-control"
-                               th:value="${review.cleanlinessRating}" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">시설</label>
-                        <input type="number" step="0.01" name="facilitiesRating" class="form-control"
-                               th:value="${review.facilitiesRating}" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">위치</label>
-                        <input type="number" step="0.01" name="locationRating" class="form-control"
-                               th:value="${review.locationRating}" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">서비스</label>
-                        <input type="number" step="0.01" name="serviceRating" class="form-control"
-                               th:value="${review.serviceRating}" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">좋아요 수</label>
-                        <input type="number" name="likeCount" class="form-control"
-                               th:value="${review.likeCount}" />
-                    </div>
-                </div>
-
-                <div class="mt-3">
-                    <label class="form-label">리뷰 내용</label>
-                    <textarea name="content" class="form-control" rows="3"
-                              th:text="${review.content}"></textarea>
-                </div>
-
-                <div class="mt-3">
-                    <label class="form-label">숙소주인 답글</label>
-                    <textarea name="reply" class="form-control" rows="2"
-                              th:text="${review.reply}"></textarea>
-                </div>
+    <div class="card shadow-sm mb-4 p-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="text-muted small">숙소 / 객실</div>
+                <div class="fw-semibold" th:text="${review.accommodationName}">숙소명</div>
+                <div class="text-muted small" th:text="${review.roomName}">객실명</div>
             </div>
-
-            <div class="text-end">
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="bi bi-save me-1"></i> 저장
-                </button>
+            <div class="col-md-4">
+                <div class="text-muted small">작성자</div>
+                <div class="fw-semibold" th:text="${review.userName ?: '-'}">홍길동</div>
+                <div class="text-muted small"
+                     th:text="${review.createdAt != null ? #temporals.format(review.createdAt,'yyyy-MM-dd HH:mm') : '-'}">2025-01-01</div>
             </div>
-        </form>
+            <div class="col-md-4">
+                <div class="text-muted small">평점</div>
+                <div class="fw-bold" style="color:#F59E0B;" th:text="${review.rating != null ? review.rating + ' ★' : '-'}">5 ★</div>
+                <div class="text-muted small"
+                     th:text="|청결 ${review.cleanlinessRating ?: '-'} · 서비스 ${review.serviceRating ?: '-'} · 시설 ${review.facilitiesRating ?: '-'} · 위치 ${review.locationRating ?: '-'}|">세부 평점</div>
+            </div>
+            <div class="col-12">
+                <div class="text-muted small">리뷰 내용</div>
+                <div class="p-3 rounded" style="background:#F8FAFC;white-space:pre-wrap;" th:text="${review.content ?: '(내용 없음)'}">내용</div>
+            </div>
+        </div>
     </div>
+
+    <form th:action="@{'/owner/review/' + ${review.reviewId} + '/reply'}" method="post" class="card shadow-sm mb-4 p-4">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="status" class="form-label">노출 상태</label>
+                <select id="status" name="status" class="form-select">
+                    <option value="PUBLISHED"
+                            th:selected="${#strings.equalsIgnoreCase(review.status,'PUBLISHED') or #strings.equalsIgnoreCase(review.status,'VISIBLE')}">노출</option>
+                    <option value="HIDDEN" th:selected="${#strings.equalsIgnoreCase(review.status,'HIDDEN')}">숨김</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label for="reply" class="form-label">숙소 답글</label>
+                <textarea id="reply" name="reply" class="form-control" rows="4"
+                          placeholder="답글을 입력하세요. 비우고 저장하면 답글이 지워집니다."
+                          th:text="${review.reply}"></textarea>
+            </div>
+        </div>
+        <div class="text-end mt-3">
+            <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i> 저장</button>
+        </div>
+    </form>
 </th:block>
 </body>
 </html>

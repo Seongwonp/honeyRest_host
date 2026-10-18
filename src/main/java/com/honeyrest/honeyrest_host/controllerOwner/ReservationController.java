@@ -24,128 +24,99 @@ public class ReservationController {
     private final ORoomService roomService;
     private final OReservationService reservationService;
     private final OUserService userService;
+    /** 취소 요청 승인/거절은 업체 관리자와 같은 서비스(도메인 전이 + 환불)를 쓴다 */
+    private final com.honeyrest.honeyrest_host.serviceAdmin.ReservationService adminReservationService;
 
 
-    @GetMapping("/reservation/accommodations")
-    public String reservations(Model model) {
-        model.addAttribute("accommodationId", 0);
-        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
-        model.addAttribute("reservations", reservationService.getReservations());
-        return "/owner/reservation/list";
-    }
-
-    @GetMapping("/reservation/accommodation/{accommodationId}")
-    public String accommodationReservations(
-            @PathVariable Long accommodationId,
-            @ModelAttribute PageRequestDTO pageRequestDTO,
-            Model model) {
-        Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
-
+    /**
+     * 예약 목록 (취소·취소 요청 제외). 업체/숙소/객실 필터를 쿼리 파라미터로 받는다.
+     * 과거 경로(/reservation/company/{id}, /accommodation/{id}, /room/{id})도 같은 화면으로 보낸다.
+     * - 뷰 이름이 "/owner/..." 로 시작해 실행 jar(데모·운영)에서 템플릿을 못 찾고 500 이었다.
+     * - 페이지 링크가 companyId 만 넘겨 숙소/객실 필터가 풀렸다.
+     */
+    @GetMapping("/reservation/list")
+    public String reservationList(@RequestParam(required = false) Integer companyId,
+                                  @RequestParam(required = false) Long accommodationId,
+                                  @RequestParam(required = false) Long roomId,
+                                  @ModelAttribute PageRequestDTO pageRequestDTO,
+                                  Model model) {
         PageResponseDTO<ReservationDTO> reservationPage;
-
-        if (accommodationId != null) {
+        if (roomId != null && roomId > 0) {
+            reservationPage = reservationService.getReservationsByRoomIdWithPage(roomId, pageRequestDTO);
+        } else if (accommodationId != null && accommodationId > 0) {
             reservationPage = reservationService.getReservationsByAccommodationIdWithPageable(accommodationId, pageRequestDTO);
-            AccommodationDTO accommodation = accommodationService.getByAccommodationId(accommodationId);
-
-            model.addAttribute("reservation", reservationPage.getDtoList());
-            model.addAttribute("accommodation", accommodation);
-        } else {
-            reservationPage = reservationService.getReservationsByAccommodationIdWithPageable(accommodationId, pageRequestDTO);
-
-        }
-        model.addAttribute("reservationPage", reservationPage);
-        model.addAttribute("reservations", reservationPage.getDtoList());
-
-        model.addAttribute("companies",  companyService.getAllCompanies());
-        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
-
-        model.addAttribute("companyId",  companyId);
-        model.addAttribute("accommodationId", accommodationId);
-
-        return "/owner/reservation/list";
-    }
-
-    @GetMapping({ "/reservation/list","/reservation/company/{companyId}"})
-    public String companyReservations(
-            @PathVariable(required = false) Integer companyId,
-            @RequestParam(required = false) Long accommodationId,
-            @ModelAttribute PageRequestDTO pageRequestDTO,
-            Model model) {
-        List<CompanyDTO> companies = companyService.getAllCompanies();
-        PageResponseDTO<ReservationDTO> reservationPage;
-        if (companyId != null) {
-            reservationPage = reservationService.getReservationsByCompanyIdWithPageable(companyId, pageRequestDTO);
-            CompanyDTO company = companyService.getCompany(companyId);
-            model.addAttribute("reservation", reservationPage.getDtoList());
-            model.addAttribute("company", company);
-            model.addAttribute("companyId", companyId);
+            model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
         } else {
             reservationPage = reservationService.getReservationsByCompanyIdWithPageable(companyId, pageRequestDTO);
-            model.addAttribute("companyId", 0);
         }
-
-        // 회사/숙소 리스트
-        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
-
-        // 선택값 유지용
-        model.addAttribute("accommodations", accommodations);
-        model.addAttribute("companyId", companyId);
-        model.addAttribute("accommodationId", accommodationId);
+        if (companyId != null && companyId > 0) {
+            model.addAttribute("company", companyService.getCompany(companyId));
+        }
+        model.addAttribute("companies", companyService.getAllCompanies());
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
         model.addAttribute("rooms", roomService.getAllRooms());
-
-        model.addAttribute("reservations", reservationPage.getDtoList());
-        model.addAttribute("companies", companies);
-        model.addAttribute("reservationPage", reservationPage);
-        return "/owner/reservation/list";
-    }
-
-    @GetMapping("/reservation/inActive/list")
-    public String cancelReservations(
-                                     @ModelAttribute PageRequestDTO pageRequestDTO,
-                                     Model model) {
-        List<CompanyDTO> companies = companyService.getAllCompanies();
-        PageResponseDTO<ReservationDTO> reservationPage =
-                reservationService.getCancelRequestReservationsByCompanyIdWithPageable(null, pageRequestDTO);
-        model.addAttribute("reservation", reservationPage.getDtoList());
-        model.addAttribute("companyId", 0);
-
-
-        // 회사/숙소 리스트
-        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
-
-        // 선택값 유지용
-        model.addAttribute("accommodations", accommodations);
-        model.addAttribute("rooms", roomService.getAllRooms());
-
-        model.addAttribute("reservations", reservationPage.getDtoList());
-        model.addAttribute("companies", companies);
-        model.addAttribute("reservationPage", reservationPage);
-        return "/owner/reservation/inActive";
-    }
-
-    @GetMapping("/reservation/room/{roomId}")
-    public String roomReservations(@PathVariable Long roomId,
-                                   @RequestParam(required = false) Integer companyId,
-                                   @RequestParam(required = false) Long accommodationId,
-                                   @ModelAttribute PageRequestDTO pageRequestDTO,
-                                   Model model){
-        List<RoomDTO> rooms = roomService.getAllRooms();
-        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
-        List<CompanyDTO> companies = companyService.getAllCompanies();
-
-        model.addAttribute("rooms", rooms);
-        model.addAttribute("accommodations", accommodations);
-        model.addAttribute("companies", companies);
         model.addAttribute("companyId", companyId);
         model.addAttribute("accommodationId", accommodationId);
         model.addAttribute("roomId", roomId);
-
-        PageResponseDTO<ReservationDTO> reservationPage = reservationService.getReservationsByRoomIdWithPage(roomId, pageRequestDTO);
-
         model.addAttribute("reservations", reservationPage.getDtoList());
         model.addAttribute("reservationPage", reservationPage);
-
         return "owner/reservation/list";
+    }
+
+    @GetMapping("/reservation/accommodations")
+    public String reservationsLegacy() {
+        return "redirect:/owner/reservation/list";
+    }
+
+    @GetMapping("/reservation/company/{companyId}")
+    public String companyReservations(@PathVariable Integer companyId) {
+        return "redirect:/owner/reservation/list?companyId=" + companyId;
+    }
+
+    @GetMapping("/reservation/accommodation/{accommodationId}")
+    public String accommodationReservations(@PathVariable Long accommodationId) {
+        return "redirect:/owner/reservation/list?accommodationId=" + accommodationId;
+    }
+
+    @GetMapping("/reservation/room/{roomId}")
+    public String roomReservations(@PathVariable Long roomId) {
+        return "redirect:/owner/reservation/list?roomId=" + roomId;
+    }
+
+    /** 취소 요청 목록 (승인 = 취소 확정 + 환불, 거절 = 예약 확정 유지) */
+    @GetMapping("/reservation/inActive/list")
+    public String cancelReservations(@ModelAttribute PageRequestDTO pageRequestDTO, Model model) {
+        PageResponseDTO<ReservationDTO> reservationPage =
+                reservationService.getCancelRequestReservationsByCompanyIdWithPageable(null, pageRequestDTO);
+        model.addAttribute("reservations", reservationPage.getDtoList());
+        model.addAttribute("reservationPage", reservationPage);
+        return "owner/reservation/inActive";
+    }
+
+    /** 취소 요청 승인: 업체 관리자 화면과 같은 도메인 전이 + 환불 */
+    @PostMapping("/reservation/{reservationId}/cancel-approve")
+    public String approveCancel(@PathVariable Long reservationId, RedirectAttributes ra) {
+        try {
+            adminReservationService.approveCancelRequest(reservationId, null);
+            ra.addFlashAttribute("success", "취소 요청을 승인했습니다. (예약 취소 및 환불 처리)");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/owner/reservation/inActive/list";
+    }
+
+    /** 취소 요청 거절: 예약을 확정 상태로 되돌린다 */
+    @PostMapping("/reservation/{reservationId}/cancel-reject")
+    public String rejectCancel(@PathVariable Long reservationId,
+                               @RequestParam(required = false) String reason,
+                               RedirectAttributes ra) {
+        try {
+            adminReservationService.rejectCancelRequest(reservationId, reason);
+            ra.addFlashAttribute("success", "취소 요청을 거절했습니다.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/owner/reservation/inActive/list";
     }
 
     @GetMapping("/reservation/{reservationId}/modify")
@@ -185,59 +156,76 @@ public class ReservationController {
 
 
     @GetMapping("/reservation/create")
-    public String createRoom(Model model) {
+    public String createReservationForm(Model model) {
         model.addAttribute("rooms", roomService.getAllRooms());
-        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
-        model.addAttribute("companies", companyService.getAllCompanies());
+        model.addAttribute("users", userService.getBookableUsers());
         return "owner/reservation/create";
     }
 
+    /**
+     * 관리자 예약 등록.
+     * 과거 화면은 숙소 자동완성·객실 목록 스크립트가 레이아웃 밖에 있어 렌더링되지 않아 객실을 고를 수 없었고(등록 불가),
+     * 서버는 숙소명·객실 "이름" 칸의 값을 ID 로 바꿔 쓰고 1박 요금을 숙박 기간과 무관하게 결제 금액으로 받았다.
+     * 이제 회원·객실을 ID 로 고르고, 금액은 서버가 객실 요금 × 박 수 - 할인으로 계산한다.
+     */
     @PostMapping("/reservation/create")
-    public String createReservation(@ModelAttribute ReservationDTO form,
-                                    org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-        UserDTO user = userService.getUserByNameAndPhone(form.getGuestName(), form.getGuestPhone());
+    public String createReservation(@ModelAttribute ReservationDTO form, RedirectAttributes ra) {
+        UserDTO user = form.getUserId() != null
+                ? userService.getUser(form.getUserId())
+                : userService.getUserByNameAndPhone(form.getGuestName(), form.getGuestPhone());
         if (user == null) {
-            ra.addFlashAttribute("error", "해당 고객 정보를 찾을 수 없습니다.");
+            ra.addFlashAttribute("error", "예약할 회원을 찾을 수 없습니다.");
             return "redirect:/owner/reservation/create";
         }
-
-        AccommodationDTO accommodation = accommodationService.getByName(form.getAccommodationName());
-        if (accommodation == null) {
-            ra.addFlashAttribute("error", "숙소 정보를 찾을 수 없습니다.");
+        if (form.getRoomId() == null) {
+            ra.addFlashAttribute("error", "객실을 선택하세요.");
             return "redirect:/owner/reservation/create";
         }
-
-        RoomDTO room = roomService.getByAccommodationIdAndId(
-                accommodation.getAccommodationId(), Long.valueOf(form.getRoomName()));
-        if (room == null) {
+        RoomDTO room;
+        try {
+            room = roomService.getByRoomId(form.getRoomId());
+        } catch (EntityNotFoundException e) {
             ra.addFlashAttribute("error", "객실 정보를 찾을 수 없습니다.");
             return "redirect:/owner/reservation/create";
         }
-
-        // 유효성 검사
-        if (form.getGuestCount() > room.getMaxOccupancy()) {
-            ra.addFlashAttribute("error", "투숙 인원이 최대 수용 인원을 초과합니다.");
+        if (form.getCheckInDate() == null || form.getCheckOutDate() == null
+                || !form.getCheckInDate().isBefore(form.getCheckOutDate())) {
+            ra.addFlashAttribute("error", "체크아웃 날짜는 체크인 날짜 이후여야 합니다.");
+            return "redirect:/owner/reservation/create";
+        }
+        int guestCount = form.getGuestCount() == null ? 1 : form.getGuestCount();
+        if (room.getMaxOccupancy() != null && guestCount > room.getMaxOccupancy()) {
+            ra.addFlashAttribute("error", "투숙 인원이 최대 수용 인원(" + room.getMaxOccupancy() + "명)을 초과합니다.");
             return "redirect:/owner/reservation/create";
         }
 
+        long nights = java.time.temporal.ChronoUnit.DAYS.between(form.getCheckInDate(), form.getCheckOutDate());
+        java.math.BigDecimal original = (room.getPrice() == null ? java.math.BigDecimal.ZERO : room.getPrice())
+                .multiply(java.math.BigDecimal.valueOf(nights));
+        java.math.BigDecimal discount = form.getDiscountAmount() == null ? java.math.BigDecimal.ZERO
+                : form.getDiscountAmount().max(java.math.BigDecimal.ZERO).min(original);
+        String number = (form.getReservationNumber() == null || form.getReservationNumber().isBlank())
+                ? "HR-ADM-" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+                  + "-" + (int) (Math.random() * 900 + 100)
+                : form.getReservationNumber().trim();
+
         ReservationDTO reservation = ReservationDTO.builder()
                 .userId(user.getUserId())
-                .accommodationId(accommodation.getAccommodationId())
+                .accommodationId(room.getAccommodationId())
                 .roomId(room.getRoomId())
-                .accommodationName(accommodation.getName())
+                .accommodationName(room.getAccommodationName())
                 .roomName(room.getName())
-                .guestName(form.getGuestName())
-                .guestPhone(form.getGuestPhone())
-                .guestCount(form.getGuestCount())
+                .guestName(form.getGuestName() == null || form.getGuestName().isBlank() ? user.getName() : form.getGuestName())
+                .guestPhone(form.getGuestPhone() == null || form.getGuestPhone().isBlank() ? user.getPhone() : form.getGuestPhone())
+                .guestCount(guestCount)
                 .checkInDate(form.getCheckInDate())
                 .checkOutDate(form.getCheckOutDate())
-                .originalPrice(form.getOriginalPrice())
-                .discountAmount(form.getDiscountAmount())
-                .price(form.getPrice())
-                .reservationNumber(form.getReservationNumber())
+                .originalPrice(original)
+                .discountAmount(discount)
+                .price(original.subtract(discount))
+                .reservationNumber(number)
                 .status(form.getStatus())
                 .specialRequest(form.getSpecialRequest())
-                .cancelReason(form.getCancelReason())
                 .build();
 
         try {
@@ -247,6 +235,7 @@ public class ReservationController {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/owner/reservation/create";
         }
+        ra.addFlashAttribute("success", "예약을 등록했습니다. (예약번호 " + number + ")");
         return "redirect:/owner/reservation/list";
     }
 //    @GetMapping("/userName/search")

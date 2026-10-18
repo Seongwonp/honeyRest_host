@@ -21,12 +21,14 @@ public class UserController {
     @GetMapping("/user/list")
     public String userList(
             @ModelAttribute PageRequestDTO pageRequestDTO,
+            @RequestParam(required = false) String keyword,
             Model model) {
-        PageResponseDTO<UserDTO> pageResponseDTO = userService.getUsersWithPage(pageRequestDTO);
+        PageResponseDTO<UserDTO> pageResponseDTO = userService.getUsersWithPage(pageRequestDTO, keyword);
+        model.addAttribute("keyword", keyword);
 
         model.addAttribute("users", pageResponseDTO.getDtoList());
         model.addAttribute("pageResponseDTO" , pageResponseDTO);
-        return "/owner/user/list";
+        return "owner/user/list";
     }
 
     @GetMapping("/user/search")

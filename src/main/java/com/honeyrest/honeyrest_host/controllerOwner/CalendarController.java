@@ -30,7 +30,17 @@ public class CalendarController {
     private final OReservationService reservationService;
 
     @GetMapping("/calendar/list")
-    public String roomCalendar(@ModelAttribute PageRequestDTO pageRequestDTO, Model model) {
+    public String roomCalendar(@ModelAttribute PageRequestDTO pageRequestDTO,
+                               @RequestParam(required = false) Integer companyId,
+                               @RequestParam(required = false) Long accommodationId,
+                               Model model) {
+        // 검색 폼 제출: 선택한 숙소/업체 캘린더로 보낸다
+        if (accommodationId != null && accommodationId > 0) {
+            return "redirect:/owner/calendar/accommodation/" + accommodationId + "/calendar";
+        }
+        if (companyId != null && companyId > 0) {
+            return "redirect:/owner/calendar/company/" + companyId + "/calendar";
+        }
         if (pageRequestDTO.getPage() <= 0) pageRequestDTO.setPage(1);
         if (pageRequestDTO.getSize() <= 0) pageRequestDTO.setSize(10);
 
@@ -80,8 +90,7 @@ public class CalendarController {
         }
 
         model.addAttribute("companyId", companyId);
-
-        // 드롭다운용 전체 회사/숙소 목록
+        model.addAttribute("accommodationId", accommodationId); // 필터 선택값 유지 (없어서 숙소 선택이 풀렸다)
 
         model.addAttribute("roomId", roomId);
         model.addAttribute("companies", companyService.getAllCompanies());
@@ -125,11 +134,14 @@ public class CalendarController {
             endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
         }
         // 해당 숙소의 방 리스트
+        // 조건이 뒤집혀 있어 숙소 미선택 시 getRoomsByAccommodationId(null)(빈 목록), 선택 시 전체 객실을 그렸다
         List<RoomDTO> roomList;
-        if (accommodationId == null) {
+        if (accommodationId != null) {
             roomList = roomService.getRoomsByAccommodationId(accommodationId);
         } else {
-            roomList = roomService.getAllRooms();
+            roomList = accommodationService.getAccommodationsByCompanyId(companyId).stream()
+                    .flatMap(a -> roomService.getRoomsByAccommodationId(a.getAccommodationId()).stream())
+                    .toList();
         }
 
         // 방별 캘린더 데이터 (날짜별 가격/재고)

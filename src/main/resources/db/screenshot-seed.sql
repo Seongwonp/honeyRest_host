@@ -13,6 +13,15 @@ CREATE ALIAS IF NOT EXISTS MYSQL_DATEDIFF    FOR 'com.honeyrest.honeyrest_host.c
 CREATE ALIAS IF NOT EXISTS MYSQL_WEEKDAY     FOR 'com.honeyrest.honeyrest_host.config.screenshot.H2MySqlCompat.weekday';
 CREATE ALIAS IF NOT EXISTS MYSQL_DATE_FORMAT FOR 'com.honeyrest.honeyrest_host.config.screenshot.H2MySqlCompat.dateFormat';
 
+-- ---- H2 의 JSON 컬럼 보정 ----
+-- H2 는 JSON 컬럼에 일반 문자열 파라미터를 넣으면 JSON "문자열 값"으로 감싸 저장한다('["a"]' → "\"[\\\"a\\\"]\"").
+-- 화면에서 저장할 때마다(편의시설·침대 정보·계좌 정보) 따옴표가 한 겹씩 늘어났다. MySQL JSON 컬럼은 텍스트를 그대로 받으므로
+-- H2 에서는 문자 컬럼으로 바꿔 같은 동작을 맞춘다 (아래 시드의 '...' FORMAT JSON 도 문자열로 들어간다).
+ALTER TABLE accommodation ALTER COLUMN amenities SET DATA TYPE VARCHAR(4000);
+ALTER TABLE room ALTER COLUMN bed_info SET DATA TYPE VARCHAR(4000);
+ALTER TABLE room ALTER COLUMN amenities SET DATA TYPE VARCHAR(4000);
+ALTER TABLE company ALTER COLUMN bank_info SET DATA TYPE VARCHAR(4000);
+
 -- ---- 지역 / 카테고리 ----
 INSERT INTO region (region_id, parent_id, name, level, is_popular, image_url) VALUES
  (1, NULL, '제주', 1, TRUE,  '/uploads/placeholder/region-1.svg'),
@@ -67,14 +76,15 @@ INSERT INTO accommodation_image (accommodation_id, image_url, image_type, sort_o
 -- ---- 객실 ----
 INSERT INTO room (room_id, accommodation_id, name, type, price, max_occupancy, standard_occupancy, extra_person_fee,
                   bed_info, amenities, description, total_rooms, status, created_at, updated_at) VALUES
- (1, 1, '디럭스 오션뷰 더블', '디럭스', 120000, 3, 2, 20000, '{"double":1}' FORMAT JSON, '["WiFi","욕조"]' FORMAT JSON, '오션뷰 더블룸', 8, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (2, 1, '프리미어 트윈',       '프리미어', 150000, 4, 2, 20000, '{"single":2}' FORMAT JSON, '["WiFi"]' FORMAT JSON, '트윈 베드 객실', 5, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (3, 1, '오션 스위트',         '스위트', 280000, 4, 2, 30000, '{"king":1}' FORMAT JSON, '["WiFi","욕조","라운지"]' FORMAT JSON, '거실 분리형 스위트', 2, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (4, 2, '사랑채 온돌방',       '온돌', 180000, 2, 2, 0, '{"yo":2}' FORMAT JSON, '["WiFi"]' FORMAT JSON, '전통 온돌방', 3, 'ACTIVE', DATEADD('DAY', -180, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (5, 2, '안채 가족실',         '패밀리', 240000, 5, 4, 25000, '{"yo":4}' FORMAT JSON, '["WiFi","주방"]' FORMAT JSON, '4인 가족실', 2, 'ACTIVE', DATEADD('DAY', -180, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (6, 3, '솔숲 독채',           '독채', 150000, 6, 4, 20000, '{"queen":2}' FORMAT JSON, '["WiFi","바비큐"]' FORMAT JSON, '독채 펜션', 4, 'ACTIVE', DATEADD('DAY', -5, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (7, 4, '스탠다드 더블',       '스탠다드', 110000, 2, 2, 15000, '{"double":1}' FORMAT JSON, '["WiFi"]' FORMAT JSON, '비즈니스 더블', 20, 'ACTIVE', DATEADD('DAY', -250, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (8, 4, '오션 디럭스 트윈',    '디럭스', 160000, 3, 2, 20000, '{"single":2}' FORMAT JSON, '["WiFi","욕조"]' FORMAT JSON, '해변 전망 트윈', 10, 'ACTIVE', DATEADD('DAY', -250, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
+ (1, 1, '디럭스 오션뷰 더블', '디럭스', 120000, 3, 2, 20000, '["더블 침대 1개"]' FORMAT JSON, '["WiFi","욕조"]' FORMAT JSON, '오션뷰 더블룸', 8, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (2, 1, '프리미어 트윈',       '프리미어', 150000, 4, 2, 20000, '["싱글 침대 2개"]' FORMAT JSON, '["WiFi"]' FORMAT JSON, '트윈 베드 객실', 5, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (3, 1, '오션 스위트',         '스위트', 280000, 4, 2, 30000, '["킹 침대 1개"]' FORMAT JSON, '["WiFi","욕조","라운지"]' FORMAT JSON, '거실 분리형 스위트', 2, 'ACTIVE', DATEADD('DAY', -200, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (4, 2, '사랑채 온돌방',       '온돌', 180000, 2, 2, 0, '["요 2채"]' FORMAT JSON, '["WiFi"]' FORMAT JSON, '전통 온돌방', 3, 'ACTIVE', DATEADD('DAY', -180, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (5, 2, '안채 가족실',         '패밀리', 240000, 5, 4, 25000, '["요 4채"]' FORMAT JSON, '["WiFi","주방"]' FORMAT JSON, '4인 가족실', 2, 'ACTIVE', DATEADD('DAY', -180, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (6, 3, '솔숲 독채',           '독채', 150000, 6, 4, 20000, '["퀸 침대 2개"]' FORMAT JSON, '["WiFi","바비큐"]' FORMAT JSON, '독채 펜션', 4, 'ACTIVE', DATEADD('DAY', -5, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (7, 4, '스탠다드 더블',       '스탠다드', 110000, 2, 2, 15000, '["더블 침대 1개"]' FORMAT JSON, '["WiFi"]' FORMAT JSON, '비즈니스 더블', 20, 'ACTIVE', DATEADD('DAY', -250, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (8, 4, '오션 디럭스 트윈',    '디럭스', 160000, 3, 2, 20000, '["싱글 침대 2개"]' FORMAT JSON, '["WiFi","욕조"]' FORMAT JSON, '해변 전망 트윈', 10, 'ACTIVE', DATEADD('DAY', -250, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (9, 4, '리모델링 중 스위트',  '스위트', 260000, 4, 2, 30000, '["킹 침대 1개"]' FORMAT JSON, '["WiFi","욕조"]' FORMAT JSON, '리모델링으로 판매 중지된 객실(비활성 목록 확인용)', 2, 'INACTIVE', DATEADD('DAY', -300, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
 
 INSERT INTO room_image (room_id, image_url, sort_order, created_at, updated_at)
 SELECT room_id, CASE WHEN MOD(room_id, 2) = 1 THEN '/uploads/placeholder/room-1.svg' ELSE '/uploads/placeholder/room-2.svg' END, 1,
@@ -150,8 +160,8 @@ SELECT r.reservation_id, r.user_id, r.price,
 -- ---- 리뷰 ----
 INSERT INTO review (reservation_id, user_id, accommodation_id, room_id, rating, cleanliness_rating, service_rating, facilities_rating, location_rating,
                     content, reply, like_count, status, created_at, updated_at) VALUES
- (6, 1, 2, 4, 5.0, 5.0, 5.0, 4.5, 5.0, '한옥 특유의 분위기가 너무 좋았어요. 조식도 정갈했습니다.', '소중한 후기 감사합니다. 다음에도 편히 쉬다 가세요!', 12, 'VISIBLE', DATEADD('DAY', -2, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
- (12, 1, 4, 8, 4.0, 4.0, 4.5, 4.0, 5.0, '해운대 바로 앞이라 위치가 최고입니다.', NULL, 3, 'VISIBLE', DATEADD('DAY', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
+ (6, 1, 2, 4, 5.0, 5.0, 5.0, 4.5, 5.0, '한옥 특유의 분위기가 너무 좋았어요. 조식도 정갈했습니다.', '소중한 후기 감사합니다. 다음에도 편히 쉬다 가세요!', 12, 'PUBLISHED', DATEADD('DAY', -2, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ (12, 1, 4, 8, 4.0, 4.0, 4.5, 4.0, 5.0, '해운대 바로 앞이라 위치가 최고입니다.', NULL, 3, 'PUBLISHED', DATEADD('DAY', -1, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
 
 INSERT INTO review (reservation_id, user_id, accommodation_id, room_id, rating, cleanliness_rating, service_rating, facilities_rating, location_rating,
                     content, reply, like_count, status, created_at, updated_at)
@@ -166,7 +176,7 @@ SELECT r.reservation_id, r.user_id, r.accommodation_id, r.room_id,
             ELSE '가격 대비 만족스러운 숙소였습니다.' END,
        CASE WHEN MOD(r.reservation_id, 3) = 0 THEN '방문해 주셔서 감사합니다!' ELSE NULL END,
        MOD(r.reservation_id, 9),
-       CASE WHEN r.reservation_id = 107 THEN 'HIDDEN' ELSE 'VISIBLE' END,
+       CASE WHEN r.reservation_id = 107 THEN 'HIDDEN' ELSE 'PUBLISHED' END,
        DATEADD('DAY', 1, CAST(r.check_out_date AS TIMESTAMP)), DATEADD('DAY', 1, CAST(r.check_out_date AS TIMESTAMP))
   FROM reservation r
  WHERE r.reservation_id BETWEEN 101 AND 118 AND r.status = 'COMPLETED';
@@ -185,6 +195,16 @@ INSERT INTO error_log (occurred_at, request_url, request_method, error_class, me
  (DATEADD('HOUR', -20, CURRENT_TIMESTAMP),   '/admin/price/grid-cells', 'GET', 'org.springframework.dao.DataIntegrityViolationException', 'could not execute statement', 'org.springframework.dao.DataIntegrityViolationException: ...', TRUE),
  (DATEADD('DAY', -2, CURRENT_TIMESTAMP),     '/owner/accommodation/7/modify', 'POST', 'java.lang.IllegalStateException', '이미 처리된 승인 요청입니다.', 'java.lang.IllegalStateException: ...', TRUE),
  (DATEADD('DAY', -3, CURRENT_TIMESTAMP),     '/admin/reviews/list', 'GET', 'java.lang.NullPointerException', 'Cannot invoke "String.length()" because "keyword" is null', 'java.lang.NullPointerException: ...', TRUE);
+
+-- ---- 쿠폰 (최고 관리자 > 쿠폰. 사용자 API 가 적용하는 대상 유형 ALL/ACCOMMODATION, 할인 유형 RATE/FIXED 별칭) ----
+INSERT INTO coupon (name, code, discount_type, discount_value, min_order_amount, max_discount_amount, target_type, target_id,
+                    start_date, end_date, is_active, created_at, updated_at) VALUES
+ ('신규 가입 10% 할인', 'WELCOME10', 'PERCENT', 10, 50000, 30000, 'ALL', NULL,
+     DATEADD('DAY', -30, CURRENT_TIMESTAMP), DATEADD('DAY', 60, CURRENT_TIMESTAMP), TRUE, DATEADD('DAY', -30, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ ('제주 오션뷰 2만원 할인', 'JEJU20000', 'FIXED', 20000, 100000, NULL, 'ACCOMMODATION', 1,
+     DATEADD('DAY', -7, CURRENT_TIMESTAMP), DATEADD('DAY', 30, CURRENT_TIMESTAMP), TRUE, DATEADD('DAY', -7, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP),
+ ('여름 시즌 15%', 'SUMMER15', 'PERCENT', 15, 80000, 50000, 'ALL', NULL,
+     DATEADD('DAY', -120, CURRENT_TIMESTAMP), DATEADD('DAY', -30, CURRENT_TIMESTAMP), FALSE, DATEADD('DAY', -120, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
 
 -- ---- 명시적 ID 로 넣은 테이블의 IDENTITY 시작값을 비켜 준다 (DataInitializer/화면 등록과 충돌 방지) ----
 ALTER TABLE region ALTER COLUMN region_id RESTART WITH 100;

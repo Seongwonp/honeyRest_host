@@ -8,7 +8,8 @@ const TOTAL_ROOMS = 2;
 async function submitReservation(page: Page, checkIn: string, checkOut: string, guest: string) {
   await page.goto('/admin/reservations/new');
   await page.locator('input[name="userId"]').fill('1');
-  await page.locator('input[name="roomId"]').fill(ROOM_ID);
+  // 객실은 ID 입력칸이 아니라 회사 객실 선택 목록이다
+  await page.locator('select[name="roomId"]').selectOption(ROOM_ID);
   await page.locator('select[name="status"]').selectOption('CONFIRMED');
   await page.locator('input[name="checkInDate"]').fill(checkIn);
   await page.locator('input[name="checkOutDate"]').fill(checkOut);

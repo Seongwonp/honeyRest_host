@@ -25,12 +25,17 @@ public class OUserService {
     private final ModelMapper modelMapper;
 
     public PageResponseDTO<UserDTO> getUsersWithPage(PageRequestDTO pageRequestDTO) {
+        return getUsersWithPage(pageRequestDTO, null);
+    }
+
+    /** 회원 목록. keyword 는 이름·이메일 부분 일치 (검색창 값이 무시되던 문제) */
+    public PageResponseDTO<UserDTO> getUsersWithPage(PageRequestDTO pageRequestDTO, String keyword) {
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
-                pageRequestDTO.getSize(), Sort.by("lastLogin").descending());
+                pageRequestDTO.getSize(), Sort.by(Sort.Order.desc("lastLogin"), Sort.Order.desc("userId")));
 
-        Page<User> page;
-
-        page = userRepository.findAll(pageable);
+        Page<User> page = (keyword == null || keyword.isBlank())
+                ? userRepository.findAll(pageable)
+                : userRepository.searchByKeyword(keyword.trim(), pageable);
 
         List<UserDTO> list = page.getContent().stream().map(user -> modelMapper.map(user, UserDTO.class)).toList();
 
@@ -55,8 +60,20 @@ public class OUserService {
         return userRepository.count();
     }
 
+    /** 이름·전화번호로 회원 조회 (없으면 null — 과거에는 ModelMapper 가 null 을 받아 500 이었다) */
     public UserDTO getUserByNameAndPhone(String name, String phone) {
-        return modelMapper.map(userRepository.findByNameAndPhone(name, phone), UserDTO.class);
+        User user = userRepository.findByNameAndPhone(name, phone);
+        return user == null ? null : modelMapper.map(user, UserDTO.class);
+    }
+
+    public UserDTO getUser(Long userId) {
+        return userRepository.findById(userId).map(u -> modelMapper.map(u, UserDTO.class)).orElse(null);
+    }
+
+    /** 예약 등록 화면의 회원 선택 목록 */
+    public List<UserDTO> getBookableUsers() {
+        return userRepository.findByRoleAndStatusOrderByNameAsc("GENERAL", "ACTIVE").stream()
+                .map(u -> modelMapper.map(u, UserDTO.class)).toList();
     }
 
     public List<UserDTO> searchByNameContaining(String name) {

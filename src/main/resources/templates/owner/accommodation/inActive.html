@@ -68,7 +68,10 @@
                     <td class="hide-sm text-end fw-semibold"
                         th:text="${a.minPrice != null ? #numbers.formatDecimal(a.minPrice,0,'COMMA',0,'POINT') + '원' : '-'}">-</td>
                     <td class="text-center">
-                        <span class="badge-chip badge-inactive" th:text="${a.status}">INACTIVE</span>
+                        <span class="badge-chip"
+                              th:classappend="${#strings.equalsIgnoreCase(a.status,'PENDING')} ? ' badge-pending' :
+                                             (${#strings.equalsIgnoreCase(a.status,'REJECTED')} ? ' badge-rejected' : ' badge-inactive')"
+                              th:text="${a.status}">INACTIVE</span>
                     </td>
                     <td class="text-center">
                         <div class="d-inline-flex gap-1">
@@ -93,7 +96,7 @@
                                th:href="@{'/owner/accommodation/' + ${a.accommodationId} + '/modify'}">수정</a>
                             <form th:action="@{'/owner/accommodation/' + ${a.accommodationId} + '/delete'}"
                                   method="post" class="d-inline"
-                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                  onsubmit="return confirm('숙소를 영구 삭제하시겠습니까? 예약 이력이 있으면 삭제할 수 없습니다.');">
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                 <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
                             </form>

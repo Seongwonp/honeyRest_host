@@ -15,6 +15,12 @@ import java.util.Optional;
 
 public interface PriceCalendarRepository extends JpaRepository<PriceCalendar, Long> {
 
+    /** 객실 영구 삭제 전에 요금 캘린더 행을 지운다 (FK) */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from PriceCalendar p where p.room.roomId = :roomId")
+    int deleteByRoomId(@Param("roomId") Long roomId);
+
+
     // 특정 방만 고르기 위해서
     List<PriceCalendar> findByRoom_RoomIdAndDateBetweenOrderByDateAsc(Long roomId, LocalDate start, LocalDate end);
 

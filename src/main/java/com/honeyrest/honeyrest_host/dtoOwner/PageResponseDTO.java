@@ -35,12 +35,9 @@ public class PageResponseDTO<E> {
 
         this.pageNumList = IntStream.range(start, end + 1).boxed().collect(Collectors.toList());
 
-        if (prev) {
-            this.prevPage = start - 1;
-        }
-        if (next) {
-            this.nextPage = end + 1;
-        }
+        // 비활성 버튼의 링크도 유효한 페이지를 가리키게 한다 (0 이면 page=0 요청이 400 이 됐다)
+        this.prevPage = prev ? start - 1 : 1;
+        this.nextPage = next ? end + 1 : Math.max(end, 1);
 
         this.totalPage = this.pageNumList.size();
 

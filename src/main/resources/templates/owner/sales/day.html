@@ -112,9 +112,10 @@
                 </tbody>
                 <tfoot th:if="${daySales != null and !#lists.isEmpty(daySales)}">
                 <tr class="fw-bold">
+                    <!-- 합계: 과거에는 0 과 존재하지 않는 모델 값(dayPrice)을 찍어 "0 / 빈칸" 이었다 -->
                     <td>합계</td>
-                    <td th:text="${0}">0</td>
-                    <td th:text="${#numbers.formatInteger(dayPrice, 0, 'COMMA')}">0</td>
+                    <td th:text="${#aggregates.sum(daySales.![quantity])}">0</td>
+                    <td th:text="${#numbers.formatInteger(#aggregates.sum(daySales.![dayPrice]), 1, 'COMMA')}">0</td>
                 </tr>
                 </tfoot>
             </table>

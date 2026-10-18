@@ -34,6 +34,8 @@ public class RoomServiceImpl implements RoomService {
     // Spring 이 관리하는 ObjectMapper(JacksonConfig, 모듈 등록됨)를 주입받는다
     private final ObjectMapper objectMapper;
     private final RoomImageRepository roomImageRepository;
+    private final com.honeyrest.honeyrest_host.repositoryAdmin.ReservationRepository reservationRepository;
+    private final com.honeyrest.honeyrest_host.repositoryAdmin.price.PriceCalendarRepository priceCalendarRepository;
     // 객실 재고(totalRooms)·상태·가격이 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다
     private final SearchCacheInvalidator searchCacheInvalidator;
 
@@ -208,8 +210,14 @@ public class RoomServiceImpl implements RoomService {
     public void removeRoom(Long id) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
-        // 실제 삭제 대신 상태만 변경
-       roomRepository.delete(room);
+        // 예약이 있으면 지우지 않는다. 없으면 이미지·요금 캘린더 행을 먼저 지운다.
+        // (과거에는 room_image FK 때문에 예약이 없는 새 객실도 삭제가 실패했고, 화면에는 "예약 이력" 때문이라고 안내했다)
+        if (reservationRepository.existsByRoom_RoomId(id)) {
+            throw new IllegalStateException("해당 객실에 예약 이력이 있어 삭제할 수 없습니다. 대신 객실 상태를 'INACTIVE'로 변경하세요.");
+        }
+        roomImageRepository.deleteByRoomRoomId(id);
+        priceCalendarRepository.deleteByRoomId(id);
+        roomRepository.delete(room);
        searchCacheInvalidator.bumpAfterCommit();
        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationIdOf(room));
     }

@@ -135,7 +135,7 @@
                         <td class="ellipsis" th:title="${p.reservationNumber}" th:text="${p.reservationNumber}">R2025...</td>
                         <td class="ellipsis" th:text="${p.guestName}">홍길동</td>
                         <td class="text-end price"
-                            th:text="${#numbers.formatInteger(p.amount != null ? p.amount.longValue() : 0, 3, 'COMMA')} + '원'">0원</td>
+                            th:text="${#numbers.formatInteger(p.amount != null ? p.amount.longValue() : 0, 1, 'COMMA')} + '원'">0원</td>
                         <td class="text-center">
                             <span class="chip"
                                   th:classappend="${p.paymentStatus=='CANCEL' ? ' chip-cancel' : ' chip-refunded'}"

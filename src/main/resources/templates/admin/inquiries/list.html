@@ -256,7 +256,7 @@
                     <td>
                         <a class="link-title"
                            th:text="${inq.title}"
-                           th:href="@{/admin/inquiries/{id}(id=${inq.inquiryId})}">문의 제목</a>
+                           th:href="@{/admin/inquiries/detail/{id}(id=${inq.inquiryId})}">문의 제목</a>
                     </td>
 
                     <td th:text="${inq.userName ?: '-'}">홍길동</td>
@@ -402,6 +402,8 @@
         const replyModal = document.getElementById('replyModal');
         replyModal.addEventListener('show.bs.modal', function (event) {
             const btn = event.relatedTarget;
+            // '보기' 모달의 '답변 작성'으로 열면 relatedTarget 이 없다 (그쪽에서 폼을 채운다). 과거엔 여기서 TypeError.
+            if (!btn) return;
             const id = btn.getAttribute('data-id');
             const title = btn.getAttribute('data-title') || '';
             const reply = btn.getAttribute('data-reply') || '';

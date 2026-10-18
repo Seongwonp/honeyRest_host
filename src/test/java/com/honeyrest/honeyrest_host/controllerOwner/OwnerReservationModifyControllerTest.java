@@ -28,13 +28,14 @@ class OwnerReservationModifyControllerTest {
     @Mock private ORoomService roomService;
     @Mock private OReservationService reservationService;
     @Mock private OUserService userService;
+    @Mock private com.honeyrest.honeyrest_host.serviceAdmin.ReservationService adminReservationService;
 
     private ReservationController controller;
 
     @BeforeEach
     void setUp() {
         controller = new ReservationController(companyService, accommodationService, roomService,
-                reservationService, userService);
+                reservationService, userService, adminReservationService);
     }
 
     private ReservationDTO form() {

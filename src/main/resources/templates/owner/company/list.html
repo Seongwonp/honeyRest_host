@@ -65,7 +65,7 @@
                     <td th:text="${c.ownerName}">홍길동</td>
                     <td class="hide-md" th:text="${c.businessNumber}">123-45-67890</td>
                     <td class="hide-md" th:text="${c.phone}">010-0000-0000</td>
-                    <td class="hide-sm" th:text="${c.commissionRate + '%'}">10%</td>
+                    <td class="hide-sm" th:text="${c.commissionRate != null ? c.commissionRate + '%' : '-'}">10%</td>
                     <td class="text-center">
                         <span class="badge-chip"
                               th:classappend="${#strings.equalsIgnoreCase(c.status,'ACTIVE')} ? ' badge-active' : ' badge-inactive'"
@@ -81,9 +81,9 @@
                                th:href="@{'/owner/company/' + ${c.companyId} + '/modify'}">수정</a>
                             <form th:action="@{'/owner/company/' + ${c.companyId} + '/delete'}"
                                   method="post" class="d-inline"
-                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                  onsubmit="return confirm('업체를 비활성화하시겠습니까? 비활성 업체 목록에서 다시 활성화할 수 있습니다.');">
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <button type="submit" class="btn btn-danger-soft btn-chip">삭제</button>
+                                <button type="submit" class="btn btn-danger-soft btn-chip">비활성화</button>
                             </form>
                         </div>
                     </td>
@@ -107,18 +107,18 @@
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item" th:classappend="${!responseDTO.prev} ? 'disabled'">
                         <a class="page-link"
-                           th:href="@{/owner/company/list(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size})}">&laquo;</a>
+                           th:href="@{/owner/company/list(page=${responseDTO.prevPage}, size=${responseDTO.pageRequestDTO.size}, keyword=${keyword})}">&laquo;</a>
                     </li>
                     <li class="page-item"
                         th:each="num : ${responseDTO.pageNumList}"
                         th:classappend="${num == responseDTO.current} ? 'active'">
                         <a class="page-link"
-                           th:href="@{/owner/company/list(page=${num}, size=${responseDTO.pageRequestDTO.size})}"
+                           th:href="@{/owner/company/list(page=${num}, size=${responseDTO.pageRequestDTO.size}, keyword=${keyword})}"
                            th:text="${num}">1</a>
                     </li>
                     <li class="page-item" th:classappend="${!responseDTO.next} ? 'disabled'">
                         <a class="page-link"
-                           th:href="@{/owner/company/list(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size})}">&raquo;</a>
+                           th:href="@{/owner/company/list(page=${responseDTO.nextPage}, size=${responseDTO.pageRequestDTO.size}, keyword=${keyword})}">&raquo;</a>
                     </li>
                 </ul>
             </nav>

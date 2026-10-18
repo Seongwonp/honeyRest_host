@@ -9,8 +9,9 @@
         /* 캘린더 스타일 */
         .calendar {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(80px, 1fr));
             gap: 8px;
+            overflow-x: auto; /* 좁은 화면에서는 달력만 가로 스크롤 */
         }
         .day {
             border-radius: 8px;
@@ -74,7 +75,7 @@
     <!-- 검색 폼 -->
     <div class="card p-4 mb-4 shadow-sm border-0">
         <form method="get"
-              th:action="@{/owner/calendar/accommodation/{accommodationId}/calendar(accommodationId=${accommodationId})}"
+              th:action="@{/owner/calendar/list}"
               class="row g-3 align-items-end"
               id="searchForm">
 
@@ -140,16 +141,13 @@
 
                         <!-- 예약 정보가 있는 경우 -->
                         <th:block th:if="${data != null}">
-                            <div>
-                                💰 <span th:text="${#numbers.formatInteger(data.price, 0, 'COMMA')} + '원'"></span>
-                            </div>
+                            <!-- price 는 그날 투숙 중인 예약 금액 합계다(1박 판매가가 아님). 판매가 수정은 업체 관리자 가격 캘린더에서 한다.
+                                 과거 "수정" 버튼은 존재하지 않는 /owner/rooms/calendar/update 로 제출돼 404 였다. -->
+                            <div class="text-muted" style="font-size:.78rem;">예약 금액</div>
+                            <div th:text="${#numbers.formatInteger(data.price, 1, 'COMMA')} + '원'">0원</div>
                             <div th:classappend="${data.availableRoom > 0} ? 'available' : 'soldout'">
                                 <span th:text="${data.availableRoom > 0 ? '잔여 ' + data.availableRoom + '실' : '매진'}"></span>
                             </div>
-                            <button type="button"
-                                    th:attr="data-date=${date}, data-roomId=${room.roomId}"
-                                    class="btn btn-sm btn-outline-primary mt-2"
-                                    onclick="openEditModal(this)">수정</button>
                         </th:block>
 
                         <!-- 예약 정보가 없는 경우: 그냥 빈 칸 -->
@@ -163,31 +161,9 @@
         </div>
     </th:block>
 
-    <!-- 수정 모달 -->
-    <div id="editModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid #ccc; z-index:1050;">
-        <h3 class="fw-bold mb-3">가격/재고 수정</h3>
-        <form id="editForm" method="post" action="/owner/rooms/calendar/update">
-            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-            <input type="hidden" name="roomId" id="roomId">
-            <input type="hidden" name="date" id="date">
-            <div class="mb-3">
-                <label class="form-label">가격</label>
-                <input type="number" class="form-control" name="price" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">잔여 객실 수</label>
-                <input type="number" class="form-control" name="availableRoom" required>
-            </div>
-            <div class="d-flex justify-content-end gap-2">
-                <button type="submit" class="btn btn-primary">저장</button>
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">닫기</button>
-            </div>
-        </form>
-    </div>
 </th:block>
-</body>
-</html>
-
+<!-- 레이아웃 프래그먼트 밖의 스크립트는 layout dialect 가 버린다 → 필터·월 이동 버튼이 동작하지 않았다 -->
+<th:block layout:fragment="script">
 <script th:inline="javascript">
     const companySelect = document.getElementById("companySelect");
     const accommodationSelect = document.getElementById("accommodationSelect");
@@ -253,15 +229,6 @@
     loadAccommodationOptions(selectedCompanyId);
     loadRoomOptions(selectedAccommodationId);
 
-    // 모달
-    function openEditModal(btn) {
-        document.getElementById("roomId").value = btn.getAttribute("data-roomId");
-        document.getElementById("date").value = btn.getAttribute("data-date");
-        document.getElementById("editModal").style.display = "block";
-    }
-    function closeEditModal() {
-        document.getElementById("editModal").style.display = "none";
-    }
 
     // 전월/다음달 이동
     const prevBtn = document.getElementById("prevMonth");
@@ -349,3 +316,6 @@
     });
 
 </script>
+</th:block>
+</body>
+</html>

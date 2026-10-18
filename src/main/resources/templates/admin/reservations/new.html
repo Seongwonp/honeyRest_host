@@ -24,19 +24,24 @@
 
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label">사용자 ID</label>
+                            <label class="form-label">회원 ID <small class="text-muted">(예약할 회원 번호)</small></label>
                             <input type="number" class="form-control" th:field="*{userId}" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">객실 ID</label>
-                            <input type="number" class="form-control" th:field="*{roomId}" required>
+                            <!-- 컨트롤러가 회사 객실 목록(rooms)을 넘기는데 화면은 ID 를 직접 입력받았다 -->
+                            <label class="form-label" for="roomId">객실</label>
+                            <select class="form-select" th:field="*{roomId}" required>
+                                <option value="">객실 선택</option>
+                                <option th:each="r : ${rooms}" th:value="${r.roomId}"
+                                        th:text="${(r.accommodationName != null ? r.accommodationName + ' · ' : '') + r.roomName}">객실</option>
+                            </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">상태</label>
+                            <!-- 신규 예약은 대기/확정만 의미가 있다 (취소·완료 상태로 바로 만드는 것은 막는다) -->
                             <select class="form-select" th:field="*{status}">
-                                <option value="">선택</option>
-                                <option th:each="st : ${reservationStatuses}"
-                                        th:value="${st}" th:text="${st}"></option>
+                                <option value="CONFIRMED">확정</option>
+                                <option value="PENDING">대기</option>
                             </select>
                         </div>
 

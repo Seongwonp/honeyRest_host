@@ -31,9 +31,41 @@ public class OCouponService {
                 .toList();
     }
 
-    public void registerCoupon(CouponDTO dto) {
+    /** 사용자 API(Coupon.isApplicableToAccommodation)가 적용하는 대상 유형 */
+    static final java.util.Set<String> TARGET_TYPES = java.util.Set.of("ALL", "ACCOMMODATION");
 
-        couponRepository.save(modelMapper.map(dto, Coupon.class));
+    public void registerCoupon(CouponDTO dto) {
+        validate(dto);
+        couponRepository.saveAndFlush(modelMapper.map(dto, Coupon.class));
+    }
+
+    /**
+     * 과거 등록 화면은 대상 유형으로 COMPANY/ROOM 을 기본 제공했는데, 사용자 API 는 ALL/ACCOMMODATION 쿠폰만
+     * 예약에 적용해 그렇게 만든 쿠폰은 쓸 수 없었다. 기간·할인값도 검증 없이 저장됐다.
+     */
+    void validate(CouponDTO dto) {
+        if (dto.getTargetType() == null || !TARGET_TYPES.contains(dto.getTargetType())) {
+            throw new IllegalArgumentException("적용 대상은 전체(ALL) 또는 특정 숙소(ACCOMMODATION)만 가능합니다.");
+        }
+        if ("ALL".equals(dto.getTargetType())) {
+            dto.setTargetId(null);
+        } else if (dto.getTargetId() == null) {
+            throw new IllegalArgumentException("특정 숙소 쿠폰은 숙소를 선택해야 합니다.");
+        }
+        try {
+            com.honeyrest.domain.type.CouponDiscountType.from(dto.getDiscountType());
+        } catch (IllegalStateException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+        if (dto.getDiscountValue() == null || dto.getDiscountValue().signum() <= 0) {
+            throw new IllegalArgumentException("할인 값은 0보다 커야 합니다.");
+        }
+        if (dto.getStartDate() == null || dto.getEndDate() == null || !dto.getStartDate().isBefore(dto.getEndDate())) {
+            throw new IllegalArgumentException("종료일은 시작일 이후여야 합니다.");
+        }
+        if (dto.getCode() != null && dto.getCode().isBlank()) {
+            dto.setCode(null);
+        }
     }
 
     public void modifyCoupon(CouponDTO dto) {

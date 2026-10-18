@@ -28,6 +28,15 @@ public class PageRequestDTO {
 
     private String keyword;
 
+    /** 1 미만 페이지(이전 버튼의 page=0 등)를 1로 보정한다. PageRequest.of(-1) 이 400 을 내던 문제 */
+    public void setPage(int page) {
+        this.page = Math.max(page, 1);
+    }
+
+    public void setSize(int size) {
+        this.size = size <= 0 ? 10 : Math.min(size, 100);
+    }
+
     public String[] getTypes() {
         /* type 문자열을 배열로 변환 */
         if (type == null || type.isEmpty()) {
@@ -38,7 +47,7 @@ public class PageRequestDTO {
 
     /* Spring Data JPA Pageable 객체 생성 */
     public Pageable getPageable(Sort sort) {
-        return PageRequest.of(page - 1, size, sort);
+        return PageRequest.of(Math.max(page, 1) - 1, size <= 0 ? 10 : Math.min(size, 100), sort);
     }
 
     public String getLink() {

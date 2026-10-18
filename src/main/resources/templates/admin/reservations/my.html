@@ -157,7 +157,7 @@
                             <td class="text-center" th:text="${r.guestCount}">2</td>
 
                             <td class="text-end price"
-                                th:text="${r.price != null ? #numbers.formatInteger(r.price.intValue(), 3, 'COMMA') + '원' : '0원'}">0원</td>
+                                th:text="${r.price != null ? #numbers.formatInteger(r.price.intValue(), 1, 'COMMA') + '원' : '0원'}">0원</td>
 
                             <!-- 状態 칩 -->
                             <td class="text-center">

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -28,45 +29,43 @@ public class RoomController {
 
     @GetMapping({"/room/list", "/accommodation/{accommodationId}/rooms"})
     public String rooms(
-            @PathVariable(required = false) Long accommodationId,
+            @PathVariable(name = "accommodationId", required = false) Long pathAccommodationId,
+            @RequestParam(name = "accommodationId", required = false) Long paramAccommodationId,
             @ModelAttribute PageRequestDTO pageRequestDTO,
             Model model) {
-
-        List<AccommodationDTO> accommodations = accommodationService.getAllAccommodations();
-
-        PageResponseDTO<RoomDTO> roomPage;
-
-        if (accommodationId != null && accommodationId > 0) {
-            roomPage = roomService.getRoomsByAccommodationIdWithPageable(accommodationId, pageRequestDTO);
-            model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
-            model.addAttribute("accommodationId", accommodationId);
-        } else {
-            roomPage = roomService.getRoomsByAccommodationIdWithPageable(accommodationId ,pageRequestDTO);
-            model.addAttribute("accommodationId", 0);
-        }
-        List<AccommodationImageDTO> subImages = accommodationService.getImagesByAccommodationIdOnlySub(accommodationId);
-        List<RoomImageDTO> roomImageDTOS = roomService.getAllImages();
-        model.addAttribute("images", roomImageDTOS);
-        model.addAttribute("subImages", subImages);
-        model.addAttribute("accommodations", accommodations);
-        model.addAttribute("rooms", roomPage.getDtoList());
-        model.addAttribute("pageResponse", roomPage);
-
+        // 목록 상단 숙소 선택(?accommodationId=)이 무시되던 문제: 경로 변수와 쿼리 파라미터를 모두 받는다
+        Long accommodationId = pathAccommodationId != null ? pathAccommodationId : paramAccommodationId;
+        fillRoomList(accommodationId, true, pageRequestDTO, model);
         return "owner/room/list";
     }
 
+    /**
+     * 비활성(판매 중지) 객실 목록. 과거에는 모델 없이 템플릿만 반환해 pageResponse 가 null 이라 500 이었다.
+     */
     @GetMapping("/room/inActive/list")
     public String inActiveList(@ModelAttribute PageRequestDTO pageRequestDTO,
-                               @RequestParam(required = false) Integer companyId,
+                               @RequestParam(required = false) Long accommodationId,
                                Model model) {
-
+        fillRoomList(accommodationId, false, pageRequestDTO, model);
         return "owner/room/inActive";
     }
 
-    @GetMapping("/room/create")
-    public String createRoom(@RequestParam Long accommodationId, Model model) {
+    private void fillRoomList(Long accommodationId, boolean active, PageRequestDTO pageRequestDTO, Model model) {
+        PageResponseDTO<RoomDTO> roomPage = roomService.getRoomsByStatusWithPageable(accommodationId, active, pageRequestDTO);
+        if (accommodationId != null && accommodationId > 0) {
+            model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationId));
+        }
         model.addAttribute("accommodationId", accommodationId);
-        if (accommodationId != 0) {
+        model.addAttribute("accommodations", accommodationService.getAllAccommodations());
+        model.addAttribute("rooms", roomPage.getDtoList());
+        model.addAttribute("pageResponse", roomPage);
+    }
+
+    @GetMapping("/room/create")
+    public String createRoom(@RequestParam(required = false) Long accommodationId, Model model) {
+        // 사이드바 "객실 등록"은 accommodationId 없이 들어온다 (필수 파라미터라 500 이었다)
+        model.addAttribute("accommodationId", accommodationId);
+        if (accommodationId != null && accommodationId != 0) {
             Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
             model.addAttribute("accommodations", accommodationService.getAccommodationsByCompanyId(companyId));
         } else {
@@ -76,34 +75,23 @@ public class RoomController {
     }
 
     @PostMapping("/room/create")
-    public String createRoom(@ModelAttribute RoomDTO roomDTO) throws Exception {
+    public String createRoom(@ModelAttribute RoomDTO roomDTO, RedirectAttributes ra) throws Exception {
         Long roomId = roomService.registerRoom(roomDTO);
 
-        String mainImage = fileStorage.upload(roomDTO.getFile(),"rooms/"+ roomId);
-        RoomImageDTO roomImageDTO = RoomImageDTO.builder()
-                .roomId(roomId)
-                .imageUrl(mainImage)
-                .sortOrder(0)
-                .build();
-        roomService.updateRoomImage(roomImageDTO);
-
-        List<MultipartFile> images = roomDTO.getImages();
-        if (images != null && !images.isEmpty()) {
-            int sortOrder = 1; // MAIN 이미지 다음부터
-            for (MultipartFile image : images) {
-                if (!image.isEmpty()) {
-                    String roomImageUrl = fileStorage.upload(image,"rooms/" + roomId + "/images");
-                    RoomImageDTO dto = RoomImageDTO.builder()
-                            .roomId(roomId)
-                            .imageUrl(roomImageUrl)
-                            .sortOrder(sortOrder)
-                            .build();
-                    roomService.updateRoomImage(dto);
-                }
-            }
+        // 대표 이미지는 선택 사항. 빈 파일을 올려 0바이트 이미지가 저장되던 문제
+        MultipartFile mainFile = roomDTO.getFile();
+        if (mainFile != null && !mainFile.isEmpty()) {
+            String mainImage = fileStorage.upload(mainFile, "rooms/" + roomId);
+            roomService.updateRoomImage(RoomImageDTO.builder()
+                    .roomId(roomId)
+                    .imageUrl(mainImage)
+                    .sortOrder(0)
+                    .build());
         }
+        roomService.modifyRoomImage(roomId, roomDTO.getImages());
 
-        return "redirect:/owner/room/list";
+        ra.addFlashAttribute("success", "객실을 등록했습니다.");
+        return "redirect:/owner/accommodation/" + roomDTO.getAccommodationId() + "/rooms";
     }
 
     @GetMapping("/room/{roomId}/modify")
@@ -116,12 +104,30 @@ public class RoomController {
     }
 
     @PostMapping("/room/modify")
-    public String modifyRoom(@ModelAttribute RoomDTO roomDTO) throws Exception {
+    public String modifyRoom(@ModelAttribute RoomDTO roomDTO, RedirectAttributes ra) throws Exception {
         roomService.modifyRoom(roomDTO);
-        Long roomId = roomDTO.getRoomId();
-        List<MultipartFile> images = roomDTO.getImages();
-        roomService.modifyRoomImage(roomId, images);
+        MultipartFile mainFile = roomDTO.getFile();
+        if (mainFile != null && !mainFile.isEmpty()) {
+            roomService.replaceMainImage(roomDTO.getRoomId(), fileStorage.upload(mainFile, "rooms/" + roomDTO.getRoomId()));
+        }
+        roomService.modifyRoomImage(roomDTO.getRoomId(), roomDTO.getImages());
+        ra.addFlashAttribute("success", "객실 정보를 수정했습니다.");
         return "redirect:/owner/room/list";
+    }
+
+    /** 판매 중지(INACTIVE). 목록의 버튼이 가리키던 경로가 없어 404 였다. 예약 FK 때문에 행은 지우지 않는다. */
+    @PostMapping("/room/{roomId}/delete")
+    public String deleteRoom(@PathVariable Long roomId, RedirectAttributes ra) {
+        roomService.removeRoom(roomId);
+        ra.addFlashAttribute("success", "객실을 판매 중지(비활성)했습니다.");
+        return "redirect:/owner/room/list";
+    }
+
+    @PostMapping("/room/{roomId}/activate")
+    public String activateRoom(@PathVariable Long roomId, RedirectAttributes ra) {
+        roomService.activateRoom(roomId);
+        ra.addFlashAttribute("success", "객실을 다시 판매 가능으로 바꿨습니다.");
+        return "redirect:/owner/room/inActive/list";
     }
 
     @GetMapping("/room/search")
@@ -137,13 +143,7 @@ public class RoomController {
     }
 
     @GetMapping("/room/{roomId}/reviews")
-    public String reviews(@PathVariable Long roomId, Model model, PageRequestDTO pageRequestDTO) {
-        model.addAttribute("room", roomService.getByRoomId(roomId));
-        model.addAttribute("rooms", roomService.getRoomsByAccommodationId(accommodationService.getAccommodationIdByRoomId(roomId)));
-        model.addAttribute("accommodation", accommodationService.getByAccommodationId(accommodationService.getAccommodationIdByRoomId(roomId)));
-        PageResponseDTO<ReviewDTO> reviews = reviewService.getReviewsWithPageable(roomId,  pageRequestDTO);
-        model.addAttribute("pageResponse", reviews);
-        model.addAttribute("reviews", reviews.getDtoList());
-        return "owner/review/list";
+    public String reviews(@PathVariable Long roomId) {
+        return "redirect:/owner/review/room/" + roomId;
     }
 }

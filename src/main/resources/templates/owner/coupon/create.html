@@ -24,7 +24,7 @@
                     </div>
                     <div class="col-md-6">
                         <label for="code" class="form-label">쿠폰 코드</label>
-                        <input type="text" name="code" class="form-control" id="code" required>
+                        <input type="text" name="code" class="form-control" id="code" required maxlength="50">
                     </div>
                 </div>
 
@@ -71,16 +71,19 @@
                 <div class="row g-3 mt-3">
                     <div class="col-md-6">
                         <label for="targetType" class="form-label">대상 유형</label>
-                        <select name="targetType" class="form-select" id="targetType" required>
-                            <option value="COMPANY">업체</option>
-                            <option value="ROOM">객실</option>
-                            <option value="ALL">전체</option>
+                        <!-- 사용자 사이트는 ALL/ACCOMMODATION 쿠폰만 예약에 적용한다 (COMPANY/ROOM 은 쓸 수 없는 쿠폰이 됐다) -->
+                        <select name="targetType" class="form-select" id="targetType" required
+                                onchange="document.getElementById('targetId').disabled = (this.value === 'ALL');">
+                            <option value="ALL">전체 숙소</option>
+                            <option value="ACCOMMODATION">특정 숙소</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label for="targetId" class="form-label">대상 ID (선택)</label>
-                        <input type="number" name="targetId" class="form-control" id="targetId">
-                        <small class="text-muted">대상 유형이 ALL이면 비워두세요.</small>
+                        <label for="targetId" class="form-label">대상 숙소</label>
+                        <select name="targetId" class="form-select" id="targetId" disabled>
+                            <option th:each="a : ${accommodations}" th:value="${a.accommodationId}" th:text="${a.name}">숙소</option>
+                        </select>
+                        <small class="text-muted">특정 숙소를 고르면 그 숙소 예약에만 적용됩니다.</small>
                     </div>
                 </div>
 

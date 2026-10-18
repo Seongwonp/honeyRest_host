@@ -85,7 +85,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">편의시설 (JSON)</label>
+                    <label class="form-label">편의시설 (쉼표로 구분)</label>
                     <textarea name="amenities" class="form-control" rows="3" placeholder='wifi,tv,...'></textarea>
                 </div>
             </div>
@@ -131,9 +131,9 @@
     </div>
 
 </th:block>
-
-</body>
-</html>
+<!-- 레이아웃 프래그먼트 밖의 스크립트는 layout dialect 가 버린다 → 서브 지역 목록이 비어 등록 자체가 불가능했다.
+     (주소 찾기용 jQuery/다음 우편번호 CDN 스크립트는 쓰지 않는 기능이라 제거) -->
+<th:block layout:fragment="script">
 <script th:inline="javascript">
     let regions = [[${regions}]];
     const mainSelect = document.getElementById("mainRegionId");
@@ -148,11 +148,10 @@
             const mainRegion = regions.find(r => r.regionId == mainId);
             const subRegion = regions.find(r => r.regionId == subId);
 
-            if(mainRegion && subRegion) {
-                addressInput.value = mainRegion.name + " " + subRegion.name;
+            // 직접 입력한 주소는 덮어쓰지 않는다 (비어 있을 때만 지역명으로 채움)
+            if (mainRegion && subRegion && !addressInput.value.trim()) {
+                addressInput.value = mainRegion.name + " " + subRegion.name + " ";
             }
-        } else {
-            addressInput.value = ""; // 선택 안되었으면 초기화
         }
     }
 
@@ -171,34 +170,6 @@
 
     subSelect.addEventListener("change", updateAddress);
 </script>
-    <script src="https://code.jquery.com/jquery-3.6.0.js"
-            integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossOrigin="anonymous"></script>
-<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script>
-    //kakad map api
-    function searchAddr() {
-        new daum.Postcode({
-            oncomplete: function (data) {
-                // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성
-
-                // 각 주소의 노출 규칙에 따라 주소를 조합한다.
-                // 내려오는 변수가 값이 없는 경우엔 공백('')값을 가지므로, 이를 참고하여 분기 한다.
-                var addr = ''; // 주소 변수
-
-                //사용자가 선택한 주소 타입에 따라 해당 주소 값을 가져온다.
-                if (data.userSelectedType === 'R') {
-                    // 사용자가 도로명 주소를 선택했을 경우
-                    addr = data.roadAddress;
-                } else {
-                    // 사용자가 지번 주소를 선택했을 경우(J)
-                    addr = data.jibunAddress;
-                }
-                // 우편번호와 주소 정보를 해당 필드에 넣는다.
-                $("#userPostCode").val(data.zonecode);
-                $("#userAddr1").val(addr);
-                // 커서를 상세주소 필드로 이동한다.
-                $("#userAddr2").focus();
-            }
-        }).open();
-    }
-</script>
+</th:block>
+</body>
+</html>

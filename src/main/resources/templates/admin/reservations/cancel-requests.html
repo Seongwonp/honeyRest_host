@@ -136,7 +136,7 @@
                 </div>
                 <div class="col-md-6 text-end">
                     <button class="btn btn-honey btn-sm" type="submit">조회</button>
-                    <a class="btn btn-ghost btn-sm" th:href="@{/admin/reservations/cancel-request}">검색 초기화</a>
+                    <a class="btn btn-ghost btn-sm" th:href="@{/admin/reservations/cancel-requests}">검색 초기화</a>
                 </div>
             </form>
         </div>
@@ -195,7 +195,7 @@
                         <td class="text-center" th:text="${r.checkOutDate}">2025-09-12</td>
 
                         <td class="text-end"
-                            th:text="${#numbers.formatInteger(r.price != null ? r.price.longValue() : 0, 3, 'COMMA')} + '원'">0원</td>
+                            th:text="${#numbers.formatInteger(r.price != null ? r.price.longValue() : 0, 1, 'COMMA')} + '원'">0원</td>
 
                         <td class="text-center">
                             <span class="pill" th:text="'-'">-</span>
@@ -259,7 +259,7 @@
                     <ul class="pagination mb-0">
                         <li class="page-item page-arrows" th:classappend="${currentPage == 1} ? ' disabled'">
                             <a class="page-link"
-                               th:href="@{/admin/reservations/cancel-request(page=${currentPage-1 <= 1 ? 1 : currentPage-1}, size=${pageSize}, q=${q})}">&laquo;</a>
+                               th:href="@{/admin/reservations/cancel-requests(page=${currentPage-1 <= 1 ? 1 : currentPage-1}, size=${pageSize}, q=${q})}">&laquo;</a>
                         </li>
 
                         <th:block th:with="start=${ ( ( (currentPage-1) / 5) * 5 ) + 1 }, end=${ T(java.lang.Math).min(start + 4, totalPages) }">
@@ -268,13 +268,13 @@
                                 th:classappend="${i==currentPage} ? ' active'">
                                 <a class="page-link"
                                    th:text="${i}"
-                                   th:href="@{/admin/reservations/cancel-request(page=${i}, size=${pageSize}, q=${q})}">1</a>
+                                   th:href="@{/admin/reservations/cancel-requests(page=${i}, size=${pageSize}, q=${q})}">1</a>
                             </li>
                         </th:block>
 
                         <li class="page-item page-arrows" th:classappend="${currentPage == totalPages} ? ' disabled'">
                             <a class="page-link"
-                               th:href="@{/admin/reservations/cancel-request(page=${currentPage+1 > totalPages ? totalPages : currentPage+1}, size=${pageSize}, q=${q})}">&raquo;</a>
+                               th:href="@{/admin/reservations/cancel-requests(page=${currentPage+1 > totalPages ? totalPages : currentPage+1}, size=${pageSize}, q=${q})}">&raquo;</a>
                         </li>
                     </ul>
                 </nav>
@@ -341,6 +341,8 @@
 </th:block>
 
 <th:block layout:fragment="script">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <script>
         // 승인 버튼 즉시 승인
         document.addEventListener('click', async (e) => {
@@ -350,10 +352,10 @@
             const id = btn.getAttribute('data-id');
             if (!id) return;
 
-            // CSRF 토큰 가져오기 (reasonModal 폼에 있는 hidden 사용)
-            const csrfInput = document.querySelector('#reasonModal input[name]');
-            const csrfHeaderName = csrfInput ? csrfInput.getAttribute('name') : null;
-            const csrfToken = csrfInput ? csrfInput.value : null;
+            // CSRF: 과거에는 '#reasonModal input[name]' 이 사유 textarea(name=reason)를 잡아
+            // 헤더 이름이 "reason" 으로 나가 토큰이 빠졌다 → 승인이 항상 403. 서버가 알려 준 헤더 이름/토큰을 쓴다.
+            const csrfHeaderName = document.querySelector('meta[name="_csrf_header"]')?.content;
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
 
             try {
                 const resp = await fetch(`/admin/reservations/cancel-request/${id}/approve`, {
@@ -386,6 +388,18 @@
                 console.error(err);
                 alert('네트워크 오류로 승인에 실패했습니다.');
             }
+        });
+
+        // 거부 모달: 열 때 대상 예약으로 폼 action 을 정한다 (과거에는 action 이 없어 현재 목록 주소로 POST → 405)
+        const reasonModal = document.getElementById('reasonModal');
+        reasonModal.addEventListener('show.bs.modal', function (event) {
+            const btn = event.relatedTarget;
+            if (!btn) return;
+            const id = btn.getAttribute('data-id');
+            document.getElementById('reasonForm').action = `/admin/reservations/cancel-request/${id}/reject`;
+            document.getElementById('reasonModalTitle').textContent = '취소 요청 거부';
+            document.getElementById('reasonSubtitle').textContent =
+                `${btn.getAttribute('data-name') || ''} 님의 취소 요청을 거부하고 예약을 유지합니다. 사유를 입력해 주세요.`;
         });
 
         // 상세(영수증) 모달 세팅 (기능 변경 없음)

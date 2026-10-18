@@ -64,13 +64,8 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     private List<String> parseAmenitiesToList(String jsonInput) {
         if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
 
-        try {
-            // JSON 배열 문자열을 List<String>으로 역직렬화
-            return objectMapper.readValue(jsonInput, new TypeReference<List<String>>() {});
-        } catch (JsonProcessingException e) {
-            log.warn("JSON parse error", e);
-            return Collections.emptyList(); // 실패 시 빈 리스트 반환
-        }
+        // JSON 배열/CSV/여러 줄 모두 허용 (형식이 다르면 매 요청 스택트레이스 경고가 쌓였다)
+        return com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.toList(jsonInput);
     }
     //List를 문자열로 변환
     private String parseAmenitiesToString(String jsonInput) {
@@ -223,6 +218,18 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
         // save(merge)가 영속 엔티티를 덮어쓰기 전에 검색 관련 값을 떠 둔다
         String oldStatus = acc.getStatus();
+
+        // 상태: 비어 있으면 유지. ACTIVE 가 아닌 숙소를 수정 폼으로 ACTIVE 로 바꾸면 승인 흐름(approve, PENDING→ACTIVE)을
+        // 건너뛰게 된다. 과거 폼은 ACTIVE/INACTIVE 두 개만 있어 PENDING 숙소를 저장하기만 해도 ACTIVE 가 됐다.
+        if (dto.getStatus() == null || dto.getStatus().isBlank()) {
+            dto.setStatus(oldStatus);
+        } else {
+            String requested = dto.getStatus().trim().toUpperCase(java.util.Locale.ROOT);
+            if (AccommodationStatus.ACTIVE.equals(requested) && !AccommodationStatus.isActive(oldStatus)) {
+                throw new IllegalArgumentException("ACTIVE 전환은 승인 대기(PENDING) 숙소의 '승인'으로만 할 수 있습니다.");
+            }
+            dto.setStatus(requested);
+        }
         java.math.BigDecimal oldMinPrice = acc.getMinPrice();
 
         // Entity로 변환 후 저장
@@ -237,13 +244,19 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     }
 
 
+    /**
+     * 숙소 운영 중지(INACTIVE). 과거에는 deleteById 로 바로 지워 객실·예약·이미지 FK 때문에 항상 500 이 났다.
+     * 영구 삭제는 예약 이력이 없을 때만 {@code AccommodationService.delete} 로 한다(컨트롤러).
+     */
     @Override
     public void removeAccommodation(Long id) {
         Accommodation acc = accommodationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("숙소가 존재하지 않습니다."));
-
-        accommodationRepository.deleteById(id);
-        searchCacheInvalidator.bumpAfterCommit();
+        boolean wasActive = AccommodationStatus.isActive(acc.getStatus());
+        accommodationRepository.updateStatus(id, AccommodationStatus.INACTIVE);
+        if (wasActive) {
+            searchCacheInvalidator.bumpAfterCommit();
+        }
         searchCacheInvalidator.evictAccommodationAfterCommit(id);
     }
 
@@ -317,7 +330,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     public List<AccommodationImageDTO> getImagesByAccommodationIdOnlySub(Long id) {
         return accommodationImageRepository.findByAccommodation_AccommodationId(id)
                 .stream().map(this::toImageDTO)
-                .filter(si -> si.getImageType().equals("SUB"))
+                .filter(si -> "SUB".equals(si.getImageType()))
                 .toList();
     }
 
@@ -328,8 +341,11 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
 
 
+        // 기존 서브 이미지 뒤에 붙인다 (매번 1부터 매겨 정렬 순서가 겹쳤다)
+        sortOrder += (int) accommodationImageRepository.findByAccommodation_AccommodationId(accommodationId).stream()
+                .filter(i -> "SUB".equals(i.getImageType())).count();
         for (MultipartFile image : images) {
-            if (!image.isEmpty()) {
+            if (image != null && !image.isEmpty()) {
                 String subImageUrl = fileStorage.upload(image, "accommodations/" + accommodationId + "/images");
 
                 AccommodationImageDTO imageDTO = AccommodationImageDTO.builder()

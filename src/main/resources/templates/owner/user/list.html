@@ -18,6 +18,7 @@
     <div class="toolbar">
         <div class="d-flex align-items-center gap-2">
             <h3 class="mb-0">회원 관리</h3>
+            <span class="count-badge" th:if="${pageResponseDTO != null}" th:text="'총 ' + ${pageResponseDTO.total} + '명'">총 0명</span>
         </div>
         <div class="d-flex align-items-center gap-2">
             <form class="search-wrap" method="get" th:action="@{/owner/user/list}">
@@ -52,7 +53,7 @@
                     <td>
                         <div class="fw-semibold" th:text="${u.name}">홍길동</div>
                         <div class="text-muted" style="font-size:.78rem;"
-                             th:text="${u.gender != null ? u.gender : ''}"></div>
+                             th:text="${u.role == 'SUPER_ADMIN' ? '총관리자' : (u.role == 'COMPANY_ADMIN' ? '업체 관리자' : '일반 회원')}">일반 회원</div>
                     </td>
                     <td th:text="${u.email}">email@example.com</td>
                     <td class="hide-md" th:text="${u.phone ?: '-'}">010-0000-0000</td>
@@ -62,10 +63,10 @@
                         <span class="badge-chip"
                               th:classappend="${#strings.equalsIgnoreCase(u.status,'ACTIVE')} ? ' badge-active' :
                                              (${#strings.equalsIgnoreCase(u.status,'INACTIVE')} ? ' badge-inactive' : ' chip-wait')"
-                              th:text="${u.status}">ACTIVE</span>
+                              th:text="${#strings.equalsIgnoreCase(u.status,'ACTIVE') ? '활성' : (#strings.equalsIgnoreCase(u.status,'SUSPENDED') ? '정지' : (#strings.equalsIgnoreCase(u.status,'DELETED') ? '탈퇴' : u.status))}">활성</span>
                     </td>
                     <td class="hide-sm text-muted" style="font-size:.84rem;"
-                        th:text="${u.socialType != null ? u.socialType : '자체'}">자체</td>
+                        th:text="${u.socialType == 'KAKAO' ? '카카오' : (u.socialType == 'GOOGLE' ? '구글' : '이메일')}">이메일</td>
                     <td class="hide-md text-muted" style="font-size:.82rem;"
                         th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'yyyy-MM-dd HH:mm') : '-'}">-</td>
                 </tr>
@@ -89,18 +90,18 @@
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item" th:classappend="${!pageResponseDTO.prev} ? 'disabled'">
                         <a class="page-link"
-                           th:href="@{/owner/user/list(page=${pageResponseDTO.prevPage}, size=${pageResponseDTO.pageRequestDTO.size})}">&laquo;</a>
+                           th:href="@{/owner/user/list(page=${pageResponseDTO.prevPage}, size=${pageResponseDTO.pageRequestDTO.size}, keyword=${keyword})}">&laquo;</a>
                     </li>
                     <li class="page-item"
                         th:each="num : ${pageResponseDTO.pageNumList}"
                         th:classappend="${num == pageResponseDTO.current} ? 'active'">
                         <a class="page-link"
-                           th:href="@{/owner/user/list(page=${num}, size=${pageResponseDTO.pageRequestDTO.size})}"
+                           th:href="@{/owner/user/list(page=${num}, size=${pageResponseDTO.pageRequestDTO.size}, keyword=${keyword})}"
                            th:text="${num}">1</a>
                     </li>
                     <li class="page-item" th:classappend="${!pageResponseDTO.next} ? 'disabled'">
                         <a class="page-link"
-                           th:href="@{/owner/user/list(page=${pageResponseDTO.nextPage}, size=${pageResponseDTO.pageRequestDTO.size})}">&raquo;</a>
+                           th:href="@{/owner/user/list(page=${pageResponseDTO.nextPage}, size=${pageResponseDTO.pageRequestDTO.size}, keyword=${keyword})}">&raquo;</a>
                     </li>
                 </ul>
             </nav>

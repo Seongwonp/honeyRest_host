@@ -89,7 +89,8 @@
             }
 
             /* 달력 그리드 */
-            .month-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+            /* 좁은 화면에서는 달력만 가로 스크롤 (과거엔 페이지 전체가 390px 폭을 넘었다) */
+            .month-grid{ display:grid; grid-template-columns:repeat(7,minmax(84px,1fr)); gap:8px; overflow-x:auto; }
             .dow{
                 font-weight:700; text-align:center; padding:8px 0;
                 background:var(--dow-bg); color:var(--violet-dark);
@@ -221,6 +222,50 @@
         <div class="btn btn-light fw-semibold" th:text="${#temporals.format(ym,'yyyy년 MM월')}">YYYY-MM</div>
     </div>
 
+    <!-- 기간 일괄 설정: 기존 /admin/price/bulk-upsert(JSON) 엔드포인트에 화면이 없어 쓸 수 없었다.
+         객실·기간·요일·1박 가격을 고르면 스크립트가 JSON 을 만들어 보낸다. -->
+    <details class="card card-body mb-3" th:if="${priceCalendarDTO != null and !#lists.isEmpty(priceCalendarDTO.rooms)}" id="bulkPanel">
+        <summary class="fw-semibold" style="cursor:pointer">기간 일괄 가격 설정</summary>
+        <form th:action="@{/admin/price/bulk-upsert}" method="post" id="bulkForm" class="row g-2 align-items-end mt-2">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="companyId" th:value="${companyId}">
+            <input type="hidden" name="accommodationId" th:value="${accommodationId}">
+            <input type="hidden" name="ym" th:value="${#temporals.format(ym,'yyyy-MM')}">
+            <input type="hidden" name="mode" value="calendar">
+            <input type="hidden" name="json" id="bulkJson">
+            <div class="col-md-3">
+                <label class="form-label" for="bulkRoom">객실</label>
+                <select class="form-select" name="roomId" id="bulkRoom" required>
+                    <option th:each="r : ${priceCalendarDTO.rooms}" th:value="${r.room.roomId}" th:text="${r.room.roomName}"
+                            th:selected="${roomId != null and roomId.equals(r.room.roomId)}">객실</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="bulkFrom">시작일</label>
+                <input type="date" class="form-control" id="bulkFrom" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="bulkTo">종료일</label>
+                <input type="date" class="form-control" id="bulkTo" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="bulkDays">요일</label>
+                <select class="form-select" id="bulkDays">
+                    <option value="all">매일</option>
+                    <option value="weekend">금·토만</option>
+                    <option value="weekday">일~목만</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="bulkPrice">1박 가격</label>
+                <input type="number" class="form-control" id="bulkPrice" min="0" step="1000" required>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100">적용</button>
+            </div>
+        </form>
+    </details>
+
     <!-- 안내: 숙소 미선택 -->
     <div class="alert alert-light border" th:if="${accommodationId == null}">
         숙소를 먼저 선택하세요.
@@ -232,7 +277,8 @@
         선택된 숙소에 표시할 객실이 없습니다.
     </div>
 
-    <!-- 월 달력 -->
+    <!-- 월 달력: 헤더가 일요일 시작이고 #temporals.dayOfWeek 는 월=1..일=7 이라 앞 빈칸은 startDow % 7.
+         (과거 (startDow+6)%7 로 날짜가 하루씩 왼쪽 요일에 그려졌고, 일요일 시작 달은 sequence(1,0) 때문에 빈칸이 2개 생겼다) -->
     <!-- 회사 전체 보기(overview) -->
     <div th:if="${overview != null}" class="mt-3">
         <div class="month-grid">
@@ -248,8 +294,8 @@
             <!-- 앞쪽 빈 칸 -->
             <div class="day"
                  th:with="startDow=${#temporals.dayOfWeek(ym.atDay(1))},
-                  leadingBlanks=${(startDow + 6) % 7}"
-                 th:each="i : ${#numbers.sequence(1, leadingBlanks)}"></div>
+                  leadingBlanks=${startDow % 7}"
+                 th:each="i : ${leadingBlanks > 0 ? #numbers.sequence(1, leadingBlanks) : {}}"></div>
 
             <!-- 날짜 칸 -->
             <div class="day" th:each="d : ${#numbers.sequence(1, ym.lengthOfMonth())}">
@@ -300,7 +346,7 @@
               rc=${ rooms.^[ room != null and T(java.lang.String).valueOf(room.roomId) == T(java.lang.String).valueOf(#vars.roomId) ] },
               days=${ym.lengthOfMonth()},
               startDow=${#temporals.dayOfWeek(ym.atDay(1))},
-              leadingBlanks=${(startDow + 6) % 7}
+              leadingBlanks=${startDow % 7}
             ">
 
             <div th:if="${rc != null}">
@@ -316,7 +362,7 @@
                     <div class="dow">Sat</div>
 
                     <!-- 앞쪽 빈 칸 -->
-                    <div class="day" th:each="i : ${#numbers.sequence(1, leadingBlanks)}"></div>
+                    <div class="day" th:each="i : ${leadingBlanks > 0 ? #numbers.sequence(1, leadingBlanks) : {}}"></div>
 
                     <!-- 날짜 칸 -->
                     <div class="day" th:each="d : ${#numbers.sequence(1, days)}">
@@ -396,7 +442,7 @@
                  th:with="
            days=${ym.lengthOfMonth()},
            startDow=${#temporals.dayOfWeek(ym.atDay(1))},
-           leadingBlanks=${(startDow + 6) % 7}
+           leadingBlanks=${startDow % 7}
          "
                  class="mb-4">
                 <h6 class="mb-2" th:text="${rc.room.roomName}">객실명</h6>
@@ -411,7 +457,7 @@
                     <div class="dow">Sat</div>
 
                     <!-- 앞쪽 빈 칸 -->
-                    <div class="day" th:each="i : ${#numbers.sequence(1, leadingBlanks)}"></div>
+                    <div class="day" th:each="i : ${leadingBlanks > 0 ? #numbers.sequence(1, leadingBlanks) : {}}"></div>
 
                     <!-- 날짜 칸 -->
                     <div class="day" th:each="d : ${#numbers.sequence(1, days)}">
@@ -492,6 +538,30 @@
 <!-- 레이아웃 데코레이터는 fragment 밖 내용을 버린다: 과거 이 스크립트가 fragment 밖에 있어 수정 버튼이 동작하지 않았다 -->
 <th:block layout:fragment="script">
 <script>
+    (function () {
+        const form = document.getElementById('bulkForm');
+        if (!form) return;
+        form.addEventListener('submit', function (e) {
+            const from = document.getElementById('bulkFrom').value;
+            const to = document.getElementById('bulkTo').value;
+            const price = Number(document.getElementById('bulkPrice').value);
+            const mode = document.getElementById('bulkDays').value;
+            if (!from || !to || from > to) { e.preventDefault(); alert('기간을 확인하세요.'); return; }
+            const days = [];
+            for (let d = new Date(from + 'T00:00:00'); d <= new Date(to + 'T00:00:00'); d.setDate(d.getDate() + 1)) {
+                const dow = d.getDay(); // 0=일 .. 6=토
+                const weekend = dow === 5 || dow === 6;
+                if (mode === 'weekend' && !weekend) continue;
+                if (mode === 'weekday' && weekend) continue;
+                const iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                days.push({ date: iso, price: price });
+            }
+            if (days.length === 0 || days.length > 366) { e.preventDefault(); alert('적용할 날짜가 없거나 너무 많습니다(최대 366일).'); return; }
+            const roomId = Number(document.getElementById('bulkRoom').value);
+            document.getElementById('bulkJson').value = JSON.stringify({ rooms: [{ room: { roomId: roomId }, days: days }] });
+        });
+    })();
+
     function openEditModal(btn) {
         const m = document.getElementById('cellEditModal');
         document.getElementById('modalRoomId').value = btn.dataset.roomid;

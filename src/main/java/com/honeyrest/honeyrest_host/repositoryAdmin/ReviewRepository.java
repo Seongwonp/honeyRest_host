@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecificationExecutor<Review> {
@@ -19,6 +20,15 @@ public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecif
 
     // 상태 단일 필터 (사용자가 status 선택했을 때)
     Page<Review> findByStatus(String status, Pageable pageable);
+
+    // 노출 상태는 PUBLISHED(사용자 API)와 과거 VISIBLE 을 함께 조회해야 해서 IN 으로 거른다 (ReviewStatus.expand)
+    Page<Review> findByStatusIn(Collection<String> statuses, Pageable pageable);
+
+    Page<Review> findByAccommodationIdAndStatusIn(Long accommodationId, Collection<String> statuses, Pageable pageable);
+
+    Page<Review> findByRoomIdAndStatusIn(Long roomId, Collection<String> statuses, Pageable pageable);
+
+    Page<Review> findByAccommodationIdInAndStatusIn(List<Long> accommodationIds, Collection<String> statuses, Pageable pageable);
 
     // [조건 조회 1] 숙소 기준 + 상태 필터
     Page<Review> findByAccommodationIdAndStatus(Long accommodationId, String status, Pageable pageable);
@@ -33,11 +43,11 @@ public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecif
     Page<Review> findByRoomId(Long roomId, Pageable pageable);
 
     // [통계] 숙소별 평균 평점
-    @Query("select avg(r.rating) from Review r where r.accommodationId = :accId and r.status = 'VISIBLE'")
+    @Query("select avg(r.rating) from Review r where r.accommodationId = :accId and r.status in ('PUBLISHED', 'VISIBLE')")
     Double findAverageRatingByAccommodation(@Param("accId") Long accommodationId);
 
     // [통계] 객실별 평균 평점
-    @Query("select avg(r.rating) from Review r where r.roomId = :roomId and r.status = 'VISIBLE'")
+    @Query("select avg(r.rating) from Review r where r.roomId = :roomId and r.status in ('PUBLISHED', 'VISIBLE')")
     Double findAverageRatingByRoom(@Param("roomId") Long roomId);
 
     // [소프트 삭제] status만 바꾸는 업데이트 (하드 삭제를 피하고 싶을 때)

@@ -30,4 +30,8 @@ public class RoomDTO {
     private String status; // ACTIVE / INACTIVE
     private MultipartFile file;
     private List<MultipartFile> images;
+
+    // 목록 화면 표시용 (owner/room/list.html, inActive.html 이 참조 — 없어서 목록이 500 이었다)
+    private String accommodationName;
+    private String thumbnailUrl;
 }

@@ -67,8 +67,9 @@ public class AccommodationController {
      * 등록 화면
      */
     @GetMapping("/add")
-    public String addPage(Model model) {
+    public String addPage(Model model, Authentication authentication) {
         AccommodationCreateRequestDTO form = new AccommodationCreateRequestDTO();
+        form.setCompanyId(resourceAccessService.currentCompanyId(authentication)); // 표시용 (저장 시에도 서버가 다시 채운다)
 
         form.setTagIds(Collections.emptyList());
 
@@ -123,8 +124,12 @@ public class AccommodationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String q,
             Model model
     ) {
+        // 이전 버튼(page=-1)·조작된 size 로 PageRequest 가 IllegalArgumentException(400)을 내던 문제
+        page = Math.max(page, 0);
+        size = size <= 0 ? 12 : Math.min(size, 100);
         // 1) 로그인 체크
         if (authentication == null || !authentication.isAuthenticated()
             || authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
@@ -156,7 +161,20 @@ public class AccommodationController {
         // 5) 페이징 조회
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "accommodationId"));
         Page<AccommodationListDTO> result;
-        if (status == null || status.isBlank()) {
+        if (q != null && !q.isBlank()) {
+            // 검색창(q)이 화면에만 있고 서버에서 무시되던 문제. 업체 숙소 수가 적어 메모리에서 거른 뒤 잘라 준다.
+            String kw = q.trim().toLowerCase(java.util.Locale.ROOT);
+            List<AccommodationListDTO> matched = accommodationService
+                    .findByCompanyId(companyDTO.getCompanyId(), PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, "accommodationId")))
+                    .getContent().stream()
+                    .filter(a -> status == null || status.isBlank() || status.equalsIgnoreCase(a.getStatus()))
+                    .filter(a -> (a.getName() != null && a.getName().toLowerCase(java.util.Locale.ROOT).contains(kw))
+                            || (a.getRegionName() != null && a.getRegionName().toLowerCase(java.util.Locale.ROOT).contains(kw)))
+                    .toList();
+            int from = Math.min((int) pageable.getOffset(), matched.size());
+            int to = Math.min(from + pageable.getPageSize(), matched.size());
+            result = new org.springframework.data.domain.PageImpl<>(matched.subList(from, to), pageable, matched.size());
+        } else if (status == null || status.isBlank()) {
             // 상태 미지정이면 기존 전체 호출
             result = accommodationService.findByCompanyId(companyDTO.getCompanyId(), pageable);
         } else {
@@ -169,6 +187,7 @@ public class AccommodationController {
         model.addAttribute("accommodations", result.getContent()); // 목록 아이템
         model.addAttribute("loginEmail", email);
         model.addAttribute("status", status);
+        model.addAttribute("q", q);
         return "admin/accommodations/list";
     }
 
@@ -440,9 +459,10 @@ public class AccommodationController {
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         try {
             accommodationService.delete(id);
-            ra.addAttribute("success", "숙소가 삭제되었습니다.");
+            // addAttribute 는 쿼리스트링으로 붙어 결과 토스트가 뜨지 않았다 → flash
+            ra.addFlashAttribute("success", "숙소가 삭제되었습니다.");
         } catch (Exception e) {
-            ra.addAttribute("error", "삭제 중 오류: " + e.getMessage());
+            ra.addFlashAttribute("error", "삭제 중 오류: " + e.getMessage());
         }
         return "redirect:/admin/accommodations/list";
 

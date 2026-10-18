@@ -50,6 +50,8 @@ public class GlobalExceptionHandler {
     public String handleReservationConflict(ReservationConflictException e, Model model) {
         log.info("ReservationConflict: {}", e.getMessage());
         model.addAttribute("message", e.getMessage());
+        model.addAttribute("errorCode", 409);
+        model.addAttribute("errorTitle", "요청을 처리할 수 없습니다");
         return "error/500";
     }
 
@@ -59,6 +61,34 @@ public class GlobalExceptionHandler {
         log.warn("BadRequest: {}", e.getMessage());
         errorLogService.saveAsync(e, request.getRequestURI(), request.getMethod());
         model.addAttribute("message", "잘못된 요청입니다.");
+        model.addAttribute("errorCode", 400);
+        model.addAttribute("errorTitle", "잘못된 요청입니다");
+        return "error/500";
+    }
+
+    /**
+     * 필수 파라미터 누락·형식 오류(예: /admin/reservations/abc)는 클라이언트 오류다.
+     * 과거에는 아래 handleGeneral 로 떨어져 500 + ERROR 로그 + 에러 로그 테이블 적재가 됐다.
+     */
+    @ExceptionHandler({org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.bind.MissingPathVariableException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleBadParameter(Exception e, Model model, HttpServletRequest request) {
+        log.warn("BadParameter [{}] {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+        model.addAttribute("message", "요청 값이 올바르지 않습니다.");
+        model.addAttribute("errorCode", 400);
+        model.addAttribute("errorTitle", "잘못된 요청입니다");
+        return "error/500";
+    }
+
+    /** POST 전용 주소를 주소창으로 열었을 때 등 */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public String handleMethodNotAllowed(Exception e, Model model) {
+        model.addAttribute("message", "이 주소는 화면에서 버튼으로만 실행할 수 있습니다.");
+        model.addAttribute("errorCode", 405);
+        model.addAttribute("errorTitle", "허용되지 않은 요청입니다");
         return "error/500";
     }
 

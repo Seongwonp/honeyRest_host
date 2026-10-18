@@ -27,15 +27,16 @@ public class AccommodationController {
     private final ORegionService regionService;
     private final FileStorage fileStorage;
     private final ORoomService roomService;
+    /** 영구 삭제는 업체 관리자 화면과 같은 규칙(예약 이력 있으면 거부, 하위 데이터 순차 삭제)을 쓴다 */
+    private final com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService adminAccommodationService;
 
     @GetMapping({"/accommodation/list", "/company/{companyId}/accommodations"})
-    public String accommodations(@PathVariable(required = false) Integer companyId,
+    public String accommodations(@PathVariable(name = "companyId", required = false) Integer pathCompanyId,
+                                 @RequestParam(name = "companyId", required = false) Integer paramCompanyId,
                                  @ModelAttribute PageRequestDTO pageRequestDTO,
                                  Model model) {
-
-        // 기본 페이지 처리
-        if (pageRequestDTO.getPage() <= 0) pageRequestDTO.setPage(1);
-        if (pageRequestDTO.getSize() <= 0) pageRequestDTO.setSize(10);
+        // 목록 상단 업체 선택(?companyId=)이 무시되던 문제: 경로 변수와 쿼리 파라미터를 모두 받는다
+        Integer companyId = pathCompanyId != null ? pathCompanyId : paramCompanyId;
 
         PageResponseDTO<AccommodationDTO> responseDTO =
                 accommodationService.getAccommodationsWithPageable(companyId, pageRequestDTO);
@@ -59,7 +60,8 @@ public class AccommodationController {
 
         model.addAttribute("companyId", companyId != null ? companyId : 0);
         model.addAttribute("companies", companyService.getAllCompanies());
-        model.addAttribute("company", companyId != null ? companyService.getCompany(companyId) : null);
+        // 페이지 링크의 companyId=0(전체)으로 getCompany(0) 를 불러 404 가 나던 문제
+        model.addAttribute("company", (companyId != null && companyId > 0) ? companyService.getCompany(companyId) : null);
         model.addAttribute("responseDTO", responseDTO);
         model.addAttribute("accommodations", responseDTO.getDtoList());
         return "owner/accommodation/inActive";
@@ -67,7 +69,8 @@ public class AccommodationController {
 
 
     @GetMapping("/accommodation/create")
-    public String createAccommodation(@RequestParam Integer companyId, Model model) {
+    public String createAccommodation(@RequestParam(required = false) Integer companyId, Model model) {
+        // 사이드바 "숙소 등록"은 companyId 없이 들어온다 (필수 파라미터라 500 이었다)
         model.addAttribute("companyId", companyId);
         model.addAttribute("companies", companyService.getAllCompanies());
         model.addAttribute("categories", accommodationCategory.getAllAccommodationCategory());
@@ -76,30 +79,34 @@ public class AccommodationController {
     }
 
     @PostMapping("/accommodation/create")
-    public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO, Model model) {
+    public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO, RedirectAttributes ra) {
         try {
-            // 파일 저장소(FileStorage) 업로드
+            // 대표 이미지는 선택 사항. 빈 파일을 그대로 올려 0바이트 썸네일(깨진 이미지)이 저장되던 문제
             MultipartFile file = accommodationDTO.getFile();
-            String imageUrl = fileStorage.upload(file, "accommodation");
+            String imageUrl = (file != null && !file.isEmpty()) ? fileStorage.upload(file, "accommodation") : null;
             accommodationDTO.setThumbnailUrl(imageUrl);
 
             Long accommodationId = accommodationService.registerAccommodation(accommodationDTO);
 
-            AccommodationImageDTO accommodationImageDTO = AccommodationImageDTO.builder()
-                    .imageUrl(imageUrl)
-                    .accommodationId(accommodationId)
-                    .imageType("MAIN")
-                    .sortOrder(0)
-                    .build();
-            accommodationService.registerAccommodationImage(accommodationImageDTO);
-            List<MultipartFile> images = accommodationDTO.getImages();
-            accommodationService.updateSubImages(accommodationId, images);
-
+            if (imageUrl != null) {
+                AccommodationImageDTO accommodationImageDTO = AccommodationImageDTO.builder()
+                        .imageUrl(imageUrl)
+                        .accommodationId(accommodationId)
+                        .imageType("MAIN")
+                        .sortOrder(0)
+                        .build();
+                accommodationService.registerAccommodationImage(accommodationImageDTO);
+            }
+            accommodationService.updateSubImages(accommodationId, accommodationDTO.getImages());
+            ra.addFlashAttribute("success", "숙소를 등록했습니다.");
         } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
+            // 과거에는 Model 에 넣고 redirect 해 오류가 사라졌다 (등록 실패를 알 수 없었다)
+            log.warn("owner accommodation create failed", e);
+            ra.addFlashAttribute("error", "숙소 등록 실패: " + e.getMessage());
+            return "redirect:/owner/accommodation/create";
         }
-        return "redirect:/owner/accommodation/list"; // 성공 페이지
-
+        return AccommodationStatus.isActive(accommodationDTO.getStatus())
+                ? "redirect:/owner/accommodation/list" : "redirect:/owner/accommodation/inActive/list";
     }
 
     @GetMapping("/accommodation/{accommodationId}/modify")
@@ -114,18 +121,40 @@ public class AccommodationController {
     }
 
     @PostMapping("/accommodation/modify")
-    public String modifyAccommodation(@ModelAttribute AccommodationDTO dto) throws Exception {
-        accommodationService.modifyAccommodation(dto);
-        Long accommodationId = dto.getAccommodationId();
-        List<MultipartFile> images = dto.getImages();
-        accommodationService.updateSubImages(accommodationId, images);
+    public String modifyAccommodation(@ModelAttribute AccommodationDTO dto, RedirectAttributes ra) throws Exception {
+        try {
+            accommodationService.modifyAccommodation(dto);
+            accommodationService.updateSubImages(dto.getAccommodationId(), dto.getImages());
+            ra.addFlashAttribute("success", "숙소 정보를 수정했습니다.");
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/owner/accommodation/" + dto.getAccommodationId() + "/modify";
+        }
+        return AccommodationStatus.isActive(dto.getStatus())
+                ? "redirect:/owner/accommodation/list" : "redirect:/owner/accommodation/inActive/list";
+    }
+
+    /** 운영 중지(INACTIVE). 활성 목록의 버튼 — 데이터는 남는다. */
+    @PostMapping("/accommodation/{accommodationId}/deactivate")
+    public String deactivateAccommodation(@PathVariable Long accommodationId, RedirectAttributes ra) {
+        accommodationService.removeAccommodation(accommodationId);
+        ra.addFlashAttribute("success", "숙소를 비활성화했습니다.");
         return "redirect:/owner/accommodation/list";
     }
 
+    /**
+     * 영구 삭제. 과거에는 deleteById 로 지워 객실·이미지·예약 FK 때문에 항상 500 이 났다.
+     * 예약 이력이 있으면 거부하고 비활성화를 안내한다.
+     */
     @PostMapping("/accommodation/{accommodationId}/delete")
-    public String deleteAccommodation(@PathVariable Long accommodationId) {
-        accommodationService.removeAccommodation(accommodationId);
-        return "redirect:/owner/accommodation/list";
+    public String deleteAccommodation(@PathVariable Long accommodationId, RedirectAttributes ra) {
+        try {
+            adminAccommodationService.delete(accommodationId);
+            ra.addFlashAttribute("success", "숙소를 삭제했습니다.");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage() + " 비활성화를 이용하세요.");
+        }
+        return "redirect:/owner/accommodation/inActive/list";
     }
 
     /**
@@ -152,7 +181,7 @@ public class AccommodationController {
         } catch (IllegalStateException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/owner/accommodation/list";
+        return "redirect:/owner/accommodation/inActive/list";
     }
 
     // 회사 검색 API (자동완성용)

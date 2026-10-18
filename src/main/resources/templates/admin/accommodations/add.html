@@ -83,8 +83,9 @@
                 <div class="row g-3">
                     <!-- 회사ID -->
                     <div class="col-md-4">
-                        <label class="form-label required">회사 ID</label>
-                        <input type="number" class="form-control" th:field="*{companyId}"
+                        <label class="form-label">회사 ID</label>
+                        <!-- 로그인한 업체로 고정 (입력받지 않는다) -->
+                        <input type="number" class="form-control" th:field="*{companyId}" readonly
                                th:classappend="${#fields.hasErrors('companyId')}? 'is-invalid'">
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('companyId')}"
                              th:errors="*{companyId}">에러
