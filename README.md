@@ -1,6 +1,7 @@
 # HoneyRest – 숙소 예약 플랫폼 · 관리자 시스템
 
 [![CI](https://github.com/Seongwonp/honeyRest_host/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Seongwonp/honeyRest_host/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-%EC%82%AC%EC%9A%A9%EC%9E%90%20%EC%82%AC%EC%9D%B4%ED%8A%B8-FFC107?logo=render&logoColor=white)](https://honeyrest.onrender.com) [![Admin Demo](https://img.shields.io/badge/Live%20Demo-%EA%B4%80%EB%A6%AC%EC%9E%90%20%EC%82%AC%EC%9D%B4%ED%8A%B8-374151?logo=render&logoColor=white)](https://honeyrest-admin.onrender.com)
 ![Java 17](https://img.shields.io/badge/Java-17-007396)
 ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5.4-6DB33F)
 ![Thymeleaf](https://img.shields.io/badge/Thymeleaf-SSR-005F0F)
