@@ -13,6 +13,8 @@ import com.honeyrest.honeyrest_host.repositoryAdmin.RoomRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.UserRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
 import com.honeyrest.honeyrest_host.serviceCommon.ReservationInventoryGuard;
+import com.honeyrest.honeyrest_host.serviceCommon.ReservationModificationService;
+import com.honeyrest.honeyrest_host.serviceCommon.refund.ReservationRefundService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,6 +44,10 @@ public class ReservationServiceImpl implements ReservationService {
     private final ModelMapper modelMapper;
     private final AccommodationRepository accommodationRepository;
     private final ReservationInventoryGuard inventoryGuard;
+    // 기존 예약 수정(필드 + 상태 전이 + 재고 + 환불 + 캐시)의 공통 규칙 (오너 화면과 공유)
+    private final ReservationModificationService modificationService;
+    // 취소/취소 승인 시 결제 취소·포인트 환불·쿠폰 복원
+    private final ReservationRefundService refundService;
     // 예약 점유가 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다 (검색 결과의 남은 객실 수가 바뀜)
     private final SearchCacheInvalidator searchCacheInvalidator;
 
@@ -61,19 +66,22 @@ public class ReservationServiceImpl implements ReservationService {
         return toDto(r);
     }
 
-    // 수정: 세터 대신 도메인 메서드 사용
+    /**
+     * 예약 수정 (부분 업데이트). 필드는 도메인 update, 상태는 도메인 changeStatus(전이 표 검사)로만 바꾼다.
+     * 락 순서: 예약 행 잠금 읽기 → (필요 시) 객실 락 + 재고 검사 → 연관 엔티티 조회. (ReservationModificationService 참고)
+     */
     @Override
     public ReservationDTO updateReservation(ReservationDTO dto) {
-
-        // 기존 엔티티
-        Reservation reservation = reservationRepository.findById(dto.getReservationId())
+        Reservation reservation = reservationRepository.findByIdForUpdate(dto.getReservationId())
                 .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + dto.getReservationId()));
 
-        // 연관 엔티티
+        ReservationModificationService.Plan plan = modificationService.prepare(
+                reservation, dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), dto.getStatus());
+
+        // 연관 엔티티 (재고 검사 뒤에 읽는다)
         User newUser = null;
         Room newRoom = null;
         Accommodation newAccommodation = null;
-
         if (dto.getUserId() != null) {
             newUser = userRepository.findById(dto.getUserId())
                     .orElseThrow(() -> new EntityNotFoundException("유저를 찾을 수 없습니다. userId=" + dto.getUserId()));
@@ -87,56 +95,25 @@ public class ReservationServiceImpl implements ReservationService {
                     .orElseThrow(() -> new EntityNotFoundException("숙소를 찾을 수 없습니다. id=" + dto.getAccommodationId()));
         }
 
-        // (선택) 기본 검증 예시: 체크인/아웃 역전 방지
-        if (dto.getCheckInDate() != null && dto.getCheckOutDate() != null
-            && !dto.getCheckInDate().isBefore(dto.getCheckOutDate())) {
-            throw new IllegalArgumentException("체크인 날짜는 체크아웃보다 이전이어야 합니다.");
-        }
-
-        // 상태 정규화 + 점유 상태로 들어가거나(예: CANCELLED → CONFIRMED) 점유 중 객실/기간이 바뀌면 재고 검사
-        String oldStatus = reservation.getStatus();
-        String newStatus = ReservationStatus.normalize(dto.getStatus(), oldStatus);
-        dto.setStatus(newStatus);
-        Long oldRoomId = reservation.getRoom() != null ? reservation.getRoom().getRoomId() : null;
-        Long newRoomId = dto.getRoomId() != null ? dto.getRoomId() : oldRoomId;
-        LocalDate newIn = dto.getCheckInDate() != null ? dto.getCheckInDate() : reservation.getCheckInDate();
-        LocalDate newOut = dto.getCheckOutDate() != null ? dto.getCheckOutDate() : reservation.getCheckOutDate();
-        boolean enteringOccupying = ReservationStatus.isOccupying(newStatus)
-                && !ReservationStatus.isOccupying(oldStatus);
-        boolean occupyingChanged = ReservationStatus.isOccupying(newStatus)
-                && (!java.util.Objects.equals(oldRoomId, newRoomId)
-                    || !java.util.Objects.equals(reservation.getCheckInDate(), newIn)
-                    || !java.util.Objects.equals(reservation.getCheckOutDate(), newOut));
-        if (enteringOccupying || occupyingChanged) {
-            inventoryGuard.lockRoomAndAssertAvailable(newRoomId, newIn, newOut, reservation.getReservationId());
-        }
-
-        boolean leavingOccupying = ReservationStatus.isOccupying(oldStatus)
-                && !ReservationStatus.isOccupying(newStatus);
-
-        // 3) 도메인 메서드로 필드 반영 (JPA 변경감지)
-        reservation.update(dto, newUser, newRoom, newAccommodation);
-
-        if (enteringOccupying || leavingOccupying || occupyingChanged) {
-            searchCacheInvalidator.bumpAfterCommit();
-        }
-
-        // 4) 트랜잭션 커밋 시 자동 flush. 여기서 DTO로 변환해 반환
+        modificationService.apply(reservation, plan, dto, newUser, newRoom, newAccommodation);
+        // 트랜잭션 커밋 시 변경 감지로 반영된다
         return toDto(reservation);
     }
 
-    // 취소
+    /**
+     * 관리자 취소 (CONFIRMED/PENDING/COMPLETED/NO_SHOW → CANCELLED) + 환불(결제 취소·포인트·쿠폰 복원).
+     * 이미 취소된 예약이면 아무것도 하지 않는다(멱등). 재고는 room.total_rooms − 겹치는 점유 예약 수로 계산하므로
+     * 비점유(CANCELLED)가 되는 순간 자동으로 복구된다.
+     */
     @Override
     public void cancelReservation(Long reservationId, String cancelReason) {
-        Reservation r = reservationRepository.findById(reservationId)
+        Reservation r = reservationRepository.findByIdForUpdate(reservationId)
                 .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + reservationId));
 
-        // 이미 취소면 무시
         if (ReservationStatus.CANCELLED.equalsIgnoreCase(r.getStatus())) return;
 
-        // 상태 변경만 한다. 재고는 room.total_rooms − 겹치는 점유 예약 수로 계산하므로
-        // 취소(CANCELLED, 비점유)되는 순간 자동으로 복구된다. total_rooms 를 늘리지 않는다.
         r.cancel(cancelReason);
+        refundService.refund(r, cancelReason);
         searchCacheInvalidator.bumpAfterCommit();
     }
 
@@ -277,20 +254,23 @@ public class ReservationServiceImpl implements ReservationService {
             throw new IllegalArgumentException("체크인 날짜는 체크아웃보다 이전이어야 합니다.");
         }
 
+        // 관리자 직접 생성의 기본 상태는 CONFIRMED. 점유 상태면 객실 행을 잠그고 겹침 검사를 한다.
+        // 락 순서: 객실 락(+잠금 읽기 겹침 수)이 이 트랜잭션의 첫 문장이어야 한다. 회원/숙소 같은 일반 SELECT 를
+        // 먼저 하면 REPEATABLE READ 스냅샷이 그 시점에 고정되어 겹침 수가 옛 값을 볼 수 있었다.
+        String status = ReservationStatus.normalize(dto.getStatus(), ReservationStatus.CONFIRMED);
+        Room room;
+        if (ReservationStatus.isOccupying(status)) {
+            room = inventoryGuard.lockRoomAndAssertAvailable(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), null);
+        } else {
+            room = roomRepository.findById(dto.getRoomId())
+                    .orElseThrow(() -> new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + dto.getRoomId()));
+        }
+
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("유저를 찾을 수 없습니다. userId=" + dto.getUserId()));
-        Room room = roomRepository.findById(dto.getRoomId())
-                .orElseThrow(() -> new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + dto.getRoomId()));
         Accommodation accommodation = accommodationRepository.findById(
                 dto.getAccommodationId() != null ? dto.getAccommodationId() : room.getAccommodation().getAccommodationId()
         ).orElseThrow(() -> new EntityNotFoundException("숙소를 찾을 수 없습니다."));
-
-        // 관리자 직접 생성의 기본 상태는 CONFIRMED. 점유 상태면 객실 행을 잠그고 겹침 검사를 한다.
-        // (과거에는 room.total_rooms 를 1 줄였으나, 사용자 저장소와 같은 겹침 계산으로 통일했다.)
-        String status = ReservationStatus.normalize(dto.getStatus(), ReservationStatus.CONFIRMED);
-        if (ReservationStatus.isOccupying(status)) {
-            inventoryGuard.lockRoomAndAssertAvailable(room.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), null);
-        }
 
         String reservationNumber =
                 (dto.getReservationNumber() != null && !dto.getReservationNumber().isBlank())
@@ -411,19 +391,21 @@ public class ReservationServiceImpl implements ReservationService {
         return page.map(this::toDto);
     }
 
-    /* 예약 상태에 따른 로직(총 5가지) */
+    /*
+     * 예약 상태 전이. 과거에는 JPQL 일괄 UPDATE 로 상태를 바꿔 도메인 전이 표를 우회했다.
+     * 이제 예약 행을 잠금 읽기로 가져와 도메인 메서드로만 바꾼다. 허용되지 않는 전이는 도메인이 IllegalStateException.
+     */
+
+    /** 취소 요청 승인: CANCEL_REQUEST → CANCELLED + 환불. 갱신된 예약을 돌려준다. */
     @Override
     public ReservationDTO approveCancelRequest(Long reservationId, String reason) {
-        int updated = reservationRepository.approveCancelRequest(
-                reservationId, reason, LocalDateTime.now());
-
-        if (updated == 0) {
-            throw new IllegalStateException("취소요청 상태의 예약만 승인할 수 있습니다. id=" + reservationId);
-        }
+        Reservation r = lockedReservation(reservationId);
+        r.approveCancelRequest(reason);
+        refundService.refund(r, r.getCancelReason());
         // CANCEL_REQUEST(점유) → CANCELLED(비점유): 객실이 다시 팔 수 있게 되므로 검색 캐시를 버린다.
         searchCacheInvalidator.bumpAfterCommit();
         log.info("예약 취소 승인 완료: reservationId={}, reason={}", reservationId, reason);
-        return null;
+        return toDto(r);
     }
 
     /*
@@ -433,33 +415,25 @@ public class ReservationServiceImpl implements ReservationService {
      */
     @Override
     public void rejectCancelRequest(Long reservationId, String reason) {
-        int updated = reservationRepository.rejectCancelRequest(
-                reservationId, reason, LocalDateTime.now());
-
-        if (updated == 0) {
-            throw new IllegalStateException("취소요청 상태의 예약만 거부할 수 있습니다. id=" + reservationId);
-        }
+        lockedReservation(reservationId).rejectCancelRequest(reason);
         log.info("예약 취소 거부 완료: reservationId={}, reason={}", reservationId, reason);
     }
 
     @Override
     public void markCompleted(Long reservationId) {
-        int updated = reservationRepository.markCompleted(reservationId, LocalDateTime.now());
-
-        if (updated == 0) {
-            throw new IllegalStateException("CONFIRMED 상태의 예약만 COMPLETED로 변경 가능합니다. id=" + reservationId);
-        }
+        lockedReservation(reservationId).complete();
         log.info("체크아웃 완료 처리: reservationId={}", reservationId);
     }
 
     @Override
     public void markNoShow(Long reservationId) {
-        int updated = reservationRepository.markNoShow(reservationId, LocalDateTime.now());
-
-        if (updated == 0) {
-            throw new IllegalStateException("PENDING/CONFIRMED 상태만 NO_SHOW 처리 가능합니다. id=" + reservationId);
-        }
+        lockedReservation(reservationId).markNoShow();
         log.info("노쇼 처리 완료: reservationId={}", reservationId);
+    }
+
+    private Reservation lockedReservation(Long reservationId) {
+        return reservationRepository.findByIdForUpdate(reservationId)
+                .orElseThrow(() -> new EntityNotFoundException("예약을 찾을 수 없습니다. id=" + reservationId));
     }
 
     // ===================================================

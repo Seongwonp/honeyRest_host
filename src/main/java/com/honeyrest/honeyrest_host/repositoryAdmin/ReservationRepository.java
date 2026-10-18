@@ -6,14 +6,14 @@ import com.honeyrest.domain.type.ReservationStatus;
 import com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection.SalesStatRow;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import java.util.Collection;
 import java.util.List;
@@ -127,25 +127,45 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                                                    @Param("statuses") Collection<String> statuses);
 
     /**
-     * [checkIn, checkOut) 구간과 숙박일이 겹치는 예약 수 (checkIn < reqOut AND checkOut > reqIn).
-     * 체크아웃 당일은 점유하지 않으며 예약 1건 = 객실 1개로 계산한다.
-     * 사용자 저장소 ReservationRepository.countOverlapping 과 같은 규칙이며,
+     * [checkIn, checkOut) 구간과 숙박일이 겹치는 점유 예약 수를 <b>잠금 읽기</b>로 센다
+     * (checkIn < reqOut AND checkOut > reqIn, 예약 1건 = 객실 1개, 체크아웃 당일은 점유하지 않음).
+     * <p>
+     * 일반 SELECT(스냅샷 읽기)는 REPEATABLE READ 에서 트랜잭션 첫 읽기 시점의 스냅샷을 보므로,
+     * 객실 행 락을 기다리는 동안 다른 트랜잭션이 커밋한 예약을 놓칠 수 있다. FOR UPDATE 는 항상 최신 커밋을 읽는다.
+     * COUNT(*) ... FOR UPDATE 는 H2(test/screenshot)에서 지원되지 않아 겹치는 예약 ID 를 잠그며 읽고 개수를 센다.
      * 기존 예약 수정 시 자기 자신을 빼기 위해 excludeId 를 받는다 (null 이면 제외 없음).
+     * 사용자 저장소 ReservationRepository.countOverlapping 과 같은 겹침 규칙이다.
      */
-    @Query("""
-                select count(r) from Reservation r
-                 where r.room.roomId = :roomId
-                   and r.status in :statuses
-                   and r.checkInDate < :checkOut
-                   and r.checkOutDate > :checkIn
-                   and (:excludeId is null or r.reservationId <> :excludeId)
-            """)
-    long countOverlapping(@Param("roomId") Long roomId,
-                          @Param("checkIn") LocalDate checkIn,
-                          @Param("checkOut") LocalDate checkOut,
-                          @Param("statuses") Collection<String> statuses,
-                          @Param("excludeId") Long excludeId);
+    default long countOverlappingForUpdate(Long roomId, LocalDate checkIn, LocalDate checkOut,
+                                           Collection<String> statuses, Long excludeId) {
+        // 네이티브 쿼리에서 null 파라미터의 타입 추론 문제를 피하려고 "제외 없음"은 존재할 수 없는 ID(-1)로 넘긴다.
+        return findOverlappingIdsForUpdate(roomId, checkIn, checkOut, statuses,
+                excludeId == null ? -1L : excludeId).size();
+    }
 
+    @Query(value = """
+                SELECT r.reservation_id
+                  FROM reservation r
+                 WHERE r.room_id = :roomId
+                   AND r.status IN (:statuses)
+                   AND r.check_in_date < :checkOut
+                   AND r.check_out_date > :checkIn
+                   AND r.reservation_id <> :excludeId
+                 FOR UPDATE
+            """, nativeQuery = true)
+    List<Long> findOverlappingIdsForUpdate(@Param("roomId") Long roomId,
+                                           @Param("checkIn") LocalDate checkIn,
+                                           @Param("checkOut") LocalDate checkOut,
+                                           @Param("statuses") Collection<String> statuses,
+                                           @Param("excludeId") Long excludeId);
+
+    /**
+     * 예약 행을 잠그고 읽는다 (SELECT ... FOR UPDATE). 상태 전이·환불을 같은 예약에 대해 직렬화하고,
+     * 수정 트랜잭션의 첫 문장을 잠금 읽기로 만들어 이후 재고 검사가 옛 스냅샷을 보지 않게 한다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Reservation r where r.reservationId = :id")
+    Optional<Reservation> findByIdForUpdate(@Param("id") Long id);
 
 
     @Query(value = """
@@ -188,51 +208,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             Pageable pageable);
 
 
-    // 취소 승인
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-                update Reservation r
-                   set r.status = 'CANCELLED',
-                       r.cancelReason = :reason,
-                       r.updatedAt = :now
-                 where r.reservationId = :id
-                   and r.status = 'CANCEL_REQUEST'
-            """)
-    int approveCancelRequest(@Param("id") Long id, @Param("reason") String reason, @Param("now") LocalDateTime now);
-
-    // 취소 거부(확정으로 복귀)
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-                update Reservation r
-                   set r.status = 'CONFIRMED',
-                       r.cancelReason = concat('[REJECT] ', coalesce(:reason,'')),
-                       r.updatedAt = :now
-                 where r.reservationId = :id
-                   and r.status = 'CANCEL_REQUEST'
-            """)
-    int rejectCancelRequest(@Param("id") Long id, @Param("reason") String reason, @Param("now") LocalDateTime now);
-
-    // 체크아웃 완료 -> COMPLETED
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-                update Reservation r
-                   set r.status = 'COMPLETED',
-                       r.updatedAt = :now
-                 where r.reservationId = :id
-                   and r.status = 'CONFIRMED'
-            """)
-    int markCompleted(@Param("id") Long id, @Param("now") LocalDateTime now);
-
-    // 노쇼 처리 -> NO_SHOW
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-                update Reservation r
-                   set r.status = 'NO_SHOW',
-                       r.updatedAt = :now
-                 where r.reservationId = :id
-                   and r.status in ('PENDING','CONFIRMED')
-            """)
-    int markNoShow(@Param("id") Long id, @Param("now") LocalDateTime now);
+    // 취소 승인/거부·체크아웃 완료·노쇼는 과거 JPQL 일괄 UPDATE 로 상태를 바꿨으나(전이 표 우회),
+    // 이제 엔티티를 읽어 도메인 메서드(Reservation.approveCancelRequest 등)로만 바꾼다. (ReservationServiceImpl 참고)
 
     // 체크인일 기준, 회사(+선택 숙소/객실) 필터
     @Query("""

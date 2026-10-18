@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoAdmin.RoomImageDTO;
 import com.honeyrest.domain.entity.Room;
 import com.honeyrest.domain.entity.RoomImage;
@@ -21,6 +22,14 @@ public class RoomImageServiceImpl implements RoomImageService {
 
     private final RoomImageRepository roomImageRepository;
     private final RoomRepository roomRepository;
+    // 객실 이미지가 바뀌면 사용자 API 숙소 상세 캐시를 커밋 후 지운다
+    private final SearchCacheInvalidator searchCacheInvalidator;
+
+    private void evictAccommodationOfRoom(Long roomId) {
+        roomRepository.findById(roomId)
+                .map(Room::getAccommodation)
+                .ifPresent(acc -> searchCacheInvalidator.evictAccommodationAfterCommit(acc.getAccommodationId()));
+    }
 
     // dto -> 엔티티
     private RoomImage toEntity(Long roomId, RoomImageDTO ri) {
@@ -63,6 +72,7 @@ public class RoomImageServiceImpl implements RoomImageService {
                 .map(dto -> toEntity(roomId, dto))
                 .toList();
         roomImageRepository.saveAll(entities);
+        evictAccommodationOfRoom(roomId);
     }
 
     @Override
@@ -82,16 +92,21 @@ public class RoomImageServiceImpl implements RoomImageService {
                     .build()));
         }
         roomImageRepository.saveAll(added);
+        evictAccommodationOfRoom(roomId);
     }
 
     @Override
     public void deleteImage(Long imageId) {
+        roomImageRepository.findById(imageId)
+                .map(img -> img.getRoom().getRoomId())
+                .ifPresent(this::evictAccommodationOfRoom);
         roomImageRepository.deleteById(imageId);
     }
 
     @Override
     public void deleteAllOfRoom(Long roomId) {
         roomImageRepository.deleteByRoomRoomId(roomId);
+        evictAccommodationOfRoom(roomId);
     }
 
     // 첫 번째 이미지를 MAIN(=0)으로 강제, 나머지는 1..N

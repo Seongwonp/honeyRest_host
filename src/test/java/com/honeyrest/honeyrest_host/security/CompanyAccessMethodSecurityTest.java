@@ -121,7 +121,7 @@ class CompanyAccessMethodSecurityTest {
         mockMvc.perform(post("/admin/price/upsert")
                         .param("companyId", "1")
                         .param("roomId", String.valueOf(roomB.getRoomId()))
-                        .param("yearMonth", "2026-10")
+                        .param("ym", "2026-10")
                         .param("date", "2026-10-01")
                         .param("price", "1")
                         .with(adminA()).with(csrf()))

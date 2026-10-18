@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
+import com.honeyrest.honeyrest_host.type.UserStatus;
+
 
 import com.honeyrest.honeyrest_host.config.JwtTokenProvider;
 import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
@@ -18,6 +20,9 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 @Transactional
 public class AdminAuthService {
+
+    /** 로그인 실패 공통 메시지 (계정 존재 여부를 드러내지 않는다) */
+    static final String BAD_CREDENTIALS = "아이디 또는 비밀번호가 올바르지 않습니다.";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -54,7 +59,7 @@ public class AdminAuthService {
                 .lastLogin(LocalDateTime.now())
                 .point(0)
                 .role("COMPANY_ADMIN") // COMPANY_ADMIN or SUPER_ADM
-                .status("ACTIVE")
+                .status(UserStatus.ACTIVE)
                 .build();
 
         User saved = userRepository.save(admin);
@@ -65,12 +70,19 @@ public class AdminAuthService {
     @Transactional(readOnly = true)
     public TokenResponseDTO login(AdminLoginRequestDTO request) {
         // 이메일 정규화(권장)
-        String email = request.getEmail().trim().toLowerCase();
+        String email = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase();
 
         User user = userRepository.findByEmail(email);
 
+        // 없는 이메일과 틀린 비밀번호는 같은 메시지(400)로 응답한다. 과거에는 없는 이메일이면 user.getStatus() 에서
+        // NPE(500)가 나 계정 존재 여부가 드러났다. 소셜 계정(passwordHash null)도 같은 응답이다.
+        if (user == null || user.getPasswordHash() == null
+                || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException(BAD_CREDENTIALS);
+        }
+
         //  status: String 비교
-        if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
+        if (!UserStatus.isActive(user.getStatus())) {
             throw new IllegalStateException("비활성화된 계정입니다.");
         }
 
@@ -78,12 +90,6 @@ public class AdminAuthService {
         String roleType = user.getRole(); // String으로 가정
         if (roleType == null || "GENERAL".equalsIgnoreCase(roleType)) {
             throw new IllegalStateException("관리자 권한이 없습니다.");
-        }
-
-        // 소셜 계정 대비: passwordHash null일 수 있으면 방어
-        if (user.getPasswordHash() == null ||
-            !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
 
         // ✅ 토큰 생성도 문자열 roleType 사용(메서드 시그니처를 문자열 받도록 수정/오버로드)

@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
+import com.honeyrest.honeyrest_host.type.RoomStatus;
+
 import jakarta.persistence.EntityNotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -116,7 +118,7 @@ public class ORoomServiceImpl implements ORoomService {
                 .amenities(amenitiesJson)
                 .description(d.getDescription())
                 .totalRooms(d.getTotalRooms())
-                .status(d.getStatus() == null ? "ACTIVE" : d.getStatus())
+                .status(d.getStatus() == null ? RoomStatus.ACTIVE : d.getStatus())
                 .build();
     }
 
@@ -162,6 +164,7 @@ public class ORoomServiceImpl implements ORoomService {
         dto.setAccommodationId(acc.getAccommodationId());
         Long roomId = roomRepository.save(toEntity(dto)).getRoomId();
         searchCacheInvalidator.bumpAfterCommit(); // 새 객실 = 새 재고
+        searchCacheInvalidator.evictAccommodationAfterCommit(acc.getAccommodationId()); // 사용자 숙소 상세(객실 목록) 캐시
         return roomId;
 
     }
@@ -176,6 +179,8 @@ public class ORoomServiceImpl implements ORoomService {
         if (RoomSearchSnapshot.of(updated).differsFrom(before)) {
             searchCacheInvalidator.bumpAfterCommit();
         }
+        searchCacheInvalidator.evictAccommodationAfterCommit(before.accommodationId());
+        searchCacheInvalidator.evictAccommodationAfterCommit(RoomSearchSnapshot.of(updated).accommodationId());
     }
 
     @Override
@@ -184,6 +189,9 @@ public class ORoomServiceImpl implements ORoomService {
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
         roomRepository.delete(room); // RoomImage는 orphanRemoval=true로 함께 삭제
         searchCacheInvalidator.bumpAfterCommit();
+        if (room.getAccommodation() != null) {
+            searchCacheInvalidator.evictAccommodationAfterCommit(room.getAccommodation().getAccommodationId());
+        }
     }
 
     @Override
@@ -214,6 +222,11 @@ public class ORoomServiceImpl implements ORoomService {
     @Override
     public void updateRoomImage(RoomImageDTO dto){
         roomImageRepository.save(toRoomImageEntity(dto));
+        if (dto.getRoomId() != null) {
+            roomRepository.findById(dto.getRoomId())
+                    .map(Room::getAccommodation)
+                    .ifPresent(acc -> searchCacheInvalidator.evictAccommodationAfterCommit(acc.getAccommodationId()));
+        }
     }
 
     @Override

@@ -171,6 +171,50 @@ E2E 작성 중 드러난 문제:
 cd e2e && npx playwright test   9 passed (반복 실행 모두 통과)
 ```
 
+### 12. 도메인 상태 전이 이전, SOLID 정리, 버그 수정 — 완료
+
+공유 도메인 서브모듈(`libs/honeyrest-user`)을 사용자 저장소 `a612071`로 재고정했다. 새 도메인은 `Reservation`의 상태/취소 사유 setter를 없애고 `ReservationStatus.canTransition` 전이 표와 `changeStatus`·`approveCancelRequest`·`rejectCancelRequest`·`complete`·`markNoShow`·`cancel`만 남겼다. 호스트는 수정 없이 컴파일됐지만 아래처럼 전이 표를 우회하는 경로가 남아 있어 모두 옮겼다.
+
+#### A. 도메인 전이로 이전
+
+- 관리자 `ReservationServiceImpl.updateReservation`: `Reservation.update`가 상태를 그대로 대입하던 것을, 상태를 가린 변경값으로 필드만 반영하고 상태는 `changeStatus`(전이 표 검사)로 바꾼다.
+- 취소 승인/거부·체크아웃 완료·노쇼: `ReservationRepository`의 JPQL 일괄 UPDATE 4개를 지우고, 예약을 잠금 읽기(`findByIdForUpdate`)로 가져와 도메인 메서드를 부른다. 재고 검사·검색 캐시 무효화 호출은 그대로 둔다.
+- 오너 `OReservationService.modifyReservation`: 폼 값으로 엔티티를 새로 만들어 `save`(덮어쓰기)하던 것을, 기존 엔티티를 읽어 도메인 `update`와 `changeStatus`로 바꾼다. 예약번호·원가·할인액·객실명은 예약 시점 스냅샷이라 이 화면에서 바뀌지 않는다(도메인 `update`가 받지 않는 값).
+- 두 계층에 복사돼 있던 점유 전이 판단(`enteringOccupying/occupyingChanged/leavingOccupying`)을 `serviceCommon/ReservationModificationService`(`prepare` → 연관 엔티티 조회 → `apply`) 하나로 합쳤다. 관리자에만 있던 체크인 < 체크아웃 검증과 전이 표 사전 검사가 오너에도 적용되고, 취소로 바뀌면 환불(C1)까지 같은 규칙으로 처리한다.
+
+#### B. SOLID 정리
+
+- 숙소 등록/수정 흐름(썸네일 업로드 → 저장 → 환불 규정 → 이미지 → 서브 이미지)을 컨트롤러에서 `AccommodationRegistrationService`(단일 `@Transactional`)로 옮겼다. 파일은 트랜잭션에 참여하지 않으므로 `storage/UploadCompensation`이 커밋되지 않으면 그 요청에서 올린 파일을 지우고, DB에서 뗀 파일은 커밋 후에만 지운다. 등록 시 썸네일·서브 이미지를 두 번 올리던 중복 업로드와, 썸네일 삭제 토글이 숙소 ID를 이미지 ID로 넘겨 엉뚱한 이미지를 지우던 문제도 고쳤다.
+- `OSalesService`: 모든 예약을 메모리로 읽어 여섯 번 복사된 반복문으로 합산하던 것을 `OSalesRepository`의 GROUP BY 쿼리(일별/월별, 전체·업체·숙소 범위는 null 조건) 두 개로 바꿨다. 관리자 매출과 같은 기준(결제일, `payment_status='DONE'`, 예약 미취소)이며 시작일·종료일을 모두 포함한다(과거 일별 전체 매출은 `isAfter`로 시작일이 빠졌다). MySQL과 H2에서 같은 쿼리가 돌도록 JPQL로 썼다.
+- `SalesChartServiceImpl`의 문자열 `switch(mode)` 두 개와 복사된 날짜 변환을 `ChartMode` enum(`parse`, 단위별 조회·행 변환, `toLocalDate` 한 곳)으로 바꿨다.
+- 상태 문자열 리터럴을 상수로 바꿨다. 도메인에 없는 값은 호스트 `type` 패키지에 `AccommodationStatus`·`CompanyStatus`(대소문자 무시 `isActive`)·`RoomStatus`·`UserStatus`·`PaymentStatus`·`UserCouponStatus`·`PointHistoryType`으로 두었다.
+- LSP/ISP: 구현이 예외만 던지던 `PriceCalendarService.stats`를 지웠다. `approveCancelRequest`는 null 대신 갱신된 DTO를 돌려준다.
+- DIP: `RoomController`(회사 조회 → `CompanyResourceAccessService.currentCompanyId`), `AccommodationController`·`RegionController`(지역 → `RegionService`), 오너 `DashboardController`(회원 → `OUserService`)가 리포지토리를 직접 쓰지 않는다. `RoomServiceImpl`·`AccommodationServiceImpl`은 `new ObjectMapper()` 대신 Spring 빈을 주입받는다.
+- 단일 구현용 인터페이스는 새로 만들지 않았다(`TossCancelClient`는 HTTP/No-op 두 구현). 두 관리자 계층은 합치지 않고 공통 규칙만 `serviceCommon`으로 뽑았다.
+
+#### C. 버그 수정
+
+1. 환불 없는 취소: 관리자 취소와 취소 승인이 예약 상태만 바꿨다. `serviceCommon/refund/ReservationRefundService`가 같은 트랜잭션에서 결제 `DONE → CANCELED`(조건부 UPDATE, 토스 응답 철자), 사용 포인트 환불(잔액 + `point_history` REFUND 행), 쿠폰 복원(`ISSUED`, `coupon_usage` 삭제), 토스 결제 취소를 처리한다. 두 번째 호출은 바꿀 것이 없어 아무것도 하지 않는다(멱등). 토스 호출은 `TossCancelClient`로 감싸고, `toss.secret-key`(환경변수 `TOSS_SECRET_KEY`)가 비었거나 screenshot 프로필이면 No-op 구현이 경고 로그만 남긴다. 토스 취소가 실패하면 트랜잭션 전체가 롤백된다(`ALREADY_CANCELED_PAYMENT`는 성공으로 본다). 관리자 매출(`SalesStatRepository`)·대시보드 매출(`DashboardReportRepository.sumRevenue`)은 취소된 예약을 뺀다.
+2. 문의 답변이 항상 400: 컨트롤러가 `relpyText`(오타)를 받았다. 목록 모달·상세 폼 모두 `replyText`로 맞추고, 상세 화면의 폼 안 폼(삭제 버튼이 답변 저장으로 제출되던 문제)을 분리했다.
+3. 가격 캘린더 수정: 컨트롤러가 `yearMonth`를, 모달은 `ym`을 보내 저장이 항상 400이었다(`ym`으로 통일). 셀의 `price`에 그날 체크인 매출 합계를 넣어 모달이 매출을 가격으로 미리 채웠다. 이제 `price`는 설정된 1박 가격(`price_calendar`, 없으면 객실 기본가), `revenue`는 체크인 매출(표시 전용)이다. 사용자 API가 읽지 않는 `available_room`을 바꾸던 "재고 0 = 판매중지" 입력은 없애고 재고는 표시 전용이라고 안내한다. 수정 모달 스크립트가 레이아웃 fragment 밖에 있어 버튼이 동작하지 않던 문제와 저장 토스트가 보이지 않던 문제(`toast` → `success`)도 고쳤다.
+4. 상세 캐시 미무효화: 숙소/객실/이미지/환불 규정/태그를 바꿔도 사용자 API 상세 캐시가 TTL까지 남았다. 사용자 API `AccommodationCacheKeys`를 `cache/AccommodationCacheKeys`로 복사(동기화 경고 주석, 리터럴 키 테스트)하고, `SearchCacheInvalidator.evictAccommodationAfterCommit`이 커밋 후 숙소별로 한 번 `allFor(id)` 키를 지운다(Redis 구현 DEL, No-op 구현은 아무것도 하지 않음).
+5. 락 순서: 예약 생성/수정에서 일반 SELECT가 객실 락보다 먼저 실행돼, REPEATABLE READ 스냅샷 때문에 겹침 수가 락을 기다리는 동안 커밋된 예약을 놓칠 수 있었다. 생성은 객실 락을 트랜잭션 첫 문장으로 옮기고, 수정은 예약 행 잠금 읽기 → 객실 락 → 연관 엔티티 조회 순서로 바꿨다. 겹침 수는 `countOverlappingForUpdate`(겹치는 예약 ID를 `FOR UPDATE`로 읽어 개수 계산. `COUNT ... FOR UPDATE`는 H2가 지원하지 않음)로 센다. 운영 프로필에 `spring.datasource.hikari.transaction-isolation=TRANSACTION_READ_COMMITTED`를 추가했다(사용자 API와 같은 값).
+6. 관리자 로그인: 없는 이메일이면 NPE(500)가 나 계정 존재 여부가 드러났다. 틀린 비밀번호와 같은 400 메시지로 응답한다.
+
+남은 사항:
+
+- 도메인 `ReservationChanges`가 객실명·원가·할인액을 받지 않아, 오너 화면에서 객실을 바꾸면 예약의 객실명 스냅샷은 그대로 남는다. 필요하면 사용자 저장소의 도메인에 해당 필드를 추가한다.
+- 운영에서 `TOSS_SECRET_KEY`가 비어 있으면 PG 환불이 호출되지 않는다(경고 로그). 배포 환경변수에 반드시 넣는다.
+- `AccommodationCacheKeys`는 사본이다. 사용자 API가 키를 바꾸면 함께 고치고 `AccommodationCacheKeysTest`를 갱신한다.
+- 쓰이지 않는 `ReportRepository`는 `payment_status='COMPLETED'`(실제 값은 `DONE`)를 쓰고 있다. 쓰기 전에 고친다.
+
+검증:
+
+```text
+./gradlew test                   136 tests, 0 failures
+cd e2e && npx playwright test    10 passed (가격 캘린더 수정 시나리오 07 추가)
+```
+
 ## 전체 안정화 순서
 
 1. 기준 상태 기록

@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.config;
 
+import com.honeyrest.honeyrest_host.type.UserStatus;
+
 import com.honeyrest.domain.entity.User;
 import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -61,7 +63,7 @@ public class DataInitializer implements CommandLineRunner {
                         .passwordHash(passwordEncoder.encode(companyAdminPassword))
                         .name(name)
                         .role("COMPANY_ADMIN")
-                        .status("ACTIVE")
+                        .status(UserStatus.ACTIVE)
                         .isVerified(true)
                         .build());
                 created++;
@@ -74,7 +76,7 @@ public class DataInitializer implements CommandLineRunner {
                     .passwordHash(passwordEncoder.encode(superAdminPassword))
                     .name("HoneyRest관리자")
                     .role("SUPER_ADMIN")
-                    .status("ACTIVE")
+                    .status(UserStatus.ACTIVE)
                     .isVerified(true)
                     .build());
             created++;

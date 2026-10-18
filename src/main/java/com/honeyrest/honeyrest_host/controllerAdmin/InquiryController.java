@@ -68,7 +68,9 @@ public class InquiryController {
     @PostMapping("/{id}/reply")
     @PreAuthorize("@companyAccess.ownsInquiry(#inquiryId, authentication)")
     public String reply(@PathVariable("id") Long inquiryId,
-                        @RequestParam("relpyText") String relpyText,
+                        // 과거에는 오타("relpyText")라 화면이 보내는 replyText/reply 와 맞지 않아 항상 400 이었다.
+                        // list.html 모달과 detail.html 폼 모두 replyText 로 보낸다.
+                        @RequestParam("replyText") String replyText,
                         RedirectAttributes ra,
                         @RequestParam(required = false) Long accommodationId,
                         @RequestParam(required = false) String q,
@@ -76,7 +78,7 @@ public class InquiryController {
                         @RequestParam(defaultValue = "1") int page,
                         @RequestParam(defaultValue = "10") int size) {
         try {
-            inquiryService.reply(inquiryId, relpyText);
+            inquiryService.reply(inquiryId, replyText);
             ra.addAttribute("msg", "답변이 저장되었습니다.");
         } catch (Exception e) {
             ra.addAttribute("msg", "답변 저장 실패하셨습니다." + e.getMessage());

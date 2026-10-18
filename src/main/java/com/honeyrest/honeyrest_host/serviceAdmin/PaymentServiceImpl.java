@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
+import com.honeyrest.honeyrest_host.type.PaymentStatus;
+
 import com.honeyrest.honeyrest_host.dtoAdmin.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PaymentDTO;
 import com.honeyrest.domain.entity.Payment;
@@ -27,7 +29,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     // 기본적으로 보여줄 결제 상태(결제완료 + 환불)
     private static final List<String> DEFAULT_STATUSES =
-            List.of("DONE", "CANCEL" ); // 결제대기, 결제완료, 결제취소, 환불완료
+            List.of(PaymentStatus.DONE, "CANCEL"); // 결제완료 + 화면 필터 코드 CANCEL
 
 
     @Override

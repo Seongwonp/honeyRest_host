@@ -5,6 +5,7 @@ import com.honeyrest.domain.entity.Accommodation;
 import com.honeyrest.domain.entity.AccommodationImage;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationImageRepository;
 import com.honeyrest.honeyrest_host.repositoryAdmin.accommodation.AccommodationRepository;
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.storage.FileStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,8 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
     private final AccommodationRepository accommodationRepository;
     private final AccommodationImageRepository accommodationImageRepository;
     private final FileStorage fileStorage;
+    // 이미지가 바뀌면 사용자 API 숙소 상세/이미지 캐시를 커밋 후 지운다
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
     private AccommodationImageDTO toDTO(AccommodationImage e) {
         return AccommodationImageDTO.builder().
@@ -68,6 +71,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
                 .build();
 
         AccommodationImage saved = accommodationImageRepository.save(entity);
+        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
         return toDTO(saved);
     }
 
@@ -91,7 +95,19 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
         String folder = "accommodations/" + image.getAccommodation().getAccommodationId() + "/images";
         fileStorage.delete(folder, image.getImageUrl());
         accommodationImageRepository.delete(image);
+        searchCacheInvalidator.evictAccommodationAfterCommit(image.getAccommodation().getAccommodationId());
 
+    }
+
+    @Override
+    public List<String> deleteMainThumbnail(Long accommodationId) {
+        List<String> urls = accommodationImageRepository
+                .findByAccommodation_AccommodationIdAndImageTypeOrderBySortOrderAscImageIdAsc(accommodationId, "MAIN")
+                .stream().map(AccommodationImage::getImageUrl).toList();
+        accommodationImageRepository.deleteByAccommodation_AccommodationIdAndImageType(accommodationId, "MAIN");
+        accommodationRepository.updateThumbnail(accommodationId, null);
+        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
+        return urls;
     }
 
     @Override
@@ -102,6 +118,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
         // imageId가 실제로 이 숙소 소속인지 확인 없이 그대로 삭제하면 타 숙소 이미지를
         // imageId만 알아내 삭제할 수 있었다(P1-4).
         accommodationImageRepository.deleteByAccommodation_AccommodationIdAndImageIdIn(accommodationId, imageIds);
+        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
     }
 
     @Override
@@ -111,6 +128,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
         AccommodationImage updated = AccommodationImage.builder().imageId(img.getImageId()).accommodation(img.getAccommodation()).imageUrl(img.getImageUrl()).imageType(img.getImageType()).sortOrder(sortOrder).build();
 
         accommodationImageRepository.save(updated);
+        searchCacheInvalidator.evictAccommodationAfterCommit(img.getAccommodation().getAccommodationId());
     }
 
 
@@ -145,6 +163,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
                 .build();
 
         AccommodationImage saved = accommodationImageRepository.save(entity);
+        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
         return toDTO(saved);
     }
 
@@ -162,6 +181,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
     public void updateThumbnailUrl(Long accommodationId, String thumbnailUrl) {
         int n = accommodationRepository.updateThumbnail(accommodationId, thumbnailUrl);
         if (n == 0) throw new IllegalArgumentException("숙소를 찾을 수 없습니다: " + accommodationId);
+        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
 
     }
 }

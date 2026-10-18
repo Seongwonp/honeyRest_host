@@ -11,6 +11,7 @@ import com.honeyrest.honeyrest_host.repositoryOwner.OReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORoomRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import com.honeyrest.honeyrest_host.serviceCommon.ReservationInventoryGuard;
+import com.honeyrest.honeyrest_host.serviceCommon.ReservationModificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,7 @@ class OReservationServicePageTest {
     @Mock private OUserRepository userRepository;
     @Mock private OAccommodationRepository accommodationRepository;
     @Mock private ReservationInventoryGuard guard;
+    @Mock private ReservationModificationService modificationService;
     @Mock private SearchCacheInvalidator searchCacheInvalidator;
 
     private OReservationService service;
@@ -48,7 +50,7 @@ class OReservationServicePageTest {
     @BeforeEach
     void setUp() {
         service = new OReservationService(reservationRepository, roomRepository, userRepository,
-                accommodationRepository, guard, searchCacheInvalidator);
+                accommodationRepository, guard, modificationService, searchCacheInvalidator);
         pageRequest = new PageRequestDTO();
     }
 

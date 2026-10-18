@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
+import com.honeyrest.honeyrest_host.type.CompanyStatus;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -111,7 +113,7 @@ public class OCompanyService {
                 .orElseThrow(() -> new EntityNotFoundException("Company not found"));
 
         CompanyDTO dto = toDTO(company);
-        dto.setStatus("INACTIVE");  // 상태를 변경
+        dto.setStatus(CompanyStatus.INACTIVE);  // 상태를 변경
 
         companyRepository.save(toEntity(dto)); // 업데이트
     }
@@ -124,7 +126,7 @@ public class OCompanyService {
         return companyRepository.findAll()
                 .stream()
                 .map(this::toDTO)
-                .filter(c -> "active".equalsIgnoreCase(c.getStatus()))
+                .filter(c -> CompanyStatus.isActive(c.getStatus()))
                 .toList();
     }
 
@@ -142,7 +144,7 @@ public class OCompanyService {
 
         List<CompanyDTO> dtoList = page.getContent().stream()
                 .map(this::toDTO) // Company -> CompanyDTO 변환 메서드 필요
-                .filter(c -> "active".equalsIgnoreCase(c.getStatus()))
+                .filter(c -> CompanyStatus.isActive(c.getStatus()))
                 .toList();
 
         return PageResponseDTO.<CompanyDTO>withAll()
@@ -161,7 +163,7 @@ public class OCompanyService {
 
         List<CompanyDTO> dtoList = page.getContent().stream()
                 .map(this::toDTO) // Company -> CompanyDTO 변환 메서드 필요
-                .filter(c -> !"active".equalsIgnoreCase(c.getStatus()))
+                .filter(c -> !CompanyStatus.isActive(c.getStatus()))
                 .toList();
 
         return PageResponseDTO.<CompanyDTO>withAll()

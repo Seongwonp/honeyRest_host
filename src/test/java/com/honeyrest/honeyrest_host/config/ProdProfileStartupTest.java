@@ -52,6 +52,9 @@ class ProdProfileStartupTest {
         assertThat(env.getProperty("app.storage.type")).isEqualTo("local");
         assertThat(env.getProperty("server.forward-headers-strategy")).isEqualTo("native");
         assertThat(env.getProperty("logging.file.name")).isEmpty();
+        // 재고 계산이 옛 스냅샷을 보지 않도록 사용자 API 와 같은 READ COMMITTED
+        assertThat(env.getProperty("spring.datasource.hikari.transaction-isolation"))
+                .isEqualTo("TRANSACTION_READ_COMMITTED");
     }
 
     @Test

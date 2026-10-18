@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
+import com.honeyrest.honeyrest_host.type.RoomStatus;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.cache.RoomSearchSnapshot;
@@ -29,7 +31,8 @@ import java.util.stream.Collectors;
 public class RoomServiceImpl implements RoomService {
     private final RoomRepository roomRepository;
     private final AccommodationRepository accommodationRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    // Spring 이 관리하는 ObjectMapper(JacksonConfig, 모듈 등록됨)를 주입받는다
+    private final ObjectMapper objectMapper;
     private final RoomImageRepository roomImageRepository;
     // 객실 재고(totalRooms)·상태·가격이 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다
     private final SearchCacheInvalidator searchCacheInvalidator;
@@ -121,7 +124,7 @@ public class RoomServiceImpl implements RoomService {
                 .amenities(d.getAmenities())
                 .description(d.getDescription())
                 .totalRooms(d.getTotalRooms())
-                .status(d.getStatus() == null ? "ACTIVE" : d.getStatus())
+                .status(d.getStatus() == null ? RoomStatus.ACTIVE : d.getStatus())
                 .build();
 
     }
@@ -155,10 +158,12 @@ public class RoomServiceImpl implements RoomService {
                 .amenities(jsonNodeToString(stringToJsonNode(dto.getAmenities())))
                 .description(dto.getDescription())
                 .totalRooms(dto.getTotalRooms())
-                .status(dto.getStatus() == null ? "ACTIVE" : dto.getStatus())
+                .status(dto.getStatus() == null ? RoomStatus.ACTIVE : dto.getStatus())
                 .build();
         RoomDTO saved = toDTO(roomRepository.save(room));
         searchCacheInvalidator.bumpAfterCommit(); // 새 객실 = 새 재고
+        // 사용자 숙소 상세(객실 목록 포함) 캐시도 커밋 후 지운다
+        searchCacheInvalidator.evictAccommodationAfterCommit(acc.getAccommodationId());
         return saved;
     }
 
@@ -194,6 +199,9 @@ public class RoomServiceImpl implements RoomService {
         if (RoomSearchSnapshot.of(updated).differsFrom(before)) {
             searchCacheInvalidator.bumpAfterCommit();
         }
+        // 설명·편의시설 등 검색과 무관한 변경도 상세 화면에는 보이므로 상세 캐시는 항상 지운다(숙소 이동 시 양쪽)
+        searchCacheInvalidator.evictAccommodationAfterCommit(before.accommodationId());
+        searchCacheInvalidator.evictAccommodationAfterCommit(RoomSearchSnapshot.of(updated).accommodationId());
     }
 
     @Override
@@ -203,6 +211,7 @@ public class RoomServiceImpl implements RoomService {
         // 실제 삭제 대신 상태만 변경
        roomRepository.delete(room);
        searchCacheInvalidator.bumpAfterCommit();
+       searchCacheInvalidator.evictAccommodationAfterCommit(accommodationIdOf(room));
     }
 
     // 회사 전체/ 특정 숙소 커버 동시에 페이징
@@ -288,20 +297,27 @@ public class RoomServiceImpl implements RoomService {
                 .amenities(room.getAmenities())
                 .description(room.getDescription())
                 .totalRooms(room.getTotalRooms())
-                .status("INACTIVE")   // ★ 비활성화
+                .status(RoomStatus.INACTIVE)   // ★ 비활성화
                 .build();
 
-        boolean wasActive = !"INACTIVE".equals(room.getStatus());
+        boolean wasActive = !RoomStatus.INACTIVE.equals(room.getStatus());
         roomRepository.save(updated);
         if (wasActive) {
             searchCacheInvalidator.bumpAfterCommit();
+            searchCacheInvalidator.evictAccommodationAfterCommit(accommodationIdOf(room));
         }
     }
 
     @Override
     public void toggleStatus(Long roomId) {
+        Long accommodationId = roomRepository.findById(roomId).map(RoomServiceImpl::accommodationIdOf).orElse(null);
         if (roomRepository.toggleStatus(roomId) > 0) {
             searchCacheInvalidator.bumpAfterCommit(); // ACTIVE ↔ INACTIVE: 검색 노출 여부가 바뀜
+            searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
         }
+    }
+
+    private static Long accommodationIdOf(Room room) {
+        return room.getAccommodation() != null ? room.getAccommodation().getAccommodationId() : null;
     }
 }

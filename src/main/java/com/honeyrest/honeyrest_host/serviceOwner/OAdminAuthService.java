@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
+import com.honeyrest.honeyrest_host.type.UserStatus;
+
 import com.honeyrest.honeyrest_host.config.JwtTokenProvider;
 import com.honeyrest.honeyrest_host.dtoOwner.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dtoOwner.AdminSignupRequestDTO;
@@ -54,7 +56,7 @@ public class OAdminAuthService {
                 .point(0)
                 .role(role) // 이 API는 SecurityConfig에서 SUPER_ADMIN 인증을 요구하므로,
                             // 이미 검증된 super admin이 명시한 role(COMPANY_ADMIN 또는 SUPER_ADMIN)을 그대로 사용한다.
-                .status("ACTIVE")
+                .status(UserStatus.ACTIVE)
                 .build();
 
         User saved = userRepository.save(admin);
@@ -70,7 +72,7 @@ public class OAdminAuthService {
         User user = userRepository.findByEmail(email);
 
         //  status: String 비교
-        if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
+        if (!UserStatus.isActive(user.getStatus())) {
             throw new IllegalStateException("비활성화된 계정입니다.");
         }
 

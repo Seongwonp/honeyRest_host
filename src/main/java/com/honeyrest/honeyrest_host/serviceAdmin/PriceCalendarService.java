@@ -4,7 +4,6 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 import com.honeyrest.honeyrest_host.dtoAdmin.DailyOverviewDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.GridCellDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.PriceCalendarDTO;
-import com.honeyrest.honeyrest_host.dtoAdmin.reports.SalesStatDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,11 +26,6 @@ public interface PriceCalendarService {
     void bulkUpsert(List<BulkItem> items);
 
     void bulkUpsert(PriceCalendarDTO payload);
-
-    List<SalesStatDTO> stats(Long accommodationId,
-                             Long roomId,
-                             LocalDate start, LocalDate end,
-                             String granularity);
 
     Map<LocalDate, PriceCalendarDTO> getCalendarData(Long roomId, LocalDate startDate, LocalDate endDate);
 

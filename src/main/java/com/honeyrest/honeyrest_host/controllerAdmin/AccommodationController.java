@@ -1,16 +1,18 @@
 package com.honeyrest.honeyrest_host.controllerAdmin;
 
+import com.honeyrest.honeyrest_host.type.AccommodationStatus;
+
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.AdminLoginRequestDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.CompanyDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.RegionDTO;
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.*;
-import com.honeyrest.honeyrest_host.repositoryAdmin.RegionRepository;
 import com.honeyrest.honeyrest_host.serviceAdmin.CancellationPolicyService;
 import com.honeyrest.honeyrest_host.serviceAdmin.RegionService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationCategoryService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationImageService;
+import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationRegistrationService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationStatusPolicy;
 import com.honeyrest.honeyrest_host.serviceAdmin.CompanyService;
@@ -18,7 +20,6 @@ import com.honeyrest.honeyrest_host.serviceAdmin.CompanyResourceAccessService;
 import com.honeyrest.honeyrest_host.serviceAdmin.UserService;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationTagService;
 import com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser;
-import com.honeyrest.honeyrest_host.storage.FileStorage;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -52,14 +53,12 @@ public class AccommodationController {
     private final AccommodationService accommodationService;
     private final AccommodationImageService accommodationImageService;
     private final CompanyService companyService;
-    private final FileStorage fileStorage;
     private final UserService userService;
     private final CompanyResourceAccessService resourceAccessService;
     private final AccommodationTagService accommodationTagService;
     private final CancellationPolicyService cancellationPolicyService;
-
-
-    private final RegionRepository regionRepository;
+    // 등록/수정 처리 흐름(업로드 보상 포함 단일 트랜잭션)
+    private final AccommodationRegistrationService registrationService;
     private final AccommodationCategoryService accommodationCategoryService;
     private final RegionService regionService;
 
@@ -74,7 +73,7 @@ public class AccommodationController {
         form.setTagIds(Collections.emptyList());
 
 
-        model.addAttribute("mainRegions", regionRepository.findByLevel(1));
+        model.addAttribute("mainRegions", regionService.listMainRegions());
         model.addAttribute("form", form);
         model.addAttribute("tagsByCategory", accommodationTagService.findAllGroupedByCategory());
         return "admin/accommodations/add";
@@ -93,77 +92,23 @@ public class AccommodationController {
         Integer companyId = resourceAccessService.currentCompanyId(authentication);
         if (companyId == null) return "redirect:/auth/login";
         form.setCompanyId(companyId);
-        // 신규 등록은 항상 승인 대기(PENDING)로 시작한다 (서비스에서도 강제).
+        // 신규 등록은 항상 승인 대기(PENDING)로 시작한다 (등록 서비스·숙소 서비스에서도 강제).
         form.setStatus(AccommodationStatusPolicy.INITIAL_STATUS);
         if (binding.hasErrors()) {
             binding.getAllErrors().forEach(err -> log.warn("bind err: {}", err));
-            model.addAttribute("mainRegions", regionRepository.findByLevel(1));
+            model.addAttribute("mainRegions", regionService.listMainRegions());
             model.addAttribute("tagsByCategory", accommodationTagService.findAllGroupedByCategory());
             return "admin/accommodations/add";
         }
 
         try {
-
-            // (1) 대표 썸네일
-            if (form.getFile() != null && !form.getFile().isEmpty()) {
-                String url = fileStorage.upload(form.getFile(), "accommodations");
-                form.setThumbnail(url);
-            }
-
-            // (2) 편의시설 JSON 정규화
-            form.setAmenities(AmenitiesParser.normalizeToJson(form.getAmenities()));
-
-            // (3) 숙소 저장
-            AccommodationCreateRequestDTO saved = accommodationService.create(form);
-            Long accId = saved.getAccommodationId();
-
-            // 태그 매핑
-//            List<Long> tagIds = (form.getTagIds() == null) ? Collections.emptyList() : form.getTagIds();
-//            accommodationTagService.replaceMapping(accId, tagIds);
-            if(form.getTagIds() == null) form.setTagIds(Collections.emptyList());
-
-            // 환불 정책
-            cancellationPolicyService.saveOrUpdate(accId, form.getCancellationPolicyDetail());
-
-            // (4) 메인 썸네일 → image 테이블
-            if (form.getThumbnail() != null && !form.getThumbnail().isBlank()) {
-                accommodationImageService.upsertMainThumbnail(
-                        accId,
-                        AccommodationImageDTO.builder()
-                                .imageUrl(form.getThumbnail())
-                                .imageType("MAIN")
-                                .sortOrder(0)
-                                .build()
-                );
-                accommodationImageService.updateThumbnailUrl(accId, form.getThumbnail());
-            }
-
-            // (5) 서브 이미지들 업로드 후 저장
-            if (subImages != null && !subImages.isEmpty()) {
-                int order = 1;
-                for (MultipartFile f : subImages) {
-                    if (f.isEmpty()) continue;
-                    String url = fileStorage.upload(f, "accommodations/" + accId + "/images");
-                    accommodationImageService.saveOrUpload(
-                            accId,
-                            AccommodationImageDTO.builder()
-                                    .file(f)
-                                    .imageUrl(url)
-                                    .imageType("SUB")
-                                    .sortOrder(order++)
-                                    .build()
-                    );
-                }
-            }
-
-
+            // 업로드 → 저장 → 환불 규정 → 이미지까지 한 트랜잭션 (실패 시 이번 요청에서 올린 파일 삭제)
+            registrationService.register(companyId, form, subImages);
             ra.addFlashAttribute("success", "숙소 등록이 요청되었습니다.");
             return "redirect:/admin/accommodations/list?status=PENDING";
-
         } catch (Exception e) {
             log.error("add error", e);
             ra.addFlashAttribute("error", "등록 중 오류: " + e.getMessage());
-            ra.addAttribute("form", form);
             return "redirect:/admin/accommodations/add";
         }
 
@@ -349,7 +294,7 @@ public class AccommodationController {
     @PostMapping("/{id}/request")
     @PreAuthorize("@companyAccess.ownsAccommodation(#id, authentication)")
     public String requestApproval(@PathVariable Long id) {
-        accommodationService.changeStatus(id, "PENDING");
+        accommodationService.changeStatus(id, AccommodationStatus.PENDING);
         return "redirect:/admin/accommodations/list?status=PENDING";
     }
 
@@ -362,7 +307,7 @@ public class AccommodationController {
         Integer companyId = resourceAccessService.currentCompanyId(authentication);
         ids.stream()
                 .filter(id -> resourceAccessService.ownsAccommodation(companyId, id))
-                .forEach(id -> accommodationService.changeStatus(id, "PENDING"));
+                .forEach(id -> accommodationService.changeStatus(id, AccommodationStatus.PENDING));
         return "redirect:/admin/accommodations/list?status=PENDING";
     }
 
@@ -370,7 +315,7 @@ public class AccommodationController {
     @GetMapping(value = "/regions/children", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public List<Map<String, Object>> regionChildren(@RequestParam("parentId") Integer parentId) {
-        return regionRepository.findByParentId(parentId).stream()
+        return regionService.listSubRegions(parentId).stream()
                 .map(r -> Map.<String, Object>of(
                         "id", r.getRegionId(),
                         "name", r.getName()
@@ -457,7 +402,7 @@ public class AccommodationController {
                              RedirectAttributes ra,
                              Model model) {
 
-        // 소유권은 @PreAuthorize 로 확인했다. 폼의 companyId 는 신뢰하지 않는다
+        // 소유권은 @PreAuthorize 로 확인했다. 폼의 companyId 는 신뢰하지 않는다(서비스에서도 비운다)
         // (값을 넣어 보내면 AccommodationService.update 가 숙소를 다른 회사로 옮길 수 있었다).
         form.setCompanyId(null);
 
@@ -473,83 +418,10 @@ public class AccommodationController {
             return "admin/accommodations/edit";
         }
         try {
-            // 0) 상태 변경 검증을 이미지 삭제/업로드 같은 부수효과보다 먼저 한다.
-            //    회사 관리자는 PENDING/INACTIVE 로만 바꿀 수 있고 ACTIVE 는 총관리자 승인으로만 전환된다.
-            //    (서비스 update 에서도 같은 규칙을 한 번 더 적용한다)
-            AccommodationCreateRequestDTO current = accommodationService.getById(id);
-            AccommodationStatusPolicy.resolveCompanyAdminStatus(
-                    current == null ? null : current.getStatus(), form.getStatus());
-
-            // 1) amenities 정규화
-            form.setAmenities(AmenitiesParser.normalizeToJson(form.getAmenities()));
-
-            String policyJson = AmenitiesParser.normalizeToJson(form.getPolicyMultiline());
-            form.setPolicyMultiline(policyJson);
-
-            // 2) 썸네일 처리
-            String newMainUrl = null;
-
-            if (deleteThumbnail) {
-                // ui 에서 삭제 토글한 경우
-                accommodationImageService.delete(id);
-                form.setThumbnail(null);
-            }
-            if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
-                // 파일 업로드한 경우 → 새 URL을 DTO에 넣어 엔티티 필드에도 반영되게
-                newMainUrl = fileStorage.upload(thumbnailFile, "accommodations");
-                form.setThumbnail(newMainUrl);
-            } else if (form.getThumbnail() != null && !form.getThumbnail().isBlank()) {
-                // 파일 업로드 없이 URL만 입력/유지하는 경우
-                newMainUrl = form.getThumbnail();
-            } // else: 아무 것도 없으면 null 유지 → 썸네일 미변경
-
-            // 3) 스칼라/연관 필드 업데이트(썸네일 포함)
-            accommodationService.update(id, form);
-
-            // 4) 메인 이미지(이미지 테이블) upsert (썸네일 URL이 최종 있으면만)
-            if (newMainUrl != null && !newMainUrl.isBlank()) {
-                accommodationImageService.upsertMainThumbnail(
-                        id,
-                        AccommodationImageDTO.builder()
-                                .imageType("MAIN")
-                                .sortOrder(0)
-                                .imageUrl(newMainUrl)
-                                .build()
-                );
-            }
-
-            // 기존 sub 이미지 삭제(있다면) - id는 이미 위에서 호출자 소유로 검증됨
-            if (deleteSubImageIds != null && !deleteSubImageIds.isEmpty()) {
-                accommodationImageService.deleteSubImages(id, deleteSubImageIds);
-            }
-
-            // 5) SUB 이미지 추가
-            if (subImages != null && !subImages.isEmpty()) {
-                int sortSeed = 1; // MAIN=0 다음
-                for (MultipartFile file : subImages) {
-                    if (file == null || file.isEmpty()) continue;
-                    String url = fileStorage.upload(file, "accommodations/" + id + "/images");
-                    accommodationImageService.saveOrUpload(
-                            id,
-                            AccommodationImageDTO.builder()
-                                    .imageUrl(url)
-                                    .imageType("SUB")
-                                    .sortOrder(sortSeed++)
-                                    .build()
-                    );
-
-                }
-
-            }
-
-            List<Long> tagIds = (form.getTagIds() == null) ? Collections.emptyList() : form.getTagIds();
-            accommodationTagService.replaceMapping(id, tagIds);
-            // 환불 규정 저장
-            cancellationPolicyService.saveOrUpdate(id, form.getPolicyMultiline());
-
+            // 상태 검증 → 썸네일/이미지 → 필드 → 태그/환불 규정까지 한 트랜잭션 (실패 시 이번 요청에서 올린 파일 삭제)
+            registrationService.edit(id, form, thumbnailFile, subImages, deleteThumbnail, deleteSubImageIds);
             ra.addFlashAttribute("success", "수정이 완료되었습니다.");
-            return "redirect:/admin/accommodations/detail/{id}"; // 또는 detail/{id}로
-
+            return "redirect:/admin/accommodations/detail/{id}";
         } catch (Exception e) {
             log.error("editSubmit error", e);
             ra.addFlashAttribute("error", "수정 중 오류: " + e.getMessage());

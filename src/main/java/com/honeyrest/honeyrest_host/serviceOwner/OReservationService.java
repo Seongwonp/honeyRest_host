@@ -14,6 +14,9 @@ import com.honeyrest.honeyrest_host.repositoryOwner.OReservationRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.ORoomRepository;
 import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import com.honeyrest.honeyrest_host.serviceCommon.ReservationInventoryGuard;
+import com.honeyrest.honeyrest_host.serviceCommon.ReservationModificationService;
+import com.honeyrest.domain.entity.Accommodation;
+import com.honeyrest.domain.entity.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,6 +41,8 @@ public class OReservationService {
     private final OUserRepository userRepository;
     private final OAccommodationRepository accommodationRepository;
     private final ReservationInventoryGuard inventoryGuard;
+    // 기존 예약 수정 공통 규칙 (관리자 화면과 공유)
+    private final ReservationModificationService modificationService;
     // 예약 점유가 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다
     private final SearchCacheInvalidator searchCacheInvalidator;
 
@@ -131,8 +136,13 @@ public class OReservationService {
      */
     public void registerReservation(ReservationDTO dto) {
         dto.setReservationId(null);
+        if (dto.getCheckInDate() != null && dto.getCheckOutDate() != null
+                && !dto.getCheckInDate().isBefore(dto.getCheckOutDate())) {
+            throw new IllegalArgumentException("체크인 날짜는 체크아웃보다 이전이어야 합니다.");
+        }
         String status = ReservationStatus.normalize(dto.getStatus(), ReservationStatus.PENDING);
         dto.setStatus(status);
+        // 객실 락이 이 트랜잭션의 첫 문장이다 (toEntity 의 getReferenceById 는 SELECT 를 하지 않는다)
         if (ReservationStatus.isOccupying(status)) {
             inventoryGuard.lockRoomAndAssertAvailable(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), null);
         }
@@ -143,32 +153,38 @@ public class OReservationService {
     }
 
     /**
-     * 예약 수정. 비점유 → 점유 상태 전환(예: CANCELLED → CONFIRMED)이거나
-     * 점유 상태에서 객실/기간이 바뀌면 등록과 같은 재고 검사를 한다(자기 자신은 제외).
+     * 예약 수정. 기존 엔티티를 잠금 읽기로 가져와 필드는 도메인 update, 상태는 도메인 changeStatus(전이 표 검사)로 바꾼다.
+     * 과거에는 폼 값으로 엔티티를 새로 만들어 save(덮어쓰기)해 상태 전이 표와 체크인 &lt; 체크아웃 검증을 우회했다.
+     * 비점유 → 점유 전환이거나 점유 중 객실/기간이 바뀌면 등록과 같은 재고 검사를 하고(자기 자신 제외),
+     * 취소로 바뀌면 환불한다. 규칙은 관리자 화면과 같은 {@link ReservationModificationService} 를 쓴다.
+     * <p>
+     * 예약번호·원가·할인액·객실명은 예약 시점 스냅샷이라 이 화면에서 바꾸지 않는다(도메인 update 가 받지 않는 값).
      */
     public void modifyReservation(ReservationDTO dto) {
-        Reservation existing = reservationRepository.findById(dto.getReservationId())
+        Reservation existing = reservationRepository.findByIdForUpdate(dto.getReservationId())
                 .orElseThrow(() -> new EntityNotFoundException("해당 예약이 존재하지 않습니다. id=" + dto.getReservationId()));
-        String newStatus = ReservationStatus.normalize(dto.getStatus(), existing.getStatus());
-        dto.setStatus(newStatus);
 
-        Long oldRoomId = existing.getRoom() != null ? existing.getRoom().getRoomId() : null;
-        boolean enteringOccupying = ReservationStatus.isOccupying(newStatus)
-                && !ReservationStatus.isOccupying(existing.getStatus());
-        boolean occupyingChanged = ReservationStatus.isOccupying(newStatus)
-                && (!java.util.Objects.equals(oldRoomId, dto.getRoomId())
-                    || !java.util.Objects.equals(existing.getCheckInDate(), dto.getCheckInDate())
-                    || !java.util.Objects.equals(existing.getCheckOutDate(), dto.getCheckOutDate()));
-        if (enteringOccupying || occupyingChanged) {
-            inventoryGuard.lockRoomAndAssertAvailable(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(),
-                    existing.getReservationId());
-        }
-        boolean leavingOccupying = ReservationStatus.isOccupying(existing.getStatus())
-                && !ReservationStatus.isOccupying(newStatus);
-        reservationRepository.save(toEntity(dto));
-        if (enteringOccupying || leavingOccupying || occupyingChanged) {
-            searchCacheInvalidator.bumpAfterCommit();
-        }
+        ReservationModificationService.Plan plan = modificationService.prepare(
+                existing, dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), dto.getStatus());
+
+        Long currentRoomId = existing.getRoom() != null ? existing.getRoom().getRoomId() : null;
+        Long currentAccId = existing.getAccommodation() != null ? existing.getAccommodation().getAccommodationId() : null;
+        Long currentUserId = existing.getUser() != null ? existing.getUser().getUserId() : null;
+
+        Room newRoom = (dto.getRoomId() != null && !dto.getRoomId().equals(currentRoomId))
+                ? roomRepository.findById(dto.getRoomId())
+                    .orElseThrow(() -> new EntityNotFoundException("객실을 찾을 수 없습니다. roomId=" + dto.getRoomId()))
+                : null;
+        Accommodation newAccommodation = (dto.getAccommodationId() != null && !dto.getAccommodationId().equals(currentAccId))
+                ? accommodationRepository.findById(dto.getAccommodationId())
+                    .orElseThrow(() -> new EntityNotFoundException("숙소를 찾을 수 없습니다. id=" + dto.getAccommodationId()))
+                : null;
+        User newUser = (dto.getUserId() != null && !dto.getUserId().equals(currentUserId))
+                ? userRepository.findById(dto.getUserId())
+                    .orElseThrow(() -> new EntityNotFoundException("회원을 찾을 수 없습니다. userId=" + dto.getUserId()))
+                : null;
+
+        modificationService.apply(existing, plan, dto, newUser, newRoom, newAccommodation);
     }
 
     public void removeReservation(Long id) {

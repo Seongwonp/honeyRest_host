@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
+import com.honeyrest.honeyrest_host.type.AccommodationStatus;
+
 import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.serviceOwner.*;
 import com.honeyrest.honeyrest_host.storage.FileStorage;
@@ -157,14 +159,14 @@ public class AccommodationController {
     @GetMapping("/accommodation/companyId/search")
     @ResponseBody
     public List<AccommodationDTO> searchAccommodation(@RequestParam Integer companyId, @RequestParam String keyword) {
-        return accommodationService.searchByNameContaining(companyId, keyword).stream().filter(a-> a.getStatus().equalsIgnoreCase("active")).toList();
+        return accommodationService.searchByNameContaining(companyId, keyword).stream().filter(a -> AccommodationStatus.isActive(a.getStatus())).toList();
     }
 
     // 회사 검색 API (자동완성용)
     @GetMapping("/accommodation/inActive/search")
     @ResponseBody
     public List<AccommodationDTO> searchInActiveAccommodation(@RequestParam Integer companyId, @RequestParam String keyword) {
-        return accommodationService.searchByNameContaining(companyId, keyword).stream().filter(a-> !a.getStatus().equalsIgnoreCase("active")).toList();
+        return accommodationService.searchByNameContaining(companyId, keyword).stream().filter(a -> !AccommodationStatus.isActive(a.getStatus())).toList();
     }
 
     // 선택한 회사의 숙소 목록 JSON

@@ -9,6 +9,12 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * 결제 기준 매출 집계 (관리자 매출 차트·대시보드).
+ * 공통 조건: 결제 승인 완료(payment_status='DONE') + 예약이 취소(CANCELLED)되지 않음.
+ * 취소 시 환불 처리(ReservationRefundService)가 결제를 CANCELED 로 바꾸지만, 과거 데이터처럼 예약만 취소되고
+ * 결제가 DONE 으로 남은 경우도 매출에서 빠지도록 예약 상태도 함께 거른다.
+ */
 public interface SalesStatRepository extends JpaRepository<Payment, Long> {
 
     /* ────────────────────────────
@@ -26,6 +32,7 @@ public interface SalesStatRepository extends JpaRepository<Payment, Long> {
           JOIN reservation r ON r.reservation_id = p.reservation_id
          WHERE r.accommodation_id IN (:accIds)
            AND p.payment_status = 'DONE'
+           AND r.status <> 'CANCELLED'
            AND p.payment_date  >= :from
            AND p.payment_date  <  DATE_ADD(:to, INTERVAL 1 DAY)
          GROUP BY DATE(p.payment_date)
@@ -48,6 +55,7 @@ public interface SalesStatRepository extends JpaRepository<Payment, Long> {
           JOIN reservation r ON r.reservation_id = p.reservation_id
          WHERE r.accommodation_id IN (:accIds)
            AND p.payment_status = 'DONE'
+           AND r.status <> 'CANCELLED'
            AND p.payment_date  >= :from
            AND p.payment_date  <  DATE_ADD(:to, INTERVAL 1 DAY)
          GROUP BY DATE(DATE_SUB(p.payment_date, INTERVAL WEEKDAY(p.payment_date) DAY))
@@ -68,6 +76,7 @@ public interface SalesStatRepository extends JpaRepository<Payment, Long> {
           JOIN reservation r ON r.reservation_id = p.reservation_id
          WHERE r.accommodation_id IN (:accIds)
            AND p.payment_status = 'DONE'
+           AND r.status <> 'CANCELLED'
            AND p.payment_date  >= :from
            AND p.payment_date  <  DATE_ADD(:to, INTERVAL 1 DAY)
          GROUP BY DATE_FORMAT(p.payment_date, '%Y-%m')
@@ -90,6 +99,7 @@ public interface SalesStatRepository extends JpaRepository<Payment, Long> {
           JOIN reservation r ON r.reservation_id = p.reservation_id
          WHERE r.accommodation_id IN (:accIds)
            AND p.payment_status = 'DONE'
+           AND r.status <> 'CANCELLED'
            AND p.payment_date  >= :from
            AND p.payment_date  <  DATE_ADD(:to, INTERVAL 1 DAY)
          GROUP BY dow
@@ -115,6 +125,7 @@ public interface SalesStatRepository extends JpaRepository<Payment, Long> {
           JOIN accommodation a  ON a.accommodation_id = r.accommodation_id
          WHERE r.accommodation_id IN (:accIds)
            AND p.payment_status = 'DONE'
+           AND r.status <> 'CANCELLED'
            AND p.payment_date  >= :from
            AND p.payment_date  <  DATE_ADD(:to, INTERVAL 1 DAY)
          GROUP BY rm.room_id, rm.name, a.name

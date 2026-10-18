@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceOwner;
 
+import com.honeyrest.honeyrest_host.type.AccommodationStatus;
+
 import jakarta.persistence.EntityNotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -148,7 +150,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
                 .description(d.getDescription())
                 .checkInTime(d.getCheckInTime())
                 .checkOutTime(d.getCheckOutTime())
-                .status(d.getStatus() == null ? "ACTIVE" : d.getStatus())
+                .status(d.getStatus() == null ? AccommodationStatus.ACTIVE : d.getStatus())
                 .minPrice(d.getMinPrice())
                 .rating(d.getRating())
                 .build();
@@ -198,7 +200,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
         Accommodation acc = toEntity(dto);
 
         Long id = accommodationRepository.save(acc).getAccommodationId();
-        if ("ACTIVE".equals(acc.getStatus())) {
+        if (AccommodationStatus.ACTIVE.equals(acc.getStatus())) {
             searchCacheInvalidator.bumpAfterCommit(); // 바로 노출되는 숙소
         }
         return id;
@@ -231,6 +233,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
         if (!java.util.Objects.equals(oldStatus, updated.getStatus()) || minPriceChanged) {
             searchCacheInvalidator.bumpAfterCommit();
         }
+        searchCacheInvalidator.evictAccommodationAfterCommit(dto.getAccommodationId());
     }
 
 
@@ -241,11 +244,13 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
         accommodationRepository.deleteById(id);
         searchCacheInvalidator.bumpAfterCommit();
+        searchCacheInvalidator.evictAccommodationAfterCommit(id);
     }
 
     @Override
     public void registerAccommodationImage(AccommodationImageDTO dto) throws JsonProcessingException {
         accommodationImageRepository.save(toImageEntity(dto));
+        searchCacheInvalidator.evictAccommodationAfterCommit(dto.getAccommodationId());
     }
 
     @Override
@@ -257,9 +262,9 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
         // 상태 필터를 쿼리에서 적용해야 total(전체 건수)과 목록 건수가 일치한다.
         if (companyId != null && companyId >= 1) {
-            page = accommodationRepository.findByCompany_CompanyIdAndStatusIgnoreCase(companyId, "ACTIVE", pageable);
+            page = accommodationRepository.findByCompany_CompanyIdAndStatusIgnoreCase(companyId, AccommodationStatus.ACTIVE, pageable);
         } else {
-            page = accommodationRepository.findByStatusIgnoreCase("ACTIVE", pageable);
+            page = accommodationRepository.findByStatusIgnoreCase(AccommodationStatus.ACTIVE, pageable);
         }
 
         List<AccommodationDTO> list = page.getContent().stream().map(this::toDTO).toList();
@@ -283,9 +288,9 @@ public class OAccommodationServiceImpl implements OAccommodationService {
         Page<Accommodation> page;
 
         if (companyId != null && companyId > 0) {
-            page = accommodationRepository.findByCompany_CompanyIdAndStatusNotIgnoreCase(companyId, "ACTIVE", pageable);
+            page = accommodationRepository.findByCompany_CompanyIdAndStatusNotIgnoreCase(companyId, AccommodationStatus.ACTIVE, pageable);
         } else {
-            page = accommodationRepository.findByStatusNotIgnoreCase("ACTIVE", pageable);
+            page = accommodationRepository.findByStatusNotIgnoreCase(AccommodationStatus.ACTIVE, pageable);
         }
 
         List<AccommodationDTO> list = page.getContent().stream().map(this::toDTO).toList();
@@ -368,17 +373,18 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
     @Override
     public void approve(Long accommodationId) {
-        int updated = accommodationRepository.updateStatusIfCurrent(accommodationId, "PENDING", "ACTIVE");
+        int updated = accommodationRepository.updateStatusIfCurrent(accommodationId, AccommodationStatus.PENDING, AccommodationStatus.ACTIVE);
         if (updated == 0) {
             throw new IllegalStateException("승인 대기(PENDING) 상태의 숙소만 승인할 수 있습니다.");
         }
         // PENDING → ACTIVE: 검색 결과에 새로 노출된다. (거절 PENDING → REJECTED 는 노출 변화가 없어 올리지 않는다)
         searchCacheInvalidator.bumpAfterCommit();
+        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
     }
 
     @Override
     public void reject(Long accommodationId) {
-        int updated = accommodationRepository.updateStatusIfCurrent(accommodationId, "PENDING", "REJECTED");
+        int updated = accommodationRepository.updateStatusIfCurrent(accommodationId, AccommodationStatus.PENDING, AccommodationStatus.REJECTED);
         if (updated == 0) {
             throw new IllegalStateException("승인 대기(PENDING) 상태의 숙소만 거절할 수 있습니다.");
         }

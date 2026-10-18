@@ -2,7 +2,6 @@ package com.honeyrest.honeyrest_host.serviceAdmin;
 
 import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
 import com.honeyrest.honeyrest_host.dtoAdmin.*;
-import com.honeyrest.honeyrest_host.dtoAdmin.reports.SalesStatDTO;
 import com.honeyrest.domain.entity.PriceCalendar;
 import com.honeyrest.domain.entity.Reservation;
 import com.honeyrest.domain.type.ReservationStatus;
@@ -130,13 +129,17 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
         // 재고(기간 겹침 기준)
         Map<Long, Map<LocalDate, Integer>> bookedMap = buildBookedQtyMap(companyId, accommodationId, start, end);
 
-        // 가격(체크인일 기준)
+        // 체크인일 기준 매출 합계(표시 전용)
         Map<Long, Map<LocalDate, BigDecimal>> revenueMap = buildCheckinRevenuePerDay(companyId, accommodationId, start, end);
+
+        // 설정된 1박 가격(price_calendar). 없는 날은 객실 기본가.
+        Map<Long, Map<LocalDate, PriceCalendar>> calendarMap = buildCalendarMapForRooms(rooms, start, end);
 
         List<RoomCalendarDTO> roomCalendars = new ArrayList<>();
         for (Room r : rooms) {
             Map<LocalDate, Integer> bookedPerDate = bookedMap.getOrDefault(r.getRoomId(), Collections.emptyMap());
             Map<LocalDate, BigDecimal> revPerDate = revenueMap.getOrDefault(r.getRoomId(), Collections.emptyMap());
+            Map<LocalDate, PriceCalendar> pricePerDate = calendarMap.getOrDefault(r.getRoomId(), Collections.emptyMap());
 
             List<CalendarCellDTO> days = new ArrayList<>(ym.lengthOfMonth());
             for (int i = 1; i <= ym.lengthOfMonth(); i++) {
@@ -151,11 +154,13 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
                     continue;
                 }
 
-                // 체크인 있는 날만 금액 표시(합계). 없으면 null
-                BigDecimal priceToShow = revPerDate.get(d); // 없으면 null
+                PriceCalendar configured = pricePerDate.get(d);
+                BigDecimal nightlyPrice = (configured != null && configured.getPrice() != null)
+                        ? configured.getPrice() : r.getPrice();
                 days.add(CalendarCellDTO.builder()
                         .date(d)
-                        .price(priceToShow)
+                        .price(nightlyPrice)
+                        .revenue(revPerDate.get(d)) // 체크인 없으면 null
                         .available(available)
                         .build());
             }
@@ -225,13 +230,6 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
                 )
         );
         bulkUpsert(items);
-    }
-
-    @Override
-    public List<SalesStatDTO> stats(Long accommodationId, Long roomId,
-                                    LocalDate start, LocalDate end,
-                                    String granularity) {
-        throw new UnsupportedOperationException("매출/정산 통계는 다음 단계에서 구현");
     }
 
     @Override

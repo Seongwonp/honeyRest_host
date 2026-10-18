@@ -2,8 +2,6 @@ package com.honeyrest.honeyrest_host.controllerAdmin;
 
 
 import com.honeyrest.honeyrest_host.dtoAdmin.*;
-import com.honeyrest.domain.entity.Company;
-import com.honeyrest.honeyrest_host.repositoryAdmin.CompanyRepository;
 import com.honeyrest.honeyrest_host.serviceAdmin.*;
 import com.honeyrest.honeyrest_host.serviceAdmin.accommodation.AccommodationService;
 import com.honeyrest.honeyrest_host.storage.FileStorage;
@@ -37,7 +35,6 @@ public class RoomController {
 
     private final RoomService roomService;
     private final RoomImageService roomImageService;
-    private final CompanyRepository companyRepository;
     private final AccommodationService accommodationService;
     private final CompanyService companyService;
     private final UserService userService;
@@ -100,13 +97,11 @@ public class RoomController {
                                       Authentication authentication,
                                       Model model) {
 
-        String email = (authentication != null && authentication.getPrincipal() instanceof UserDetails ud)
-                ? ud.getUsername()
-                : authentication.getName();
-
-        Integer companyId = companyRepository.findByEmail(email)
-                .map(Company::getCompanyId)
-                .orElseThrow(() -> new UsernameNotFoundException("업체 관리자 이메일에 해당하는 회사가 없습니다."));
+        // 컨트롤러가 CompanyRepository 를 직접 쓰지 않고 다른 핸들러와 같은 서비스로 로그인 회사를 구한다
+        Integer companyId = resourceAccessService.currentCompanyId(authentication);
+        if (companyId == null) {
+            throw new UsernameNotFoundException("업체 관리자 이메일에 해당하는 회사가 없습니다.");
+        }
 
         // 내 회사 + 특정 숙소로 제한
         Page<RoomDTO> page = roomService.findPageByCompany(companyId, accommodationId, pageable);

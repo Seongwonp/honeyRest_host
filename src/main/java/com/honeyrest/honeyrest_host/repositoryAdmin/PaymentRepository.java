@@ -6,6 +6,7 @@ import com.honeyrest.honeyrest_host.repositoryAdmin.reports.projection.SalesStat
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,6 +17,20 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    /** 예약의 모든 결제 (환불 대상 조회용) */
+    List<Payment> findByReservationReservationIdOrderByPaymentIdAsc(Long reservationId);
+
+    /**
+     * 결제 상태를 조건부로 바꾼다 (예: DONE → CANCELED). 공유 엔티티 Payment 에 setter 가 없어 JPQL 로 바꾼다.
+     * 이미 바뀐 결제면 0 을 돌려주므로 환불의 멱등성 판단에 쓴다.
+     * 영속성 컨텍스트는 비우지 않는다(호출자의 예약 엔티티 변경 유실 방지).
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("update Payment p set p.paymentStatus = :to where p.paymentId = :paymentId and p.paymentStatus = :from")
+    int changeStatusIfCurrent(@Param("paymentId") Long paymentId,
+                              @Param("from") String from,
+                              @Param("to") String to);
+
     // 최신 결제 1건
     Optional<Payment> findTopByReservationReservationIdOrderByCreatedAtDesc(Long reservationId);
 

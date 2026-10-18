@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin;
 
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
+
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,6 +23,8 @@ public class CancellationPolicyServiceImpl implements CancellationPolicyService 
     private final CancellationPolicyRepository cancellationPolicyRepository;
     private final AccommodationRepository accommodationRepository;
     private final ObjectMapper objectMapper;
+    // 환불 규정이 바뀌면 사용자 API 숙소 상세/환불 규정 캐시를 커밋 후 지운다
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
 
 
@@ -63,6 +67,7 @@ public class CancellationPolicyServiceImpl implements CancellationPolicyService 
     @Transactional
     @Override
     public void saveOrUpdate(Long accommodationId, String multiline)  {
+        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
         // 비었으면 삭제
         if (multiline == null || multiline.isBlank()) {
             cancellationPolicyRepository.deleteByAccommodation_AccommodationId(accommodationId);
@@ -97,6 +102,7 @@ public class CancellationPolicyServiceImpl implements CancellationPolicyService 
 
     @Override
     public void deleteIfExists(Long accommodationId) {
+        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
         cancellationPolicyRepository.deleteByAccommodation_AccommodationId(accommodationId);
 
     }

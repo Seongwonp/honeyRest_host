@@ -83,13 +83,11 @@ public class ReservationController {
                     .body(Map.of("ok", false, "message", "접근 권한이 없습니다."));
         }
         try {
-            // 사유 없이 즉시 승인 (서비스 시그니처에 맞춰 호출)
+            // 사유 없이 즉시 승인 (기존 취소 요청 사유 유지). 서비스가 환불까지 처리하고 갱신된 예약을 돌려준다.
             ReservationDTO updated = reservationService.approveCancelRequest(id, null);
-
-            // 상태를 컨펌(예: CONFIRM/CONFIRMED 등)으로 바꾸는 로직은 서비스에 있어야 함
             return ResponseEntity.ok(Map.of(
                     "ok", true,
-                    "status", updated != null ? updated.getStatus() : "CONFIRM"
+                    "status", updated.getStatus()
             ));
         } catch (IllegalStateException e) {
             // 상태 충돌 등 비즈니스 예외

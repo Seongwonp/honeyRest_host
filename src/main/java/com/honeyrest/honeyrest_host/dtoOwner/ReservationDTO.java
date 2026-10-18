@@ -1,5 +1,6 @@
 package com.honeyrest.honeyrest_host.dtoOwner;
 
+import com.honeyrest.domain.entity.ReservationChanges;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ReservationDTO {
+public class ReservationDTO implements ReservationChanges {
     private Long reservationId;
     private Long userId;
     private Long roomId;

@@ -33,6 +33,11 @@ public class RegionServiceImpl implements RegionService {
     }
 
     @Override
+    public List<RegionDTO> listByLevel(Integer level) {
+        return regionRepository.findByLevel(level).stream().map(RegionDTO::of).toList();
+    }
+
+    @Override
     public RegionDTO get(Integer regionId) {
         Region region = regionRepository.findById(regionId)
                 .orElse(null); // 못 찾으면 null 리턴(혹은 예외 던져도 OK)

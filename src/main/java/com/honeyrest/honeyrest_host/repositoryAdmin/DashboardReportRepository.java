@@ -27,13 +27,14 @@ public interface DashboardReportRepository  extends JpaRepository<Reservation, L
                           @Param("from") LocalDate from,
                           @Param("to") LocalDate to);
 
-    /** 기간 매출(결제일 기준, DONE) */
+    /** 기간 매출(결제일 기준, DONE, 취소되지 않은 예약) */
     @Query(value = """
         SELECT COALESCE(SUM(p.amount),0)
         FROM payment p
         JOIN reservation r ON r.reservation_id = p.reservation_id
         WHERE r.accommodation_id IN (:accIds)
           AND p.payment_status = 'DONE'
+          AND r.status <> 'CANCELLED'
           AND p.payment_date >= :from
           AND p.payment_date < DATE_ADD(:to, INTERVAL 1 DAY)
         """, nativeQuery = true)

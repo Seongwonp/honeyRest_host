@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
+import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
+
 
 import com.honeyrest.honeyrest_host.dtoAdmin.accommodation.AccommodationTagDTO;
 import com.honeyrest.domain.entity.Accommodation;
@@ -25,6 +27,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Log4j2
 public class AccommodationTagServiceImpl implements AccommodationTagService {
+
+    // 태그 매핑이 바뀌면 사용자 API 숙소 상세/태그 캐시를 커밋 후 지운다
+    private final SearchCacheInvalidator searchCacheInvalidator;
 
     private final AccommodationTagRepository tagRepo;
     private final AccommodationTagRepository accommodationTagRepository;
@@ -75,6 +80,7 @@ public class AccommodationTagServiceImpl implements AccommodationTagService {
     public void replaceMapping(Long accommodationId, List<Long> tagIds) {
         // 모두 삭제 후 다시 저장
         tagMapRepository.deleteByAccommodation_AccommodationId(accommodationId);
+        searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
 
         if (tagIds == null || tagIds.isEmpty()) return;
 

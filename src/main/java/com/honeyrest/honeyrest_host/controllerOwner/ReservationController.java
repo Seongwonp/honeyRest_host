@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.controllerOwner;
 
+import com.honeyrest.honeyrest_host.type.AccommodationStatus;
+
 import com.honeyrest.honeyrest_host.dtoOwner.*;
 import com.honeyrest.honeyrest_host.serviceOwner.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -261,7 +263,7 @@ public class ReservationController {
     @GetMapping("/accommodation/search")
     @ResponseBody
     public List<AccommodationDTO> searchAccommodations(@RequestParam String keyword) {
-        return accommodationService.searchByNameContaining(keyword).stream().filter(c-> c.getStatus().equalsIgnoreCase("active")).toList();
+        return accommodationService.searchByNameContaining(keyword).stream().filter(c -> AccommodationStatus.isActive(c.getStatus())).toList();
     }
 
 }

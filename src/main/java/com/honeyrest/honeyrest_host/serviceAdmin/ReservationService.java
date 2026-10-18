@@ -49,8 +49,9 @@ public interface ReservationService {
     Page<ReservationDTO> getCompanyReservations(
             Integer companyId, String status, String q, Long accId, Pageable pageable);
 
-    // 예약 상태 전환 로그 , 알림
-    ReservationDTO approveCancelRequest(Long reservationId, String reason); // 서비스에서 db 업데이트.dto 매핑해서 리던 -> json 으로 담기
+    // 예약 상태 전환 (도메인 메서드로만 전이)
+    /** 취소 요청 승인 + 환불. 갱신된 예약(status=CANCELLED)을 돌려준다 (null 을 돌려주지 않는다). */
+    ReservationDTO approveCancelRequest(Long reservationId, String reason);
     void rejectCancelRequest(Long reservationId, String reason);
 
     void markCompleted(Long reservationId);

@@ -1,7 +1,6 @@
 package com.honeyrest.honeyrest_host.controllerOwner.dashboard;
 
 import com.honeyrest.honeyrest_host.dtoOwner.*;
-import com.honeyrest.honeyrest_host.repositoryOwner.OUserRepository;
 import com.honeyrest.honeyrest_host.serviceOwner.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -20,7 +19,7 @@ public class DashboardController {
     private final OCouponService couponService;
     private final OReservationService reservationService;
     private final OReviewService reviewService;
-    private final OUserRepository userRepository;
+    private final OUserService userService;
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
@@ -30,14 +29,14 @@ public class DashboardController {
 
         String email = (authentication.getPrincipal() instanceof String s) ? s : authentication.getName();
 
-        var owner = userRepository.findByEmail(email);
+        UserDTO owner = userService.findByEmail(email);
         if (owner == null) return "redirect:/auth/login";
 
         model.addAttribute("companyCount", companyService.getAllCompanies().size());
         model.addAttribute("accommodationCount", accommodationService.getAllAccommodations().size());
         model.addAttribute("roomCount", roomService.getAllRooms().size());
         model.addAttribute("reservationCount", reservationService.getReservationsByActive().size());
-        model.addAttribute("userCount", userRepository.count());
+        model.addAttribute("userCount", userService.countUsers());
         model.addAttribute("currentAdmin", owner);
 
         return "owner/dashboard/dashboard";

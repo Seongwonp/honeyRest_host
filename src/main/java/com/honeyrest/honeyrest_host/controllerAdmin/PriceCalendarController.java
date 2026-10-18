@@ -144,24 +144,28 @@ public class PriceCalendarController {
                          @RequestParam Integer companyId,
                          @RequestParam(required = false) Long accommodationId,
                          @RequestParam Long roomId,
-                         @RequestParam String yearMonth,
+                         // 과거에는 yearMonth 를 요구했는데 화면 모달은 ym 을 보내 저장이 항상 400 이었다. 다른 핸들러처럼 ym 으로 통일.
+                         @RequestParam String ym,
                          @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
                          @RequestParam(required = false) BigDecimal price,
                          @RequestParam(required = false, defaultValue = "calendar") String mode,
-                         @RequestParam(required = false) Integer available,
                          @RequestParam(required = false) Integer minAvailable,
 
                          RedirectAttributes ra) {
 
         companyId = requireOwnCompanyId(authentication);
 
-        boolean created = priceCalendarService.upsert(roomId, date, price, available);
-        ra.addFlashAttribute("toast", created ? "신규 생성 완료" : "수정 완료");
+        // 재고(available_room)는 받지 않는다: 사용자 API 는 price_calendar.available_room 을 읽지 않고
+        // "총 객실 − 겹치는 점유 예약 수" 로 재고를 계산하므로, 여기서 0 을 넣어도 판매가 멈추지 않았다.
+        // 판매를 막으려면 객실 상태(INACTIVE)나 총 객실 수를 바꾼다. null 은 기존 값을 유지한다.
+        boolean created = priceCalendarService.upsert(roomId, date, price, null);
+        // 관리자 레이아웃(admin/layout/base.html)은 success/msg/error 만 토스트로 보여 준다 (과거 "toast" 키는 표시되지 않았다)
+        ra.addFlashAttribute("success", created ? "신규 생성 완료" : "수정 완료");
 
         // PRG 패턴: 기존 쿼리스트링(회사/숙소/월/필터) 유지 리다이렉트
         StringBuilder redirect = new StringBuilder("redirect:/admin/price/page")
                 .append("?companyId=").append(companyId)
-                .append("&ym=").append(yearMonth.toString())
+                .append("&ym=").append(ym)
                 .append("&mode=").append(mode);
         if (accommodationId != null) redirect.append("&accommodationId=").append(accommodationId);
         if (roomId != null) redirect.append("&roomId=").append(roomId);
@@ -197,7 +201,7 @@ public class PriceCalendarController {
                 throw new AccessDeniedException("일부 객실에 대한 권한이 없습니다.");
             }
             priceCalendarService.bulkUpsert(priceCalendarDTO);
-            ra.addFlashAttribute("toast", "벌크 업서트 완료");
+            ra.addFlashAttribute("success", "벌크 업서트 완료");
         } catch (AccessDeniedException e) {
             throw e;
         } catch (Exception e) {

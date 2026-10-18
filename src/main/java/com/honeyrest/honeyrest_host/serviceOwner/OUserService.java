@@ -45,6 +45,16 @@ public class OUserService {
         return responseDTO;
     }
 
+    /** 이메일로 회원 조회 (없으면 null) */
+    public UserDTO findByEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        return user == null ? null : modelMapper.map(user, UserDTO.class);
+    }
+
+    public long countUsers() {
+        return userRepository.count();
+    }
+
     public UserDTO getUserByNameAndPhone(String name, String phone) {
         return modelMapper.map(userRepository.findByNameAndPhone(name, phone), UserDTO.class);
     }

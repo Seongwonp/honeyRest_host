@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
+import com.honeyrest.honeyrest_host.type.AccommodationStatus;
+
 import java.util.Locale;
 import java.util.Set;
 
@@ -21,10 +23,10 @@ import java.util.Set;
 public final class AccommodationStatusPolicy {
 
     /** 회사 관리자가 직접 선택할 수 있는 상태 */
-    public static final Set<String> COMPANY_ADMIN_SELECTABLE = Set.of("PENDING", "INACTIVE");
+    public static final Set<String> COMPANY_ADMIN_SELECTABLE = Set.of(AccommodationStatus.PENDING, AccommodationStatus.INACTIVE);
 
     /** 회사 관리자가 신규 등록할 때 강제되는 상태 */
-    public static final String INITIAL_STATUS = "PENDING";
+    public static final String INITIAL_STATUS = AccommodationStatus.PENDING;
 
     private AccommodationStatusPolicy() {
     }

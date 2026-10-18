@@ -1,5 +1,7 @@
 package com.honeyrest.honeyrest_host.serviceAdmin.accommodation;
 
+import com.honeyrest.honeyrest_host.type.AccommodationStatus;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.honeyrest.honeyrest_host.cache.SearchCacheInvalidator;
@@ -40,7 +42,8 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final SearchCacheInvalidator searchCacheInvalidator;
 
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    // Spring 이 관리하는 ObjectMapper(JacksonConfig, 모듈 등록됨)를 주입받는다
+    private final ObjectMapper objectMapper;
     private final CancellationPolicyService cancellationPolicyService;
     private final AccommodationTagService accommodationTagService;
     private final RoomRepository roomRepository;
@@ -408,6 +411,8 @@ public class AccommodationServiceImpl implements AccommodationService {
                 checkInTime, checkOutTime, status, minPrice
         );
         if (affected == 0) throw new IllegalArgumentException("대상 없음: " + id);
+        // 이름·주소·설명·편의시설 등 상세 화면 값이 바뀌므로 사용자 API 숙소 상세 캐시를 커밋 후 지운다
+        searchCacheInvalidator.evictAccommodationAfterCommit(id);
 
         boolean statusChanged = status != null && !status.equals(oldStatus);
         boolean minPriceChanged = minPrice != null
@@ -444,6 +449,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         // 마지막에 숙소 삭제
         accommodationRepository.delete(acc);
         searchCacheInvalidator.bumpAfterCommit();
+        searchCacheInvalidator.evictAccommodationAfterCommit(id);
     }
 
     @Override
@@ -456,7 +462,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         // 이 메서드는 회사 관리자가 승인 요청(PENDING 제출)에만 쓴다. 과거에는 호출자가 임의의
         // status(예: APPROVED)를 넘겨 총관리자 승인 없이 자가 승인이 가능했다(P1-1).
         // 실제 승인/거절은 OAccommodationService.approve/reject(SUPER_ADMIN 전용)로 분리했다.
-        if (!"PENDING".equals(status)) {
+        if (!AccommodationStatus.PENDING.equals(status)) {
             throw new IllegalArgumentException("회사 관리자는 승인 요청(PENDING) 상태로만 전환할 수 있습니다.");
         }
         int affected = accommodationRepository.patchUpdateScalars(
@@ -464,6 +470,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         if (affected == 0) throw new EntityNotFoundException("숙소가 존재하지 않습니다. id=" + id);
         // 노출 중(ACTIVE)이던 숙소가 PENDING 으로 내려가면 검색에서 빠져야 한다
         searchCacheInvalidator.bumpAfterCommit();
+        searchCacheInvalidator.evictAccommodationAfterCommit(id);
     }
 
     public long count() {
