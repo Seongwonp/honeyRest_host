@@ -402,7 +402,7 @@
         const replyModal = document.getElementById('replyModal');
         replyModal.addEventListener('show.bs.modal', function (event) {
             const btn = event.relatedTarget;
-            // '보기' 모달의 '답변 작성'으로 열면 relatedTarget 이 없다 (그쪽에서 폼을 채운다). 과거엔 여기서 TypeError.
+            // '보기' 모달에서 열면 relatedTarget 이 없다 (그쪽에서 폼을 채운다)
             if (!btn) return;
             const id = btn.getAttribute('data-id');
             const title = btn.getAttribute('data-title') || '';

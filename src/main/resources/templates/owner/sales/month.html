@@ -114,7 +114,7 @@
                 </tbody>
                 <tfoot th:if="${monthSales != null and !#lists.isEmpty(monthSales)}">
                 <tr class="fw-bold">
-                    <!-- 합계: 과거에는 존재하지 않는 모델 값(quantity, monthPrice)을 찍어 빈칸이었다 -->
+                    <!-- 합계 -->
                     <td>합계</td>
                     <td th:text="${#aggregates.sum(monthSales.![quantity])}">0</td>
                     <td th:text="${#numbers.formatInteger(#aggregates.sum(monthSales.![monthPrice]), 1, 'COMMA')}">0</td>

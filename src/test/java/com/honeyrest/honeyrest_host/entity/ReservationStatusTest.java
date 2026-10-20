@@ -9,9 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 호스트가 기대하는 예약 상태 값을 고정한다.
- * ReservationStatus 는 이제 공유 도메인 모듈(com.honeyrest.domain.type)의 단일 클래스라 두 앱 사이 불일치는 생길 수 없지만,
- * 서브모듈을 재고정(re-pin)했을 때 호스트 화면/쿼리가 가정하는 값이 바뀌었는지 여기서 드러나게 한다.
+ * 호스트가 기대하는 예약 상태 값을 고정한다. 서브모듈을 갱신했을 때 값이 바뀌면 여기서 드러난다.
  */
 class ReservationStatusTest {
 

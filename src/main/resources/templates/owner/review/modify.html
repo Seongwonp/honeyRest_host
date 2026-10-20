@@ -7,11 +7,7 @@
     <title>리뷰 답글</title>
 </head>
 <body>
-<!--
-  총관리자 리뷰 답글·노출 관리.
-  과거 폼은 리뷰 작성자의 평점·본문·예약 ID·작성자 ID 까지 고치게 돼 있었고, 존재하지 않는 /owner/review/modify 로 제출됐다.
-  리뷰 본문은 작성자 소유이므로 읽기 전용으로 보여 주고, 답글과 노출 상태만 저장한다.
--->
+<!-- 총관리자 리뷰 답글·노출 관리. 본문은 작성자 소유라 읽기 전용 -->
 <th:block layout:fragment="content">
     <div class="toolbar">
         <div class="d-flex align-items-center gap-2">

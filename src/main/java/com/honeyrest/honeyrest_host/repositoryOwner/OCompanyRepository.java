@@ -12,7 +12,7 @@ import org.springframework.data.repository.query.Param;
 public interface OCompanyRepository extends JpaRepository<Company,Integer> {
     List<Company> findByName(String keyword);
 
-    /** 활성 업체 페이지 (과거 소문자 "active" 포함) */
+    /** 활성 업체 페이지 (소문자 "active" 포함) */
     @Query(value = "select c from Company c where upper(c.status) = 'ACTIVE'"
             + " and (:kw is null or c.name like concat('%', :kw, '%') or c.ownerName like concat('%', :kw, '%'))",
             countQuery = "select count(c) from Company c where upper(c.status) = 'ACTIVE'"

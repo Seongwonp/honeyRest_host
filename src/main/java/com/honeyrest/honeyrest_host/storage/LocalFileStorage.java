@@ -21,7 +21,6 @@ import java.util.UUID;
  * <p>
  * {@code app.storage.local.dir} (기본 ./uploads) 아래에 파일을 저장하고,
  * {@code /uploads/{dir}/{파일명}} 형태의 URL을 반환한다. 정적 서빙은 WebMvcConfig 의 리소스 핸들러가 담당한다.
- * Firebase 키 파일 없이도 애플리케이션을 띄울 수 있도록 하기 위한 구현이다.
  */
 @Log4j2
 @Component
@@ -63,8 +62,7 @@ public class LocalFileStorage implements FileStorage {
         if (key == null) {
             return;
         }
-        // 시드 데이터가 여러 숙소·객실에서 함께 쓰는 공용 자리표시 이미지(uploads/placeholder)는 지우지 않는다.
-        // 한 객실의 이미지를 교체·삭제하면 다른 모든 숙소의 이미지가 깨지던 문제
+        // 시드 데이터가 공유하는 자리표시 이미지(uploads/placeholder)는 지우지 않는다
         if (key.startsWith("placeholder/")) {
             return;
         }

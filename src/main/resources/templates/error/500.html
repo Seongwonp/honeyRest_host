@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${(errorCode ?: 500) + ' - ' + (errorTitle ?: '서버 오류') + ' | HoneyRest'}">500 - 서버 오류 | HoneyRest</title>
-    <!-- 로컬 번들(Mazer app.css 에 Bootstrap 5 포함). CDN 이 막힌 환경에서도 오류 화면이 깨지지 않게 한다 -->
+    <!-- 로컬 번들(Bootstrap 5 포함). CDN 없이도 오류 화면이 깨지지 않게 한다 -->
     <link rel="stylesheet" th:href="@{/assets/compiled/css/app.css}">
     <style>
         body { background: #F5F7FA; font-family: 'Noto Sans KR', sans-serif; }
@@ -19,7 +19,7 @@
 <div class="min-vh-100 d-flex align-items-center justify-content-center text-center p-4">
     <div>
         <div style="font-size:4rem;">🍯</div>
-        <!-- 400(잘못된 요청)·409(재고 충돌)도 이 화면을 쓰므로 코드·제목을 모델에서 받는다 (항상 500 으로 보였다) -->
+        <!-- 400·409 도 이 화면을 쓰므로 코드·제목을 모델에서 받는다 -->
         <div class="error-code" th:text="${errorCode ?: 500}">500</div>
         <div class="error-title mt-2" th:text="${errorTitle ?: '서버 오류가 발생했습니다'}">서버 오류가 발생했습니다</div>
         <p class="error-desc mt-2 mb-4" th:text="${message} ?: '잠시 후 다시 시도해 주세요.'">잠시 후 다시 시도해 주세요.</p>

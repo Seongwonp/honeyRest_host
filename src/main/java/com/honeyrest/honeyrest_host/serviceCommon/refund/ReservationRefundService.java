@@ -22,20 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 예약 취소에 따른 환불 처리. 과거에는 호스트 취소/취소 승인이 예약 상태만 CANCELLED 로 바꾸고
- * 결제·포인트·쿠폰은 그대로 두어, 고객은 돈도 포인트도 쿠폰도 돌려받지 못했다.
- * <ol>
- *   <li>결제: DONE 인 결제를 CANCELED 로 바꾸고(조건부 UPDATE) 토스 결제 취소를 호출한다.</li>
- *   <li>포인트: 이 예약에 쓴 포인트(point_history USE, related_id=예약 ID) 중 아직 환불하지 않은 만큼을
- *       잔액에 더하고 REFUND 이력을 남긴다.</li>
- *   <li>쿠폰: coupon_usage 로 쓰인 회원 쿠폰을 ISSUED 로 되돌리고 사용 내역을 지운다.</li>
- * </ol>
- * <b>멱등</b>: 두 번째 호출은 바꿀 것이 없어 아무것도 하지 않는다(결제는 이미 CANCELED, 포인트는 USE 합 = REFUND 합,
- * 쿠폰 사용 내역 없음). 같은 예약의 동시 취소는 호출자가 예약 행을 잠가(findByIdForUpdate) 직렬화한다.
- * <p>
- * 반드시 예약 상태 변경과 같은 트랜잭션에서 호출한다(MANDATORY). 토스 호출은 DB 변경을 모두 준비한 뒤 마지막에 하며,
- * 실패하면 {@link RefundFailedException} 으로 트랜잭션 전체(예약 상태 포함)가 롤백된다.
- * 공유 엔티티 Payment/UserCoupon 에 상태 변경 메서드가 없어 해당 두 상태는 조건부 JPQL UPDATE 로 바꾼다.
+ * 예약 취소에 따른 환불(결제 취소, 사용 포인트 환불, 쿠폰 복원).
+ * 멱등하다: 두 번째 호출은 바꿀 것이 없다. 동시 취소는 호출자가 예약 행을 잠가 직렬화한다.
+ * 예약 상태 변경과 같은 트랜잭션(MANDATORY)에서 호출하며, 토스 취소는 마지막에 해서 실패하면 전체가 롤백된다.
  */
 @Log4j2
 @Service

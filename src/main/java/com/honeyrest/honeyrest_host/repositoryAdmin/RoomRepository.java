@@ -27,9 +27,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     /**
      * 예약 생성/점유 상태 전환 시 객실 행을 잠근다 (SELECT ... FOR UPDATE).
-     * 사용자 저장소 RoomRepository.findByIdForUpdate 와 같은 용도.
-     * 재고는 total_rooms 를 차감하지 않고 겹치는 점유 예약 수로 계산한다
-     * (과거 decreaseStock/increaseStock 는 total_rooms 자체를 바꿔 객실 수를 오염시켜 제거했다).
+     * 재고는 total_rooms 를 차감하지 않고 겹치는 점유 예약 수로 계산한다.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Room r where r.roomId = :roomId")

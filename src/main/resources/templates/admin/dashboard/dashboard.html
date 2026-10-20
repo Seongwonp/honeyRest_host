@@ -346,8 +346,7 @@
             }
 
             // ===== 일/월 데이터 그리기 =====
-            // 기간의 모든 날짜를 라벨로 쓰고 매출이 없는 날은 0 으로 채운다.
-            // (과거: 매출 있는 날만 그려 기본값 "오늘"이면 점 하나/빈 차트였다)
+            // 기간의 모든 날짜를 라벨로 쓰고 매출이 없는 날은 0 으로 채운다
             function drawDailyByRange(fromStr, toStr){
                 const from = parseIso(fromStr);
                 const to   = parseIso(toStr);
@@ -397,7 +396,7 @@
                 renderOpsKpis();
                 renderUpcoming();
 
-                // 초기: 일별 최근 30일 (오늘 하루만 보여 주면 대부분 빈 차트였다)
+                // 초기: 일별 최근 30일
                 setRange(30);
                 drawDailyByRange(elFrom.value, elTo.value);
 

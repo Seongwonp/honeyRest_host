@@ -47,7 +47,7 @@
                                         <td th:text="${c.name}"></td>
                                         <td th:text="${c.code ?: '-'}"></td>
                                         <td>
-                                        <!-- 정률 별칭(RATE/PERCENT/PERCENTAGE) 모두 % 로 표시 (PERCENTAGE 쿠폰이 "10.00원"으로 보였다) -->
+                                        <!-- 정률 별칭(RATE/PERCENT/PERCENTAGE) 모두 % 로 표시 -->
                                         <span th:text="${c.discountType == 'PERCENT' or c.discountType == 'PERCENTAGE' or c.discountType == 'RATE'
                                                        ? #numbers.formatDecimal(c.discountValue, 1, 0) + '%'
                                                        : #numbers.formatDecimal(c.discountValue, 1, 'COMMA', 0, 'POINT') + '원'}"></span>

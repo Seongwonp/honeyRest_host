@@ -39,10 +39,7 @@ public class OCouponService {
         couponRepository.saveAndFlush(modelMapper.map(dto, Coupon.class));
     }
 
-    /**
-     * 과거 등록 화면은 대상 유형으로 COMPANY/ROOM 을 기본 제공했는데, 사용자 API 는 ALL/ACCOMMODATION 쿠폰만
-     * 예약에 적용해 그렇게 만든 쿠폰은 쓸 수 없었다. 기간·할인값도 검증 없이 저장됐다.
-     */
+    /** 대상 유형(사용자 API 가 적용하는 ALL/ACCOMMODATION만)·기간·할인값을 검증한다. */
     void validate(CouponDTO dto) {
         if (dto.getTargetType() == null || !TARGET_TYPES.contains(dto.getTargetType())) {
             throw new IllegalArgumentException("적용 대상은 전체(ALL) 또는 특정 숙소(ACCOMMODATION)만 가능합니다.");

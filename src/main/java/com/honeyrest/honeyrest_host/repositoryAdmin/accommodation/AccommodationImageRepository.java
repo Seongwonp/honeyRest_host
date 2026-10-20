@@ -34,7 +34,7 @@ public interface AccommodationImageRepository extends JpaRepository<Accommodatio
 
     void deleteByAccommodation_AccommodationIdAndImageType(Long accommodationId, String imageType);
 
-    // 이미지가 실제로 이 숙소 소속일 때만 삭제(다른 숙소의 imageId를 섞어 보내는 것을 방지, P1-4)
+    // 이 숙소 소속 이미지만 삭제 (타 숙소 imageId 섞기 방지)
     void deleteByAccommodation_AccommodationIdAndImageIdIn(Long accommodationId, List<Long> imageIds);
 
 }

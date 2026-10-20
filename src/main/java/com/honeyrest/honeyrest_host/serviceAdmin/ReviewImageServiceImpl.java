@@ -71,7 +71,7 @@ public class ReviewImageServiceImpl implements ReviewImageService {
             if (f == null || f.isEmpty()) continue;
 
             try {
-                String url = fileStorage.upload(f, FOLDER); // ★ 파일 저장소 업로드 → 공개 URL
+                String url = fileStorage.upload(f, FOLDER);
                 ReviewImage saved = reviewImageRepository.save(
                         ReviewImage.builder()
                                 .review(review)
@@ -105,7 +105,7 @@ public class ReviewImageServiceImpl implements ReviewImageService {
         ReviewImage img = reviewImageRepository.findById(imageId)
                 .orElseThrow(() -> new IllegalArgumentException("이미지 없음: " + imageId));
         try {
-            fileStorage.delete(FOLDER, img.getImageUrl()); // ★ 파일 저장소에서 파일 삭제
+            fileStorage.delete(FOLDER, img.getImageUrl());
         } catch (Exception ignore) {
             // 파일이 이미 없을 수도 있으니, DB 삭제는 계속 진행
         }

@@ -9,10 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * 매출 차트 집계 단위. 과거에는 SalesChartServiceImpl 이 문자열 switch 를 두 번(정규화·조회) 쓰고
- * 날짜 변환 코드도 daily/weekly 에 복사해 두었다. 단위별 조회와 행 변환을 enum 상수에 모았다.
- * <p>
- * 각 조회의 행 형식은 {@link SalesStatRepository} 주석 참고.
+ * 매출 차트 집계 단위별 조회와 행 변환. 행 형식은 {@link SalesStatRepository} 참고.
  */
 public enum ChartMode {
 
@@ -83,7 +80,7 @@ public enum ChartMode {
 
     /**
      * 화면/요청의 모드 문자열("daily", "일별" 등, 대소문자·공백 무시)을 해석한다.
-     * 모르는 값·null 이면 기존 동작과 같이 {@link #DAILY}.
+     * 모르는 값·null 이면 {@link #DAILY}.
      */
     public static ChartMode parse(String mode) {
         if (mode == null) return DAILY;

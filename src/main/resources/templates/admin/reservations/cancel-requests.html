@@ -352,8 +352,7 @@
             const id = btn.getAttribute('data-id');
             if (!id) return;
 
-            // CSRF: 과거에는 '#reasonModal input[name]' 이 사유 textarea(name=reason)를 잡아
-            // 헤더 이름이 "reason" 으로 나가 토큰이 빠졌다 → 승인이 항상 403. 서버가 알려 준 헤더 이름/토큰을 쓴다.
+            // CSRF: 서버가 meta 로 알려 준 헤더 이름/토큰을 쓴다
             const csrfHeaderName = document.querySelector('meta[name="_csrf_header"]')?.content;
             const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
 
@@ -390,7 +389,7 @@
             }
         });
 
-        // 거부 모달: 열 때 대상 예약으로 폼 action 을 정한다 (과거에는 action 이 없어 현재 목록 주소로 POST → 405)
+        // 거부 모달: 열 때 대상 예약으로 폼 action 을 정한다
         const reasonModal = document.getElementById('reasonModal');
         reasonModal.addEventListener('show.bs.modal', function (event) {
             const btn = event.relatedTarget;

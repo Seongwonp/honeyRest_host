@@ -36,9 +36,7 @@ public class OCompanyService {
     private final OAccommodationRepository accommodationRepository;
 
     /**
-     * company.bank_info 는 JSON 객체 {"bank","account","holder"} 로 저장된다(사용자 API·시드와 같은 형식).
-     * 과거 코드는 JSON 배열(List&lt;String&gt;)로 읽으려다 매번 파싱 실패 경고를 남기고 빈 값을 보여 줬고,
-     * 저장할 때는 JSON 이 아닌 "a, b, c" 문자열을 JSON 컬럼에 넣었다.
+     * company.bank_info 는 JSON 객체 {"bank","account","holder"} 로 저장된다(사용자 API 와 같은 형식).
      * 화면에서는 "은행, 계좌번호, 예금주" 한 줄로 보여 주고 같은 형식으로 입력받는다.
      */
     String bankInfoToText(String json) {
@@ -58,7 +56,7 @@ public class OCompanyService {
             }
             return node.asText();
         } catch (JsonProcessingException e) {
-            // JSON 이 아닌 과거 값은 그대로 보여 준다
+            // JSON 이 아닌 값은 그대로 보여 준다
             return json;
         }
     }
@@ -170,7 +168,7 @@ public class OCompanyService {
 
         Pageable pageable = PageRequest.of(requestDTO.getPage() - 1, requestDTO.getSize(), Sort.by("companyId").descending());
 
-        // 상태 조건을 쿼리에 넣는다. 페이지를 읽은 뒤 메모리에서 거르면 "총 N개"와 페이지 수가 실제 행과 어긋났다.
+        // 총 건수가 맞도록 상태 조건을 쿼리에 넣는다
         Page<Company> page = companyRepository.findActive(kw, pageable);
 
         List<CompanyDTO> dtoList = page.getContent().stream()

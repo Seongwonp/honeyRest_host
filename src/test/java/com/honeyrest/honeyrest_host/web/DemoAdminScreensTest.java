@@ -39,11 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 데모(QA) 회귀 테스트: demo 프로필(H2 + 시드)에서 관리자 화면이 실제로 렌더링되고 주요 액션이 동작하는지 확인한다.
- * <p>
- * 라이브 데모 QA 에서 발견한 버그들 —
- * 템플릿이 없는 DTO 필드를 참조해 500, "/owner/..." 로 시작하는 뷰 이름(실행 jar 에서 템플릿을 못 찾음),
- * 존재하지 않는 POST 경로, page=0 링크 400, 쿠폰 활성 체크 미바인딩, H2 JSON 컬럼 이중 인코딩 등 — 의 재발을 막는다.
+ * demo 프로필(H2 + 시드)에서 관리자 화면이 렌더링되고 주요 액션이 동작하는지 확인한다.
  */
 @SpringBootTest(properties = {
         "DEMO_COMPANY_PASSWORD=Demo1234!",

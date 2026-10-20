@@ -4,7 +4,7 @@ import java.util.Locale;
 
 /**
  * 업체 상태 문자열 상수 (company.status VARCHAR).
- * 공유 도메인 모듈에 없어 호스트에 둔다. 과거 데이터에 소문자 "active" 가 있어 비교는 대소문자를 무시한다.
+ * 소문자 데이터가 섞여 있어 비교는 대소문자를 무시한다.
  */
 public final class CompanyStatus {
 

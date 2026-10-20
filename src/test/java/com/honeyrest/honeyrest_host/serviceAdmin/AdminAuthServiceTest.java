@@ -17,7 +17,6 @@ import static org.mockito.Mockito.when;
 
 /**
  * 관리자 로그인 실패 응답: 없는 이메일과 틀린 비밀번호가 같은 IllegalArgumentException(→ 400)이어야 한다.
- * (과거에는 없는 이메일이면 NPE → 500 이라 계정 존재 여부가 드러났다)
  */
 @ExtendWith(MockitoExtension.class)
 class AdminAuthServiceTest {

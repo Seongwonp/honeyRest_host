@@ -43,7 +43,7 @@ public class OReservationService {
     private final ReservationInventoryGuard inventoryGuard;
     // 기존 예약 수정 공통 규칙 (관리자 화면과 공유)
     private final ReservationModificationService modificationService;
-    // 예약 점유가 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    // 예약 점유가 바뀌면 사용자 API 검색 캐시를 커밋 후 무효화
     private final SearchCacheInvalidator searchCacheInvalidator;
 
 
@@ -142,7 +142,7 @@ public class OReservationService {
         }
         String status = ReservationStatus.normalize(dto.getStatus(), ReservationStatus.PENDING);
         dto.setStatus(status);
-        // 객실 락이 이 트랜잭션의 첫 문장이다 (toEntity 의 getReferenceById 는 SELECT 를 하지 않는다)
+        // 객실 락이 트랜잭션의 첫 쿼리여야 한다 (getReferenceById 는 SELECT 를 하지 않는다)
         if (ReservationStatus.isOccupying(status)) {
             inventoryGuard.lockRoomAndAssertAvailable(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), null);
         }
@@ -153,12 +153,8 @@ public class OReservationService {
     }
 
     /**
-     * 예약 수정. 기존 엔티티를 잠금 읽기로 가져와 필드는 도메인 update, 상태는 도메인 changeStatus(전이 표 검사)로 바꾼다.
-     * 과거에는 폼 값으로 엔티티를 새로 만들어 save(덮어쓰기)해 상태 전이 표와 체크인 &lt; 체크아웃 검증을 우회했다.
-     * 비점유 → 점유 전환이거나 점유 중 객실/기간이 바뀌면 등록과 같은 재고 검사를 하고(자기 자신 제외),
-     * 취소로 바뀌면 환불한다. 규칙은 관리자 화면과 같은 {@link ReservationModificationService} 를 쓴다.
-     * <p>
-     * 예약번호·원가·할인액·객실명은 예약 시점 스냅샷이라 이 화면에서 바꾸지 않는다(도메인 update 가 받지 않는 값).
+     * 예약 수정. 잠금 읽기한 엔티티를 도메인 메서드로 바꾸고, 재고 검사·환불은 {@link ReservationModificationService} 규칙을 따른다.
+     * 예약번호·원가·할인액·객실명은 예약 시점 스냅샷이라 바꾸지 않는다.
      */
     public void modifyReservation(ReservationDTO dto) {
         Reservation existing = reservationRepository.findByIdForUpdate(dto.getReservationId())
@@ -259,10 +255,7 @@ public class OReservationService {
         return (id != null && id > 0) ? id : null;
     }
 
-    /**
-     * 목록과 totalCount 가 같은 상태 조건을 쓰도록 필터링은 리포지토리 쿼리(페이지 + count)에서 한다.
-     * (이전에는 페이지를 가져온 뒤 메모리에서 걸러 total 이 취소 건까지 세는 문제가 있었다.)
-     */
+    /** 목록과 totalCount 가 같은 조건을 쓰도록 필터링은 리포지토리 쿼리에서 한다. */
     private PageResponseDTO<ReservationDTO> toPageResponse(Page<Reservation> page, PageRequestDTO pageRequestDTO) {
         List<ReservationDTO> list = page.getContent().stream()
                 .map(this::toDTO)

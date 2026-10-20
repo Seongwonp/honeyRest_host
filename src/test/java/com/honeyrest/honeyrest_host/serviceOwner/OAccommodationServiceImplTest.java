@@ -22,9 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * P1-1/P1-2 회귀 테스트: 숙소 승인/거절은 PENDING 상태에서만 가능해야 한다.
- * (회사 관리자의 자가 승인 차단은 changeStatus 쪽에서 별도로 막혀 있고, 여기는
- * SUPER_ADMIN 전용 승인/거절 자체의 상태 전이 가드를 검증한다.)
+ * 숙소 승인/거절(SUPER_ADMIN)은 PENDING 상태에서만 가능해야 한다.
  */
 @ExtendWith(MockitoExtension.class)
 class OAccommodationServiceImplTest {

@@ -675,7 +675,7 @@ header.mb-3 {
   margin-bottom: 2rem;
 }
 
-/* ===== 좁은 화면 보정 (QA: 390px 에서 툴바 버튼·페이지네이션이 화면 밖으로 넘쳤다) ===== */
+/* ===== 좁은 화면 보정 (툴바 버튼·페이지네이션) ===== */
 @media (max-width: 576px) {
     .toolbar { flex-wrap: wrap; }
     .toolbar > * { max-width: 100%; }

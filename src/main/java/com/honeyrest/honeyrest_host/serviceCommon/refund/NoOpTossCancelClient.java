@@ -3,8 +3,7 @@ package com.honeyrest.honeyrest_host.serviceCommon.refund;
 import lombok.extern.log4j.Log4j2;
 
 /**
- * 토스 시크릿 키가 없거나(로컬·test) screenshot 프로필일 때 쓰는 구현.
- * 외부 호출 없이 성공으로 처리하고, 운영에서 키 누락을 알아챌 수 있게 경고 로그를 남긴다(수동 환불 필요).
+ * 토스 키가 없을 때 쓰는 구현. 외부 호출 없이 성공 처리하고 경고 로그를 남긴다(수동 환불 필요).
  */
 @Log4j2
 public class NoOpTossCancelClient implements TossCancelClient {

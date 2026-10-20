@@ -35,7 +35,7 @@ public class PageResponseDTO<E> {
 
         this.pageNumList = IntStream.range(start, end + 1).boxed().collect(Collectors.toList());
 
-        // 비활성 버튼의 링크도 유효한 페이지를 가리키게 한다 (0 이면 page=0 요청이 400 이 됐다)
+        // 비활성 버튼의 링크도 유효한 페이지를 가리키게 한다
         this.prevPage = prev ? start - 1 : 1;
         this.nextPage = next ? end + 1 : Math.max(end, 1);
 
@@ -44,10 +44,7 @@ public class PageResponseDTO<E> {
         this.current = pageRequestDTO.getPage();
     }
 
-    /**
-     * 오너 목록 템플릿(accommodation/company/user/room/review list 등)은 {@code ${...total}} 로 전체 건수를 읽는다.
-     * 필드명은 totalCount 라서 getter 가 없으면 SpEL 평가 오류로 목록 화면이 500 이 되던 문제를 막는다.
-     */
+    /** 템플릿이 {@code ${...total}} 로 전체 건수를 읽는다 */
     public int getTotal() {
         return totalCount;
     }

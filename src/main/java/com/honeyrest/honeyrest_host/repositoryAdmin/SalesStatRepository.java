@@ -11,9 +11,7 @@ import java.util.List;
 
 /**
  * 결제 기준 매출 집계 (관리자 매출 차트·대시보드).
- * 공통 조건: 결제 승인 완료(payment_status='DONE') + 예약이 취소(CANCELLED)되지 않음.
- * 취소 시 환불 처리(ReservationRefundService)가 결제를 CANCELED 로 바꾸지만, 과거 데이터처럼 예약만 취소되고
- * 결제가 DONE 으로 남은 경우도 매출에서 빠지도록 예약 상태도 함께 거른다.
+ * 공통 조건: payment_status='DONE' + 예약이 CANCELLED 아님 (결제가 DONE 으로 남은 취소 예약도 제외).
  */
 public interface SalesStatRepository extends JpaRepository<Payment, Long> {
 

@@ -57,7 +57,6 @@ public class AccommodationController {
     private final CompanyResourceAccessService resourceAccessService;
     private final AccommodationTagService accommodationTagService;
     private final CancellationPolicyService cancellationPolicyService;
-    // 등록/수정 처리 흐름(업로드 보상 포함 단일 트랜잭션)
     private final AccommodationRegistrationService registrationService;
     private final AccommodationCategoryService accommodationCategoryService;
     private final RegionService regionService;
@@ -93,7 +92,7 @@ public class AccommodationController {
         Integer companyId = resourceAccessService.currentCompanyId(authentication);
         if (companyId == null) return "redirect:/auth/login";
         form.setCompanyId(companyId);
-        // 신규 등록은 항상 승인 대기(PENDING)로 시작한다 (등록 서비스·숙소 서비스에서도 강제).
+        // 신규 등록은 항상 승인 대기(PENDING)
         form.setStatus(AccommodationStatusPolicy.INITIAL_STATUS);
         if (binding.hasErrors()) {
             binding.getAllErrors().forEach(err -> log.warn("bind err: {}", err));
@@ -103,7 +102,7 @@ public class AccommodationController {
         }
 
         try {
-            // 업로드 → 저장 → 환불 규정 → 이미지까지 한 트랜잭션 (실패 시 이번 요청에서 올린 파일 삭제)
+            // 한 트랜잭션으로 처리, 실패 시 이번 요청에서 올린 파일 삭제
             registrationService.register(companyId, form, subImages);
             ra.addFlashAttribute("success", "숙소 등록이 요청되었습니다.");
             return "redirect:/admin/accommodations/list?status=PENDING";
@@ -127,7 +126,7 @@ public class AccommodationController {
             @RequestParam(required = false) String q,
             Model model
     ) {
-        // 이전 버튼(page=-1)·조작된 size 로 PageRequest 가 IllegalArgumentException(400)을 내던 문제
+        // 음수 page·비정상 size 보정
         page = Math.max(page, 0);
         size = size <= 0 ? 12 : Math.min(size, 100);
         // 1) 로그인 체크
@@ -162,7 +161,7 @@ public class AccommodationController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "accommodationId"));
         Page<AccommodationListDTO> result;
         if (q != null && !q.isBlank()) {
-            // 검색창(q)이 화면에만 있고 서버에서 무시되던 문제. 업체 숙소 수가 적어 메모리에서 거른 뒤 잘라 준다.
+            // 업체별 숙소 수가 적어 메모리에서 필터링 후 페이징
             String kw = q.trim().toLowerCase(java.util.Locale.ROOT);
             List<AccommodationListDTO> matched = accommodationService
                     .findByCompanyId(companyDTO.getCompanyId(), PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, "accommodationId")))
@@ -307,8 +306,7 @@ public class AccommodationController {
 
     /*
      *  총관리자에게 승인요청 (DRAFT/REJECTED → PENDING)
-     *  과거에는 클라이언트가 to=APPROVED를 보내 총관리자 승인 없이 자가 승인이 가능했다(P1-1).
-     *  회사 관리자는 PENDING 제출만 할 수 있고, 실제 승인/거절은 SUPER_ADMIN 전용 흐름에서만 이뤄진다.
+     *  회사 관리자는 PENDING 제출만 가능하고 승인/거절은 SUPER_ADMIN 만 한다.
      */
     @PostMapping("/{id}/request")
     @PreAuthorize("@companyAccess.ownsAccommodation(#id, authentication)")
@@ -421,8 +419,7 @@ public class AccommodationController {
                              RedirectAttributes ra,
                              Model model) {
 
-        // 소유권은 @PreAuthorize 로 확인했다. 폼의 companyId 는 신뢰하지 않는다(서비스에서도 비운다)
-        // (값을 넣어 보내면 AccommodationService.update 가 숙소를 다른 회사로 옮길 수 있었다).
+        // 폼의 companyId 는 신뢰하지 않는다(다른 회사로 옮기는 것 방지)
         form.setCompanyId(null);
 
         if (binding.hasErrors()) {
@@ -437,7 +434,7 @@ public class AccommodationController {
             return "admin/accommodations/edit";
         }
         try {
-            // 상태 검증 → 썸네일/이미지 → 필드 → 태그/환불 규정까지 한 트랜잭션 (실패 시 이번 요청에서 올린 파일 삭제)
+            // 한 트랜잭션으로 처리, 실패 시 이번 요청에서 올린 파일 삭제
             registrationService.edit(id, form, thumbnailFile, subImages, deleteThumbnail, deleteSubImageIds);
             ra.addFlashAttribute("success", "수정이 완료되었습니다.");
             return "redirect:/admin/accommodations/detail/{id}";
@@ -459,7 +456,6 @@ public class AccommodationController {
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         try {
             accommodationService.delete(id);
-            // addAttribute 는 쿼리스트링으로 붙어 결과 토스트가 뜨지 않았다 → flash
             ra.addFlashAttribute("success", "숙소가 삭제되었습니다.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", "삭제 중 오류: " + e.getMessage());

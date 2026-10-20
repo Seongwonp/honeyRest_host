@@ -24,8 +24,7 @@ public class NotificationInterceptor implements HandlerInterceptor {
                            Object handler, ModelAndView mav) {
 
         if (mav == null || !mav.hasView()) return;
-        // 리다이렉트 응답에는 알림 배지 값을 싣지 않는다. 모델 값이 쿼리스트링으로 붙어
-        // /admin/price/page?companyId=..&ym=..&_notifyCancelCount=0 처럼 URL 이 오염됐다.
+        // 리다이렉트에는 넣지 않는다 (모델 값이 쿼리스트링으로 붙는다)
         if (isRedirect(mav)) return;
         // Ajax/API 요청 제외
         String accept = request.getHeader("Accept");

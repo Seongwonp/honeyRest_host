@@ -55,8 +55,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String roleStr = (String) claims.get("role");
                 String typ = (String) claims.get("typ");
 
-                // refresh token은 typ 검증 없이도 access token과 동일하게 인증에 통용됐다(P1-7).
-                // refresh token은 14일짜리라, 유출 시 access token 1시간 만료 정책이 무의미해진다.
+                // access 토큰만 인증에 쓴다 (14일짜리 refresh 토큰으로 인증되면 1시간 만료가 무의미해진다)
                 if (email != null && roleStr != null && "access".equals(typ)) {
                     var auth = new UsernamePasswordAuthenticationToken(
                             email, null, List.of(new SimpleGrantedAuthority("ROLE_" + roleStr)));

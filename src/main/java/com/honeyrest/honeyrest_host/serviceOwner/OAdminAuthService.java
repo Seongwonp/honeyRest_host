@@ -54,8 +54,7 @@ public class OAdminAuthService {
                 .isVerified(true)
                 .lastLogin(LocalDateTime.now())
                 .point(0)
-                .role(role) // 이 API는 SecurityConfig에서 SUPER_ADMIN 인증을 요구하므로,
-                            // 이미 검증된 super admin이 명시한 role(COMPANY_ADMIN 또는 SUPER_ADMIN)을 그대로 사용한다.
+                .role(role) // SUPER_ADMIN 만 호출 가능한 API 라 지정한 role 을 그대로 쓴다
                 .status(UserStatus.ACTIVE)
                 .build();
 

@@ -14,9 +14,7 @@ CREATE ALIAS IF NOT EXISTS MYSQL_WEEKDAY     FOR 'com.honeyrest.honeyrest_host.c
 CREATE ALIAS IF NOT EXISTS MYSQL_DATE_FORMAT FOR 'com.honeyrest.honeyrest_host.config.screenshot.H2MySqlCompat.dateFormat';
 
 -- ---- JSON 텍스트 컬럼 ----
--- amenities·bed_info·bank_info 는 엔티티 매핑이 실제 스키마(Flyway V1)와 같은 LONGTEXT 라 H2 에서도 문자 컬럼으로 만들어진다.
--- (과거 매핑이 JSON 이던 때는 저장할 때마다 따옴표가 쌓여 여기서 VARCHAR 로 바꾸는 ALTER 를 두었으나 이제 필요 없다.)
--- 아래 시드는 JSON 텍스트를 일반 문자열로 넣는다.
+-- amenities·bed_info·bank_info 는 LONGTEXT 매핑이라 JSON 텍스트를 일반 문자열로 넣는다.
 
 -- ---- 지역 / 카테고리 ----
 INSERT INTO region (region_id, parent_id, name, level, is_popular, image_url) VALUES

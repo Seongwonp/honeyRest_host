@@ -50,7 +50,7 @@ public interface ReservationService {
             Integer companyId, String status, String q, Long accId, Pageable pageable);
 
     // 예약 상태 전환 (도메인 메서드로만 전이)
-    /** 취소 요청 승인 + 환불. 갱신된 예약(status=CANCELLED)을 돌려준다 (null 을 돌려주지 않는다). */
+    /** 취소 요청 승인 + 환불. 갱신된 예약을 돌려준다. */
     ReservationDTO approveCancelRequest(Long reservationId, String reason);
     void rejectCancelRequest(Long reservationId, String reason);
 

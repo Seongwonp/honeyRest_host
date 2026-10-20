@@ -24,10 +24,7 @@ public class InquiryController {
     private final InquiryService inquiryService;
     private final CompanyService companyService;
 
-    /*
-     * 목록은 이미 companyId로 스코프되지만 단건 3개(detail/reply/delete)는 검증이 없었다(P0-5).
-     * @PreAuthorize("@companyAccess.ownsInquiry(...)")로 진입 전에 검증한다(실패 시 403).
-     */
+    // 단건 핸들러는 @PreAuthorize 로 문의 소유 회사를 확인한다
 
     @GetMapping("/list")
     public String list(@RequestParam(required = false) Long accommodationId,
@@ -68,8 +65,6 @@ public class InquiryController {
     @PostMapping("/{id}/reply")
     @PreAuthorize("@companyAccess.ownsInquiry(#inquiryId, authentication)")
     public String reply(@PathVariable("id") Long inquiryId,
-                        // 과거에는 오타("relpyText")라 화면이 보내는 replyText/reply 와 맞지 않아 항상 400 이었다.
-                        // list.html 모달과 detail.html 폼 모두 replyText 로 보낸다.
                         @RequestParam("replyText") String replyText,
                         RedirectAttributes ra,
                         @RequestParam(required = false) Long accommodationId,
@@ -79,7 +74,6 @@ public class InquiryController {
                         @RequestParam(defaultValue = "10") int size) {
         try {
             inquiryService.reply(inquiryId, replyText);
-            // addAttribute 는 쿼리스트링으로 붙어 토스트가 뜨지 않았다 → flash
             ra.addFlashAttribute("success", "답변이 저장되었습니다.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", "답변 저장에 실패했습니다: " + e.getMessage());

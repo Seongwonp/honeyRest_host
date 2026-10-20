@@ -47,7 +47,7 @@
                     <div class="toolbar-left" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
 
                         <!-- 기준 선택: 결제/예약 -->
-                        <!-- 집계는 결제(승인 완료) 기준만 지원한다. 과거 "예약 기준" 버튼은 서버에 전달되지 않아 같은 데이터를 보여 줬다 -->
+                        <!-- 집계는 결제(승인 완료) 기준만 지원한다 -->
                         <div class="seg" aria-label="집계 기준">
                             <button type="button" class="active" data-source="payment" aria-pressed="true" disabled>결제 기준</button>
                         </div>
@@ -243,7 +243,7 @@
                 });
             }
 
-            // 표: 버킷별 매출/주문 수/평균 (과거에는 tbody 를 채우는 코드가 없어 항상 빈 표였다)
+            // 표: 버킷별 매출/주문 수/평균
             function renderTable(rows){
                 const tb = document.getElementById('rowsTbody');
                 if (!tb) return;

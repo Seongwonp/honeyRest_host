@@ -17,10 +17,8 @@ public interface CouponUsageRepository extends JpaRepository<CouponUsage, Long> 
     List<CouponUsage> findByReservationId(@Param("reservationId") Long reservationId);
 
     /**
-     * 사용된(USED) 회원 쿠폰을 다시 발급 상태로 되돌린다. 공유 엔티티 UserCoupon 에 복원 메서드가 없어 JPQL 로 바꾼다.
-     * 조건부 UPDATE 라 이미 복원된 쿠폰이면 0 을 돌려준다(멱등).
-     * flushAutomatically: 같은 트랜잭션의 예약 상태 변경을 먼저 반영한다. 영속성 컨텍스트는 비우지 않는다
-     * (비우면 호출자가 들고 있는 예약 엔티티 변경이 유실된다).
+     * 사용된 회원 쿠폰을 ISSUED 로 되돌린다. 이미 복원됐으면 0 (멱등).
+     * 영속성 컨텍스트를 비우면 호출자의 예약 엔티티 변경이 유실되므로 clearAutomatically 는 쓰지 않는다.
      */
     @Modifying(flushAutomatically = true)
     @Query("""

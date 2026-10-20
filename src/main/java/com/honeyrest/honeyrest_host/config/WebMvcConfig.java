@@ -26,10 +26,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/assets/**", "/css/**", "/js/**", "/error/**", "/uploads/**");
     }
 
-    /**
-     * 로컬 저장소에 업로드된 파일을 /uploads/** 경로로 서빙한다.
-     * (Firebase 모드에서는 URL이 외부 주소이므로 이 핸들러가 사용되지 않는다)
-     */
+    /** 로컬 저장소에 업로드된 파일을 /uploads/** 경로로 서빙한다. */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String location = Path.of(localStorageDir).toAbsolutePath().normalize().toUri().toString();

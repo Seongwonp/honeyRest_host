@@ -14,10 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
- * 실제 토스페이먼츠 결제 취소 API 호출.
- * 사용자 API HttpTossClient.cancel 과 같은 규격이다: 시크릿 키를 Basic 인증(시크릿키:빈 비밀번호)으로 보내고
- * 본문은 {@code {"cancelReason": "..."}} (금액을 보내지 않으면 전액 취소).
- * 토스가 {@code ALREADY_CANCELED_PAYMENT} 를 돌려주면 이미 취소된 것이므로 성공으로 본다(재시도 멱등성).
+ * 토스페이먼츠 결제 취소 API 호출 (사용자 API HttpTossClient.cancel 과 같은 규격).
+ * {@code ALREADY_CANCELED_PAYMENT} 는 성공으로 본다(재시도 멱등성).
  */
 @Log4j2
 public class HttpTossCancelClient implements TossCancelClient {

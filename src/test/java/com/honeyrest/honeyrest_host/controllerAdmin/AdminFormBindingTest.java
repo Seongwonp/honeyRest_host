@@ -31,12 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 화면 폼 ↔ 컨트롤러 파라미터 이름 회귀 테스트 (test 프로필 = H2).
- * <ul>
- *   <li>문의 답변: 과거 @RequestParam("relpyText") 오타로 화면(replyText/reply)이 보내는 값과 달라 항상 400</li>
- *   <li>가격 캘린더 수정: 과거 yearMonth 를 요구했지만 모달은 ym 을 보내 항상 400.
- *       또 모달 기본값이 설정 가격이 아니라 그날 체크인 매출 합계였다</li>
- * </ul>
+ * 화면 폼과 컨트롤러 파라미터 이름이 맞는지 확인한다 (문의 답변 replyText, 가격 캘린더 ym·설정 가격).
  */
 @SpringBootTest
 @AutoConfigureMockMvc

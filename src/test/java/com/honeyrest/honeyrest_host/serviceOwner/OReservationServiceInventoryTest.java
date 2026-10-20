@@ -164,7 +164,7 @@ class OReservationServiceInventoryTest {
         Reservation completed = existing(ReservationStatus.COMPLETED);
         when(oReservationRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(completed));
 
-        // COMPLETED → PENDING 은 허용되지 않는다 (과거에는 save 덮어쓰기로 무엇이든 가능했다)
+        // COMPLETED → PENDING 은 허용되지 않는다
         assertThatThrownBy(() -> service.modifyReservation(form(7L, "PENDING")))
                 .isInstanceOf(IllegalStateException.class);
         assertThat(completed.getStatus()).isEqualTo(ReservationStatus.COMPLETED);

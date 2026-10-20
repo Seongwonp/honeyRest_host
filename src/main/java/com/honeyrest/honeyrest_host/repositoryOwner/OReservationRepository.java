@@ -16,7 +16,7 @@ import java.util.Optional;
 
 public interface OReservationRepository extends JpaRepository<Reservation, Long> {
 
-    /** 예약 행 잠금 읽기 (수정 트랜잭션의 첫 문장. ReservationModificationService 의 락 순서 규칙 참고) */
+    /** 예약 행 잠금 읽기 (수정 트랜잭션의 첫 쿼리) */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Reservation r where r.reservationId = :id")
     Optional<Reservation> findByIdForUpdate(@Param("id") Long id);
@@ -44,8 +44,8 @@ public interface OReservationRepository extends JpaRepository<Reservation, Long>
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
-    // ---- 오너 예약 목록: 상태 필터를 DB 쿼리에서 적용해 목록과 total(count)이 같은 조건을 쓰도록 한다 ----
-    // companyId / accommodationId 가 null 이면 전체 대상. 상태 비교는 대소문자를 무시한다(UPPER).
+    // ---- 오너 예약 목록: 목록과 count 가 같은 조건을 쓰도록 상태 필터를 쿼리에서 적용 ----
+    // companyId / accommodationId 가 null 이면 전체 대상
 
     /** 업체 기준, 지정 상태 제외 (예: 활성 목록 = CANCELLED, CANCEL_REQUEST 제외) */
     @Query(value = """

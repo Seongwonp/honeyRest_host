@@ -33,12 +33,7 @@ public class ReviewController {
     private final CompanyService companyService;
     private final AccommodationService accommodationService;
 
-    /*
-     * 목록(list)만 회사 소유 accommodationId로 스코프되어 있었고, 단건 조작 8개
-     * (detail/update/uploadImages/deleteImage/saveReply/changeStatus/delete/toggle)는
-     * reviewId만 알면 다른 회사의 리뷰도 조작할 수 있었다(P0-5).
-     * 모든 단건 핸들러에 @PreAuthorize("@companyAccess.ownsReview(...)")를 붙여 진입 전에 검증한다(실패 시 403).
-     */
+    // 단건 핸들러는 모두 @PreAuthorize 로 리뷰 소유 회사를 확인한다(reviewId 만으로 타사 리뷰 조작 방지)
 
     /**
      * 공백 -> null 치환
@@ -150,7 +145,7 @@ public class ReviewController {
                                @RequestParam("images") List<MultipartFile> files,
                                RedirectAttributes ra) {
         if (files != null && !files.isEmpty()) {
-            reviewImageService.uploadImages(id, files); // 서비스에서 파일 저장소 업로드 + DB 저장
+            reviewImageService.uploadImages(id, files);
             ra.addFlashAttribute("success", "이미지를 업로드했습니다.");
         } else {
             ra.addFlashAttribute("error", "업로드할 이미지가 없습니다.");
@@ -166,7 +161,7 @@ public class ReviewController {
     public String deleteImage(@PathVariable Long reviewId,
                               @PathVariable Long imageId,
                               RedirectAttributes ra) {
-        reviewImageService.deleteImage(reviewId, imageId, true); // 서비스 내부에서 파일 저장소 삭제 + DB 삭제
+        reviewImageService.deleteImage(reviewId, imageId, true);
         ra.addFlashAttribute("success", "이미지를 삭제했습니다.");
         return "redirect:/admin/reviews/detail/{reviewId}";
     }

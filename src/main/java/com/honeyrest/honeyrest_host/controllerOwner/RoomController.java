@@ -33,15 +33,13 @@ public class RoomController {
             @RequestParam(name = "accommodationId", required = false) Long paramAccommodationId,
             @ModelAttribute PageRequestDTO pageRequestDTO,
             Model model) {
-        // 목록 상단 숙소 선택(?accommodationId=)이 무시되던 문제: 경로 변수와 쿼리 파라미터를 모두 받는다
+        // 경로 변수와 쿼리 파라미터(?accommodationId=)를 모두 받는다
         Long accommodationId = pathAccommodationId != null ? pathAccommodationId : paramAccommodationId;
         fillRoomList(accommodationId, true, pageRequestDTO, model);
         return "owner/room/list";
     }
 
-    /**
-     * 비활성(판매 중지) 객실 목록. 과거에는 모델 없이 템플릿만 반환해 pageResponse 가 null 이라 500 이었다.
-     */
+    /** 비활성(판매 중지) 객실 목록 */
     @GetMapping("/room/inActive/list")
     public String inActiveList(@ModelAttribute PageRequestDTO pageRequestDTO,
                                @RequestParam(required = false) Long accommodationId,
@@ -63,7 +61,7 @@ public class RoomController {
 
     @GetMapping("/room/create")
     public String createRoom(@RequestParam(required = false) Long accommodationId, Model model) {
-        // 사이드바 "객실 등록"은 accommodationId 없이 들어온다 (필수 파라미터라 500 이었다)
+        // 사이드바 "객실 등록"은 accommodationId 없이 들어온다
         model.addAttribute("accommodationId", accommodationId);
         if (accommodationId != null && accommodationId != 0) {
             Integer companyId = companyService.getCompanyIdByAccommodationId(accommodationId);
@@ -78,7 +76,7 @@ public class RoomController {
     public String createRoom(@ModelAttribute RoomDTO roomDTO, RedirectAttributes ra) throws Exception {
         Long roomId = roomService.registerRoom(roomDTO);
 
-        // 대표 이미지는 선택 사항. 빈 파일을 올려 0바이트 이미지가 저장되던 문제
+        // 대표 이미지는 선택 사항 (빈 파일은 올리지 않는다)
         MultipartFile mainFile = roomDTO.getFile();
         if (mainFile != null && !mainFile.isEmpty()) {
             String mainImage = fileStorage.upload(mainFile, "rooms/" + roomId);
@@ -115,7 +113,7 @@ public class RoomController {
         return "redirect:/owner/room/list";
     }
 
-    /** 판매 중지(INACTIVE). 목록의 버튼이 가리키던 경로가 없어 404 였다. 예약 FK 때문에 행은 지우지 않는다. */
+    /** 판매 중지(INACTIVE). 예약 FK 때문에 행은 지우지 않는다. */
     @PostMapping("/room/{roomId}/delete")
     public String deleteRoom(@PathVariable Long roomId, RedirectAttributes ra) {
         roomService.removeRoom(roomId);

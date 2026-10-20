@@ -44,8 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 공유 도메인 변경(리뷰 도메인 메서드·공유 ReviewStatus, Room.images cascade=ALL, JSON 컬럼 LONGTEXT 매핑) 이후의
- * 호스트 쓰기 경로 회귀 테스트. demo 프로필(H2 + screenshot-seed.sql)에서 실제 서비스·화면으로 확인한다.
+ * 리뷰·객실 이미지·JSON 컬럼 쓰기 경로 검증. demo 프로필(H2 + 시드)에서 실제 서비스로 확인한다.
  * (DemoAdminScreensTest 와 같은 설정이라 Spring 컨텍스트를 공유한다)
  */
 @SpringBootTest(properties = {
@@ -181,7 +180,7 @@ class DemoEntityMutationTest {
         LocalDateTime createdAt = roomRepository.findByRoomId(roomId).getCreatedAt();
         assertThat(imageCount(roomId)).isEqualTo(2);
 
-        // 업체 관리자 수정: 같은 트랜잭션에서 영속 Room 의 images 가 비지 않는다 (과거: 빌더의 빈 리스트로 교체)
+        // 업체 관리자 수정: 같은 트랜잭션에서 영속 Room 의 images 가 비지 않는다
         Integer inSession = tx.execute(s -> {
             adminRoomService.modifyRoom(RoomDTO.builder().roomId(roomId).description("설명 수정").build());
             return em.find(Room.class, roomId).getImages().size();

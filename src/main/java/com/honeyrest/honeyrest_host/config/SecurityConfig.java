@@ -39,9 +39,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-// 컨트롤러의 회사 소유권 검사: @PreAuthorize("@companyAccess.ownsXxx(#id, authentication)")
-// (CompanyResourceAccessService 빈 이름 = companyAccess). 거부 시 AccessDeniedException →
-// GlobalExceptionHandler 가 403(error/403)으로 응답한다.
+// 회사 소유권은 컨트롤러에서 @PreAuthorize("@companyAccess.ownsXxx(...)")로 검사한다. 거부 시 403.
 @EnableMethodSecurity
 @RequiredArgsConstructor
 @Log4j2
@@ -70,9 +68,7 @@ public class SecurityConfig {
         return new ProviderManager(daoAuthProvider());
     }
 
-    // http.addFilterBefore(new MultipartFilter(), ...)로 직접 new 하면 GenericFilterBean의
-    // ServletContext 초기화 콜백을 받지 못해 "No ServletContext" 예외가 난다.
-    // 스프링 빈으로 등록해야 컨테이너가 정상적으로 초기화해 준다.
+    // 직접 new 하면 ServletContext 가 주입되지 않아 "No ServletContext" 예외가 나므로 빈으로 등록한다.
     @Bean
     public MultipartFilter multipartFilter() {
         return new MultipartFilter();
@@ -81,12 +77,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, MultipartFilter multipartFilter) throws Exception {
         // 0) 기본 보안 옵션
-        // STATELESS라 세션 기반 CsrfTokenRepository가 동작하지 않으므로 쿠키 기반 저장소를 사용한다.
+        // STATELESS 라 세션 저장소 대신 쿠키 기반 CSRF 저장소를 쓴다.
         CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        // STATELESS 에서는 SessionManagementFilter 가 JwtAuthFilter 로 인증된 모든 요청을 "새 인증"으로 보고
-        // CsrfAuthenticationStrategy 로 CSRF 토큰을 매번 교체했다. 교체된 토큰은 화면이 응답 버퍼(8KB)를 넘긴 뒤에야
-        // 읽혀 Set-Cookie 가 빠지고, 브라우저에서 폼 POST(객실 등록, 예약 완료, 숙소 승인 등)가 403 이 됐다.
-        // 토큰 교체(로그인 시 토큰 고정 방지)는 실제 로그인 요청(POST /auth/login)에서만 수행한다.
+        // 기본 설정은 JWT 로 인증된 매 요청마다 토큰을 교체해 폼 POST 가 403 이 나므로 로그인 요청에서만 교체한다.
         CsrfAuthenticationStrategy rotateOnLogin = new CsrfAuthenticationStrategy(csrfTokenRepository);
         http.csrf(csrf -> csrf
                 .csrfTokenRepository(csrfTokenRepository)
@@ -95,14 +88,9 @@ public class SecurityConfig {
                         rotateOnLogin.onAuthentication(authentication, request, response);
                     }
                 }));
-        // multipart/form-data(이미지 업로드) 요청은 CsrfFilter가 실행되는 시점에 바디가 아직
-        // 파싱되지 않아 request.getParameter("_csrf")가 비어 항상 403이 난다.
-        // CsrfFilter보다 앞에서 멀티파트 바디를 먼저 파싱하도록 배치한다.
+        // 멀티파트 요청의 _csrf 파라미터를 읽을 수 있도록 CsrfFilter 앞에서 바디를 파싱한다.
         http.addFilterBefore(multipartFilter, CsrfFilter.class);
-        // CsrfToken은 지연 로딩되어 뷰에서 실제로 값을 읽는 시점에야 쿠키가 저장된다.
-        // 응답 바디(사이드바 등)가 기본 응답 버퍼(8KB)를 넘겨 커밋된 뒤에 토큰을 읽으면
-        // Set-Cookie가 누락되어 다음 POST가 403(CSRF 불일치)이 나므로, 필터 체인 초입에서
-        // 토큰을 미리 로드해 응답 커밋 전에 쿠키를 확정한다.
+        // 토큰은 지연 로딩이라 응답이 커밋된 뒤 읽히면 Set-Cookie 가 빠진다. 커밋 전에 미리 로드한다.
         http.addFilterAfter(new OncePerRequestFilter() {
             @Override
             protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -123,20 +111,14 @@ public class SecurityConfig {
                         "/.well-known/**",
                         "/auth/**",
                         "/error/**",
-                        // 로컬 스토리지 모드에서 업로드된 이미지(숙소/객실/리뷰)는 공개 URL로 노출된다.
-                        "/uploads/**",
-                        // 헬스 체크(로드밸런서/모니터링)는 인증 없이 접근 가능해야 한다.
+                        "/uploads/**",       // 로컬 저장소 모드의 업로드 이미지
                         "/actuator/health"
                 ).permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/api/admin/companies/**").hasRole("SUPER_ADMIN")
-                // 회사 관리자(신규 업체) 자가 가입/로그인은 비로그인 상태에서 호출되어야 하므로 명시적으로 공개한다.
-                // AdminAuthService가 role을 항상 COMPANY_ADMIN으로 고정하므로 여기서 권한 상승은 발생하지 않는다.
+                // 업체 가입은 비로그인 공개. 서비스가 role 을 COMPANY_ADMIN 으로 고정한다.
                 .requestMatchers("/api/admin/auth/**").permitAll()
-                // /api/owner/auth/signup은 SUPER_ADMIN 계정을 만들 수 있는 엔드포인트이므로
-                // /owner/** 와 별개로 반드시 이미 SUPER_ADMIN으로 인증된 사용자만 호출할 수 있어야 한다.
-                // (이전에는 이 경로가 어떤 규칙에도 매칭되지 않아 anyRequest().authenticated()로 떨어졌고,
-                //  Spring Security 기본 설정상 익명 사용자까지 통과시켜 role=SUPER_ADMIN 자가 발급이 가능했다.)
+                // /api/owner/auth/signup 은 SUPER_ADMIN 계정을 만들 수 있으므로 SUPER_ADMIN 만 호출 가능
                 .requestMatchers("/api/owner/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/admin/**").hasRole("COMPANY_ADMIN")
                 .requestMatchers("/owner/**").hasRole("SUPER_ADMIN")

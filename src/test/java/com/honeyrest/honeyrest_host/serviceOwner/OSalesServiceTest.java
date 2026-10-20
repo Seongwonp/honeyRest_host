@@ -74,7 +74,7 @@ class OSalesServiceTest {
         // 제외: 범위 밖
         paid(room, START.minusDays(1).atTime(23, 59), 1_000, PaymentStatus.DONE, ReservationStatus.CONFIRMED);
         paid(room, END.plusDays(1).atTime(0, 0), 1_000, PaymentStatus.DONE, ReservationStatus.CONFIRMED);
-        // 제외: 환불된 결제, 취소된 예약(결제는 DONE 으로 남은 과거 데이터)
+        // 제외: 환불된 결제, 취소된 예약(결제는 DONE 으로 남은 데이터)
         paid(room, START.plusDays(2).atTime(12, 0), 7_000, PaymentStatus.CANCELED, ReservationStatus.CANCELLED);
         paid(room, START.plusDays(2).atTime(12, 0), 8_000, PaymentStatus.DONE, ReservationStatus.CANCELLED);
         // 다른 업체
@@ -89,7 +89,7 @@ class OSalesServiceTest {
         assertThat(days).extracting(DaySalesDTO::getDate)
                 .containsExactly(START, START.plusDays(3), END);
         DaySalesDTO first = days.get(0);
-        assertThat(first.getDayPrice()).isEqualByComparingTo("15000"); // 과거 isAfter 버그로 빠지던 시작일
+        assertThat(first.getDayPrice()).isEqualByComparingTo("15000"); // 시작일 포함
         assertThat(first.getQuantity()).isEqualTo(2);
         assertThat(days.get(2).getDayPrice()).isEqualByComparingTo("20000");
     }

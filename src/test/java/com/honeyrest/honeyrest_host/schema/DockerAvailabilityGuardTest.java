@@ -8,10 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * Testcontainers 테스트는 Docker 가 없으면 조용히 건너뛰므로, CI 에서 Docker 가 빠지면
- * "스키마 교차 검증이 하나도 안 돌았는데 초록불" 이 될 수 있다.
- * integrationTest 태스크가 INTEGRATION_REQUIRE_DOCKER=true 로 실행될 때만(=CI) Docker 존재를 강제한다.
- * 로컬에서는 이 테스트도 건너뛴다.
+ * Testcontainers 테스트는 Docker 가 없으면 건너뛰므로, CI(INTEGRATION_REQUIRE_DOCKER=true)에서는 Docker 존재를 강제한다.
  */
 @Tag("integration")
 class DockerAvailabilityGuardTest {

@@ -28,7 +28,7 @@ public class OUserService {
         return getUsersWithPage(pageRequestDTO, null);
     }
 
-    /** 회원 목록. keyword 는 이름·이메일 부분 일치 (검색창 값이 무시되던 문제) */
+    /** 회원 목록. keyword 는 이름·이메일 부분 일치 */
     public PageResponseDTO<UserDTO> getUsersWithPage(PageRequestDTO pageRequestDTO, String keyword) {
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
                 pageRequestDTO.getSize(), Sort.by(Sort.Order.desc("lastLogin"), Sort.Order.desc("userId")));
@@ -60,7 +60,7 @@ public class OUserService {
         return userRepository.count();
     }
 
-    /** 이름·전화번호로 회원 조회 (없으면 null — 과거에는 ModelMapper 가 null 을 받아 500 이었다) */
+    /** 이름·전화번호로 회원 조회 (없으면 null) */
     public UserDTO getUserByNameAndPhone(String name, String phone) {
         User user = userRepository.findByNameAndPhone(name, phone);
         return user == null ? null : modelMapper.map(user, UserDTO.class);

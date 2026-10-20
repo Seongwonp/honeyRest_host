@@ -6,19 +6,8 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * 회사 관리자(COMPANY_ADMIN)가 숙소 등록·수정 화면에서 바꿀 수 있는 숙소 상태 규칙.
- *
- * <p>과거에는 수정 폼의 status 값을 그대로 저장해 회사 관리자가 ACTIVE 를 골라
- * 총관리자(SUPER_ADMIN) 승인 없이 숙소를 바로 노출시킬 수 있었다.
- * ACTIVE(노출)·REJECTED(거절)는 총관리자 승인 흐름
- * ({@code OAccommodationService.approve/reject}, PENDING 에서만 전환)에서만 만들어진다.</p>
- *
- * <ul>
- *   <li>PENDING  — 승인 요청(재요청 포함). 어떤 상태에서든 가능</li>
- *   <li>INACTIVE — 운영 중지. 어떤 상태에서든 가능 (다시 노출하려면 PENDING 으로 재승인 요청)</li>
- *   <li>현재 상태 그대로 제출 — 변경 없음으로 보고 허용 (ACTIVE 숙소의 일반 정보 수정)</li>
- *   <li>그 외(ACTIVE, REJECTED, 알 수 없는 값)로의 변경 — 거부</li>
- * </ul>
+ * 회사 관리자가 바꿀 수 있는 숙소 상태 규칙. PENDING·INACTIVE 와 현재 상태 유지만 허용하고,
+ * ACTIVE·REJECTED 는 총관리자 승인 흐름(OAccommodationService.approve/reject)에서만 만들어진다.
  */
 public final class AccommodationStatusPolicy {
 

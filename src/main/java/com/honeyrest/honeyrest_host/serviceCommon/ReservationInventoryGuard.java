@@ -12,18 +12,8 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 
 /**
- * 객실 재고(겹침) 검사.
- * <p>
- * 재고의 기준은 {@code room.total_rooms − [checkIn, checkOut) 과 겹치는 점유 상태 예약 수} 이다.
- * 사용자 저장소의 ReserveService.createReservation 과 같은 규칙을 쓴다:
- * 객실 행을 PESSIMISTIC_WRITE 로 잠근 뒤 겹치는 점유 예약 수가 totalRooms 이상이면 거절한다.
- * 반드시 호출자의 트랜잭션 안에서 호출해야 락이 커밋 시점까지 유지된다.
- * <p>
- * <b>락 순서 규칙</b>: 호출자는 이 메서드를 트랜잭션의 첫 일반 SELECT 보다 먼저 부른다(또는 그 전의 읽기를 모두
- * 잠금 읽기로 한다). MySQL REPEATABLE READ 는 첫 일반 SELECT 시점에 스냅샷을 만들기 때문에, 그 뒤에 락을 잡아도
- * 일반 SELECT 로 센 겹침 수는 락을 기다리는 동안 커밋된 예약을 놓칠 수 있었다. 이제 겹침 수도 잠금 읽기
- * ({@link ReservationRepository#countOverlappingForUpdate})로 세므로 항상 최신 커밋을 본다.
- * 운영 DB 는 READ COMMITTED 로 바꿨지만(application-prod.properties) 이 규칙은 격리 수준과 무관하게 지킨다.
+ * 객실 재고 검사. 객실 행을 PESSIMISTIC_WRITE 로 잠근 뒤 겹치는 점유 예약 수가 totalRooms 이상이면 거절한다
+ * (사용자 API ReserveService 와 같은 규칙). 호출자 트랜잭션 안에서, 첫 일반 SELECT 보다 먼저 호출해야 한다.
  */
 @Component
 @RequiredArgsConstructor

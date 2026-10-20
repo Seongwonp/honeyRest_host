@@ -30,9 +30,7 @@ public class ReservationController {
 
     /**
      * 예약 목록 (취소·취소 요청 제외). 업체/숙소/객실 필터를 쿼리 파라미터로 받는다.
-     * 과거 경로(/reservation/company/{id}, /accommodation/{id}, /room/{id})도 같은 화면으로 보낸다.
-     * - 뷰 이름이 "/owner/..." 로 시작해 실행 jar(데모·운영)에서 템플릿을 못 찾고 500 이었다.
-     * - 페이지 링크가 companyId 만 넘겨 숙소/객실 필터가 풀렸다.
+     * /reservation/company/{id}, /accommodation/{id}, /room/{id} 경로도 같은 화면으로 보낸다.
      */
     @GetMapping("/reservation/list")
     public String reservationList(@RequestParam(required = false) Integer companyId,
@@ -129,9 +127,7 @@ public class ReservationController {
     }
 
     /**
-     * 예약 수정 저장 (owner/reservation/modify.html 폼 POST 대상).
-     * 재고 검사는 OReservationService.modifyReservation 에서 한다.
-     * 성공 시 목록으로, 실패(재고 부족/잘못된 입력/없는 예약) 시 수정 화면으로 돌아가 토스트로 사유를 보여준다.
+     * 예약 수정 저장. 실패 시 수정 화면으로 돌아가 사유를 보여준다.
      */
     @PostMapping("/reservation/modify")
     public String modifyReservation(@ModelAttribute ReservationDTO form, RedirectAttributes ra) {
@@ -142,7 +138,7 @@ public class ReservationController {
         try {
             reservationService.modifyReservation(form);
         } catch (IllegalArgumentException | IllegalStateException e) {
-            // ReservationConflictException(재고 부족)은 IllegalStateException 하위 타입이라 여기서 함께 처리된다.
+            // ReservationConflictException 도 IllegalStateException 하위 타입이라 여기서 처리된다
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/owner/reservation/" + form.getReservationId() + "/modify";
         } catch (EntityNotFoundException e) {
@@ -163,10 +159,7 @@ public class ReservationController {
     }
 
     /**
-     * 관리자 예약 등록.
-     * 과거 화면은 숙소 자동완성·객실 목록 스크립트가 레이아웃 밖에 있어 렌더링되지 않아 객실을 고를 수 없었고(등록 불가),
-     * 서버는 숙소명·객실 "이름" 칸의 값을 ID 로 바꿔 쓰고 1박 요금을 숙박 기간과 무관하게 결제 금액으로 받았다.
-     * 이제 회원·객실을 ID 로 고르고, 금액은 서버가 객실 요금 × 박 수 - 할인으로 계산한다.
+     * 관리자 예약 등록. 금액은 서버가 객실 요금 × 박 수 - 할인으로 계산한다.
      */
     @PostMapping("/reservation/create")
     public String createReservation(@ModelAttribute ReservationDTO form, RedirectAttributes ra) {
@@ -231,7 +224,7 @@ public class ReservationController {
         try {
             reservationService.registerReservation(reservation);
         } catch (com.honeyrest.honeyrest_host.serviceCommon.ReservationConflictException | IllegalArgumentException e) {
-            // 재고 부족(겹침) 또는 잘못된 입력: 등록 화면으로 돌아가 사유를 토스트로 보여준다.
+            // 재고 부족 또는 잘못된 입력: 등록 화면으로 돌아가 사유를 보여준다
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/owner/reservation/create";
         }

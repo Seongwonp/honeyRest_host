@@ -27,7 +27,7 @@ public class ReviewDTO {
     private Integer likeCount; // 좋아요 수
     private String status; // 상태(PUBLISHED, HIDDEN)
 
-    // 목록/답글 화면 표시용 (owner/review/*.html — createdAt 이 없어 목록이 500 이었다)
+    // 목록/답글 화면 표시용
     private java.time.LocalDateTime createdAt;
     private String accommodationName;
     private String roomName;

@@ -30,7 +30,6 @@ public class CompanyController {
             @RequestParam(required = false) String keyword,
             @ModelAttribute PageRequestDTO pageRequestDTO,
             Model model) {
-        // 검색창(keyword)이 전달돼도 무시되던 문제 수정
         PageResponseDTO<CompanyDTO> responseDTO = companyService.getCompaniesWithPage(pageRequestDTO, keyword);
         model.addAttribute("keyword", keyword);
 
@@ -87,7 +86,7 @@ public class CompanyController {
         return "redirect:/owner/company/list";
     }
 
-    /** 비활성 업체 재활성화 (비활성 목록에서 "삭제"를 다시 누르면 아무 변화가 없던 자리를 대신한다) */
+    /** 비활성 업체 재활성화 */
     @PostMapping("/company/{companyId}/activate")
     public String activateCompany(@PathVariable Integer companyId, RedirectAttributes ra) {
         companyService.activateCompany(companyId);

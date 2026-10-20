@@ -20,10 +20,7 @@ import java.util.UUID;
 
 /**
  * Firebase Storage 저장소 ({@code app.storage.type=firebase} 일 때만 활성화).
- * <p>
- * 기존 FileUploadUtil 의 업로드/삭제 로직을 옮겨 온 구현이다.
- * 인증 정보는 FirebaseConfig 가 초기화한 {@link FirebaseApp} 을 재사용하므로
- * 서비스 계정 키를 이 클래스에서 다시 읽지 않는다.
+ * 인증은 FirebaseConfig 가 초기화한 {@link FirebaseApp} 을 재사용한다.
  */
 @Log4j2
 @Component

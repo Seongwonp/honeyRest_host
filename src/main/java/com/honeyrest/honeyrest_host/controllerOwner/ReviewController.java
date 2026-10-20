@@ -25,10 +25,7 @@ public class ReviewController {
     private final ORoomService roomService;
 
 
-    /**
-     * 리뷰 목록. 숙소 선택(?accommodationId=)과 경로 /review/accommodation/{id} 를 모두 받는다.
-     * (과거에는 쿼리 파라미터를 무시했고, /review/company/{id} 는 업체 ID 를 숙소 ID 로 조회했다)
-     */
+    /** 리뷰 목록. 쿼리 파라미터(?accommodationId=)와 경로 /review/accommodation/{id} 를 모두 받는다. */
     @GetMapping({"/review/list", "/review/accommodation/{accommodationId}"})
     public String reviews(@PathVariable(name = "accommodationId", required = false) Long pathAccommodationId,
                           @RequestParam(name = "accommodationId", required = false) Long paramAccommodationId,
@@ -40,7 +37,7 @@ public class ReviewController {
         return "owner/review/list";
     }
 
-    /** 업체의 숙소 리뷰: 업체를 고르면 그 업체의 첫 숙소가 아니라 숙소 선택 목록을 그 업체 것으로 좁힌다 */
+    /** 업체의 숙소 리뷰: 숙소 선택 목록을 그 업체 것으로 좁힌다 */
     @GetMapping("/review/company/{companyId}")
     public String reviewsOfCompany(@PathVariable Integer companyId,
                                    @RequestParam(required = false) Long accommodationId,
@@ -83,7 +80,7 @@ public class ReviewController {
         return "owner/review/modify";
     }
 
-    /** 과거 매핑은 클래스 접두사와 겹쳐 /owner/owner/review/... 였고, 폼은 없는 /owner/review/modify 로 보냈다 */
+    /** 답글·노출 상태 저장 */
     @PostMapping("/review/{reviewId}/reply")
     public String saveReply(@PathVariable Long reviewId,
                             @RequestParam(required = false) String reply,
@@ -94,7 +91,7 @@ public class ReviewController {
         return "redirect:/owner/review/" + reviewId + "/modify";
     }
 
-    /** 숨김 처리(소프트 삭제). 목록의 삭제 버튼이 가리키던 경로가 없어 404 였다. */
+    /** 숨김 처리(소프트 삭제) */
     @PostMapping("/review/{reviewId}/delete")
     public String hideReview(@PathVariable Long reviewId, RedirectAttributes ra) {
         reviewService.hide(reviewId);

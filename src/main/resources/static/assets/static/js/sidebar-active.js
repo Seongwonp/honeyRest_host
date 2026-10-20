@@ -1,23 +1,13 @@
 /*
  * 현재 URL 에 해당하는 사이드바 메뉴에 active 클래스를 붙인다.
- *
- * Mazer 번들(assets/compiled/js/app.js)은 사이드바 초기화 때
- *   - document.querySelector(".sidebar-item.active") 를 화면 안으로 스크롤하고(forceElementVisibility)
- *   - active 인 .sidebar-item.has-sub 의 하위 메뉴를 펼친다(submenu-open)
- * active 항목이 하나도 없으면 null.getBoundingClientRect() 로 모든 페이지에서 TypeError 가 났다.
- * 그래서 app.js 보다 먼저(동기 로드) 이 스크립트를 실행해 항상 active 항목 하나를 정한다.
- *
- * 매칭 규칙: 메뉴 href 와 현재 경로의 앞쪽 경로 세그먼트가 가장 많이 겹치는 항목
- * (예: /admin/reservations/15 → "/admin/reservations/my" 의 "예약 관리" 그룹). 동점이면 먼저 나온 항목.
- * 겹치는 항목이 없으면 첫 번째 메뉴(대시보드)를 active 로 둔다.
+ * Mazer app.js 는 active 항목이 없으면 초기화 중 TypeError 가 나므로 app.js 보다 먼저 실행한다.
+ * 경로 세그먼트가 가장 많이 겹치는 메뉴를 고르고, 없으면 첫 번째 메뉴(대시보드)를 쓴다.
  */
 (function () {
     var sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
-    // 템플릿은 #sidebar 에 active 를 고정으로 붙여 둔다(데스크톱에서 펼침).
-    // Mazer 는 좁은 화면에서 이를 걷어 내지 않아 휴대폰으로 열면 메뉴가 화면을 덮은 채로 시작했다.
-    // 데스크톱 기준(1200px, Mazer 와 같은 값) 미만이면 접힌 상태로 시작한다 (햄버거 버튼으로 연다).
+    // 1200px(Mazer 데스크톱 기준) 미만이면 사이드바를 접은 상태로 시작한다
     if (window.innerWidth < 1200) {
         sidebar.classList.remove('active');
     }

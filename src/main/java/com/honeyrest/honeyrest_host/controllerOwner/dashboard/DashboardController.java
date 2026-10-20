@@ -63,7 +63,7 @@ public class DashboardController {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/owner/coupon/create";
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            // 쿠폰 코드는 unique — 중복이면 500 대신 안내
+            // 쿠폰 코드는 unique
             ra.addFlashAttribute("error", "이미 사용 중인 쿠폰 코드입니다.");
             return "redirect:/owner/coupon/create";
         }

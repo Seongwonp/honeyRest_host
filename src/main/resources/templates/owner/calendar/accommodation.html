@@ -75,7 +75,7 @@
         </section>
     </div>
 </th:block>
-<!-- 레이아웃 프래그먼트 밖의 스크립트는 layout dialect 가 버린다 → 필터·월 이동 버튼이 동작하지 않았다 -->
+<!-- 스크립트는 layout:fragment 안에 둔다 (밖은 layout dialect 가 버린다) -->
 <th:block layout:fragment="script">
 <script>
     document.getElementById('companySelect').addEventListener('change', function () {

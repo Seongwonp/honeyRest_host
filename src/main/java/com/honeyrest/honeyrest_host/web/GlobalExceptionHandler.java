@@ -66,10 +66,7 @@ public class GlobalExceptionHandler {
         return "error/500";
     }
 
-    /**
-     * 필수 파라미터 누락·형식 오류(예: /admin/reservations/abc)는 클라이언트 오류다.
-     * 과거에는 아래 handleGeneral 로 떨어져 500 + ERROR 로그 + 에러 로그 테이블 적재가 됐다.
-     */
+    /** 필수 파라미터 누락·형식 오류(예: /admin/reservations/abc)는 400 으로 응답한다. */
     @ExceptionHandler({org.springframework.web.bind.MissingServletRequestParameterException.class,
             org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
             org.springframework.web.bind.MissingPathVariableException.class})

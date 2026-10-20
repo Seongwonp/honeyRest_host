@@ -3,13 +3,8 @@ package com.honeyrest.honeyrest_host.cache;
 import java.util.List;
 
 /**
- * 사용자 API(honeyRest_user)의 숙소 단위 Redis 캐시 키 사본.
- * <p>
- * <b>동기화 주의:</b> 원본은 honeyRest_user {@code service/redis/AccommodationCacheKeys} 이다.
- * 사용자 API 가 키 형식을 바꾸거나 키를 추가하면 이 클래스도 같은 커밋 주기 안에 함께 고쳐야 한다.
- * 어긋나면 호스트에서 숙소/객실/이미지/환불 규정/태그를 바꿔도 사용자 상세 화면이 캐시 TTL 동안 옛 값을 보여 준다.
- * 키 문자열은 {@code AccommodationCacheKeysTest} 가 리터럴 그대로 검증한다.
- * (공유 도메인 모듈은 JPA 엔티티 전용이라 캐시 키를 두지 않았다.)
+ * 사용자 API 숙소 상세 Redis 캐시 키 사본.
+ * 원본 honeyRest_user {@code service/redis/AccommodationCacheKeys} 와 함께 바꿀 것 (AccommodationCacheKeysTest 가 검증).
  */
 public final class AccommodationCacheKeys {
 

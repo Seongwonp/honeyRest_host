@@ -115,8 +115,7 @@ public class AccommodationImageServiceImpl implements AccommodationImageService 
         if(imageIds == null || imageIds.isEmpty()) {
             return;
         }
-        // imageId가 실제로 이 숙소 소속인지 확인 없이 그대로 삭제하면 타 숙소 이미지를
-        // imageId만 알아내 삭제할 수 있었다(P1-4).
+        // 이 숙소 소속 이미지만 삭제한다
         accommodationImageRepository.deleteByAccommodation_AccommodationIdAndImageIdIn(accommodationId, imageIds);
         searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
     }

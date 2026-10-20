@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
- * P1-7 회귀 테스트: refresh token(typ=refresh)은 access token처럼 인증에 쓰일 수 없어야 한다.
+ * refresh token(typ=refresh)은 access token처럼 인증에 쓰일 수 없어야 한다.
  */
 @ExtendWith(MockitoExtension.class)
 class JwtAuthFilterTest {

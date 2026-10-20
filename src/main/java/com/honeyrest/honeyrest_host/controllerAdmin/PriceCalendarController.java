@@ -45,11 +45,7 @@ public class PriceCalendarController {
     private final AccommodationService accommodationService;
     private final CompanyResourceAccessService resourceAccessService;
 
-    /**
-     * 클라이언트가 보낸 companyId는 신뢰하지 않고 로그인 사용자 기준으로 다시 계산한다.
-     * (과거에는 이 컨트롤러 전체가 요청 파라미터의 companyId/roomId를 그대로 사용해
-     *  다른 회사의 가격·재고를 조회·변조할 수 있었다 - P0-4)
-     */
+    /** 클라이언트가 보낸 companyId 는 신뢰하지 않고 로그인 사용자 기준으로 다시 계산한다. */
     private Integer requireOwnCompanyId(Authentication authentication) {
         Integer companyId = resourceAccessService.currentCompanyId(authentication);
         if (companyId == null) {
@@ -66,7 +62,7 @@ public class PriceCalendarController {
      */
     @GetMapping("/page")
     public String pageWithoutCompanyId(@RequestParam(required = false) String ym) {
-        // 쿼리스트링에 companyId가 있어도 무시하고 로그인 사용자의 회사로만 리다이렉트한다.
+        // 쿼리스트링의 companyId 는 무시하고 로그인 사용자의 회사로 리다이렉트
         Integer companyId = companyService.getCompanyIdByOfCurrentUser();
         if (companyId == null) return "redirect:/admin/dashboard";
         // ym 없으면 현재 월로
@@ -87,7 +83,7 @@ public class PriceCalendarController {
                        @RequestParam(required = false, defaultValue = "calendar") String mode,
                        Model model) {
 
-        // 쿼리스트링의 companyId는 URL 구성/표시용일 뿐, 실제 조회는 로그인 사용자의 회사로만 수행한다.
+        // 쿼리스트링의 companyId 는 표시용. 조회는 로그인 사용자의 회사로만 한다
         companyId = requireOwnCompanyId(authentication);
 
         // 1) 파라미터 해석
@@ -136,15 +132,13 @@ public class PriceCalendarController {
     /**
      * 단건 (페이지 내 인라인 폼용)
      */
-    // priceCalendarService.upsert는 companyId 없이 roomId만으로 동작하므로,
-    // roomId가 로그인 회사 소유인지 반드시 확인해야 한다(P0-4, 가격 변조 방지).
+    // upsert 는 roomId 만으로 동작하므로 roomId 가 로그인 회사 소유인지 확인한다(가격 변조 방지)
     @PostMapping("/upsert")
     @PreAuthorize("@companyAccess.ownsRoom(#roomId, authentication)")
     public String upsert(Authentication authentication,
                          @RequestParam Integer companyId,
                          @RequestParam(required = false) Long accommodationId,
                          @RequestParam Long roomId,
-                         // 과거에는 yearMonth 를 요구했는데 화면 모달은 ym 을 보내 저장이 항상 400 이었다. 다른 핸들러처럼 ym 으로 통일.
                          @RequestParam String ym,
                          @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
                          @RequestParam(required = false) BigDecimal price,
@@ -155,11 +149,10 @@ public class PriceCalendarController {
 
         companyId = requireOwnCompanyId(authentication);
 
-        // 재고(available_room)는 받지 않는다: 사용자 API 는 price_calendar.available_room 을 읽지 않고
-        // "총 객실 − 겹치는 점유 예약 수" 로 재고를 계산하므로, 여기서 0 을 넣어도 판매가 멈추지 않았다.
-        // 판매를 막으려면 객실 상태(INACTIVE)나 총 객실 수를 바꾼다. null 은 기존 값을 유지한다.
+        // 재고는 받지 않는다. 사용자 API 는 "총 객실 − 겹치는 예약 수"로 재고를 계산하므로
+        // 판매 중지는 객실 상태나 총 객실 수로 한다. null 은 기존 값 유지.
         boolean created = priceCalendarService.upsert(roomId, date, price, null);
-        // 관리자 레이아웃(admin/layout/base.html)은 success/msg/error 만 토스트로 보여 준다 (과거 "toast" 키는 표시되지 않았다)
+        // 관리자 레이아웃은 success/msg/error 키만 토스트로 표시한다
         ra.addFlashAttribute("success", created ? "신규 생성 완료" : "수정 완료");
 
         // PRG 패턴: 기존 쿼리스트링(회사/숙소/월/필터) 유지 리다이렉트
@@ -191,8 +184,7 @@ public class PriceCalendarController {
         try {
             PriceCalendarDTO priceCalendarDTO =
                     objectMapper.readValue(json, PriceCalendarDTO.class);
-            // payload 안의 모든 room이 로그인 회사 소유인지 확인(roomId 하나만 검증하면
-            // JSON 본문에 다른 회사의 roomId를 섞어 보내는 우회가 가능하다).
+            // payload 의 모든 room 이 로그인 회사 소유인지 확인(타사 roomId 섞기 방지)
             Integer verifiedCompanyId = companyId;
             boolean allOwned = priceCalendarDTO.getRooms() == null || priceCalendarDTO.getRooms().stream()
                     .allMatch(roomDTO -> roomDTO.getRoom() != null
@@ -219,8 +211,7 @@ public class PriceCalendarController {
         return redirect.toString();
     }
 
-    // accommodationId만으로 companyId를 역산하면 임의 accommodationId를 넣어
-    // 다른 회사의 캘린더를 열람할 수 있으므로, 로그인 회사 소유인지 먼저 확인한다.
+    // 숙소가 로그인 회사 소유인지 먼저 확인한다
     @GetMapping("/calendar/{accommodationId}")
     @PreAuthorize("@companyAccess.ownsAccommodation(#accommodationId, authentication)")
     public String roomCalendar(Authentication authentication,

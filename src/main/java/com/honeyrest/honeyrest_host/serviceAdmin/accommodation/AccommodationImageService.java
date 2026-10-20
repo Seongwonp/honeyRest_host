@@ -19,10 +19,10 @@ public interface AccommodationImageService {
     //삭제
     void delete(Long imageId);
 
-    // 메인 썸네일(MAIN) 행 삭제 + 숙소 엔티티 thumbnail 비우기. 지운 이미지 URL 을 돌려준다(파일은 호출자가 커밋 후 삭제)
+    // 메인 썸네일 삭제 + 숙소 thumbnail 비우기. 지운 URL 을 돌려준다(파일은 호출자가 커밋 후 삭제)
     List<String> deleteMainThumbnail(Long accommodationId);
 
-    // 여러장 삭제 (accommodationId 소속인 이미지만, P1-4)
+    // 여러장 삭제 (accommodationId 소속인 이미지만)
     void deleteSubImages(Long accommodationId, List<Long> imageIds);
     // 정렬 변경 옵션
     void updateSort(Long ImageId, Integer sortOrder);

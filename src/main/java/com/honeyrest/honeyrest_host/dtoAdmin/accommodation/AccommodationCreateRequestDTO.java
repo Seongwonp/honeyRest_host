@@ -20,8 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 public class AccommodationCreateRequestDTO {
 
-    // 연관키. companyId 는 화면 입력이 아니라 로그인한 업체로 서버가 채운다.
-    // (과거 @NotNull 이라 비어 있는 "회사 ID" 칸을 사용자가 직접 입력하지 않으면 등록이 "must not be null" 로 실패했다)
+    // companyId 는 화면 입력이 아니라 로그인한 업체로 서버가 채운다
     private Integer companyId;
     @NotNull
     private Integer categoryId;

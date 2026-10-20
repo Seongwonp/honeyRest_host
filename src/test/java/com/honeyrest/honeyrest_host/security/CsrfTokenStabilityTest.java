@@ -16,8 +16,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 회귀 테스트: JWT 로 인증된 일반 요청마다 CSRF 토큰이 교체되면 안 된다.
- * (교체된 쿠키가 큰 화면 응답에서 누락되어 브라우저의 폼 POST 가 403 이 되던 문제)
+ * JWT 로 인증된 일반 요청마다 CSRF 토큰이 교체되면 안 된다 (교체된 쿠키가 누락되면 폼 POST 가 403).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")

@@ -35,7 +35,7 @@ public class AccommodationController {
                                  @RequestParam(name = "companyId", required = false) Integer paramCompanyId,
                                  @ModelAttribute PageRequestDTO pageRequestDTO,
                                  Model model) {
-        // 목록 상단 업체 선택(?companyId=)이 무시되던 문제: 경로 변수와 쿼리 파라미터를 모두 받는다
+        // 경로 변수와 쿼리 파라미터(?companyId=)를 모두 받는다
         Integer companyId = pathCompanyId != null ? pathCompanyId : paramCompanyId;
 
         PageResponseDTO<AccommodationDTO> responseDTO =
@@ -60,7 +60,7 @@ public class AccommodationController {
 
         model.addAttribute("companyId", companyId != null ? companyId : 0);
         model.addAttribute("companies", companyService.getAllCompanies());
-        // 페이지 링크의 companyId=0(전체)으로 getCompany(0) 를 불러 404 가 나던 문제
+        // companyId=0 은 전체
         model.addAttribute("company", (companyId != null && companyId > 0) ? companyService.getCompany(companyId) : null);
         model.addAttribute("responseDTO", responseDTO);
         model.addAttribute("accommodations", responseDTO.getDtoList());
@@ -70,7 +70,7 @@ public class AccommodationController {
 
     @GetMapping("/accommodation/create")
     public String createAccommodation(@RequestParam(required = false) Integer companyId, Model model) {
-        // 사이드바 "숙소 등록"은 companyId 없이 들어온다 (필수 파라미터라 500 이었다)
+        // 사이드바 "숙소 등록"은 companyId 없이 들어온다
         model.addAttribute("companyId", companyId);
         model.addAttribute("companies", companyService.getAllCompanies());
         model.addAttribute("categories", accommodationCategory.getAllAccommodationCategory());
@@ -81,7 +81,7 @@ public class AccommodationController {
     @PostMapping("/accommodation/create")
     public String createAccommodation(@ModelAttribute AccommodationDTO accommodationDTO, RedirectAttributes ra) {
         try {
-            // 대표 이미지는 선택 사항. 빈 파일을 그대로 올려 0바이트 썸네일(깨진 이미지)이 저장되던 문제
+            // 대표 이미지는 선택 사항 (빈 파일은 올리지 않는다)
             MultipartFile file = accommodationDTO.getFile();
             String imageUrl = (file != null && !file.isEmpty()) ? fileStorage.upload(file, "accommodation") : null;
             accommodationDTO.setThumbnailUrl(imageUrl);
@@ -100,7 +100,6 @@ public class AccommodationController {
             accommodationService.updateSubImages(accommodationId, accommodationDTO.getImages());
             ra.addFlashAttribute("success", "숙소를 등록했습니다.");
         } catch (Exception e) {
-            // 과거에는 Model 에 넣고 redirect 해 오류가 사라졌다 (등록 실패를 알 수 없었다)
             log.warn("owner accommodation create failed", e);
             ra.addFlashAttribute("error", "숙소 등록 실패: " + e.getMessage());
             return "redirect:/owner/accommodation/create";
@@ -142,10 +141,7 @@ public class AccommodationController {
         return "redirect:/owner/accommodation/list";
     }
 
-    /**
-     * 영구 삭제. 과거에는 deleteById 로 지워 객실·이미지·예약 FK 때문에 항상 500 이 났다.
-     * 예약 이력이 있으면 거부하고 비활성화를 안내한다.
-     */
+    /** 영구 삭제. 예약 이력이 있으면 거부하고 비활성화를 안내한다. */
     @PostMapping("/accommodation/{accommodationId}/delete")
     public String deleteAccommodation(@PathVariable Long accommodationId, RedirectAttributes ra) {
         try {
@@ -157,10 +153,7 @@ public class AccommodationController {
         return "redirect:/owner/accommodation/inActive/list";
     }
 
-    /**
-     * 숙소 승인 (PENDING -> ACTIVE). 이 컨트롤러는 /owner/** 전체가 SecurityConfig에서
-     * SUPER_ADMIN 전용으로 잠겨 있으므로, 회사 관리자는 이 경로에 도달할 수 없다(P1-1/P1-2).
-     */
+    /** 숙소 승인 (PENDING -> ACTIVE). /owner/** 는 SUPER_ADMIN 전용이다. */
     @PostMapping("/accommodation/{accommodationId}/approve")
     public String approveAccommodation(@PathVariable Long accommodationId, RedirectAttributes ra) {
         try {

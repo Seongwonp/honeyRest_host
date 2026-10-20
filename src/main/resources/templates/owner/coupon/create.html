@@ -71,7 +71,7 @@
                 <div class="row g-3 mt-3">
                     <div class="col-md-6">
                         <label for="targetType" class="form-label">대상 유형</label>
-                        <!-- 사용자 사이트는 ALL/ACCOMMODATION 쿠폰만 예약에 적용한다 (COMPANY/ROOM 은 쓸 수 없는 쿠폰이 됐다) -->
+                        <!-- 사용자 사이트는 ALL/ACCOMMODATION 쿠폰만 예약에 적용한다 -->
                         <select name="targetType" class="form-select" id="targetType" required
                                 onchange="document.getElementById('targetId').disabled = (this.value === 'ALL');">
                             <option value="ALL">전체 숙소</option>

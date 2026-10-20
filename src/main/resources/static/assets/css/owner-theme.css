@@ -401,7 +401,7 @@ a.text-primary    { color: #2563EB !important; }
   .kpi-card .kpi-value { font-size: 1.4rem; }
 }
 
-/* ===== 좁은 화면 보정 (QA: 390px 에서 툴바·페이지네이션·표가 화면 밖으로 넘쳤다) ===== */
+/* ===== 좁은 화면 보정 (툴바·페이지네이션·표) ===== */
 @media (max-width: 576px) {
     .toolbar { flex-wrap: wrap; }
     .toolbar > * { max-width: 100%; }

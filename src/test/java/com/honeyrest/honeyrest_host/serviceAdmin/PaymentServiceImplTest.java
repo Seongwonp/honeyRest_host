@@ -15,8 +15,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * P0-3 회귀 테스트: 로그인 이메일로 회사를 특정할 수 없을 때(예: principal 매핑 실패) 전체 회사의
- * 결제 내역이 노출되지 않고 빈 결과를 반환해야 한다(fail-closed).
+ * 로그인 이메일로 회사를 특정할 수 없으면 전체 결제 내역 대신 빈 결과를 반환해야 한다(fail-closed).
  */
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceImplTest {

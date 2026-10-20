@@ -22,9 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 관리자 ReservationServiceImpl 통합 테스트 (test 프로필 = H2 인메모리).
- * 과거 버전은 빈 테스트 본문과 실 DB에 하드코딩 ID로 INSERT 하는 테스트였다.
- * 이제 각 테스트가 자체 픽스처를 만들고 트랜잭션 롤백으로 정리한다.
+ * 관리자 ReservationServiceImpl 통합 테스트 (test 프로필 = H2). 픽스처는 트랜잭션 롤백으로 정리된다.
  */
 @SpringBootTest
 @ActiveProfiles("test")

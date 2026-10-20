@@ -16,7 +16,7 @@ public class AuthController {
 
     @GetMapping("/auth/login")
     public String loginPage(Model model) {
-        // demo 프로필이면 로그인 화면에 데모 계정을 안내한다 (그 외 프로필은 빈 목록 → 표시 안 함)
+        // demo 프로필이면 데모 계정을 안내한다
         model.addAttribute("demoAccounts", demoLoginProperties.visibleAccounts());
         // templates/auth/login.html 반환
         return "auth/login";

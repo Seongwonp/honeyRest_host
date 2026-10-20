@@ -8,17 +8,8 @@ import java.util.Set;
 
 /**
  * 사용자 API 의 Redis 캐시를 무효화한다.
- * <ul>
- *   <li>숙소 검색 캐시: 세대 번호 증가 ({@link #bumpAfterCommit()})</li>
- *   <li>숙소 상세 캐시: {@link AccommodationCacheKeys#allFor} 키 삭제 ({@link #evictAccommodationAfterCommit(Long)})</li>
- * </ul>
- * 호스트가 검색 결과에 영향을 주는 데이터(예약 점유 상태, 객실 totalRooms/상태, 숙소 노출 상태,
- * 가격 캘린더, 숙소 승인)를 바꾸면 서비스 계층에서 {@link #bumpAfterCommit()} 을,
- * 상세 화면에 보이는 데이터(숙소/객실/이미지/환불 규정/태그)를 바꾸면 {@link #evictAccommodationAfterCommit(Long)} 을 호출한다.
- * <ul>
- *   <li>app.cache.redis.enabled=true : {@link RedisSearchCacheInvalidator} (Redis INCR / DEL)</li>
- *   <li>그 외(test/screenshot 프로필 등) : {@link NoOpSearchCacheInvalidator} (아무것도 하지 않음)</li>
- * </ul>
+ * 검색 결과에 영향을 주는 변경은 {@link #bumpAfterCommit()}(세대 번호 증가),
+ * 상세 화면에 보이는 변경은 {@link #evictAccommodationAfterCommit(Long)}(키 삭제)을 호출한다.
  */
 public interface SearchCacheInvalidator {
 
@@ -29,9 +20,8 @@ public interface SearchCacheInvalidator {
     void evictAccommodationNow(Long accommodationId);
 
     /**
-     * 트랜잭션 안이면 커밋이 끝난 뒤에, 밖이면 즉시 세대 번호를 올린다.
-     * 커밋 전에 올리면 그 사이 사용자 API 가 아직 커밋되지 않은(옛) 재고로 새 세대 캐시를 채울 수 있고,
-     * 롤백된 변경으로 캐시를 버리는 일도 생긴다. 한 트랜잭션에서 여러 번 불려도 커밋 후 한 번만 올린다.
+     * 트랜잭션 안이면 커밋 후에, 밖이면 즉시 세대 번호를 올린다(커밋 전에 올리면 옛 재고로 새 캐시가 채워질 수 있다).
+     * 한 트랜잭션에서 여러 번 불려도 한 번만 올린다.
      */
     default void bumpAfterCommit() {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {

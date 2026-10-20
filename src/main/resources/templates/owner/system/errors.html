@@ -108,8 +108,7 @@
 
 <th:block layout:fragment="script">
 <script th:inline="javascript">
-// CSRF 토큰: SecurityConfig가 CSRF 보호를 켜 두었으므로 fetch POST에도 토큰 헤더를 실어야 403이 나지 않는다.
-// (헤더 이름은 CookieCsrfTokenRepository 기본값인 X-XSRF-TOKEN을 _csrf.headerName으로 받아 사용)
+// fetch POST 에도 CSRF 토큰 헤더를 실어야 403 이 나지 않는다
 const csrfHeaderName = /*[[${_csrf != null ? _csrf.headerName : null}]]*/ null;
 const csrfToken = /*[[${_csrf != null ? _csrf.token : null}]]*/ null;
 

@@ -97,7 +97,6 @@ public class RoomController {
                                       Authentication authentication,
                                       Model model) {
 
-        // 컨트롤러가 CompanyRepository 를 직접 쓰지 않고 다른 핸들러와 같은 서비스로 로그인 회사를 구한다
         Integer companyId = resourceAccessService.currentCompanyId(authentication);
         if (companyId == null) {
             throw new UsernameNotFoundException("업체 관리자 이메일에 해당하는 회사가 없습니다.");
@@ -208,8 +207,7 @@ public class RoomController {
             }
 
             ra.addFlashAttribute("success", "객실이 등록되었습니다.");
-            // /admin/rooms/list 는 다시 list_all 로 리다이렉트하는 라우터라 중간 요청에서 flash 가 소비돼
-            // 성공 토스트가 보이지 않았다. 최종 목록으로 바로 보낸다.
+            // /list 를 거치면 중간 리다이렉트에서 flash 가 소비되므로 최종 목록으로 바로 보낸다
             return "redirect:/admin/rooms/list_all";
 
         } catch (Exception e) {
@@ -241,8 +239,7 @@ public class RoomController {
     }
 
     /* =============== 저장 =================== */
-    // roomId 소유권만 확인하고 form.accommodationId는 검증하지 않아, 자기 객실을 타사 숙소 소속으로
-    // 옮길 수 있었다(P1-3). 대상 숙소(값이 있으면)도 같은 회사 소유인지 함께 확인한다.
+    // 객실을 타사 숙소로 옮기지 못하도록 대상 숙소의 소유권도 함께 확인한다
     @PostMapping("/{roomId}")
     @PreAuthorize("@companyAccess.ownsRoom(#roomId, authentication)"
             + " and @companyAccess.ownsAccommodationIfPresent(#form.accommodationId, authentication)")

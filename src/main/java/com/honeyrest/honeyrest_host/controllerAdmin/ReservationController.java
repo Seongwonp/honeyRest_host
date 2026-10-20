@@ -70,8 +70,7 @@ public class ReservationController {
 
     /**
      * 취소승인 (사유 포함)
-     * fetch(JSON) 호출이라 403 도 JSON 본문으로 돌려줘야 화면 스크립트가 메시지를 띄울 수 있다.
-     * 그래서 이 핸들러만 @PreAuthorize(→ error/403 HTML) 대신 직접 검사한다.
+     * fetch(JSON) 호출이라 403 도 JSON 으로 돌려주려고 @PreAuthorize 대신 직접 검사한다.
      */
     @PostMapping(value = "/cancel-request/{id}/approve", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
@@ -83,7 +82,7 @@ public class ReservationController {
                     .body(Map.of("ok", false, "message", "접근 권한이 없습니다."));
         }
         try {
-            // 사유 없이 즉시 승인 (기존 취소 요청 사유 유지). 서비스가 환불까지 처리하고 갱신된 예약을 돌려준다.
+            // 기존 취소 요청 사유 유지. 서비스가 환불까지 처리한다
             ReservationDTO updated = reservationService.approveCancelRequest(id, null);
             return ResponseEntity.ok(Map.of(
                     "ok", true,
@@ -124,7 +123,6 @@ public class ReservationController {
     @PostMapping("/{id}/complete")
     @PreAuthorize("@companyAccess.ownsReservation(#id, authentication)")
     public String complete(@PathVariable Long id, RedirectAttributes ra) {
-        // 과거에는 존재하지 않는 /admin/reservations/list-all 로 보내 처리 후 500 화면이 떴다.
         try {
             reservationService.markCompleted(id);
             ra.addFlashAttribute("msg", "체크아웃 완료 처리");
@@ -252,12 +250,12 @@ public class ReservationController {
         try {
             saved = reservationService.createReservation(form);
         } catch (ReservationConflictException | IllegalArgumentException e) {
-            // 재고 부족(겹침) 또는 잘못된 입력: 폼으로 돌아가 사유를 토스트로 보여준다.
+            // 재고 부족 또는 잘못된 입력: 폼으로 돌아가 사유를 보여준다
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/admin/reservations/new";
         }
         ra.addFlashAttribute("msg", "예약이 등록되었습니다. (" + saved.getReservationNumber() + ")");
-        // 예약 현황(/my)에서 예약번호로 검색한 결과로 이동한다 (/list 매핑은 존재하지 않는다)
+        // 예약 현황에서 예약번호로 검색한 결과로 이동
         return "redirect:/admin/reservations/my?q=" + saved.getReservationNumber();
     }
 
@@ -288,7 +286,6 @@ public class ReservationController {
     @GetMapping("/day")
     public String day(@RequestParam(required = false) Integer companyId,
                       @RequestParam(required = false) Long accommodationId,
-                      // 날짜 없이 열면 오늘로 보여 준다 (필수 파라미터라 400 이었다)
                       @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
                       Model model,
                       Authentication authentication) {

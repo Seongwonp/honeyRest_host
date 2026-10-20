@@ -16,22 +16,8 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 /**
- * 기존 예약 수정(필드 + 상태 전이)의 공통 규칙. 관리자(serviceAdmin.ReservationServiceImpl)와
- * 오너(serviceOwner.OReservationService) 두 화면 계층이 함께 쓴다.
- * <p>
- * 과거에는 두 계층이 점유 전이 판단(enteringOccupying/occupyingChanged/leavingOccupying)을 복사해 두었고,
- * 오너는 엔티티를 통째로 새로 만들어 save(덮어쓰기)했으며 체크인 &lt; 체크아웃 검증도 관리자에만 있었다.
- * 상태는 {@code Reservation.update} 가 아무 값이나 대입해 전이 표({@link ReservationStatus#canTransition})를 우회했다.
- * <p>
- * 사용 순서 (락 순서 규칙 때문에 두 단계로 나뉜다):
- * <ol>
- *   <li>예약을 잠금 읽기로 가져온다 ({@code findByIdForUpdate}).</li>
- *   <li>{@link #prepare} — 목표 상태 정규화, 날짜·전이 검증, 필요하면 객실 락 + 재고 검사.
- *       연관 엔티티(회원/객실/숙소)를 일반 SELECT 로 읽기 <b>전에</b> 호출해야 재고 검사가 옛 스냅샷을 보지 않는다.</li>
- *   <li>연관 엔티티를 읽는다.</li>
- *   <li>{@link #apply} — 필드는 도메인 {@code update}, 상태는 도메인 {@code changeStatus} 로 반영하고
- *       취소로 들어가면 환불, 점유가 바뀌면 검색 캐시 무효화.</li>
- * </ol>
+ * 예약 수정(필드 + 상태 전이) 공통 규칙. 관리자·오너 화면이 함께 쓴다.
+ * 락 순서 때문에 잠금 읽기 → {@link #prepare}(검증·재고 검사) → 연관 엔티티 조회 → {@link #apply} 순으로 호출한다.
  */
 @Component
 @RequiredArgsConstructor

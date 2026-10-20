@@ -33,10 +33,7 @@ public class RoomImageServiceImpl implements RoomImageService {
     }
 
     /**
-     * 이미지를 명시적으로 지우기 전에, 같은 영속성 컨텍스트에 로딩된 Room 의 images 컬렉션에서도 빼 둔다.
-     * Room.images 가 cascade=ALL 이라, 컬렉션이 로딩된 채로(예: 같은 트랜잭션의 객실 수정 merge) 이미지만 지우면
-     * flush 때 Room 쪽 PERSIST cascade 가 삭제 예정 이미지를 다시 살려 삭제가 무시된다.
-     * 컬렉션이 로딩되지 않았으면 아무것도 하지 않는다(추가 조회 없음).
+     * 로딩된 Room.images 컬렉션에서도 이미지를 빼 둔다. cascade=ALL 이라 그대로 두면 flush 때 삭제가 무시된다.
      */
     private static void detachFromLoadedRoom(RoomImage image) {
         Room room = image.getRoom();
@@ -50,7 +47,7 @@ public class RoomImageServiceImpl implements RoomImageService {
         List<RoomImage> images = roomImageRepository.findByRoomRoomIdOrderBySortOrderAsc(roomId);
         images.forEach(RoomImageServiceImpl::detachFromLoadedRoom);
         roomImageRepository.deleteAll(images);
-        roomImageRepository.flush(); // 이어지는 새 이미지 저장보다 삭제가 먼저 반영되게 한다 (기존 deleteBy... 의 flush 와 같은 순서)
+        roomImageRepository.flush(); // 새 이미지 저장보다 삭제가 먼저 반영되게 한다
     }
 
     // dto -> 엔티티

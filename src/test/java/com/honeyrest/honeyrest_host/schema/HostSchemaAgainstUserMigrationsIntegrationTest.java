@@ -26,26 +26,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * 호스트가 쓰는 엔티티(공유 도메인 모듈 + 호스트 전용 ErrorLog) ↔ 사용자 API 저장소 Flyway 마이그레이션 스키마의 교차 검증.
- *
- * <p>호스트 앱은 마이그레이션 없이 운영에서 {@code ddl-auto=validate} 로 기동하고, 기본 test 태스크는 H2 + create-drop 이라
- * 두 저장소 사이의 스키마 차이(drift)는 지금까지 운영 기동 시점에야 드러났다. 이 테스트는
- * <ol>
- *   <li>Testcontainers 로 빈 MySQL 8.0 을 띄우고</li>
- *   <li>사용자 API 저장소의 {@code db/migration} (V1~최신) 을 Flyway 로 그대로 적용한 뒤
- *       (V3·V10 등 MySQL 전용 PREPARE/information_schema 구문도 실제 MySQL 이 처리)</li>
- *   <li>호스트 컨텍스트를 {@code ddl-auto=validate} 로 기동한다 — 누락 테이블/컬럼·타입 불일치가 있으면 기동이 실패한다.</li>
- * </ol>
- *
- * <p>마이그레이션 위치 결정 순서:
- * <ol>
- *   <li>시스템 프로퍼티 또는 환경변수 {@code HONEYREST_USER_MIGRATIONS} (명시적으로 지정하면 우선)</li>
- *   <li>git submodule {@code libs/honeyrest-user/src/main/resources/db/migration}
- *       (공유 도메인 모듈과 같은 커밋이므로 엔티티와 마이그레이션 버전이 항상 짝이 맞는다.
- *       Gradle 에서 {@code -PhoneyrestUserDir} 로 사용자 저장소 위치를 바꾸면 build.gradle 이 1번 값을 그 경로로 채운다.)</li>
- * </ol>
- * 둘 다 없으면 로컬에서는 건너뛰고, {@code integration.requireDocker=true}(CI)에서는 실패한다.
- * Docker 가 없으면 클래스 전체를 건너뛴다. 실행: {@code ./gradlew integrationTest}
+ * 호스트 엔티티 ↔ 사용자 API Flyway 마이그레이션 스키마 교차 검증.
+ * MySQL 8.0 컨테이너에 마이그레이션을 적용한 뒤 호스트 컨텍스트를 {@code ddl-auto=validate} 로 기동한다.
+ * 마이그레이션 위치: {@code HONEYREST_USER_MIGRATIONS}, 없으면 서브모듈 {@code libs/honeyrest-user/.../db/migration}.
+ * 실행: {@code ./gradlew integrationTest}
  */
 @Tag("integration")
 @Testcontainers(disabledWithoutDocker = true)

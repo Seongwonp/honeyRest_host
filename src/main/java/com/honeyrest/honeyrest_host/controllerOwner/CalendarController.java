@@ -90,7 +90,7 @@ public class CalendarController {
         }
 
         model.addAttribute("companyId", companyId);
-        model.addAttribute("accommodationId", accommodationId); // 필터 선택값 유지 (없어서 숙소 선택이 풀렸다)
+        model.addAttribute("accommodationId", accommodationId); // 필터 선택값 유지
 
         model.addAttribute("roomId", roomId);
         model.addAttribute("companies", companyService.getAllCompanies());
@@ -134,7 +134,7 @@ public class CalendarController {
             endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
         }
         // 해당 숙소의 방 리스트
-        // 조건이 뒤집혀 있어 숙소 미선택 시 getRoomsByAccommodationId(null)(빈 목록), 선택 시 전체 객실을 그렸다
+        // 숙소를 고르면 그 숙소의 방, 아니면 전체 방
         List<RoomDTO> roomList;
         if (accommodationId != null) {
             roomList = roomService.getRoomsByAccommodationId(accommodationId);

@@ -26,11 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 /**
- * 메서드 보안(@PreAuthorize("@companyAccess.ownsXxx(#id, authentication)")) 회귀 테스트.
- * <p>
- * 업체 A 의 COMPANY_ADMIN 이 업체 B 의 숙소·객실·예약에 접근하면 컨트롤러 본문에 들어가기 전에 거부되고,
- * GlobalExceptionHandler 를 거쳐 403 + error/403 화면으로 응답해야 한다.
- * (test 프로필 = H2, MockMvc 요청이 테스트 트랜잭션에 참여하므로 픽스처는 롤백으로 정리된다.)
+ * 메서드 보안 검증: 업체 A 관리자가 업체 B 의 숙소·객실·예약에 접근하면 403 + error/403 화면이어야 한다.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

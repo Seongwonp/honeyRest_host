@@ -32,7 +32,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     private final RoomRepository roomRepository;
     private final EntityManager em;
     private final ReservationRepository reservationRepository;
-    // 가격 캘린더 변경 시 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    // 가격 캘린더 변경 시 사용자 API 검색 캐시를 커밋 후 무효화
     private final SearchCacheInvalidator searchCacheInvalidator;
 
     // 예약 수량 맵: (roomId -> (date -> 예약수량))
@@ -42,7 +42,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
             LocalDate start,
             LocalDate end
     ) {
-        // 회사(+선택 숙소) 범위의 겹치는 예약들 (점유 상태 ReservationStatus.OCCUPYING 만 쿼리에서 조회)
+        // 회사(+선택 숙소) 범위의 겹치는 점유 예약들
         List<Reservation> rs = reservationRepository.findOverlappedReservationsForMonth(
                 companyId, accommodationId, start, end);
 
@@ -195,7 +195,7 @@ public class PriceCalendarServiceImpl implements PriceCalendarService {
     @Override
     @Transactional
     public boolean upsert(Long roomId, LocalDate date, BigDecimal price, Integer available) {
-        // 날짜별 가격/판매 가능 수가 바뀌면 사용자 API 검색 결과(가격·재고)가 달라진다
+        // 사용자 API 검색 결과(가격)가 달라진다
         searchCacheInvalidator.bumpAfterCommit();
         int updated = priceCalendarRepository.updateValues(roomId, date, price, available);
         if (updated > 0) return false; // updated

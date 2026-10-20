@@ -11,13 +11,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 총관리자(오너) 매출 화면용 집계. 관리자 SalesStatRepository 와 같은 기준이다:
- * 결제 승인 완료(DONE) + 예약이 취소되지 않음, 결제일 기준, [from 00:00, toExclusive 00:00).
- * <p>
- * 과거에는 OSalesService 가 모든 예약을 메모리로 읽어 여섯 군데에서 복사된 반복문으로 합산했고,
- * 그중 하나는 isAfter 를 써서 시작일 매출이 빠졌다. 이제 DB 의 GROUP BY 한 번으로 집계한다.
- * 범위(전체/업체/숙소)는 null 이면 조건을 끄는 파라미터로 한 쿼리에서 처리한다.
- * JPQL 이라 MySQL(운영)과 H2(test/screenshot)에서 같은 쿼리가 돈다.
+ * 총관리자 매출 화면용 집계. SalesStatRepository 와 같은 기준(결제 DONE + 예약 미취소, 결제일 기준).
+ * 범위(전체/업체/숙소)는 null 이면 조건을 끄는 파라미터로 처리한다.
  */
 public interface OSalesRepository extends JpaRepository<Payment, Long> {
 

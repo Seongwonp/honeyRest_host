@@ -15,8 +15,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long>, JpaSpecif
     // [기본 조회]
     // Pageable을 넘기면 페이징/정렬 모두 처리가능 (기본 findAll(Pageable)도 있음)
 
-    // 상태 필터. V12 에서 과거 노출 값 VISIBLE 을 PUBLISHED 로 정규화했으므로 단일 값(=)으로 조회한다
-    // (저장 값: com.honeyrest.domain.type.ReviewStatus.ALL = PUBLISHED/HIDDEN/DELETED)
+    // 상태 필터 (저장 값: ReviewStatus.ALL = PUBLISHED/HIDDEN/DELETED)
     Page<Review> findByStatus(String status, Pageable pageable);
 
     // [조건 조회 1] 숙소 기준 + 상태 필터

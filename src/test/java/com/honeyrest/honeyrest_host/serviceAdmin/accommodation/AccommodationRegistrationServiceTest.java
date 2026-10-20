@@ -43,7 +43,7 @@ class AccommodationRegistrationServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
 
         verify(fileStorage).delete("/uploads/accommodations/thumb.jpg");
-        // 서브 이미지는 숙소 저장 뒤 단계라 올라가지 않았다
+        // 서브 이미지는 숙소 저장 뒤 단계라 올라가지 않는다
         verify(fileStorage, never()).upload(any(), eq("accommodations/null/images"));
         verify(fileStorage, never()).delete(eq("/uploads/accommodations/other.jpg"));
     }

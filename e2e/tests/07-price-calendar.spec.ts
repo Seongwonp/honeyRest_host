@@ -2,8 +2,7 @@ import { test, expect } from '@playwright/test';
 import { adminToast, isoDate, login } from './helpers';
 
 // (g) 가격 캘린더 1박 가격 수정 모달
-//  - 모달 기본값은 그날 "설정된 1박 가격"이어야 한다 (과거: 체크인 매출 합계를 가격으로 채움)
-//  - 저장 요청 파라미터 ym 이 컨트롤러와 맞아야 한다 (과거: 컨트롤러가 yearMonth 를 요구해 항상 400)
+//  - 모달 기본값은 그날 설정된 1박 가격이고, 저장 파라미터 ym 이 컨트롤러와 맞아야 한다
 //  - 사용자 API 가 따르지 않는 "재고 0 = 판매중지" 입력은 없어야 한다
 test('가격 캘린더에서 1박 가격을 수정하면 같은 달 캘린더에 반영된다', async ({ page }) => {
   await login(page, 'company');

@@ -13,10 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Firebase 초기화 설정.
- * <p>
- * {@code app.storage.type=firebase} 일 때만 로드된다. 기본값(local)에서는 이 설정이 비활성화되므로
- * 서비스 계정 키 파일이 없어도 애플리케이션이 정상 기동한다.
+ * Firebase 초기화 설정. {@code app.storage.type=firebase} 일 때만 로드된다.
  */
 @Configuration
 @ConditionalOnProperty(name = "app.storage.type", havingValue = "firebase")

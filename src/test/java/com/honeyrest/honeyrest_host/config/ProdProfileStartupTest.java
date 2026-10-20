@@ -13,14 +13,8 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 운영(prod) 프로필 설정(application-prod.properties)이 필수 환경변수만으로 기동되는지,
- * prod,local-demo 조합에서 데모 계정이 환경변수 비밀번호로만 만들어지는지 검증한다.
- * <p>
- * - 필수: DB_URL / DB_USERNAME / DB_PASSWORD / JWT_SECRET (docker-compose 가 주는 이름 그대로)
- * - DEMO_COMPANY_PASSWORD 만 주고 DEMO_ADMIN_PASSWORD 는 주지 않는다
- *   → 업체 관리자 계정은 생성, 총관리자 계정은 건너뜀 (코드 기본값 admin1234 로 만들어지면 안 됨)
- * - MySQL·Redis 는 이 테스트 환경에 없으므로 H2(create-drop) + Redis 스위치 끔으로만 바꾼다.
- *   (실제 운영은 사용자 API 의 Flyway 스키마에 ddl-auto=validate. 그 조합은 integrationTest 가 MySQL 8.0 으로 검증한다)
+ * prod 프로필이 필수 환경변수만으로 기동되는지, prod,local-demo 에서 데모 계정이 환경변수 비밀번호로만 만들어지는지 검증한다.
+ * DEMO_ADMIN_PASSWORD 를 주지 않아 총관리자 계정은 건너뛰어야 한다. DB 는 H2, Redis 는 끈다.
  */
 @SpringBootTest(properties = {
         // ---- 운영 compose 가 넣는 필수 환경변수 (값만 테스트용) ----

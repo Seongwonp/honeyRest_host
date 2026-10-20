@@ -42,7 +42,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     private final ObjectMapper objectMapper;
     private final FileStorage fileStorage;
     private final ORoomRepository roomRepository;
-    // 숙소 승인·노출 상태·최저가가 바뀌거나 삭제되면 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    // 승인·노출 상태·최저가 변경/삭제 시 사용자 API 검색 캐시를 커밋 후 무효화
     private final SearchCacheInvalidator searchCacheInvalidator;
 
 
@@ -64,7 +64,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
     private List<String> parseAmenitiesToList(String jsonInput) {
         if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
 
-        // JSON 배열/CSV/여러 줄 모두 허용 (형식이 다르면 매 요청 스택트레이스 경고가 쌓였다)
+        // JSON 배열/CSV/여러 줄 모두 허용
         return com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.toList(jsonInput);
     }
     //List를 문자열로 변환
@@ -216,11 +216,10 @@ public class OAccommodationServiceImpl implements OAccommodationService {
             dto.setThumbnailUrl(acc.getThumbnail());
         }
 
-        // save(merge)가 영속 엔티티를 덮어쓰기 전에 검색 관련 값을 떠 둔다
+        // save(merge) 전에 비교할 값을 미리 읽어 둔다
         String oldStatus = acc.getStatus();
 
-        // 상태: 비어 있으면 유지. ACTIVE 가 아닌 숙소를 수정 폼으로 ACTIVE 로 바꾸면 승인 흐름(approve, PENDING→ACTIVE)을
-        // 건너뛰게 된다. 과거 폼은 ACTIVE/INACTIVE 두 개만 있어 PENDING 숙소를 저장하기만 해도 ACTIVE 가 됐다.
+        // 상태: 비어 있으면 유지. 수정 폼으로 ACTIVE 전환을 허용하면 승인 흐름을 건너뛰게 된다
         if (dto.getStatus() == null || dto.getStatus().isBlank()) {
             dto.setStatus(oldStatus);
         } else {
@@ -245,8 +244,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
 
     /**
-     * 숙소 운영 중지(INACTIVE). 과거에는 deleteById 로 바로 지워 객실·예약·이미지 FK 때문에 항상 500 이 났다.
-     * 영구 삭제는 예약 이력이 없을 때만 {@code AccommodationService.delete} 로 한다(컨트롤러).
+     * 숙소 운영 중지(INACTIVE). 영구 삭제는 예약 이력이 없을 때만 {@code AccommodationService.delete} 로 한다.
      */
     @Override
     public void removeAccommodation(Long id) {
@@ -273,7 +271,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
         Page<Accommodation> page;
 
-        // 상태 필터를 쿼리에서 적용해야 total(전체 건수)과 목록 건수가 일치한다.
+        // 상태 필터를 쿼리에서 적용해야 total 과 목록 건수가 일치한다
         if (companyId != null && companyId >= 1) {
             page = accommodationRepository.findByCompany_CompanyIdAndStatusIgnoreCase(companyId, AccommodationStatus.ACTIVE, pageable);
         } else {
@@ -341,7 +339,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
 
 
 
-        // 기존 서브 이미지 뒤에 붙인다 (매번 1부터 매겨 정렬 순서가 겹쳤다)
+        // 기존 서브 이미지 뒤에 붙인다
         sortOrder += (int) accommodationImageRepository.findByAccommodation_AccommodationId(accommodationId).stream()
                 .filter(i -> "SUB".equals(i.getImageType())).count();
         for (MultipartFile image : images) {
@@ -393,7 +391,7 @@ public class OAccommodationServiceImpl implements OAccommodationService {
         if (updated == 0) {
             throw new IllegalStateException("승인 대기(PENDING) 상태의 숙소만 승인할 수 있습니다.");
         }
-        // PENDING → ACTIVE: 검색 결과에 새로 노출된다. (거절 PENDING → REJECTED 는 노출 변화가 없어 올리지 않는다)
+        // PENDING → ACTIVE 로 검색에 새로 노출된다 (거절은 노출 변화 없음)
         searchCacheInvalidator.bumpAfterCommit();
         searchCacheInvalidator.evictAccommodationAfterCommit(accommodationId);
     }

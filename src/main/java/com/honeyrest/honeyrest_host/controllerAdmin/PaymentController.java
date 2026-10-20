@@ -88,10 +88,9 @@ public class PaymentController {
         // 정렬: 결제일 최신 우선, 결제일 null이면 createdAt로 보조 정렬
         Sort sort = Sort.by(Sort.Direction.DESC, "paymentDate")
                 .and(Sort.by(Sort.Direction.DESC, "createdAt"));
-        // 이전 버튼의 page=-1 로 400 이 나던 문제
         Pageable pageable = PageRequest.of(Math.max(page, 0), size <= 0 ? 10 : Math.min(size, 100), sort);
 
-        // 서비스 호출 (정규화한 상태/수단을 넘긴다 — 원본을 넘겨 소문자·허용 외 값이 그대로 쿼리에 들어갔다)
+        // 정규화한 상태/수단으로 조회
         Page<PaymentDTO> result = paymentService.listForCompanyUser
                 (email, accommodationId, fixedStatus, fixedMethod, q, from, to, pageable);
 
@@ -124,9 +123,7 @@ public class PaymentController {
                           Model model) {
 
         // 회사/사용자 맥락이 필요하면 로그인 이메일로 조회
-        // 주의: 이전에는 @AuthenticationPrincipal User user를 사용했는데, 이 앱의 JWT principal은
-        // User 엔티티가 아니라 String(email)이라 항상 null로 주입되어 로그인 이메일이 유실됐고,
-        // 그 결과 PaymentRepository.search의 companyId 필터가 통째로 빠져 전 회사 결제/환불이 노출됐다.
+        // JWT principal 은 User 가 아니라 email 문자열이므로 auth.getName() 으로 꺼낸다
         String loginEmail = (auth != null) ? auth.getName() : null;
 
         // 2) 회샤 id

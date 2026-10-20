@@ -18,10 +18,7 @@ public class PageRequestDTO {
     @Builder.Default
     private int size = 10;
 
-    /**
-     * 페이지는 1부터 시작한다. 이전 버튼이 비활성일 때 링크에 page=0 이 붙어
-     * PageRequest.of(-1, ...) 가 IllegalArgumentException(400)을 내던 문제를 막는다.
-     */
+    /** 페이지는 1부터 시작한다 (1 미만은 1로 보정) */
     public void setPage(int page) {
         this.page = Math.max(page, 1);
     }

@@ -4,9 +4,7 @@ import os from 'node:os';
 import { test, expect, type Page } from '@playwright/test';
 import { acceptDialogs, adminToast, isoDate, login } from './helpers';
 
-// 라이브 데모 QA 에서 발견한 관리자 화면 버그의 브라우저 회귀 시나리오.
-//  - 총관리자 화면: 템플릿/뷰 이름 오류로 500, 레이아웃 밖 스크립트가 버려져 폼이 동작하지 않음, 없는 POST 경로
-//  - 업체 관리자 화면: 숙소 등록 시 회사 ID 필수, 취소 요청 승인 CSRF 누락(403)·거부 폼 action 없음(405)
+// 관리자 화면 회귀 시나리오: 총관리자 메뉴 화면 렌더링·폼 동작, 업체 관리자 숙소 등록·취소 요청 승인/거부
 
 const PNG = path.join(os.tmpdir(), 'honeyrest-e2e-1px.png');
 fs.writeFileSync(PNG, Buffer.from(
@@ -29,7 +27,7 @@ test.describe('총관리자 화면', () => {
   });
 
   test('사이드바의 모든 화면이 오류 없이 열린다', async ({ page }) => {
-    // owner/fragments/sidebar.html 의 메뉴 (과거: 객실·리뷰·회원·예약·매출 화면이 500 이거나 렌더링 도중 끊겼다)
+    // owner/fragments/sidebar.html 의 메뉴
     for (const url of [
       '/owner/dashboard', '/owner/company/list', '/owner/company/create', '/owner/company/inActive/list',
       '/owner/accommodation/list', '/owner/accommodation/create', '/owner/accommodation/inActive/list',

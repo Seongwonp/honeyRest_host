@@ -89,7 +89,7 @@
             }
 
             /* 달력 그리드 */
-            /* 좁은 화면에서는 달력만 가로 스크롤 (과거엔 페이지 전체가 390px 폭을 넘었다) */
+            /* 좁은 화면에서는 달력만 가로 스크롤 */
             .month-grid{ display:grid; grid-template-columns:repeat(7,minmax(84px,1fr)); gap:8px; overflow-x:auto; }
             .dow{
                 font-weight:700; text-align:center; padding:8px 0;
@@ -222,8 +222,7 @@
         <div class="btn btn-light fw-semibold" th:text="${#temporals.format(ym,'yyyy년 MM월')}">YYYY-MM</div>
     </div>
 
-    <!-- 기간 일괄 설정: 기존 /admin/price/bulk-upsert(JSON) 엔드포인트에 화면이 없어 쓸 수 없었다.
-         객실·기간·요일·1박 가격을 고르면 스크립트가 JSON 을 만들어 보낸다. -->
+    <!-- 기간 일괄 설정: 객실·기간·요일·가격으로 JSON 을 만들어 /admin/price/bulk-upsert 로 보낸다 -->
     <details class="card card-body mb-3" th:if="${priceCalendarDTO != null and !#lists.isEmpty(priceCalendarDTO.rooms)}" id="bulkPanel">
         <summary class="fw-semibold" style="cursor:pointer">기간 일괄 가격 설정</summary>
         <form th:action="@{/admin/price/bulk-upsert}" method="post" id="bulkForm" class="row g-2 align-items-end mt-2">
@@ -277,8 +276,7 @@
         선택된 숙소에 표시할 객실이 없습니다.
     </div>
 
-    <!-- 월 달력: 헤더가 일요일 시작이고 #temporals.dayOfWeek 는 월=1..일=7 이라 앞 빈칸은 startDow % 7.
-         (과거 (startDow+6)%7 로 날짜가 하루씩 왼쪽 요일에 그려졌고, 일요일 시작 달은 sequence(1,0) 때문에 빈칸이 2개 생겼다) -->
+    <!-- 월 달력: 일요일 시작이고 dayOfWeek 는 월=1..일=7 이라 앞 빈칸은 startDow % 7 -->
     <!-- 회사 전체 보기(overview) -->
     <div th:if="${overview != null}" class="mt-3">
         <div class="month-grid">
@@ -535,7 +533,7 @@
 
 </th:block>
 
-<!-- 레이아웃 데코레이터는 fragment 밖 내용을 버린다: 과거 이 스크립트가 fragment 밖에 있어 수정 버튼이 동작하지 않았다 -->
+<!-- 레이아웃 데코레이터는 fragment 밖 내용을 버린다 -->
 <th:block layout:fragment="script">
 <script>
     (function () {

@@ -13,9 +13,8 @@ import org.springframework.web.client.RestClient;
 import java.time.Duration;
 
 /**
- * 토스 결제 취소 클라이언트 선택.
- * {@code toss.secret-key}(환경변수 TOSS_SECRET_KEY)가 비어 있거나 screenshot·demo 프로필이면 {@link NoOpTossCancelClient},
- * 그 외에는 {@link HttpTossCancelClient} 를 등록한다. 시크릿 키는 사용자 API 와 같은 토스 상점 키를 쓴다.
+ * 토스 결제 취소 클라이언트 선택. 키(TOSS_SECRET_KEY)가 없거나 screenshot·demo 프로필이면 No-op,
+ * 그 외에는 {@link HttpTossCancelClient}. 키는 사용자 API 와 같은 상점 키를 쓴다.
  */
 @Log4j2
 @Configuration

@@ -11,19 +11,8 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
- * screenshot 프로필(H2 인메모리 DB, MySQL 모드) 전용 호환 계층.
- * <p>
- * 리포트/매출 네이티브 쿼리는 MySQL 전용 문법({@code DATE_ADD(x, INTERVAL 1 DAY)}, {@code DATE_FORMAT},
- * {@code WEEKDAY}, 2-인자 {@code DATEDIFF})을 쓰는데 H2 는 이를 파싱하지 못한다.
- * 운영 쿼리를 바꾸지 않기 위해, screenshot 프로필에서만
- * <ol>
- *   <li>{@link StatementInspector} 로 SQL 을 H2 가 읽을 수 있는 형태로 치환하고
- *       ({@code INTERVAL n DAY} → {@code n}, {@code DATE_ADD(} → {@code MYSQL_DATE_ADD(},
- *       {@code status = 1} → {@code status = '1'} 등)</li>
- *   <li>치환된 함수를 {@code db/screenshot-seed.sql} 의 {@code CREATE ALIAS} 로 이 클래스의 static 메서드에 연결한다.</li>
- * </ol>
- * 등록: {@code spring.jpa.properties.hibernate.session_factory.statement_inspector} (application-screenshot.properties).
- * MySQL 로 실행할 때는 전혀 관여하지 않는다.
+ * screenshot 프로필(H2, MySQL 모드) 전용. H2 가 파싱하지 못하는 MySQL 문법(DATE_ADD INTERVAL, DATE_FORMAT 등)을
+ * 치환하고, 치환된 함수는 {@code db/screenshot-seed.sql} 의 CREATE ALIAS 로 이 클래스의 static 메서드에 연결한다.
  */
 public class H2MySqlCompat implements StatementInspector {
 

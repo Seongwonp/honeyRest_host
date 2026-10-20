@@ -14,17 +14,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 데모/로컬 시연용 계정 시더. 과거에는 프로필 제한이 없어 모든 환경(운영 포함)에서
- * 고정 비밀번호로 SUPER_ADMIN 계정을 만들었다(P0-1). local-demo 프로필을 명시적으로
- * 활성화한 경우에만 실행되도록 opt-in으로 전환했다.
- * <p>
- * 운영 배포에서 데모 계정이 필요하면 {@code prod,local-demo} 로 켜고 비밀번호를 환경변수
- * {@code DEMO_COMPANY_PASSWORD} / {@code DEMO_ADMIN_PASSWORD} 로 준다 (application-prod.properties).
- * 비밀번호가 비어 있으면 해당 계정 묶음은 만들지 않는다 → 빈 비밀번호·코드 기본값 계정이 생기지 않는다.
- * 이미 있는 계정은 건드리지 않으므로(비밀번호 변경 없음) 재기동해도 안전하다.
- * <p>
- * demo 프로필(Render 무료 데모, H2 인메모리)에서도 실행된다. 비밀번호는 render.yaml 의 DEMO_COMPANY_PASSWORD /
- * DEMO_ADMIN_PASSWORD 로 주며(application-demo.properties), 로그인 화면에 같은 값이 안내된다.
+ * 데모용 계정 시더. local-demo·demo 프로필에서만 실행된다(opt-in).
+ * 비밀번호는 DEMO_COMPANY_PASSWORD / DEMO_ADMIN_PASSWORD 환경변수로 주며, 비어 있으면 해당 계정은 만들지 않는다.
+ * 이미 있는 계정은 건드리지 않는다.
  */
 @Component
 @RequiredArgsConstructor

@@ -42,7 +42,7 @@ public class ORoomServiceImpl implements ORoomService {
     private final ORoomImageRepository roomImageRepository;
     private final OReviewRepository reviewRepository;
     private final FileStorage fileStorage;
-    // 객실 재고(totalRooms)·상태·가격이 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    // 객실 재고·상태·가격이 바뀌면 사용자 API 검색 캐시를 커밋 후 무효화
     private final SearchCacheInvalidator searchCacheInvalidator;
 
     // ===== Mapper =====
@@ -79,8 +79,7 @@ public class ORoomServiceImpl implements ORoomService {
     private List<String> parseList(String jsonInput) {
         if (jsonInput == null || jsonInput.isBlank()) return Collections.emptyList();
 
-        // JSON 배열/CSV/여러 줄 모두 허용. 과거에는 JSON 배열만 읽어 bed_info 처럼 형식이 다른 값마다
-        // 스택트레이스 경고를 남기고 빈 값을 보여 줬다.
+        // JSON 배열/CSV/여러 줄 모두 허용
         return com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.toList(jsonInput);
     }
     private String parseString(String jsonInput) {
@@ -93,12 +92,11 @@ public class ORoomServiceImpl implements ORoomService {
     }
 
     /**
-     * 객실 폼 값을 빌더에 채운다. 등록은 빈 빌더에, 수정은 관리 중인 Room 에서 시작한 빌더(RoomEntityCopy.of)에 쓴다.
-     * 수정 폼은 모든 항목을 보내므로 값은 폼 그대로 덮어쓰고(기존 동작), 이미지 컬렉션·roomId 는 빌더에 남은 값을 쓴다.
+     * 객실 폼 값을 빌더에 채운다. 수정은 관리 중인 Room 에서 시작한 빌더(RoomEntityCopy.of)를 써서
+     * 이미지 컬렉션·roomId 를 유지한다.
      */
     private Room.RoomBuilder applyForm(Room.RoomBuilder b, RoomDTO d) {
-        // 편의시설과 침대 정보를 각각 변환한다. 과거에는 편의시설이 비어 있으면 침대 정보까지 "[]" 로 버려졌고,
-        // 공백 기준으로도 쪼개 "더블 침대" 가 ["더블","침대"] 로 저장됐다.
+        // 편의시설과 침대 정보를 각각 JSON 으로 정규화
         String amenitiesJson = com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.normalizeToJson(d.getAmenities());
         String bedInfoJson = com.honeyrest.honeyrest_host.utilAdmin.AmenitiesParser.normalizeToJson(d.getBedInfo());
         return b
@@ -158,7 +156,7 @@ public class ORoomServiceImpl implements ORoomService {
         dto.setAccommodationId(acc.getAccommodationId());
         Long roomId = roomRepository.save(toEntity(dto)).getRoomId();
         searchCacheInvalidator.bumpAfterCommit(); // 새 객실 = 새 재고
-        searchCacheInvalidator.evictAccommodationAfterCommit(acc.getAccommodationId()); // 사용자 숙소 상세(객실 목록) 캐시
+        searchCacheInvalidator.evictAccommodationAfterCommit(acc.getAccommodationId());
         return roomId;
 
     }
@@ -167,9 +165,8 @@ public class ORoomServiceImpl implements ORoomService {
     public void modifyRoom(RoomDTO dto) {
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
-        RoomSearchSnapshot before = RoomSearchSnapshot.of(room); // save(merge) 전에 떠 둔다
-        // 관리 중인 Room(이미지 컬렉션 포함)에서 시작한다. 과거에는 toEntity(dto) 로 새 Room 을 만들어 merge 해
-        // 영속 Room 의 이미지 컬렉션이 빈 리스트로 바뀌었다 (Room.images cascade=ALL, RoomEntityCopy 참고).
+        RoomSearchSnapshot before = RoomSearchSnapshot.of(room); // save(merge) 전에 읽어 둔다
+        // 새 Room 으로 merge 하면 이미지 컬렉션(cascade=ALL)이 비므로 관리 중인 Room 에서 시작한다
         Room updated = applyForm(RoomEntityCopy.of(room), dto).build();
         roomRepository.save(updated);
         if (RoomSearchSnapshot.of(updated).differsFrom(before)) {
@@ -196,7 +193,7 @@ public class ORoomServiceImpl implements ORoomService {
     private void changeStatus(Long id, String status) {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("객실이 존재하지 않습니다."));
-        // 상태만 바꾼다. 과거에는 DTO(침대·편의시설을 "a, b" 문자열로 바꾼 값)를 거쳐 새 Room 을 만들어 merge 했다.
+        // 상태만 바꾼다
         roomRepository.save(RoomEntityCopy.of(room).status(status).build());
         searchCacheInvalidator.bumpAfterCommit();
         if (room.getAccommodation() != null) {
@@ -289,7 +286,7 @@ public class ORoomServiceImpl implements ORoomService {
     @Override
     public void modifyRoomImage(Long roomId, List<MultipartFile> images) throws Exception {
         if (images == null || images.isEmpty()) return;
-        // 기존 이미지 뒤에 붙인다 (매번 0부터 매겨 대표 이미지와 순서가 겹쳤다)
+        // 기존 이미지 뒤에 붙인다
         int sortOrder = roomImageRepository.findByRoom_RoomId(roomId).stream()
                 .map(RoomImage::getSortOrder).filter(Objects::nonNull).max(Integer::compare).orElse(-1) + 1;
 
@@ -314,8 +311,7 @@ public class ORoomServiceImpl implements ORoomService {
         // 대표 이미지(정렬 순서가 가장 앞선 이미지)의 URL 을 바꾼다. 없으면 0번으로 추가한다.
         Optional<RoomImage> current = roomImageRepository.findByRoom_RoomId(roomId).stream()
                 .min(Comparator.comparing(i -> i.getSortOrder() == null ? Integer.MAX_VALUE : i.getSortOrder()));
-        // merge 뒤에는 영속 엔티티의 URL 도 새 값으로 바뀌므로 지울 옛 URL 은 먼저 떠 둔다
-        // (과거 순서대로면 방금 올린 새 파일을 지워 대표 이미지가 404 였다)
+        // merge 뒤에는 영속 엔티티의 URL 도 바뀌므로 지울 옛 URL 을 먼저 읽어 둔다
         String oldUrl = current.map(RoomImage::getImageUrl).orElse(null);
         updateRoomImage(RoomImageDTO.builder()
                 .imageId(current.map(RoomImage::getImageId).orElse(null))

@@ -17,8 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * P0-2 회귀 테스트: COMPANY_ADMIN이 /api/owner/auth/signup으로 role=SUPER_ADMIN 계정을
- * 자가 발급할 수 없어야 하고, 익명 사용자도 호출할 수 없어야 한다. SUPER_ADMIN만 허용된다.
+ * /api/owner/auth/signup 은 SUPER_ADMIN 만 호출할 수 있어야 한다 (COMPANY_ADMIN·익명 사용자 거부).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -41,9 +40,7 @@ class OwnerAuthSignupSecurityTest {
 
     @Test
     void 익명_사용자는_owner_signup을_호출할_수_없다() {
-        // 미인증 요청은 formLogin 설정상 /auth/login으로 302 리다이렉트되고
-        // TestRestTemplate은 기본적으로 리다이렉트를 따라가 최종 200(로그인 페이지)을 반환한다.
-        // 중요한 건 최종 상태 코드가 아니라 signup 컨트롤러가 실제로는 호출되지 않아 계정이 생성되지 않는 것이다.
+        // 미인증 요청은 로그인 페이지로 리다이렉트된다. 상태 코드보다 계정이 생성되지 않았는지를 본다.
         ResponseEntity<String> response = attemptSignup(null, "SUPER_ADMIN", "anon-super");
 
         assertTrue(response.getStatusCode() != HttpStatus.CREATED,
@@ -56,10 +53,7 @@ class OwnerAuthSignupSecurityTest {
     void superAdmin은_새_관리자를_생성할_수_있다() {
         String token = jwtTokenProvider.createAccessToken(2L, "super-admin@test.local", "SUPER_ADMIN");
 
-        // Spring Security 6의 기본 CsrfTokenRequestHandler(XorCsrfTokenRequestAttributeHandler)는
-        // BREACH 공격 방어를 위해 화면에 노출하는 토큰 값을 매 요청 XOR로 마스킹한다. 즉 쿠키에 저장된
-        // 원본 값과 폼/헤더로 제출하는 값이 서로 다르다(같은 문자열을 넣으면 오히려 실패한다).
-        // 실제 브라우저처럼 로그인 페이지의 숨은 input에서 마스킹된 값을 그대로 읽어와야 한다.
+        // Spring Security 6 는 화면의 CSRF 토큰을 XOR 마스킹하므로 쿠키 값이 아니라 로그인 페이지의 hidden input 값을 쓴다.
         ResponseEntity<String> loginPage = restTemplate.getForEntity("/auth/login", String.class);
         String xsrfCookie = loginPage.getHeaders().get(HttpHeaders.SET_COOKIE).stream()
                 .filter(c -> c.startsWith("XSRF-TOKEN="))

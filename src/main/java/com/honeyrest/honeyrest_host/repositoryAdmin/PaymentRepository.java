@@ -21,9 +21,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByReservationReservationIdOrderByPaymentIdAsc(Long reservationId);
 
     /**
-     * 결제 상태를 조건부로 바꾼다 (예: DONE → CANCELED). 공유 엔티티 Payment 에 setter 가 없어 JPQL 로 바꾼다.
-     * 이미 바뀐 결제면 0 을 돌려주므로 환불의 멱등성 판단에 쓴다.
-     * 영속성 컨텍스트는 비우지 않는다(호출자의 예약 엔티티 변경 유실 방지).
+     * 결제 상태를 조건부로 바꾼다 (예: DONE → CANCELED). 이미 바뀌었으면 0 이라 환불 멱등성 판단에 쓴다.
+     * 호출자의 예약 엔티티 변경이 유실되지 않도록 영속성 컨텍스트는 비우지 않는다.
      */
     @Modifying(flushAutomatically = true)
     @Query("update Payment p set p.paymentStatus = :to where p.paymentId = :paymentId and p.paymentStatus = :from")
@@ -40,9 +39,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      * 결제 수단, 경제 상태, 기간, 검색어(예약번호/이름/전화) 지원
      * page 형태로 리턴(페이징 처리)
      */
-    /* 결제 내역 화면(관리자 -> 결제내역, 정산 리포트)에서 검색 조건 줬을 때 사용됨.
-     * companyId는 테넌트 경계이므로 null-bypass를 허용하지 않는다(항상 필수 일치).
-     * 그 외 조건은 주어지면 필터링, 없으면 전체 허용. */
     @Query("""
             select p from Payment p
             join p.reservation r where r.accommodation.company.companyId = :companyId

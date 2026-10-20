@@ -8,10 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 로그인 화면에 안내할 데모 계정 목록 ({@code app.demo.login-accounts[n].*}).
- * <p>
- * demo 프로필(application-demo.properties)에서만 값을 채운다. 다른 프로필은 목록이 비어 있어 로그인 화면에 아무것도 나오지 않는다.
- * 비밀번호가 비어 있는 계정(= DataInitializer 가 만들지 않은 계정)은 안내하지 않는다.
+ * 로그인 화면에 안내할 데모 계정 목록 ({@code app.demo.login-accounts[n].*}). demo 프로필에서만 채운다.
+ * 비밀번호가 비어 있는 계정은 안내하지 않는다.
  */
 @Getter
 @Setter

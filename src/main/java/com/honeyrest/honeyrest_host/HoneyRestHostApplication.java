@@ -9,8 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @SpringBootApplication
 @EnableJpaAuditing
 @EnableAsync
-// 공유 엔티티는 사용자 API 저장소의 :honeyrest-domain 모듈(com.honeyrest.domain)에서 온다.
-// 호스트 전용 엔티티(ErrorLog)는 com.honeyrest.honeyrest_host.entity 에 남아 있으므로 두 패키지를 모두 스캔한다.
+// 공유 엔티티(:honeyrest-domain)와 호스트 전용 엔티티(ErrorLog)를 함께 스캔한다
 @EntityScan({"com.honeyrest.domain", "com.honeyrest.honeyrest_host.entity"})
 public class HoneyRestHostApplication {
     public static void main(String[] args) {

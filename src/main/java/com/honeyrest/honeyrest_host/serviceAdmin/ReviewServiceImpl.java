@@ -85,9 +85,8 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     /**
-     * 목록 상태 필터 값 (공유 ReviewStatus 로 정규화: 대문자, 과거 VISIBLE → PUBLISHED).
-     * V12 이후 저장 값은 PUBLISHED/HIDDEN/DELETED 뿐이라 노출 필터는 PUBLISHED 하나로 조회한다.
-     * 허용되지 않은 값(옛 북마크의 PENDING/REPORTED 등)은 오류 대신 그대로 조회해 빈 목록이 된다.
+     * 목록 상태 필터 값을 공유 ReviewStatus 로 정규화한다(VISIBLE → PUBLISHED).
+     * 허용되지 않은 값은 그대로 조회해 빈 목록이 된다.
      */
     private static String filterStatus(String status) {
         try {
@@ -322,9 +321,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     /*
      * -------------------- 수정 공통 --------------------
-     * 과거에는 Review.builder() 로 새 엔티티를 만들어 save(merge) 했다. 빌더에 빠진 필드는 null 로 덮어써지고
-     * 영속성 컨텍스트의 createdAt 도 null 이 됐다. 이제 관리 중인 엔티티를 도메인 메서드
-     * (updateContent / reply·deleteReply / changeStatus / setLikeCount)로 바꾸고 dirty checking 으로 저장한다.
+     * 새 엔티티로 merge 하면 빠진 필드가 null 로 덮이므로, 관리 엔티티를 도메인 메서드로 바꾸고 dirty checking 으로 저장한다.
      */
 
     /** DTO 의 null 이 아닌 값만 관리 엔티티에 반영한다. */
@@ -356,16 +353,13 @@ public class ReviewServiceImpl implements ReviewService {
             review.setLikeCount(dto.getLikeCount());
         }
 
-        // 상태: 비어 있으면 그대로. 허용 값은 공유 ReviewStatus.ALL(PUBLISHED/HIDDEN/DELETED), VISIBLE 은 PUBLISHED 로 저장
+        // 상태: 비어 있으면 그대로, VISIBLE 은 PUBLISHED 로 저장
         if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
             review.changeStatus(dto.getStatus());
         }
     }
 
-    /**
-     * 리뷰의 예약·작성자·숙소·객실은 예약에서 정해지는 값이라 수정 대상이 아니다(도메인에도 변경 메서드가 없다).
-     * 같은 값이 다시 들어오는 것은 허용하고, 다른 값이면 조용히 무시하지 않고 거부한다.
-     */
+    /** 예약·작성자·숙소·객실은 수정 대상이 아니다. 같은 값은 허용하고 다른 값이면 거부한다. */
     private static void rejectIdentityChange(Review review, ReviewDTO dto) {
         boolean changed =
                 (dto.getReservationId() != null && review.getReservation() != null
@@ -427,8 +421,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional
     @Override
     public void changeStatus(Long reviewId, String status) {
-        // 허용 값은 공유 ReviewStatus.ALL (PUBLISHED/HIDDEN/DELETED). VISIBLE 은 PUBLISHED 로 저장되고,
-        // 그 밖의 값(과거 화면의 PENDING/REPORTED 등)은 IllegalArgumentException.
+        // 허용 값은 ReviewStatus.ALL. VISIBLE 은 PUBLISHED 로 저장, 그 밖의 값은 IllegalArgumentException
         Review review = findReview(reviewId);
         review.changeStatus(status);
     }
@@ -438,7 +431,7 @@ public class ReviewServiceImpl implements ReviewService {
     public ReviewDTO toggleVisibleHidden(Long reviewId) {
         Review r = findReview(reviewId);
 
-        // 규칙: 노출(PUBLISHED, 과거 VISIBLE)이면 HIDDEN 으로, 그 외(HIDDEN/DELETED/기타)는 PUBLISHED 로.
+        // 노출 중이면 HIDDEN, 그 외는 PUBLISHED
         String after = ReviewStatus.isPublished(r.getStatus()) ? ReviewStatus.HIDDEN : ReviewStatus.PUBLISHED;
         r.changeStatus(after);
         return modelMapper.map(r, ReviewDTO.class);

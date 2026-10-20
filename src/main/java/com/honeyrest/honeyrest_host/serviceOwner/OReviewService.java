@@ -46,9 +46,6 @@ public class OReviewService {
                 .build();
     }
 
-    // 과거의 toEntity/create(빌더로 Review 를 만들어 save) 는 호출하는 곳이 없고, 리뷰 작성은 사용자 API 의 몫이라 제거했다.
-    // 업체 화면의 리뷰 변경(답변·상태·숨김)은 아래 saveReply/hide 가 관리자 서비스의 도메인 메서드 경로를 쓴다.
-
     public PageResponseDTO<ReviewDTO> getReviewsByAccommodationIdWithPageable(Long accommodationId, PageRequestDTO pageRequestDTO) {
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1,
                 pageRequestDTO.getSize(), Sort.by("reviewId").descending());
@@ -153,8 +150,7 @@ public class OReviewService {
     }
 
     /**
-     * 답글·노출 상태 저장. 과거에는 빌더로 만든 새 엔티티를 merge 해 작성일이 비고(같은 이유로 도메인에 updateContent 가 생김),
-     * 컨트롤러 매핑도 /owner/owner/... 로 잘못돼 저장 자체가 불가능했다. 업체 관리자 화면과 같은 부분 수정 로직을 쓴다.
+     * 답글·노출 상태 저장. 업체 관리자 화면과 같은 부분 수정 로직을 쓴다.
      */
     public void saveReply(Long reviewId, String reply, String status) {
         if (reviewRepository.findByReviewId(reviewId) == null) {
@@ -162,7 +158,7 @@ public class OReviewService {
         }
         com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO patch = com.honeyrest.honeyrest_host.dtoAdmin.ReviewDTO.builder()
                 .reply(reply == null ? "" : reply.trim())
-                .status(status) // 비어 있으면 유지, 값은 Review.changeStatus 가 공유 ReviewStatus 로 검증·정규화
+                .status(status) // 비어 있으면 유지
                 .build();
         adminReviewService.patch(reviewId, patch);
     }

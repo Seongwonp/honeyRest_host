@@ -28,7 +28,7 @@ public class PageRequestDTO {
 
     private String keyword;
 
-    /** 1 미만 페이지(이전 버튼의 page=0 등)를 1로 보정한다. PageRequest.of(-1) 이 400 을 내던 문제 */
+    /** 1 미만 페이지를 1로 보정한다 */
     public void setPage(int page) {
         this.page = Math.max(page, 1);
     }

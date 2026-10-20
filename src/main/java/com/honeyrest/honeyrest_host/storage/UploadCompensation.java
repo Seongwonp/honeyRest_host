@@ -10,13 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 한 트랜잭션 안에서 올린/지울 파일을 DB 결과에 맞춰 정리한다. 파일 저장소는 트랜잭션에 참여하지 않으므로
- * <ul>
- *   <li>{@link #upload}: 트랜잭션이 커밋되지 않으면(예외·롤백·커밋 실패) 이번 요청에서 올린 파일을 지운다(보상).</li>
- *   <li>{@link #deleteAfterCommit}: DB 에서 뗀 파일은 커밋이 성공한 뒤에만 지운다(롤백되면 파일을 남긴다).</li>
- * </ul>
- * {@link #begin} 은 트랜잭션 동기화가 활성인 곳(@Transactional 메서드 안)에서만 부를 수 있다.
- * 파일 삭제 실패는 로그만 남긴다(본 처리 결과를 바꾸지 않는다).
+ * 파일 저장소는 트랜잭션에 참여하지 않으므로, 커밋되지 않으면 올린 파일을 지우고 뗀 파일은 커밋 후에만 지운다.
+ * {@link #begin} 은 @Transactional 메서드 안에서만 부를 수 있다. 파일 삭제 실패는 로그만 남긴다.
  */
 @Log4j2
 public final class UploadCompensation implements TransactionSynchronization {

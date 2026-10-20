@@ -4,8 +4,8 @@
 #   빌드 컨텍스트 = 이 저장소 루트. 공유 도메인 모듈은 git submodule libs/honeyrest-user 에서 가져오므로
 #   반드시 서브모듈을 받은 상태여야 한다:  git clone --recurse-submodules  또는  git submodule update --init --recursive
 #   (settings.gradle 이 libs/honeyrest-user/honeyrest-domain/build.gradle 이 없으면 빌드를 중단한다)
-#   - 1단계(build): JDK 17 + Gradle Wrapper 로 bootJar 생성 (테스트는 CI 에서 실행하므로 생략)
-#   - 2단계(runtime): JRE 17 + 비루트 사용자로 실행
+#   - build 스테이지: JDK 17 + Gradle Wrapper 로 bootJar 생성 (테스트는 CI 에서 실행)
+#   - runtime 스테이지: JRE 17 + 비루트 사용자로 실행
 #   eclipse-temurin 은 arm64(aarch64) 이미지를 제공하므로 Oracle Cloud Ampere(ARM) VM 에서 그대로 빌드된다.
 # =============================================================================
 

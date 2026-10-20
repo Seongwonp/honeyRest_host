@@ -17,13 +17,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 회사 관리자 숙소 등록/수정 화면의 처리 흐름(애플리케이션 서비스).
- * <p>
- * 과거에는 AccommodationController.addSubmit/editSubmit 이 썸네일 업로드 → 숙소 저장 → 환불 규정 → 메인 이미지 →
- * 서브 이미지를 직접 순서대로 호출해, 단계마다 별도 트랜잭션이 커밋됐다. 중간에 실패하면 숙소만 있고 이미지·규정이
- * 없는 반쪽 데이터와 고아 파일이 남았다. 이제 한 트랜잭션으로 묶고, 파일은 트랜잭션에 참여하지 않으므로
- * {@link UploadCompensation} 으로 "커밋되지 않으면 이번 요청에서 올린 파일 삭제", "뗀 파일은 커밋 후 삭제" 를 보장한다.
- * (등록 시 썸네일 파일을 숙소 서비스와 이미지 서비스가 각각 한 번 더 올리던 중복 업로드도 없앴다.)
+ * 회사 관리자 숙소 등록/수정 흐름. 전체를 한 트랜잭션으로 묶고, 파일은 {@link UploadCompensation} 으로
+ * 롤백 시 이번 요청에서 올린 파일을 지우고 뗀 파일은 커밋 후 지운다.
  */
 @Service
 @RequiredArgsConstructor
@@ -50,7 +45,7 @@ public class AccommodationRegistrationService {
         form.setCompanyId(companyId);
         form.setStatus(AccommodationStatusPolicy.INITIAL_STATUS);
 
-        // (1) 대표 썸네일 업로드. 파일은 여기서 한 번만 올리고, 하위 서비스가 다시 올리지 않도록 폼에서 뗀다.
+        // (1) 대표 썸네일 업로드. 하위 서비스가 다시 올리지 않도록 폼에서 뗀다
         MultipartFile thumbnailFile = form.getFile();
         form.setFile(null);
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
@@ -86,11 +81,10 @@ public class AccommodationRegistrationService {
     public void edit(Long id, AccommodationUpdateRequestDTO form, MultipartFile thumbnailFile,
                      List<MultipartFile> subImages, boolean deleteThumbnail, List<Long> deleteSubImageIds)
             throws IOException {
-        // 폼의 companyId 는 신뢰하지 않는다 (값을 넣어 보내면 숙소를 다른 회사로 옮길 수 있었다)
+        // 폼의 companyId 는 신뢰하지 않는다
         form.setCompanyId(null);
 
-        // 0) 회사 관리자는 PENDING/INACTIVE 로만 바꿀 수 있고 ACTIVE 는 총관리자 승인으로만 전환된다.
-        //    (AccommodationService.update 에서도 같은 규칙을 한 번 더 적용한다)
+        // 0) 부수효과 전에 상태 변경 검증 (ACTIVE 는 총관리자 승인으로만)
         AccommodationCreateRequestDTO current = accommodationService.getById(id);
         AccommodationStatusPolicy.resolveCompanyAdminStatus(current == null ? null : current.getStatus(), form.getStatus());
 
@@ -140,7 +134,7 @@ public class AccommodationRegistrationService {
             if (file == null || file.isEmpty()) continue;
             String url = files.upload(file, "accommodations/" + accId + "/images");
             accommodationImageService.saveOrUpload(accId, AccommodationImageDTO.builder()
-                    .imageUrl(url) // 파일은 이미 올렸으므로 file 은 넘기지 않는다(중복 업로드 방지)
+                    .imageUrl(url) // 이미 업로드했으므로 file 은 넘기지 않는다
                     .imageType("SUB")
                     .sortOrder(order++)
                     .build());

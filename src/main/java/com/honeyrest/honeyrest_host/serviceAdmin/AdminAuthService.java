@@ -74,8 +74,7 @@ public class AdminAuthService {
 
         User user = userRepository.findByEmail(email);
 
-        // 없는 이메일과 틀린 비밀번호는 같은 메시지(400)로 응답한다. 과거에는 없는 이메일이면 user.getStatus() 에서
-        // NPE(500)가 나 계정 존재 여부가 드러났다. 소셜 계정(passwordHash null)도 같은 응답이다.
+        // 계정 존재 여부를 드러내지 않도록 없는 이메일·틀린 비밀번호·소셜 계정은 같은 메시지로 응답한다
         if (user == null || user.getPasswordHash() == null
                 || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException(BAD_CREDENTIALS);

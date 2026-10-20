@@ -44,11 +44,11 @@ public class ReservationServiceImpl implements ReservationService {
     private final ModelMapper modelMapper;
     private final AccommodationRepository accommodationRepository;
     private final ReservationInventoryGuard inventoryGuard;
-    // 기존 예약 수정(필드 + 상태 전이 + 재고 + 환불 + 캐시)의 공통 규칙 (오너 화면과 공유)
+    // 예약 수정 공통 규칙 (오너 화면과 공유)
     private final ReservationModificationService modificationService;
     // 취소/취소 승인 시 결제 취소·포인트 환불·쿠폰 복원
     private final ReservationRefundService refundService;
-    // 예약 점유가 바뀌면 사용자 API 검색 캐시 세대를 커밋 후 올린다 (검색 결과의 남은 객실 수가 바뀜)
+    // 예약 점유가 바뀌면 사용자 API 검색 캐시를 커밋 후 무효화 (남은 객실 수 변경)
     private final SearchCacheInvalidator searchCacheInvalidator;
 
 
@@ -67,8 +67,8 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     /**
-     * 예약 수정 (부분 업데이트). 필드는 도메인 update, 상태는 도메인 changeStatus(전이 표 검사)로만 바꾼다.
-     * 락 순서: 예약 행 잠금 읽기 → (필요 시) 객실 락 + 재고 검사 → 연관 엔티티 조회. (ReservationModificationService 참고)
+     * 예약 수정 (부분 업데이트). 상태는 도메인 changeStatus 로만 바꾼다.
+     * 락 순서: 예약 행 잠금 → (필요 시) 객실 락 + 재고 검사 → 연관 엔티티 조회.
      */
     @Override
     public ReservationDTO updateReservation(ReservationDTO dto) {
@@ -101,9 +101,8 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     /**
-     * 관리자 취소 (CONFIRMED/PENDING/COMPLETED/NO_SHOW → CANCELLED) + 환불(결제 취소·포인트·쿠폰 복원).
-     * 이미 취소된 예약이면 아무것도 하지 않는다(멱등). 재고는 room.total_rooms − 겹치는 점유 예약 수로 계산하므로
-     * 비점유(CANCELLED)가 되는 순간 자동으로 복구된다.
+     * 관리자 취소 + 환불(결제 취소·포인트·쿠폰 복원). 이미 취소된 예약이면 아무것도 하지 않는다(멱등).
+     * 재고는 겹치는 점유 예약 수로 계산하므로 CANCELLED 가 되면 자동 복구된다.
      */
     @Override
     public void cancelReservation(Long reservationId, String cancelReason) {
@@ -254,9 +253,8 @@ public class ReservationServiceImpl implements ReservationService {
             throw new IllegalArgumentException("체크인 날짜는 체크아웃보다 이전이어야 합니다.");
         }
 
-        // 관리자 직접 생성의 기본 상태는 CONFIRMED. 점유 상태면 객실 행을 잠그고 겹침 검사를 한다.
-        // 락 순서: 객실 락(+잠금 읽기 겹침 수)이 이 트랜잭션의 첫 문장이어야 한다. 회원/숙소 같은 일반 SELECT 를
-        // 먼저 하면 REPEATABLE READ 스냅샷이 그 시점에 고정되어 겹침 수가 옛 값을 볼 수 있었다.
+        // 기본 상태는 CONFIRMED. 객실 락이 트랜잭션의 첫 쿼리여야 한다
+        // (일반 SELECT 를 먼저 하면 REPEATABLE READ 스냅샷이 고정돼 겹침 수가 옛 값을 본다).
         String status = ReservationStatus.normalize(dto.getStatus(), ReservationStatus.CONFIRMED);
         Room room;
         if (ReservationStatus.isOccupying(status)) {
@@ -357,7 +355,7 @@ public class ReservationServiceImpl implements ReservationService {
         String st = null;
         if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
             st = status.toUpperCase();
-            // CANCELLED 도 허용해야 결제 화면의 미결제(취소) 목록 조회가 동작한다.
+            // 결제 화면의 미결제(취소) 목록 조회를 위해 CANCELLED 도 허용
             if (!ReservationStatus.ALL.contains(st)) {
                 throw new IllegalArgumentException("유효하지 않은 예약 상태: " + status);
             }
@@ -392,8 +390,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     /*
-     * 예약 상태 전이. 과거에는 JPQL 일괄 UPDATE 로 상태를 바꿔 도메인 전이 표를 우회했다.
-     * 이제 예약 행을 잠금 읽기로 가져와 도메인 메서드로만 바꾼다. 허용되지 않는 전이는 도메인이 IllegalStateException.
+     * 예약 상태 전이. 예약 행을 잠금 읽기로 가져와 도메인 메서드로만 바꾼다(잘못된 전이는 IllegalStateException).
      */
 
     /** 취소 요청 승인: CANCEL_REQUEST → CANCELLED + 환불. 갱신된 예약을 돌려준다. */
@@ -402,17 +399,13 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation r = lockedReservation(reservationId);
         r.approveCancelRequest(reason);
         refundService.refund(r, r.getCancelReason());
-        // CANCEL_REQUEST(점유) → CANCELLED(비점유): 객실이 다시 팔 수 있게 되므로 검색 캐시를 버린다.
+        // 점유 → 비점유: 객실을 다시 팔 수 있으므로 검색 캐시 무효화
         searchCacheInvalidator.bumpAfterCommit();
         log.info("예약 취소 승인 완료: reservationId={}, reason={}", reservationId, reason);
         return toDto(r);
     }
 
-    /*
-     * 아래 거부(CANCEL_REQUEST→CONFIRMED)·체크아웃 완료(CONFIRMED→COMPLETED)·노쇼(→NO_SHOW)는
-     * 점유 → 점유 전이라 남은 객실 수가 바뀌지 않으므로 검색 캐시 세대를 올리지 않는다.
-     * (ReservationStatus.OCCUPYING 참고)
-     */
+    // 아래 전이는 점유 → 점유라 남은 객실 수가 같으므로 검색 캐시를 건드리지 않는다
     @Override
     public void rejectCancelRequest(Long reservationId, String reason) {
         lockedReservation(reservationId).rejectCancelRequest(reason);

@@ -6,9 +6,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 /**
  * 사용자 API 와 같은 Redis 의 {@link SearchCacheKeys#SEARCH_VERSION_KEY} 를 INCR 하고,
  * 숙소 상세 캐시 키({@link AccommodationCacheKeys#allFor})를 DEL 한다.
- * <p>
- * Redis 장애가 예약/객실/가격 변경 자체를 실패시키면 안 되므로 예외는 삼키고 경고 로그만 남긴다.
- * (이 경우 사용자 검색 결과는 최대 TTL 동안 옛 재고를 보여줄 수 있다.)
+ * Redis 장애로 본 처리가 실패하면 안 되므로 예외는 삼키고 경고 로그만 남긴다.
  */
 @Log4j2
 public class RedisSearchCacheInvalidator implements SearchCacheInvalidator {

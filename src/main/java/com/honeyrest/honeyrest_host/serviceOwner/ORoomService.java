@@ -43,6 +43,6 @@ public interface ORoomService {
 
     List<RoomImageDTO> getAllImages();
 
-    /** 객실 대표 이미지 교체 (수정 화면의 대표 이미지 입력 — 과거에는 업로드해도 무시됐다) */
+    /** 객실 대표 이미지 교체 */
     void replaceMainImage(Long roomId, String imageUrl);
 }

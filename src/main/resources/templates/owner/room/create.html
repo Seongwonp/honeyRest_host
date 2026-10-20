@@ -124,8 +124,6 @@
 </th:block>
 <th:block layout:fragment="script">
 <script>
-    // 레이아웃 프래그먼트 밖에 있던 스크립트는 렌더링에서 빠져 검증이 동작하지 않았다.
-    // (숙소 최저가보다 싼 객실을 막던 규칙은 제거: 최저가는 객실 가격에서 계산되는 요약 값이다)
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.querySelector("form[enctype]");
         if (!form) return;

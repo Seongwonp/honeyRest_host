@@ -131,7 +131,7 @@
         document.getElementById('searchForm').addEventListener('submit', function (event) {
             const companyId = companySelect.value;
             const accommodationId = accommodationSelect.value;
-            let actionUrl = "/owner/calendar/list"; // 선택이 없으면 그대로 (과거: 없는 /owner/calendar/company 로 404)
+            let actionUrl = "/owner/calendar/list"; // 선택이 없으면 그대로
 
             if (accommodationId) {
                 actionUrl = `/owner/calendar/accommodation/${accommodationId}/calendar`;

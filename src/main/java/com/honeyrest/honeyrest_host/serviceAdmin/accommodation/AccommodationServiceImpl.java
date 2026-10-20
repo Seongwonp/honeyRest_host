@@ -38,11 +38,10 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationImageService accommodationImageService;
     private final CancellationPolicyRepository cancellationPolicyRepository;
     private final ReservationRepository reservationRepository;
-    // 숙소 노출 상태(status)·최저가가 바뀌거나 삭제되면 사용자 API 검색 캐시 세대를 커밋 후 올린다
+    // 노출 상태·최저가 변경/삭제 시 사용자 API 검색 캐시를 커밋 후 무효화
     private final SearchCacheInvalidator searchCacheInvalidator;
 
 
-    // Spring 이 관리하는 ObjectMapper(JacksonConfig, 모듈 등록됨)를 주입받는다
     private final ObjectMapper objectMapper;
     private final CancellationPolicyService cancellationPolicyService;
     private final AccommodationTagService accommodationTagService;
@@ -296,7 +295,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .amenities(amenitiesJson)
                 .checkInTime(req.getCheckInTime())
                 .checkOutTime(req.getCheckOutTime())
-                // 신규 숙소는 항상 승인 대기로 시작한다. 폼의 status(ACTIVE 등)는 신뢰하지 않는다.
+                // 신규 숙소는 항상 승인 대기. 폼의 status 는 무시한다.
                 .status(AccommodationStatusPolicy.INITIAL_STATUS)
                 .minPrice(req.getMinPrice())
                 .build();
@@ -367,7 +366,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Override
     public AccommodationCreateRequestDTO update(Long id, AccommodationUpdateRequestDTO req) {
         Accommodation before = getEntityOrThrow(id); // 존재 여부 확인
-        // patchUpdateScalars 가 영속성 컨텍스트를 비우므로(clearAutomatically) 비교할 값은 미리 떠 둔다
+        // patchUpdateScalars 가 영속성 컨텍스트를 비우므로 비교할 값을 미리 읽어 둔다
         String oldStatus = before.getStatus();
         BigDecimal oldMinPrice = before.getMinPrice();
 
@@ -403,7 +402,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         LocalDateTime checkInTime = req.getCheckInTime();
         LocalDateTime checkOutTime = req.getCheckOutTime();
-        // 회사 관리자는 PENDING/INACTIVE 로만 바꿀 수 있다. ACTIVE 는 총관리자 승인(approve)으로만 전환된다.
+        // 회사 관리자는 PENDING/INACTIVE 로만 변경 가능. ACTIVE 는 총관리자 승인으로만 전환
         String status = AccommodationStatusPolicy.resolveCompanyAdminStatus(oldStatus, req.getStatus());
         BigDecimal minPrice = req.getMinPrice();
 
@@ -413,7 +412,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                 checkInTime, checkOutTime, status, minPrice
         );
         if (affected == 0) throw new IllegalArgumentException("대상 없음: " + id);
-        // 이름·주소·설명·편의시설 등 상세 화면 값이 바뀌므로 사용자 API 숙소 상세 캐시를 커밋 후 지운다
+        // 사용자 API 숙소 상세 캐시를 커밋 후 삭제
         searchCacheInvalidator.evictAccommodationAfterCommit(id);
 
         boolean statusChanged = status != null && !status.equals(oldStatus);
@@ -446,7 +445,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         accommodationImageRepository.deleteByAccommodation_AccommodationId(id);
         accommodationTagMapRepository.deleteByAccommodation_AccommodationId(id);
         cancellationPolicyRepository.deleteByAccommodation_AccommodationId(id);
-        // 객실의 이미지·요금 캘린더 행이 객실을 FK 로 참조하므로 먼저 지운다 (객실이 있는 숙소는 삭제가 항상 실패했다)
+        // 객실 이미지·요금 캘린더가 객실을 FK 로 참조하므로 먼저 삭제
         roomRepository.findByAccommodation_AccommodationId(id, org.springframework.data.domain.Pageable.unpaged())
                 .forEach(room -> {
                     roomImageRepository.deleteByRoomRoomId(room.getRoomId());
@@ -467,16 +466,14 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Override
     public void changeStatus(Long id, String status) {
-        // 이 메서드는 회사 관리자가 승인 요청(PENDING 제출)에만 쓴다. 과거에는 호출자가 임의의
-        // status(예: APPROVED)를 넘겨 총관리자 승인 없이 자가 승인이 가능했다(P1-1).
-        // 실제 승인/거절은 OAccommodationService.approve/reject(SUPER_ADMIN 전용)로 분리했다.
+        // 회사 관리자의 승인 요청(PENDING)만 허용. 승인/거절은 OAccommodationService(SUPER_ADMIN 전용)
         if (!AccommodationStatus.PENDING.equals(status)) {
             throw new IllegalArgumentException("회사 관리자는 승인 요청(PENDING) 상태로만 전환할 수 있습니다.");
         }
         int affected = accommodationRepository.patchUpdateScalars(
                 id, null, null, null, null, null, null, null, null, null, status, null);
         if (affected == 0) throw new EntityNotFoundException("숙소가 존재하지 않습니다. id=" + id);
-        // 노출 중(ACTIVE)이던 숙소가 PENDING 으로 내려가면 검색에서 빠져야 한다
+        // ACTIVE 였다면 검색에서 빠져야 한다
         searchCacheInvalidator.bumpAfterCommit();
         searchCacheInvalidator.evictAccommodationAfterCommit(id);
     }

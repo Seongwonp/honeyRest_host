@@ -98,7 +98,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     // 회사(or 숙소) 객실의 월 범위에 걸친 예약들 싸그리
     // 체크인/ 체크아웃 날짜가 그달과 겹치는 모든 예약 포함. -> 월단위 캘린더 재고/예약 표시
-    // 재고 계산과 같은 기준을 쓰도록 점유 상태(ReservationStatus.OCCUPYING)만 포함한다.
+    // 재고 계산과 같은 기준으로 점유 상태만 포함
     default List<Reservation> findOverlappedReservationsForMonth(Integer companyId,
                                                                  Long accommodationId,
                                                                  LocalDate startDate,
@@ -127,18 +127,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                                                    @Param("statuses") Collection<String> statuses);
 
     /**
-     * [checkIn, checkOut) 구간과 숙박일이 겹치는 점유 예약 수를 <b>잠금 읽기</b>로 센다
-     * (checkIn < reqOut AND checkOut > reqIn, 예약 1건 = 객실 1개, 체크아웃 당일은 점유하지 않음).
-     * <p>
-     * 일반 SELECT(스냅샷 읽기)는 REPEATABLE READ 에서 트랜잭션 첫 읽기 시점의 스냅샷을 보므로,
-     * 객실 행 락을 기다리는 동안 다른 트랜잭션이 커밋한 예약을 놓칠 수 있다. FOR UPDATE 는 항상 최신 커밋을 읽는다.
-     * COUNT(*) ... FOR UPDATE 는 H2(test/screenshot)에서 지원되지 않아 겹치는 예약 ID 를 잠그며 읽고 개수를 센다.
-     * 기존 예약 수정 시 자기 자신을 빼기 위해 excludeId 를 받는다 (null 이면 제외 없음).
-     * 사용자 저장소 ReservationRepository.countOverlapping 과 같은 겹침 규칙이다.
+     * [checkIn, checkOut) 과 겹치는 점유 예약 수를 잠금 읽기(FOR UPDATE)로 센다. 스냅샷 읽기는 락 대기 중 커밋된 예약을 놓친다.
+     * H2 가 COUNT(*) ... FOR UPDATE 를 지원하지 않아 ID 를 잠그며 읽고 센다. excludeId 는 수정 시 자기 자신 제외용.
+     * 사용자 API ReservationRepository.countOverlapping 과 같은 규칙을 유지할 것.
      */
     default long countOverlappingForUpdate(Long roomId, LocalDate checkIn, LocalDate checkOut,
                                            Collection<String> statuses, Long excludeId) {
-        // 네이티브 쿼리에서 null 파라미터의 타입 추론 문제를 피하려고 "제외 없음"은 존재할 수 없는 ID(-1)로 넘긴다.
+        // 네이티브 쿼리의 null 타입 추론 문제를 피하려고 "제외 없음"은 -1 로 넘긴다
         return findOverlappingIdsForUpdate(roomId, checkIn, checkOut, statuses,
                 excludeId == null ? -1L : excludeId).size();
     }
@@ -160,8 +155,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                            @Param("excludeId") Long excludeId);
 
     /**
-     * 예약 행을 잠그고 읽는다 (SELECT ... FOR UPDATE). 상태 전이·환불을 같은 예약에 대해 직렬화하고,
-     * 수정 트랜잭션의 첫 문장을 잠금 읽기로 만들어 이후 재고 검사가 옛 스냅샷을 보지 않게 한다.
+     * 예약 행을 잠그고 읽는다. 같은 예약의 상태 전이·환불을 직렬화하고 이후 재고 검사가 옛 스냅샷을 보지 않게 한다.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Reservation r where r.reservationId = :id")
@@ -207,9 +201,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("accId") Long accId,
             Pageable pageable);
 
-
-    // 취소 승인/거부·체크아웃 완료·노쇼는 과거 JPQL 일괄 UPDATE 로 상태를 바꿨으나(전이 표 우회),
-    // 이제 엔티티를 읽어 도메인 메서드(Reservation.approveCancelRequest 등)로만 바꾼다. (ReservationServiceImpl 참고)
 
     // 체크인일 기준, 회사(+선택 숙소/객실) 필터
     @Query("""
